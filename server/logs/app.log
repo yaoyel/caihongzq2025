@@ -130,3 +130,46 @@
 {"level":30,"time":1740145924903,"pid":6468,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
 {"level":30,"time":1740145926223,"pid":6468,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
 {"level":30,"time":1740145928707,"pid":6468,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146267167,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"Database configuration:"}
+{"level":30,"time":1740146268976,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146268999,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269002,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269004,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269004,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269005,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269021,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269042,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269042,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269042,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269043,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269094,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269094,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269098,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269101,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269106,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269117,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269118,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"Database connection established"}
+{"level":30,"time":1740146269301,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269307,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269308,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269308,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269309,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269309,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269325,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269346,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269346,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269346,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269346,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269394,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269394,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269397,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269399,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269404,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269409,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146269423,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"Server running at http://localhost:80"}
+{"level":30,"time":1740146273951,"pid":23432,"hostname":"DESKTOP-QHV0S35","method":"POST","url":"/api/chat/sessions","status":200,"duration":"35ms","userId":"anonymous","ip":"::1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36","requestBody":{"userId":1,"title":"新对话 2025/2/21 21:57:53"},"responseBody":{"id":19,"userId":1,"title":"新对话 2025/2/21 21:57:53","createdAt":"2025-02-21T13:57:53.930Z","updatedAt":"2025-02-21T13:57:53.930Z","isShared":false,"shareCode":null},"timestamp":"2025-02-21T13:57:53.951Z"}
+{"level":30,"time":1740146273999,"pid":23432,"hostname":"DESKTOP-QHV0S35","method":"GET","url":"/api/chat/sessions/19/messages","status":200,"duration":"16ms","userId":"anonymous","ip":"::1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36","requestBody":{},"responseBody":[],"timestamp":"2025-02-21T13:57:53.999Z"}
+{"level":30,"time":1740146273929,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146273937,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146273944,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}
+{"level":30,"time":1740146273996,"pid":23432,"hostname":"DESKTOP-QHV0S35","msg":"DB Query:"}

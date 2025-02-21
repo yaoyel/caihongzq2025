@@ -9,6 +9,7 @@ import { AppDataSource } from './data-source';
 import { useContainer as typeormUseContainer, getConnectionManager } from 'typeorm';
 import wechatRouter from './routes/wechat';
 import { logger } from './config/logger';
+import { loggerMiddleware } from './middlewares/logger.middleware';
 
 // 导入所有控制器
 import { ElementController } from './controllers/element.controller';
@@ -49,6 +50,7 @@ async function bootstrap() {
         app.use(cors());
         app.use(bodyParser());
         app.use(koaLogger());
+        app.use(loggerMiddleware);
 
         // 注入微信路由
         app.use(wechatRouter.routes());
@@ -113,4 +115,4 @@ bootstrap().catch((error: unknown) => {
     process.exit(1);
 });
 
-export default bootstrap; 
+export default bootstrap;
