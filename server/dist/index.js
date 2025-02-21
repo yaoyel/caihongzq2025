@@ -14,6 +14,8 @@ const data_source_1 = require("./data-source");
 const typeorm_1 = require("typeorm");
 const wechat_1 = __importDefault(require("./routes/wechat"));
 const logger_1 = require("./config/logger");
+const logger_middleware_1 = require("./middlewares/logger.middleware");
+const typeorm_2 = require("typeorm");
 // 导入所有控制器
 const element_controller_1 = require("./controllers/element.controller");
 const question_controller_1 = require("./controllers/question.controller");
@@ -22,7 +24,7 @@ const user_controller_1 = require("./controllers/user.controller");
 const chat_controller_1 = require("./controllers/chat.controller");
 const report_controller_1 = require("./controllers/report.controller");
 // 设置依赖注入
-typedi_1.Container.reset(); // 重置容器
+typedi_1.Container.reset();
 (0, routing_controllers_1.useContainer)(typedi_1.Container);
 (0, typeorm_1.useContainer)(typedi_1.Container);
 async function bootstrap() {
@@ -30,24 +32,15 @@ async function bootstrap() {
         // 初始化数据库
         await data_source_1.AppDataSource.initialize();
         logger_1.logger.info('Database connection established');
-        // 设置连接到容器
-        const connectionManager = (0, typeorm_1.getConnectionManager)();
-        if (!connectionManager.has('default')) {
-            connectionManager.create({
-                name: 'default',
-                ...data_source_1.AppDataSource.options
-            });
-        }
-        const connection = connectionManager.get('default');
-        if (!connection.isConnected) {
-            await connection.connect();
-        }
+        // 设置数据源
+        typedi_1.Container.set(typeorm_2.DataSource, data_source_1.AppDataSource);
         // 创建应用
         const app = new koa_1.default();
         // 中间件
         app.use((0, cors_1.default)());
         app.use((0, koa_bodyparser_1.default)());
         app.use((0, koa_logger_1.default)());
+        app.use(logger_middleware_1.loggerMiddleware);
         // 注入微信路由
         app.use(wechat_1.default.routes());
         app.use(wechat_1.default.allowedMethods());

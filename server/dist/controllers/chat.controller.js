@@ -68,6 +68,26 @@ let ChatController = class ChatController {
             throw error;
         }
     }
+    async createSession(data) {
+        try {
+            // 如果title未定义则使用空字符串作为默认值
+            const sessionTitle = data.title || '';
+            return await this.chatService.createSession(data.userId, sessionTitle);
+        }
+        catch (error) {
+            logger_1.logger.error({ data, error }, 'Failed to create session');
+            throw error;
+        }
+    }
+    async getSessionMessages(sessionId) {
+        try {
+            return await this.chatService.getMessages(sessionId);
+        }
+        catch (error) {
+            logger_1.logger.error({ sessionId, error }, 'Failed to get session messages');
+            throw error;
+        }
+    }
     async deleteSession(id) {
         try {
             await this.chatService.deleteSession(id);
@@ -81,7 +101,7 @@ let ChatController = class ChatController {
 };
 exports.ChatController = ChatController;
 __decorate([
-    (0, routing_controllers_1.Get)('/sessions/:userId'),
+    (0, routing_controllers_1.Get)('/sessions/user/:userId'),
     (0, routing_controllers_openapi_1.OpenAPI)({ summary: '获取用户的聊天会话列表' }),
     __param(0, (0, routing_controllers_1.Param)('userId')),
     __metadata("design:type", Function),
@@ -121,6 +141,22 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], ChatController.prototype, "updateSession", null);
+__decorate([
+    (0, routing_controllers_1.Post)('/sessions'),
+    (0, routing_controllers_openapi_1.OpenAPI)({ summary: '创建聊天会话' }),
+    __param(0, (0, routing_controllers_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], ChatController.prototype, "createSession", null);
+__decorate([
+    (0, routing_controllers_1.Get)('/sessions/:sessionId/messages'),
+    (0, routing_controllers_openapi_1.OpenAPI)({ summary: '获取会话的消息列表' }),
+    __param(0, (0, routing_controllers_1.Param)('sessionId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ChatController.prototype, "getSessionMessages", null);
 __decorate([
     (0, routing_controllers_1.Delete)('/sessions/:id'),
     (0, routing_controllers_openapi_1.OpenAPI)({ summary: '删除聊天会话' }),

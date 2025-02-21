@@ -77,7 +77,7 @@ export class ReportService {
           )
         }));
 
-      logger.info({ userId }, 'Talent analysis completed');
+      logger.info('Talent analysis completed', { userId });
       return {
         bothTalentAndInterest: analysis.filter(item => item.hasTalent && item.hasInterest),
         neitherTalentNorInterest: analysis.filter(item => !item.hasTalent && !item.hasInterest),
@@ -86,7 +86,13 @@ export class ReportService {
         rawAnalysis: analysis
       };
     } catch (error) {
-      logger.error({ userId, error }, 'Failed to get talent analysis');
+      logger.error('Failed to get talent analysis', { 
+        userId, 
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack
+        } : error 
+      });
       throw error;
     }
   }
@@ -120,10 +126,16 @@ export class ReportService {
         }
       };
 
-      logger.info({ userId }, 'Report generated successfully');
+      logger.info('Report generated successfully', { userId });
       return reportContent;
     } catch (error) {
-      logger.error({ userId, error }, 'Failed to generate report');
+      logger.error('Failed to generate report', { 
+        userId, 
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack
+        } : error 
+      });
       throw error;
     }
   }

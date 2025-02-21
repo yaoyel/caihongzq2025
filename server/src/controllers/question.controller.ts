@@ -1,8 +1,7 @@
-import { JsonController, Get, Post, Put, Body, Param, QueryParam, Authorized } from 'routing-controllers';
+import { JsonController, Get, Post, Put, Body, Param, QueryParam } from 'routing-controllers';
 import { OpenAPI } from 'routing-controllers-openapi';
 import { Service } from 'typedi';
 import { QuestionService } from '../services/question.service';
-import { logger } from '../config/logger';
 
 @JsonController('/questions')
 @Service()
@@ -12,15 +11,10 @@ export class QuestionController {
     @Get()
     @OpenAPI({ summary: '获取问题列表' })
     async getAll(@QueryParam('ageRange') ageRange: '4-8' | '9-14' | '14+') {
-        try {
-            if (!ageRange) {
-                throw new Error('必须指定年龄段');
-            }
-            return await this.questionService.findByAgeRange(ageRange);
-        } catch (error) {
-            logger.error({ ageRange, error }, 'Failed to get questions');
-            throw error;
+        if (!ageRange) {
+            throw new Error('必须指定年龄段');
         }
+        return await this.questionService.findByAgeRange(ageRange);
     }
 
     @Get('/answers/user/:userId')
@@ -29,12 +23,7 @@ export class QuestionController {
         @Param('userId') userId: number,
         @QueryParam('ageRange') ageRange?: '4-8' | '9-14' | '14+'
     ) {
-        try {
-            return await this.questionService.getUserAnswers(userId, ageRange);
-        } catch (error) {
-            logger.error({ userId, ageRange, error }, 'Failed to get user answers');
-            throw error;
-        }
+        return await this.questionService.getUserAnswers(userId, ageRange);
     }
 
     @Get('/answers/user/:userId/summary')
@@ -43,12 +32,7 @@ export class QuestionController {
         @Param('userId') userId: number,
         @QueryParam('ageRange') ageRange: '4-8' | '9-14' | '14+'
     ) {
-        try {
-            return await this.questionService.getUserAnswerSummary(userId, ageRange);
-        } catch (error) {
-            logger.error({ userId, ageRange, error }, 'Failed to get answer summary');
-            throw error;
-        }
+        return await this.questionService.getUserAnswerSummary(userId, ageRange);
     }
 
     @Post('/:id/answers')
@@ -57,12 +41,7 @@ export class QuestionController {
         @Param('id') questionId: number,
         @Body() data: { userId: number; content: string; submittedBy: string }
     ) {
-        try {
-            return await this.questionService.submitAnswer(questionId, data);
-        } catch (error) {
-            logger.error({ questionId, data, error }, 'Failed to submit answer');
-            throw error;
-        }
+        return await this.questionService.submitAnswer(questionId, data);
     }
 
     @Put('/answers/:id')
@@ -71,11 +50,6 @@ export class QuestionController {
         @Param('id') id: number,
         @Body() data: { content: string }
     ) {
-        try {
-            return await this.questionService.updateAnswer(id, data.content);
-        } catch (error) {
-            logger.error({ id, data, error }, 'Failed to update answer');
-            throw error;
-        }
+        return await this.questionService.updateAnswer(id, data.content);
     }
 } 

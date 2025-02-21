@@ -1,19 +1,20 @@
 import { Service } from 'typedi';
-import { InjectRepository } from 'typeorm-typedi-extensions';
 import { Repository } from 'typeorm';
 import { Question } from '../entities/Question';
 import { QuestionAnswer } from '../entities/QuestionAnswer';
+import { AppDataSource } from '../data-source';
 
 type AgeRange = '4-8' | '9-14' | '14+';
 
 @Service()
 export class QuestionService {
-    constructor(
-        @InjectRepository(Question)
-        private questionRepository: Repository<Question>,
-        @InjectRepository(QuestionAnswer)
-        private answerRepository: Repository<QuestionAnswer>
-    ) {}
+    private questionRepository: Repository<Question>;
+    private answerRepository: Repository<QuestionAnswer>;
+
+    constructor() {
+        this.questionRepository = AppDataSource.getRepository(Question);
+        this.answerRepository = AppDataSource.getRepository(QuestionAnswer);
+    }
 
     async findByAgeRange(ageRange: AgeRange) {
         return this.questionRepository.find({

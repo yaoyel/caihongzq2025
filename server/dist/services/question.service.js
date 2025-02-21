@@ -8,22 +8,18 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.QuestionService = void 0;
 const typedi_1 = require("typedi");
-const typeorm_typedi_extensions_1 = require("typeorm-typedi-extensions");
-const typeorm_1 = require("typeorm");
 const Question_1 = require("../entities/Question");
 const QuestionAnswer_1 = require("../entities/QuestionAnswer");
+const data_source_1 = require("../data-source");
 let QuestionService = class QuestionService {
     questionRepository;
     answerRepository;
-    constructor(questionRepository, answerRepository) {
-        this.questionRepository = questionRepository;
-        this.answerRepository = answerRepository;
+    constructor() {
+        this.questionRepository = data_source_1.AppDataSource.getRepository(Question_1.Question);
+        this.answerRepository = data_source_1.AppDataSource.getRepository(QuestionAnswer_1.QuestionAnswer);
     }
     async findByAgeRange(ageRange) {
         return this.questionRepository.find({
@@ -50,7 +46,7 @@ let QuestionService = class QuestionService {
             completed: answers.length,
             answers: answers.map(answer => ({
                 questionId: answer.questionId,
-                content: answer.content.substring(0, 50) + (answer.content.length > 50 ? '...' : ''),
+                content: answer.content,
                 submittedAt: answer.submittedAt
             }))
         };
@@ -87,8 +83,5 @@ let QuestionService = class QuestionService {
 exports.QuestionService = QuestionService;
 exports.QuestionService = QuestionService = __decorate([
     (0, typedi_1.Service)(),
-    __param(0, (0, typeorm_typedi_extensions_1.InjectRepository)(Question_1.Question)),
-    __param(1, (0, typeorm_typedi_extensions_1.InjectRepository)(QuestionAnswer_1.QuestionAnswer)),
-    __metadata("design:paramtypes", [typeorm_1.Repository,
-        typeorm_1.Repository])
+    __metadata("design:paramtypes", [])
 ], QuestionService);

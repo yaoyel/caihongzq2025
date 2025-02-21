@@ -13,59 +13,34 @@ export class ElementController {
     @Get()
     @OpenAPI({ summary: '获取所有元素' })
     async getAll() {
-        try {
-            return await this.elementService.findAll();
-        } catch (error) {
-            logger.error({ error }, 'Failed to get elements');
-            throw error;
-        }
+        return await this.elementService.findAll();
     }
 
     @Get('/:id')
     @OpenAPI({ summary: '获取单个元素' })
     async getOne(@Param('id') id: number) {
-        try {
-            return await this.elementService.findOne(id);
-        } catch (error) {
-            logger.error({ id, error }, 'Failed to get element');
-            throw error;
-        }
+        return await this.elementService.findOne(id);
     }
 
     @Post()
     @Authorized()
     @OpenAPI({ summary: '创建元素' })
     async create(@Body() data: Partial<Element>) {
-        try {
-            return await this.elementService.create(data);
-        } catch (error) {
-            logger.error({ data, error }, 'Failed to create element');
-            throw error;
-        }
+        return await this.elementService.create(data);
     }
 
     @Put('/:id')
     @Authorized()
     @OpenAPI({ summary: '更新元素' })
     async update(@Param('id') id: number, @Body() data: Partial<Element>) {
-        try {
-            return await this.elementService.update(id, data);
-        } catch (error) {
-            logger.error({ id, data, error }, 'Failed to update element');
-            throw error;
-        }
+        return await this.elementService.update(id, data);
     }
 
     @Delete('/:id')
     @Authorized()
     @OpenAPI({ summary: '删除元素' })
     async delete(@Param('id') id: number) {
-        try {
-            await this.elementService.delete(id);
-            return { success: true };
-        } catch (error) {
-            logger.error({ id, error }, 'Failed to delete element');
-            throw error;
-        }
+        await this.elementService.delete(id);
+        return { success: true };
     }
 } 

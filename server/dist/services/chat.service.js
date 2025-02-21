@@ -95,6 +95,12 @@ let ChatService = class ChatService {
         await this.sessionRepository.update(id, { title });
         return this.getSessionById(id);
     }
+    async getMessages(sessionId) {
+        return this.messageRepository.find({
+            where: { sessionId },
+            order: { createdAt: 'ASC' }
+        });
+    }
     async deleteSession(id) {
         await this.sessionRepository.delete(id);
     }

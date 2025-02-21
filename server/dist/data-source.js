@@ -16,6 +16,7 @@ const ChatMessage_1 = require("./entities/ChatMessage");
 const ChatSession_1 = require("./entities/ChatSession");
 const logger_1 = require("./config/logger");
 const dotenv_1 = __importDefault(require("dotenv"));
+const typedi_1 = require("typedi");
 // 加载环境变量
 dotenv_1.default.config();
 // 创建自定义 logger
@@ -77,6 +78,8 @@ exports.AppDataSource = new typeorm_1.DataSource({
     schema: 'public',
     logger: new CustomLogger()
 });
+// 将 AppDataSource 添加到容器中
+typedi_1.Container.set(typeorm_1.DataSource, exports.AppDataSource);
 // 打印完整配置（只保留一次）
 logger_1.logger.info('Database configuration:', {
     host: process.env.DB_HOST,

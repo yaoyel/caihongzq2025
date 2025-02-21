@@ -41,7 +41,7 @@
     "routing-controllers-openapi": "^4.0.0",
     "typedi": "^0.10.0",
     "typeorm": "^0.3.19",
-    "typeorm-typedi-extensions": "^0.4.1",
+    "@typeorm/typeorm-typedi-extensions": "^0.3.19",
     "winston": "^3.11.0"
   },
   "devDependencies": {
