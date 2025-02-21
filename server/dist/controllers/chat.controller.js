@@ -1,36 +1,136 @@
 "use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChatController = void 0;
+const routing_controllers_1 = require("routing-controllers");
+const routing_controllers_openapi_1 = require("routing-controllers-openapi");
+const typedi_1 = require("typedi");
 const chat_service_1 = require("../services/chat.service");
-class ChatController {
-    constructor() {
-        this.chatService = new chat_service_1.ChatService();
+const logger_1 = require("../config/logger");
+let ChatController = class ChatController {
+    chatService;
+    constructor(chatService) {
+        this.chatService = chatService;
     }
-    async getHistory(req, res) {
+    async getSessions(userId) {
         try {
-            const userId = parseInt(req.params.userId);
-            const history = await this.chatService.getHistory(userId);
-            res.json(history);
+            return await this.chatService.getSessions(userId);
         }
         catch (error) {
-            console.error('获取聊天历史失败:', error);
-            res.status(500).json({ error: '获取聊天历史失败' });
+            logger_1.logger.error({ userId, error }, 'Failed to get chat sessions');
+            throw error;
         }
     }
-    async sendMessage(req, res) {
+    async getSharedSession(shareCode) {
         try {
-            const { userId, content } = req.body;
-            if (!content || !userId) {
-                return res.status(400).json({ error: '缺少必要参数' });
-            }
-            const response = await this.chatService.sendMessage(userId, content);
-            res.json(response);
+            return await this.chatService.getSessionByShareCode(shareCode);
         }
         catch (error) {
-            console.error('发送消息失败:', error);
-            res.status(500).json({ error: '发送消息失败' });
+            logger_1.logger.error({ shareCode, error }, 'Failed to get shared session');
+            throw error;
         }
     }
-}
+    async sendMessage(data) {
+        try {
+            return await this.chatService.sendMessage(data.sessionId, data.content, data.role);
+        }
+        catch (error) {
+            logger_1.logger.error({ data, error }, 'Failed to send message');
+            throw error;
+        }
+    }
+    async shareSession(id) {
+        try {
+            return await this.chatService.shareSession(id);
+        }
+        catch (error) {
+            logger_1.logger.error({ id, error }, 'Failed to share session');
+            throw error;
+        }
+    }
+    async updateSession(id, data) {
+        try {
+            return await this.chatService.updateSession(id, data.title);
+        }
+        catch (error) {
+            logger_1.logger.error({ id, data, error }, 'Failed to update session');
+            throw error;
+        }
+    }
+    async deleteSession(id) {
+        try {
+            await this.chatService.deleteSession(id);
+            return { success: true };
+        }
+        catch (error) {
+            logger_1.logger.error({ id, error }, 'Failed to delete session');
+            throw error;
+        }
+    }
+};
 exports.ChatController = ChatController;
-//# sourceMappingURL=chat.controller.js.map
+__decorate([
+    (0, routing_controllers_1.Get)('/sessions/:userId'),
+    (0, routing_controllers_openapi_1.OpenAPI)({ summary: '获取用户的聊天会话列表' }),
+    __param(0, (0, routing_controllers_1.Param)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ChatController.prototype, "getSessions", null);
+__decorate([
+    (0, routing_controllers_1.Get)('/sessions/shared/:shareCode'),
+    (0, routing_controllers_openapi_1.OpenAPI)({ summary: '获取共享的聊天会话' }),
+    __param(0, (0, routing_controllers_1.Param)('shareCode')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], ChatController.prototype, "getSharedSession", null);
+__decorate([
+    (0, routing_controllers_1.Post)('/messages'),
+    (0, routing_controllers_openapi_1.OpenAPI)({ summary: '发送消息' }),
+    __param(0, (0, routing_controllers_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], ChatController.prototype, "sendMessage", null);
+__decorate([
+    (0, routing_controllers_1.Put)('/sessions/:id/share'),
+    (0, routing_controllers_openapi_1.OpenAPI)({ summary: '分享聊天会话' }),
+    __param(0, (0, routing_controllers_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ChatController.prototype, "shareSession", null);
+__decorate([
+    (0, routing_controllers_1.Put)('/sessions/:id'),
+    (0, routing_controllers_openapi_1.OpenAPI)({ summary: '更新会话标题' }),
+    __param(0, (0, routing_controllers_1.Param)('id')),
+    __param(1, (0, routing_controllers_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], ChatController.prototype, "updateSession", null);
+__decorate([
+    (0, routing_controllers_1.Delete)('/sessions/:id'),
+    (0, routing_controllers_openapi_1.OpenAPI)({ summary: '删除聊天会话' }),
+    __param(0, (0, routing_controllers_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ChatController.prototype, "deleteSession", null);
+exports.ChatController = ChatController = __decorate([
+    (0, routing_controllers_1.JsonController)('/chat'),
+    (0, typedi_1.Service)(),
+    __metadata("design:paramtypes", [chat_service_1.ChatService])
+], ChatController);

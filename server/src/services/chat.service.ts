@@ -1,87 +1,104 @@
-import { AppDataSource } from '../data-source';
-import { ChatSession } from '../entity/ChatSession';
-import { ChatMessage } from '../entity/ChatMessage';
-import { v4 as uuidv4 } from 'uuid';
+import { Service } from 'typedi';
+import { InjectRepository } from 'typeorm-typedi-extensions';
+import { ChatSession } from '../entities/ChatSession';
+import { ChatMessage } from '../entities/ChatMessage';
+import { Repository } from 'typeorm';
+import { OpenAI } from 'openai';
 
+@Service()
 export class ChatService {
-    private chatSessionRepository = AppDataSource.getRepository(ChatSession);
-    private chatMessageRepository = AppDataSource.getRepository(ChatMessage);
+    private openai: OpenAI;
 
-    public async createSession(userId: number, title: string): Promise<ChatSession> {
-        const session = new ChatSession();
-        session.userId = userId;
-        session.title = title;
-        return await this.chatSessionRepository.save(session);
-    }
-
-    public async getSessionsByUserId(userId: number): Promise<ChatSession[]> {
-        return await this.chatSessionRepository.find({
-            where: { userId },
-            order: { updatedAt: 'DESC' },
-            relations: ['messages']
+    constructor(
+        @InjectRepository(ChatSession)
+        private sessionRepository: Repository<ChatSession>,
+        @InjectRepository(ChatMessage)
+        private messageRepository: Repository<ChatMessage>
+    ) {
+        this.openai = new OpenAI({
+            apiKey: process.env.DEEPSEEK_API_KEY,
+            baseURL: process.env.DEEPSEEK_API_BASE_URL || 'https://api.deepseek.com/v1'
         });
     }
 
-    public async getSessionById(id: number): Promise<ChatSession | null> {
-        return await this.chatSessionRepository.findOne({
+    async createSession(userId: number, title: string) {
+        const session = this.sessionRepository.create({ userId, title });
+        return this.sessionRepository.save(session);
+    }
+
+    async getSessions(userId: number) {
+        return this.sessionRepository.find({
+            where: { userId },
+            relations: ['messages'],
+            order: { updatedAt: 'DESC' }
+        });
+    }
+
+    async getSessionById(id: number) {
+        return this.sessionRepository.findOne({ 
             where: { id },
             relations: ['messages']
         });
     }
 
-    public async addMessage(sessionId: number, role: 'user' | 'assistant', content: string): Promise<ChatMessage> {
-        const message = new ChatMessage();
-        message.sessionId = sessionId;
-        message.role = role;
-        message.content = content;
+    async processMessage(data: { sessionId: number; role: "user" | "assistant"; content: string }) {
+        // 保存用户消息
+        const userMessage = await this.addMessage(data.sessionId, data.role, data.content);
 
-        const savedMessage = await this.chatMessageRepository.save(message);
+        if (data.role === 'user') {
+            const completion = await this.openai.chat.completions.create({
+                model: 'deepseek-reasoner',
+                messages: [{ role: 'user', content: data.content }],
+                temperature: 0.7
+            });
 
-        // 更新会话的更新时间
-        await this.chatSessionRepository.update(sessionId, {
-            updatedAt: new Date()
-        });
+            const aiContent = completion.choices[0].message.content;
+            const aiMessage = await this.addMessage(data.sessionId, 'assistant', aiContent || '');
+            
+            return { userMessage, aiMessage };
+        }
 
-        return savedMessage;
+        return userMessage;
     }
 
-    public async shareSession(sessionId: number): Promise<string> {
-        const session = await this.chatSessionRepository.findOne({
-            where: { id: sessionId }
-        });
+    async addMessage(sessionId: number, role: "user" | "assistant", content: string) {
+        const message = this.messageRepository.create({ sessionId, role, content });
+        return this.messageRepository.save(message);
+    }
 
+    async sendMessage(sessionId: number, content: string, role: 'user' | 'assistant') {
+        const message = this.messageRepository.create({
+            sessionId,
+            content,
+            role
+        });
+        return this.messageRepository.save(message);
+    }
+
+    async shareSession(id: number) {
+        const session = await this.sessionRepository.findOne({ where: { id } });
         if (!session) {
             throw new Error('会话不存在');
         }
-
         session.isShared = true;
-        session.shareCode = uuidv4().replace(/-/g, '').substring(0, 8);
-        await this.chatSessionRepository.save(session);
-
+        session.shareCode = Math.random().toString(36).substring(2, 10);
+        await this.sessionRepository.save(session);
         return session.shareCode;
     }
 
-    public async getSessionByShareCode(shareCode: string): Promise<ChatSession | null> {
-        return await this.chatSessionRepository.findOne({
+    async getSessionByShareCode(shareCode: string) {
+        return this.sessionRepository.findOne({
             where: { shareCode, isShared: true },
             relations: ['messages']
         });
     }
 
-    public async updateSession(id: number, title: string): Promise<ChatSession> {
-        await this.chatSessionRepository.update(id, { title });
-        const updatedSession = await this.chatSessionRepository.findOne({
-            where: { id },
-            relations: ['messages']
-        });
-        if (!updatedSession) {
-            throw new Error('会话不存在');
-        }
-        return updatedSession;
+    async updateSession(id: number, title: string) {
+        await this.sessionRepository.update(id, { title });
+        return this.getSessionById(id);
     }
 
-    public async deleteSession(id: number): Promise<void> {
-        await this.chatMessageRepository.delete({ sessionId: id });
-        await this.chatSessionRepository.delete(id);
+    async deleteSession(id: number) {
+        await this.sessionRepository.delete(id);
     }
 }

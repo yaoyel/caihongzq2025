@@ -4,7 +4,7 @@ dotenv.config();
 
 export const config = {
     deepseek: {
-        apiKey: process.env.DEEPSEEK_API_KEY || 'sk-c8a4469f28ad44c0aa4de8f58693de31',
+        apiKey: process.env.DEEPSEEK_API_KEY || '',
         model: process.env.DEEPSEEK_MODEL || 'deepseek-reasoner',
         baseURL: process.env.DEEPSEEK_API_BASE_URL || 'https://api.deepseek.com/v1',
         temperature: parseFloat(process.env.DEEPSEEK_TEMPERATURE || '0.7'),
@@ -13,4 +13,4 @@ export const config = {
         presencePenalty: parseFloat(process.env.DEEPSEEK_PRESENCE_PENALTY || '0'),
         frequencyPenalty: parseFloat(process.env.DEEPSEEK_FREQUENCY_PENALTY || '0')
     }
-};
+}; 

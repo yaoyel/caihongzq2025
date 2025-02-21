@@ -45,4 +45,3 @@ class CreateChatTables1703664000000 {
     }
 }
 exports.CreateChatTables1703664000000 = CreateChatTables1703664000000;
-//# sourceMappingURL=1703664000000-CreateChatTables.js.map

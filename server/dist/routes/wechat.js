@@ -7,7 +7,7 @@ const router_1 = __importDefault(require("@koa/router"));
 const axios_1 = __importDefault(require("axios"));
 const fast_xml_parser_1 = require("fast-xml-parser");
 const data_source_1 = require("../data-source");
-const User_1 = require("../entity/User");
+const User_1 = require("../entities/User");
 const helper_1 = require("../utils/helper");
 const router = new router_1.default({ prefix: '/api/wechat' });
 const userRepository = data_source_1.AppDataSource.getRepository(User_1.User);
@@ -17,7 +17,6 @@ const sceneMap = new Map();
 const processedEvents = new Map();
 // 获取登录二维码
 router.get('/qrcode', async (ctx) => {
-    var _a, _b, _c, _d, _e;
     try {
         const sceneStr = (0, helper_1.generateRandomString)(32);
         let responseData;
@@ -49,7 +48,7 @@ router.get('/qrcode', async (ctx) => {
         }
         catch (error) {
             // 如果是未认证错误，使用测试号方案
-            if (((_b = (_a = error.response) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.errcode) === 48001) {
+            if (error.response?.data?.errcode === 48001) {
                 console.log('使用测试号方案');
                 // 使用测试号的参数化二维码接口
                 const testQrCodeUrl = `https://mp.weixin.qq.com/debug/cgi-bin/qrcode?token=${process.env.WECHAT_TOKEN}&scene_str=${sceneStr}`;
@@ -74,11 +73,11 @@ router.get('/qrcode', async (ctx) => {
         ctx.body = responseData;
     }
     catch (error) {
-        console.error('获取二维码失败:', ((_c = error.response) === null || _c === void 0 ? void 0 : _c.data) || error.message);
+        console.error('获取二维码失败:', error.response?.data || error.message);
         ctx.status = 500;
         ctx.body = {
             error: '获取二维码失败',
-            message: ((_e = (_d = error.response) === null || _d === void 0 ? void 0 : _d.data) === null || _e === void 0 ? void 0 : _e.errmsg) || error.message
+            message: error.response?.data?.errmsg || error.message
         };
     }
 });
@@ -267,4 +266,3 @@ router.get('/check', async (ctx) => {
     }
 });
 exports.default = router;
-//# sourceMappingURL=wechat.js.map

@@ -1,7 +1,19 @@
- 
- 
-// 一、项目结构规范
-1. 目录结构
+# 服务器端开发规范
+
+## 技术栈
+- 基础框架：KOA2 + TypeScript
+- 路由控制：routing-controllers
+- 依赖注入：TypeDI
+- ORM工具：TypeORM
+- 参数校验：class-validator
+- 日志系统：Pino
+- 认证中间件：koa-jwt
+- API文档：Swagger/OpenAPI + routing-controllers-openapi
+- 环境配置：dotenv
+- 测试工具:supertest
+- 数据库:postgres
+
+## 项目结构
 - client/src/pages: 页面组件目录
 - client/src/components: 通用组件目录
 - client/src/utils: 工具函数目录
@@ -9,6 +21,7 @@
 - server/src/routes: API路由目录
 - server/src/entity: 数据实体目录
 - server/src/utils: 工具函数目录
+- server/src/controllers: 控制器目录
 
 2. 文件命名
 - 组件文件: PascalCase (如 LoginPage.tsx)

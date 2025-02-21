@@ -40,4 +40,3 @@ const getAccessToken = async () => {
     }
 };
 exports.getAccessToken = getAccessToken;
-//# sourceMappingURL=helper.js.map

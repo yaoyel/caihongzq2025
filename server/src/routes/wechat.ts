@@ -3,7 +3,7 @@ import { Context } from 'koa';
 import axios from 'axios';
 import { XMLParser } from 'fast-xml-parser';
 import { AppDataSource } from '../data-source';
-import { User } from '../entity/User';
+import { User } from '../entities/User';
 import { generateRandomString, getAccessToken } from '../utils/helper';
 
 // 微信接口返回数据类型定义
