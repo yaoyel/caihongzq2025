@@ -59,6 +59,12 @@ const PrintableContent = styled.div`
   }
 `;
 
+interface TalentAnalysis {
+  dimension: string;
+  hasTalent: boolean;
+  hasInterest: boolean;
+}
+
 const ReportPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeKey, setActiveKey] = useState(['1']);
@@ -101,10 +107,54 @@ const ReportPage: React.FC = () => {
     ]
   };
 
+  // 修改维度数据结构
+  const dimensions = ['看', '听', '说', '记', '想', '做', '运动'];
+  
+  // 模拟用户答案数据，实际使用时需要从props或API获取
+  const [talentAnalysis, setTalentAnalysis] = useState<TalentAnalysis[]>([]);
+
+  // 分析天赋和兴趣
+  const analyzeTalentAndInterest = (scaleAnswers: any) => {
+    const analysis = dimensions.map(dim => {
+      // 这里需要根据实际数据结构调整获取答案的方式
+      const talentForward = scaleAnswers[`${dim}_talent_forward`] || 0;
+      const talentReverse = scaleAnswers[`${dim}_talent_reverse`] || 0;
+      const interestForward = scaleAnswers[`${dim}_interest_forward`] || 0;
+      const interestReverse = scaleAnswers[`${dim}_interest_reverse`] || 0;
+
+      const hasTalent = (talentForward <= 2 && talentReverse >= 3);
+      const hasInterest = (interestForward <= 2 && interestReverse >= 3);
+
+      return {
+        dimension: dim,
+        hasTalent,
+        hasInterest
+      };
+    });
+
+    setTalentAnalysis(analysis);
+  };
+
+  // 获取不同类别的维度
+  const getTalentCategories = () => {
+    const bothTalentAndInterest = talentAnalysis.filter(t => t.hasTalent && t.hasInterest);
+    const neitherTalentNorInterest = talentAnalysis.filter(t => !t.hasTalent && !t.hasInterest);
+    const onlyInterest = talentAnalysis.filter(t => !t.hasTalent && t.hasInterest);
+    const onlyTalent = talentAnalysis.filter(t => t.hasTalent && !t.hasInterest);
+
+    return {
+      bothTalentAndInterest,
+      neitherTalentNorInterest,
+      onlyInterest,
+      onlyTalent
+    };
+  };
+
+  // 修改雷达图配置
   const radarConfig = {
-    data: mockData.dimensions.map(d => ({
-      name: d.name,
-      value: d.score
+    data: dimensions.map(dim => ({
+      name: dim,
+      value: Math.random() * 100 // 这里需要根据实际分析结果设置数值
     })),
     xField: 'name',
     yField: 'value',
@@ -122,12 +172,45 @@ const ReportPage: React.FC = () => {
     }
   };
 
-  // 天赋与喜好雷达图数据
-  const talentData = {
-    labels: ['创造力', '逻辑思维', '语言表达', '空间感知', '音乐天赋', '运动能力', '人际交往'],
-    datasets: [{
-      data: [85, 65, 75, 80, 60, 70, 90],
-    }]
+  // 在天赋与喜好分析卡片中展示分类结果
+  const renderTalentAnalysis = () => {
+    const categories = getTalentCategories();
+    
+    return (
+      <Space direction="vertical" style={{ width: '100%' }}>
+        {categories.bothTalentAndInterest.length > 0 && (
+          <Card title="有天赋且感兴趣">
+            {categories.bothTalentAndInterest.map(item => (
+              <Tag color="success" key={item.dimension}>{item.dimension}</Tag>
+            ))}
+          </Card>
+        )}
+        
+        {categories.neitherTalentNorInterest.length > 0 && (
+          <Card title="既无天赋也无兴趣">
+            {categories.neitherTalentNorInterest.map(item => (
+              <Tag color="error" key={item.dimension}>{item.dimension}</Tag>
+            ))}
+          </Card>
+        )}
+        
+        {categories.onlyInterest.length > 0 && (
+          <Card title="有兴趣但暂无天赋">
+            {categories.onlyInterest.map(item => (
+              <Tag color="warning" key={item.dimension}>{item.dimension}</Tag>
+            ))}
+          </Card>
+        )}
+        
+        {categories.onlyTalent.length > 0 && (
+          <Card title="有天赋但缺乏兴趣">
+            {categories.onlyTalent.map(item => (
+              <Tag color="processing" key={item.dimension}>{item.dimension}</Tag>
+            ))}
+          </Card>
+        )}
+      </Space>
+    );
   };
 
   // 添加雷达图事件的类型定义
@@ -197,7 +280,7 @@ const ReportPage: React.FC = () => {
                 </Tooltip>
               }
             >
-              <Row>
+              <Row gutter={24}>
                 <Col span={12}>
                   <Radar {...radarConfig} onReady={(plot) => {
                     plot.on('element:click', (evt: RadarEvent) => {
@@ -207,19 +290,7 @@ const ReportPage: React.FC = () => {
                   }} />
                 </Col>
                 <Col span={12}>
-                  <List
-                    header={<Text strong>突出天赋项</Text>}
-                    dataSource={[
-                      '人际交往能力突出',
-                      '创造性思维活跃',
-                      '空间想象力强'
-                    ]}
-                    renderItem={item => (
-                      <List.Item>
-                        <Tag color="blue">{item}</Tag>
-                      </List.Item>
-                    )}
-                  />
+                  {renderTalentAnalysis()}
                 </Col>
               </Row>
             </Panel>
