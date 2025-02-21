@@ -315,7 +315,7 @@ const QAAssessment: React.FC = () => {
                       </Text>
                       {answer && (
                         <Text type="secondary" className="answer-preview">
-                          答：{answer.content.replace(/<[^>]+>/g, '')}
+                          答：{answer.content}
                         </Text>
                       )}
                     </Space>

@@ -45,7 +45,7 @@ export class QuestionService {
             completed: answers.length,
             answers: answers.map(answer => ({
                 questionId: answer.questionId,
-                content: answer.content.substring(0, 50) + (answer.content.length > 50 ? '...' : ''),
+                content: answer.content,
                 submittedAt: answer.submittedAt
             }))
         };
