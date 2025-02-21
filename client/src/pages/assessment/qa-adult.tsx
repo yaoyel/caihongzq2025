@@ -35,14 +35,16 @@ const QuestionCard = styled(Card)`
 `;
 
 const StyledMenuItem = styled(Menu.Item as React.FC<MenuItemProps>)`
-  padding: 12px 24px !important;
+  padding: 12px 16px !important;
   min-height: 80px;
   position: relative;
+  margin: 4px 8px !important;
+  border-radius: 8px;
   
   .ant-menu-title-content {
     white-space: normal;
     line-height: 1.5;
-    padding-right: 24px;
+    margin-right: 28px;
     
     .question-preview {
       overflow: hidden;
@@ -53,23 +55,68 @@ const StyledMenuItem = styled(Menu.Item as React.FC<MenuItemProps>)`
       margin-bottom: 4px;
       font-size: 13px;
       color: rgba(0, 0, 0, 0.65);
+      word-break: break-all;
     }
     
     .answer-preview {
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
       font-size: 12px;
       color: rgba(0, 0, 0, 0.45);
       margin-top: 4px;
+      word-break: break-all;
     }
   }
 
   .ant-menu-item-icon {
     position: absolute;
-    right: 16px;
+    right: 12px;
     top: 50%;
     transform: translateY(-50%);
+    font-size: 16px;
+  }
+`;
+
+const THEMES = ['动力探索', '强项认知', '奋斗方向', '共赢发展'];
+
+const getThemeQuestions = (themeIndex: number, questions: Question[]) => {
+  const startIndex = themeIndex * 12;
+  const endIndex = startIndex + 12;
+  return questions.slice(startIndex, endIndex);
+};
+
+const getThemeProgress = (themeIndex: number, questions: Question[], answers: Answer[]) => {
+  const themeQuestions = getThemeQuestions(themeIndex, questions);
+  const answeredCount = themeQuestions.filter(q => 
+    answers.some(a => a.questionId === q.id)
+  ).length;
+  return {
+    total: themeQuestions.length,
+    completed: answeredCount,
+    percent: themeQuestions.length ? Math.round((answeredCount / themeQuestions.length) * 100) : 0
+  };
+};
+
+const StyledSubMenu = styled(Menu.SubMenu)`
+  .ant-menu-sub {
+    background: #fafafa !important;
+  }
+  
+  .ant-menu-item {
+    margin: 4px 0 !important;
+  }
+
+  .ant-menu-submenu-title {
+    font-weight: bold;
+    height: auto !important;
+    padding: 12px 24px !important;
+    
+    .ant-progress {
+      margin-top: 8px;
+    }
   }
 `;
 
@@ -141,11 +188,11 @@ const AdultQAAssessment: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    const currentQuestionId = questions[currentQuestion].id;
-    const content = answers[currentQuestionId];
+    if (!editor) return;
     
-    // 移除 HTML 标签，检查实际内容
-    const plainText = content?.replace(/<[^>]+>/g, '').trim();
+    const currentQuestionId = questions[currentQuestion].id;
+    const content = editor.getHtml();
+    const plainText = content?.replace(/<[^>]*>/g, '').trim();
     
     if (!plainText) {
       message.warning('请输入答案');
@@ -156,7 +203,8 @@ const AdultQAAssessment: React.FC = () => {
       await axios.post(getApiUrl(`/questions/${currentQuestionId}/answers`), {
         userId: 1, // TODO: 使用实际的用户ID
         content,
-        submittedBy: '用户名' // TODO: 使用实际的用户名
+        submittedBy: '用户名', // TODO: 使用实际的用户名
+        ageRange: '14+'
       });
       
       message.success('保存成功');
@@ -248,29 +296,50 @@ const AdultQAAssessment: React.FC = () => {
         </div>
         <Menu
           mode="inline"
-          selectedKeys={[questions[currentQuestion].id.toString()]}
+          selectedKeys={[questions[currentQuestion]?.id.toString()]}
+          defaultOpenKeys={[]}
           style={{ height: 'calc(100vh - 120px)', overflowY: 'auto' }}
         >
-          {questions.map((question, index) => {
-            const answer = summary?.answers.find(a => a.questionId === question.id);
+          {THEMES.map((theme, themeIndex) => {
+            const progress = getThemeProgress(themeIndex, questions, summary?.answers || []);
             return (
-              <StyledMenuItem
-                key={question.id}
-                onClick={() => handleSelectQuestion(question.id)}
-                icon={answer ? <CheckCircleOutlined style={{ color: '#52c41a' }} /> : null}
+              <StyledSubMenu
+                key={`theme-${themeIndex}`}
+                title={
+                  <div>
+                    <div>{theme} ({themeIndex * 12 + 1}-{(themeIndex + 1) * 12}题)</div>
+                    <Progress
+                      percent={progress.percent}
+                      size="small"
+                      format={() => `${progress.completed}/${progress.total}`}
+                    />
+                  </div>
+                }
               >
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <Text strong>问题 {index + 1}</Text>
-                  <Text type="secondary" className="question-preview">
-                    {question.content}
-                  </Text>
-                  {answer && (
-                    <Text type="secondary" className="answer-preview">
-                      答：{answer.content.replace(/<[^>]+>/g, '')}
-                    </Text>
-                  )}
-                </Space>
-              </StyledMenuItem>
+                {getThemeQuestions(themeIndex, questions).map((question, index) => {
+                  const answer = summary?.answers.find(a => a.questionId === question.id);
+                  const globalIndex = themeIndex * 12 + index;
+                  return (
+                    <StyledMenuItem
+                      key={question.id}
+                      onClick={() => handleSelectQuestion(question.id)}
+                      icon={answer ? <CheckCircleOutlined style={{ color: '#52c41a' }} /> : null}
+                    >
+                      <Space direction="vertical" style={{ width: '100%' }}>
+                        <Text strong>问题 {globalIndex + 1}</Text>
+                        <div className="question-preview">
+                          {question.content}
+                        </div>
+                        {answer && (
+                          <div className="answer-preview">
+                            答：{answer.content.replace(/<[^>]+>/g, '')}
+                          </div>
+                        )}
+                      </Space>
+                    </StyledMenuItem>
+                  );
+                })}
+              </StyledSubMenu>
             );
           })}
         </Menu>
@@ -291,11 +360,10 @@ const AdultQAAssessment: React.FC = () => {
 
         <Steps
           current={Math.floor(currentQuestion / 12)}
-          items={[
-            { title: '兴趣探索', description: '1-12题' },
-            { title: '能力认知', description: '13-24题' },
-            { title: '天赋发现', description: '25-36题' }
-          ]}
+          items={THEMES.map((theme, index) => ({
+            title: theme,
+            description: `${index * 12 + 1}-${(index + 1) * 12}题`
+          }))}
           style={{ marginBottom: 40 }}
         />
 

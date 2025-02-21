@@ -13,12 +13,17 @@ const { Content, Sider } = Layout;
 const StyledLayout = styled(Layout)`
   height: 100vh;
   background: #fff;
+  display: flex;
 `;
 
 const StyledSider = styled(Sider)`
   background: #f5f5f5;
   border-right: 1px solid #e8e8e8;
   padding: 20px 0;
+  flex-shrink: 0;
+  position: fixed;
+  height: 100vh;
+  z-index: 1;
 `;
 
 const ChatList = styled(List)`
@@ -39,13 +44,29 @@ const ChatList = styled(List)`
   }
 `;
 
+const ChatContainer = styled(Layout)`
+  margin-left: 300px;
+  margin-right: 20px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  min-height: 100vh;
+`;
+
 const MessageList = styled(List)`
-  padding: 20px;
-  height: calc(100vh - 180px);
+  flex: 1;
+  padding: 0 24px;
+  background: #fff;
   overflow-y: auto;
   
   .ant-list-item {
     margin-bottom: 20px;
+    padding: 0;
+
+    &:first-child {
+      margin-top: 24px;
+    }
   }
 `;
 
@@ -53,20 +74,19 @@ const MessageBubble = styled.div<{ isUser: boolean }>`
   background-color: ${props => props.isUser ? '#e6f7ff' : '#f5f5f5'};
   padding: 12px 16px;
   border-radius: 12px;
-  max-width: 70%;
-  word-break: break-word;
-  white-space: pre-wrap;
+  display: inline-block;
+  border: 1px solid ${props => props.isUser ? '#91d5ff' : '#e8e8e8'};
   
   .markdown-content {
-    font-size: 14px;
+    font-size: 15px;
     line-height: 1.6;
     
     p {
-      margin: 0 0 1em;
-      white-space: pre-wrap;
-      &:last-child {
-        margin-bottom: 0;
-      }
+      margin: 0;
+      display: inline;
+      white-space: pre;
+      word-wrap: break-word;
+      word-break: break-word;
     }
     
     code {
@@ -74,48 +94,57 @@ const MessageBubble = styled.div<{ isUser: boolean }>`
       padding: 2px 4px;
       border-radius: 4px;
       font-family: monospace;
-      white-space: pre-wrap;
+      white-space: pre;
     }
     
     pre {
       background-color: rgba(0, 0, 0, 0.05);
       padding: 12px;
       border-radius: 4px;
+      margin: 8px 0;
       overflow-x: auto;
       
       code {
         background-color: transparent;
         padding: 0;
-        white-space: pre;
       }
-    }
-    
-    ul, ol {
-      margin: 0 0 1em;
-      padding-left: 20px;
-    }
-    
-    blockquote {
-      margin: 0 0 1em;
-      padding-left: 12px;
-      border-left: 4px solid #ddd;
-      color: #666;
-      white-space: pre-wrap;
     }
   }
 `;
 
-const InputArea = styled.div`
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: calc(100% - 300px);
-  padding: 20px;
+const InputContainer = styled.div`
+  padding: 24px 24px;
   background: #fff;
-  border-top: 1px solid #e8e8e8;
-  display: flex;
-  align-items: center;
-  gap: 16px;
+  border-top: 1px solid #f0f0f0;
+  
+  .ant-input-textarea {
+    textarea {
+      padding: 16px 20px;
+      font-size: 16px;
+      min-height: 120px;
+      border: 2px solid #e8e8e8;
+      border-radius: 12px;
+      resize: none;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        border-color: #40a9ff;
+      }
+      
+      &:focus {
+        border-color: #1890ff;
+        box-shadow: 0 0 0 2px rgba(24,144,255,0.1);
+      }
+    }
+  }
+  
+  .send-button {
+    margin-top: 12px;
+    height: 44px;
+    padding: 0 32px;
+    font-size: 16px;
+    float: right;
+  }
 `;
 
 interface Message {
@@ -363,95 +392,57 @@ const ChatPage: React.FC = () => {
           )}
         />
       </StyledSider>
-      <Layout>
-        <Content style={{ position: 'relative' }}>
-          <MessageList
-            ref={messageListRef}
-            dataSource={messages}
-            renderItem={(message:any) => (
-              <List.Item style={{ 
-                justifyContent: message.isUser ? 'flex-end' : 'flex-start',
-                marginBottom: '16px'
-              }}>
-                <Space align="start">
-                  {!message.isUser && (
-                    <Avatar style={{ backgroundColor: '#1890ff' }}>
-                      AI
-                    </Avatar>
-                  )}
-                  <MessageBubble isUser={message.isUser} style={{
-                    border: '2px solid #e8e8e8',
-                    borderRadius: '12px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                  }}>
-                    <div className="markdown-content">
-                      <ReactMarkdown>{message.content}</ReactMarkdown>
-                    </div>
-                  </MessageBubble>
-                  {message.isUser && (
-                    <Avatar style={{ backgroundColor: '#52c41a' }}>
-                      我
-                    </Avatar>
-                  )}
-                </Space>
-              </List.Item>
-            )}
-            style={{ 
-              padding: '20px',
-              marginBottom: '80px',
-              border: '2px solid #e8e8e8',
-              borderRadius: '8px'
+      
+      <ChatContainer>
+        <MessageList
+          ref={messageListRef}
+          dataSource={messages}
+          renderItem={(message: any) => (
+            <List.Item style={{ 
+              justifyContent: message.isUser ? 'flex-end' : 'flex-start',
+              display: 'flex'
+            }}>
+              <Space align="start" size={12} style={{ maxWidth: '90%' }}>
+                {!message.isUser && (
+                  <Avatar style={{ backgroundColor: '#1890ff', flexShrink: 0 }}>AI</Avatar>
+                )}
+                <MessageBubble isUser={message.isUser}>
+                  <div className="markdown-content">
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  </div>
+                </MessageBubble>
+                {message.isUser && (
+                  <Avatar style={{ backgroundColor: '#52c41a', flexShrink: 0 }}>我</Avatar>
+                )}
+              </Space>
+            </List.Item>
+          )}
+        />
+        
+        <InputContainer>
+          <Input.TextArea
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="输入消息..."
+            autoSize={{ minRows: 4, maxRows: 8 }}
+            onPressEnter={(e) => {
+              if (!e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
             }}
           />
-          <InputArea style={{
-            position: 'fixed',
-            bottom: 0,
-            left: '300px',
-            right: 0,
-            padding: '20px',
-            backgroundColor: '#fff',
-            boxShadow: '0 -2px 8px rgba(0,0,0,0.15)',
-            zIndex: 1000,
-            border: '2px solid #e8e8e8',
-            borderRadius: '8px 8px 0 0'
-          }}>
-            <Input.TextArea
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="输入消息..."
-              autoSize={{ minRows: 2, maxRows: 6 }}
-              onPressEnter={(e) => {
-                if (!e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              style={{ 
-                flex: 1,
-                marginRight: '12px',
-                resize: 'none',
-                border: '2px solid #d9d9d9',
-                borderRadius: '8px',
-                padding: '12px 16px',
-                fontSize: '16px',
-                minHeight: '60px',
-                '&:hover, &:focus': {
-                  borderColor: '#1890ff',
-                  boxShadow: '0 0 0 2px rgba(24,144,255,0.2)'
-                }
-              }}
-            />
-            <Button
-              type="primary"
-              icon={<SendOutlined />}
-              onClick={handleSend}
-              disabled={!inputValue.trim()}
-            >
-              发送
-            </Button>
-          </InputArea>
-        </Content>
-      </Layout>
+          <Button
+            type="primary"
+            icon={<SendOutlined />}
+            onClick={handleSend}
+            disabled={!inputValue.trim()}
+            className="send-button"
+          >
+            发送
+          </Button>
+        </InputContainer>
+      </ChatContainer>
 
       <Modal
         title="修改对话标题"

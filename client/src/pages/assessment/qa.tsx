@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Card, Button, Steps, Space, Progress, Menu, message } from 'antd';
+import { Layout, Typography, Card, Button, Steps, Space, Progress, Menu, message, Tooltip } from 'antd';
 import type { MenuItemProps } from 'antd';
 import styled from '@emotion/styled';
-import { ArrowLeftOutlined, ArrowRightOutlined, SendOutlined, HomeOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, ArrowRightOutlined, SendOutlined, HomeOutlined, CheckCircleOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { Editor, Toolbar } from '@wangeditor/editor-for-react';
 import { IDomEditor, IEditorConfig } from '@wangeditor/editor';
@@ -35,13 +35,17 @@ const QuestionCard = styled(Card)`
 `;
 
 const StyledMenuItem = styled(Menu.Item as React.FC<MenuItemProps>)`
-  padding: 8px 16px !important;
-  height: auto !important;
-  line-height: 1.5 !important;
+  padding: 12px 16px !important;
+  min-height: 80px;
+  position: relative;
+  margin: 4px 8px !important;
+  border-radius: 8px;
   
   .ant-menu-title-content {
     white-space: normal;
     line-height: 1.5;
+    padding-right: 24px;
+    width: 100%;
     
     .question-preview {
       overflow: hidden;
@@ -50,7 +54,10 @@ const StyledMenuItem = styled(Menu.Item as React.FC<MenuItemProps>)`
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       margin-bottom: 4px;
-      font-size: 12px;
+      font-size: 13px;
+      color: rgba(0, 0, 0, 0.65);
+      word-break: break-all;
+      width: calc(100% - 24px);
     }
     
     .answer-preview {
@@ -60,8 +67,19 @@ const StyledMenuItem = styled(Menu.Item as React.FC<MenuItemProps>)`
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       font-size: 12px;
-      color: #666;
+      color: rgba(0, 0, 0, 0.45);
+      margin-top: 4px;
+      word-break: break-all;
+      width: calc(100% - 24px);
     }
+  }
+
+  .ant-menu-item-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
   }
 `;
 
@@ -224,6 +242,21 @@ const QAAssessment: React.FC = () => {
     }
   };
 
+  const getNextUnansweredQuestion = () => {
+    if (!summary?.answers || !questions.length) return -1;
+    
+    const answeredQuestionIds = new Set(summary.answers.map(a => a.questionId));
+    const nextUnansweredIndex = questions.findIndex(q => !answeredQuestionIds.has(q.id));
+    return nextUnansweredIndex;
+  };
+
+  const handleContinueAnswering = () => {
+    const nextIndex = getNextUnansweredQuestion();
+    if (nextIndex !== -1) {
+      setCurrentQuestion(nextIndex);
+    }
+  };
+
   if (loading) return null;
 
   const progress = summary ? (summary.completed / summary.total * 100) : 0;
@@ -242,6 +275,18 @@ const QAAssessment: React.FC = () => {
             percent={Math.round(progress)}
             format={percent => `已完成 ${percent}%`}
           />
+          {summary && summary.completed < summary.total && (
+            <Tooltip title="继续上次的答题进度">
+              <Button 
+                type="primary"
+                icon={<PlayCircleOutlined />}
+                onClick={handleContinueAnswering}
+                style={{ marginTop: 16, width: '100%' }}
+              >
+                继续答题
+              </Button>
+            </Tooltip>
+          )}
         </div>
         <Menu
           mode="inline"

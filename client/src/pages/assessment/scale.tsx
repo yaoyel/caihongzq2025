@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Steps, Card, Radio, Progress, Space, Button, Divider, Menu, message } from 'antd';
+import { Layout, Typography, Steps, Card, Radio, Progress, Space, Button, Divider, Menu, message, Row } from 'antd';
 import type { MenuItemProps } from 'antd';
 import styled from '@emotion/styled';
 import { ArrowRightOutlined, ArrowLeftOutlined, HomeOutlined, CheckCircleOutlined, CaretRightOutlined } from '@ant-design/icons';
@@ -46,6 +46,9 @@ const StyledMenuItem = styled(Menu.Item as React.FC<MenuItemProps>)`
   min-height: 80px;
   position: relative;
   margin: 4px 0 !important;
+  white-space: normal !important;
+  height: auto !important;
+  line-height: 1.5 !important;
   
   .ant-menu-title-content {
     white-space: normal;
@@ -53,26 +56,24 @@ const StyledMenuItem = styled(Menu.Item as React.FC<MenuItemProps>)`
     padding-right: 32px;
     
     .question-preview {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      margin-bottom: 4px;
+      overflow: visible;
+      text-overflow: initial;
+      display: block;
+      -webkit-line-clamp: initial;
+      word-break: break-word;
       font-size: 13px;
       color: rgba(0, 0, 0, 0.65);
-      word-break: break-all;
+      margin-bottom: 8px;
     }
     
     .answer-preview {
-      overflow: hidden;
-      text-overflow: ellipsis;
+      overflow: visible;
+      text-overflow: initial;
       white-space: normal;
       font-size: 12px;
       color: rgba(0, 0, 0, 0.45);
       margin-top: 4px;
-      padding-right: 24px;
-      word-break: break-all;
+      word-break: break-word;
     }
   }
 
@@ -290,9 +291,26 @@ const ScaleAssessment: React.FC = () => {
   const currentQuestionIndex = Math.min(currentQuestion, questions.length - 1);
   const currentQuestionData = questions[currentQuestionIndex];
 
+  // 添加一个检查是否所有题目都已回答的函数
+  const isAllQuestionsAnswered = () => {
+    return allQuestions.every(question => answers[question.id]);
+  };
+
   return (
     <StyledLayout>
-      <Sider width={300} style={{ background: '#fff', padding: '24px 0', height: '100vh', position: 'fixed', overflowY: 'auto', borderRight: '1px solid #f0f0f0' }}>
+      <Sider 
+        width={300} 
+        style={{ 
+          background: '#fff', 
+          padding: '24px 0', 
+          height: '100vh', 
+          position: 'fixed', 
+          overflowY: 'auto', 
+          overflowX: 'hidden',
+          borderRight: '1px solid #f0f0f0',
+          wordWrap: 'break-word'
+        }}
+      >
         <div style={{ padding: '0 24px', marginBottom: 16 }}>
           <Progress
             percent={Math.round(progress)}
@@ -427,39 +445,23 @@ const ScaleAssessment: React.FC = () => {
 
               <Divider />
               
-              <div style={{ textAlign: 'center' }}>
-                <Space size="large">
-                  {(currentQuestionIndex > 0 || currentSection > 0) && (
-                    <Button 
-                      icon={<ArrowLeftOutlined />}
-                      onClick={handlePrevious}
-                      size="middle"
-                    >
-                      上一题
-                    </Button>
-                  )}
-                  {currentQuestionIndex === questions.length - 1 && currentSection === sections.length - 1 ? (
-                    <Button 
-                      type="primary"
-                      size="middle"
-                      onClick={handleComplete}
-                      disabled={!answers[currentQuestionData.id]}
-                    >
-                      完成
-                    </Button>
-                  ) : (
-                    <Button 
-                      type="primary"
-                      icon={<ArrowRightOutlined />}
-                      size="middle"
-                      onClick={handleNext}
-                      disabled={!answers[currentQuestionData.id]}
-                    >
-                      下一题
-                    </Button>
-                  )}
+              <Row justify="start" style={{ marginTop: '24px' }}>
+                <Space>
+                  <Button 
+                    onClick={handlePrevious}
+                    disabled={currentQuestionIndex === 0}
+                  >
+                    上一题
+                  </Button>
+                  <Button 
+                    type="primary"
+                    onClick={isAllQuestionsAnswered() && currentQuestionIndex === questions.length - 1 ? handleComplete : handleNext}
+                    disabled={!answers[currentQuestionData.id]}
+                  >
+                    {isAllQuestionsAnswered() && currentQuestionIndex === questions.length - 1 ? '完成' : '下一题'}
+                  </Button>
                 </Space>
-              </div>
+              </Row>
             </QuestionCard>
           </StyledCard>
         </StyledContent>

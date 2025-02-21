@@ -44,7 +44,17 @@ const StyledMenuItem = styled(Menu.Item as React.FC<MenuItemProps>)`
   .ant-menu-title-content {
     white-space: normal;
     line-height: 1.5;
-    padding-right: 28px;
+    padding-right: 24px;
+    width: 100%;
+    
+    .ant-space {
+      width: 100%;
+      
+      .ant-typography-strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+    }
     
     .question-preview {
       overflow: hidden;
@@ -56,16 +66,20 @@ const StyledMenuItem = styled(Menu.Item as React.FC<MenuItemProps>)`
       font-size: 13px;
       color: rgba(0, 0, 0, 0.65);
       word-break: break-all;
+      width: 100%;
     }
     
     .answer-preview {
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
       font-size: 12px;
       color: rgba(0, 0, 0, 0.45);
       margin-top: 4px;
-      padding-right: 24px;
+      word-break: break-all;
+      width: 100%;
     }
   }
 
@@ -362,15 +376,15 @@ const TeenQAAssessment: React.FC = () => {
                       onClick={() => handleSelectQuestion(question.id)}
                       icon={answer ? <CheckCircleOutlined style={{ color: '#52c41a' }} /> : null}
                     >
-                      <Space direction="vertical" style={{ width: '100%' }}>
+                      <Space direction="vertical" style={{ width: '100%', gap: '4px' }}>
                         <Text strong>问题 {globalIndex + 1}</Text>
-                        <Text type="secondary" className="question-preview">
+                        <div className="question-preview">
                           {question.content}
-                        </Text>
+                        </div>
                         {answer && (
-                          <Text type="secondary" className="answer-preview">
+                          <div className="answer-preview">
                             答：{answer.content.replace(/<[^>]+>/g, '')}
-                          </Text>
+                          </div>
                         )}
                       </Space>
                     </StyledMenuItem>
