@@ -116,8 +116,12 @@ const InputContainer = styled.div`
   padding: 24px 24px;
   background: #fff;
   border-top: 1px solid #f0f0f0;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
   
   .ant-input-textarea {
+    flex: 1;
     textarea {
       padding: 16px 20px;
       font-size: 16px;
@@ -139,11 +143,19 @@ const InputContainer = styled.div`
   }
   
   .send-button {
-    margin-top: 12px;
-    height: 44px;
-    padding: 0 32px;
+    height: auto;
+    width: 100px;
+    padding: 16px;
     font-size: 16px;
-    float: right;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+    
+    .anticon {
+      font-size: 24px;
+    }
   }
 `;
 
@@ -203,13 +215,13 @@ const ChatPage: React.FC = () => {
 
   const fetchMessages = async (chatId: string) => {
     try {
-      const response = await axios.get(getApiUrl(`/chat/sessions/${chatId}`));
-      if (response.data && Array.isArray(response.data.messages)) {
-        setMessages(response.data.messages.map((msg: any) => ({
+      const response = await axios.get(getApiUrl(`/chat/sessions/${chatId}/messages`));
+      if (response.data && Array.isArray(response.data)) {
+        setMessages(response.data.map((msg: any) => ({
           id: msg.id,
           content: msg.content,
           isUser: msg.role === 'user',
-          timestamp: new Date(msg.timestamp)
+          timestamp: new Date(msg.createdAt)
         })));
       } else {
         setMessages([]);

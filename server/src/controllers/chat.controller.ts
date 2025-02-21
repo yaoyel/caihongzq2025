@@ -9,7 +9,7 @@ import { logger } from '../config/logger';
 export class ChatController {
     constructor(private chatService: ChatService) {}
 
-    @Get('/sessions/:userId')
+    @Get('/sessions/user/:userId')
     @OpenAPI({ summary: '获取用户的聊天会话列表' })
     async getSessions(@Param('userId') userId: number) {
         try {
@@ -64,6 +64,30 @@ export class ChatController {
         }
     }
 
+    @Post('/sessions')
+    @OpenAPI({ summary: '创建聊天会话' })
+    async createSession(@Body() data: { userId: number; title?: string }) {
+        try {
+            // 如果title未定义则使用空字符串作为默认值
+            const sessionTitle = data.title || '';
+            return await this.chatService.createSession(data.userId, sessionTitle);
+        } catch (error) {
+            logger.error({ data, error }, 'Failed to create session');
+            throw error;
+        }
+    }
+
+    @Get('/sessions/:sessionId/messages')
+    @OpenAPI({ summary: '获取会话的消息列表' })
+    async getSessionMessages(@Param('sessionId') sessionId: number) {
+        try {
+            return await this.chatService.getMessages(sessionId);
+        } catch (error) {
+            logger.error({ sessionId, error }, 'Failed to get session messages');
+            throw error;
+        }
+    }
+
     @Delete('/sessions/:id')
     @OpenAPI({ summary: '删除聊天会话' })
     async deleteSession(@Param('id') id: number) {
@@ -75,4 +99,4 @@ export class ChatController {
             throw error;
         }
     }
-} 
+}

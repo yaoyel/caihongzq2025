@@ -98,6 +98,13 @@ export class ChatService {
         return this.getSessionById(id);
     }
 
+    async getMessages(sessionId: number) {
+        return this.messageRepository.find({
+            where: { sessionId },
+            order: { createdAt: 'ASC' }
+        });
+    }
+
     async deleteSession(id: number) {
         await this.sessionRepository.delete(id);
     }
