@@ -40,13 +40,24 @@ const StyledMenuItem = styled(Menu.Item as React.FC<MenuItemProps>)`
   position: relative;
   margin: 4px 8px !important;
   border-radius: 8px;
-  
   .ant-menu-title-content {
     white-space: normal;
     line-height: 1.5;
-    margin-right: 28px;
+    padding-right: 24px;
+    width: 100%;
     
+    .ant-space {
+      width: 100%;
+      
+      .ant-typography-strong {
+        display: inline-block;
+        margin-right: 8px;
+        min-width: 60px;
+      }
+    }
     .question-preview {
+      display: inline-block;
+      flex: 1;
       overflow: hidden;
       text-overflow: ellipsis;
       display: -webkit-box;
@@ -56,9 +67,10 @@ const StyledMenuItem = styled(Menu.Item as React.FC<MenuItemProps>)`
       font-size: 13px;
       color: rgba(0, 0, 0, 0.65);
       word-break: break-all;
+      width: calc(100% - 70px);
     }
-    
     .answer-preview {
+      position: relative;
       overflow: hidden;
       text-overflow: ellipsis;
       display: -webkit-box;
@@ -68,9 +80,20 @@ const StyledMenuItem = styled(Menu.Item as React.FC<MenuItemProps>)`
       color: rgba(0, 0, 0, 0.45);
       margin-top: 4px;
       word-break: break-all;
+      width: 100%;
+      max-height: 36px;
+      padding-right: 24px;
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 40px;
+        height: 18px;
+        background: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1) 90%);
+      }
     }
   }
-
   .ant-menu-item-icon {
     position: absolute;
     right: 12px;
@@ -104,16 +127,13 @@ const StyledSubMenu = styled(Menu.SubMenu)`
   .ant-menu-sub {
     background: #fafafa !important;
   }
-  
   .ant-menu-item {
     margin: 4px 0 !important;
   }
-
   .ant-menu-submenu-title {
     font-weight: bold;
     height: auto !important;
     padding: 12px 24px !important;
-    
     .ant-progress {
       margin-top: 8px;
     }

@@ -38,9 +38,7 @@ const StyledMenuItem = styled(Menu.Item as React.FC<MenuItemProps>)`
   padding: 12px 16px !important;
   min-height: 80px;
   position: relative;
-  margin: 4px 8px !important;
-  border-radius: 8px;
-  
+  margin: 4px 8px !important  border-radius: 8px;
   .ant-menu-title-content {
     white-space: normal;
     line-height: 1.5;
@@ -48,19 +46,28 @@ const StyledMenuItem = styled(Menu.Item as React.FC<MenuItemProps>)`
     width: 100%;
     
     .question-preview {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       margin-bottom: 4px;
       font-size: 13px;
       color: rgba(0, 0, 0, 0.65);
       word-break: break-all;
-      width: calc(100% - 24px);
+      width: 100%;
+      
+      .question-number {
+        flex-shrink: 0;
+        min-width: 24px;
+      }
+      .question-content {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
     }
-    
     .answer-preview {
+      position: relative;
       overflow: hidden;
       text-overflow: ellipsis;
       display: -webkit-box;
@@ -70,10 +77,20 @@ const StyledMenuItem = styled(Menu.Item as React.FC<MenuItemProps>)`
       color: rgba(0, 0, 0, 0.45);
       margin-top: 4px;
       word-break: break-all;
-      width: calc(100% - 24px);
+      width: 100%;
+      max-height: 36px;
+      padding-right: 24px;
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 40px;
+        height: 18px;
+        background: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1) 90%);
+      }
     }
   }
-
   .ant-menu-item-icon {
     position: absolute;
     right: 12px;
@@ -87,7 +104,6 @@ const StyledSubMenu = styled(Menu.SubMenu)`
   .ant-menu-sub {
     background: #fafafa !important;
   }
-  
   .ant-menu-item {
     margin: 4px 0 !important;
   }
@@ -302,6 +318,7 @@ const QAAssessment: React.FC = () => {
               {getStageQuestions(stageIndex).map((question, index) => {
                 const answer = summary?.answers.find(a => a.questionId === question.id);
                 const globalIndex = stageIndex * 12 + index;
+                const plainAnswer = answer ? answer.content.replace(/<[^>]*>/g, '').trim() : '';
                 return (
                   <StyledMenuItem
                     key={question.id}
@@ -309,14 +326,16 @@ const QAAssessment: React.FC = () => {
                     icon={answer ? <CheckCircleOutlined style={{ color: '#52c41a' }} /> : null}
                   >
                     <Space direction="vertical" style={{ width: '100%' }}>
-                      <Text strong style={{ fontSize: '13px' }}>问题 {globalIndex + 1}</Text>
-                      <Text type="secondary" className="question-preview">
-                        {question.content}
-                      </Text>
+                      <div className="question-preview">
+                        <span className="question-number">Q{globalIndex + 1}.</span>
+                        <span className="question-content">{question.content}</span>
+                      </div>
                       {answer && (
-                        <Text type="secondary" className="answer-preview">
-                          答：{answer.content}
-                        </Text>
+                        <Tooltip title={answer.content.replace(/<[^>]*>/g, '')}>
+                          <div className="answer-preview">
+                            答：{plainAnswer}
+                          </div>
+                        </Tooltip>
                       )}
                     </Space>
                   </StyledMenuItem>
