@@ -1,0 +1,62 @@
+# 依赖目录
+node_modules/
+**/node_modules/
+
+# 构建输出目录
+dist/
+build/
+**/dist/
+**/build/
+
+# 开发工具配置
+.idea/
+.vscode/
+*.sublime-*
+.DS_Store
+
+# 环境配置文件
+.env
+.env.*
+!.env.example
+
+# 日志文件
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 测试覆盖率报告
+coverage/
+.nyc_output/
+
+# 临时文件
+*.swp
+*.swo
+.temp/
+.cache/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 包管理器文件
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+
+# 数据库文件
+*.sqlite
+*.db
+
+# 编译缓存
+.tsbuildinfo
+*.tsbuildinfo
+
+# 其他
+.git/
+.gitignore
+README.md
+LICENSE
+*.md
+!README.md 

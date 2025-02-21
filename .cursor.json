@@ -1,0 +1,65 @@
+{
+  "name": "天赋测评系统",
+  "description": "基于科学方法的儿童天赋测评与发展指导系统",
+  "version": "1.0.0",
+  "language": {
+    "typescript": {
+      "formatter": "prettier",
+      "linter": "eslint"
+    }
+  },
+  "folders": {
+    "client": {
+      "path": "./client",
+      "description": "前端 React 应用",
+      "patterns": {
+        "include": ["src/**/*"],
+        "exclude": ["node_modules", "dist", "build"]
+      }
+    },
+    "server": {
+      "path": "./server",
+      "description": "后端 Node.js 服务",
+      "patterns": {
+        "include": ["src/**/*"],
+        "exclude": ["node_modules", "dist"]
+      }
+    }
+  },
+  "settings": {
+    "editor": {
+      "formatOnSave": true,
+      "tabSize": 2,
+      "insertSpaces": true,
+      "rulers": [100],
+      "wordWrap": "on"
+    },
+    "files": {
+      "exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/build": true,
+        "**/.git": true,
+        "**/.DS_Store": true
+      }
+    }
+  },
+  "tasks": {
+    "dev:client": {
+      "command": "cd client && npm run dev",
+      "description": "启动前端开发服务器"
+    },
+    "dev:server": {
+      "command": "cd server && npm run dev",
+      "description": "启动后端开发服务器"
+    },
+    "build:client": {
+      "command": "cd client && npm run build",
+      "description": "构建前端应用"
+    },
+    "build:server": {
+      "command": "cd server && npm run build",
+      "description": "构建后端服务"
+    }
+  }
+} 

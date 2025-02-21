@@ -1,0 +1,138 @@
+ 
+ 
+// 一、项目结构规范
+1. 目录结构
+- client/src/pages: 页面组件目录
+- client/src/components: 通用组件目录
+- client/src/utils: 工具函数目录
+- client/src/data: 静态数据目录
+- server/src/routes: API路由目录
+- server/src/entity: 数据实体目录
+- server/src/utils: 工具函数目录
+
+2. 文件命名
+- 组件文件: PascalCase (如 LoginPage.tsx)
+- 工具文件: camelCase (如 helper.ts)
+- 样式文件: 与组件同名 (如 LoginPage.styles.ts)
+- 路由文件: kebab-case (如 wechat.ts)
+
+// 二、编码规范
+1. TypeScript 规范
+- 必须定义接口或类型
+- 避免使用 any 类型
+- 使用 const 声明不变变量
+- 使用 interface 定义对象类型
+- 使用 enum 定义常量枚举
+
+2. React 规范
+- 使用函数组件和 Hooks
+- Props 必须定义类型
+- 状态管理使用 useState/useContext
+- 副作用处理使用 useEffect
+- 事件处理函数命名为 handle*
+
+3. 样式规范
+- 使用 styled-components 或 emotion
+- 组件样式文件单独管理
+- 避免内联样式
+- 遵循 BEM 命名规范
+- 使用主题变量
+
+4. API 规范
+- RESTful 风格设计
+- 请求响应必须定义类型
+- 统一错误处理
+- 使用 axios 实例
+- 环境变量配置
+
+// 三、性能优化规则
+1. 前端优化
+- 组件懒加载
+- 图片资源优化
+- 路由按需加载
+- 避免不必要的重渲染
+- 使用 useMemo/useCallback
+
+2. 后端优化
+- 数据库索引优化
+- 缓存机制
+- 并发控制
+- 错误日志记录
+- 安全性处理
+
+// 四、测试规范
+1. 单元测试
+- 组件测试使用 @testing-library/react
+- API 测试使用 Jest
+- 保持测试覆盖率
+- 模拟数据与实际分离
+- 异步测试处理
+
+2. 集成测试
+- E2E 测试流程
+- 用户行为模拟
+- 错误场景测试
+- 性能测试
+- 安全测试
+
+// 五、文档规范
+1. 代码注释
+- 组件必须包含功能说明
+- 复杂逻辑必须注释
+- API 接口必须注释
+- 类型定义必须注释
+- 工具函数必须注释
+
+2. README 文档
+- 项目说明
+- 环境要求
+- 安装步骤
+- 开发指南
+- 部署说明
+
+// 六、Git 规范
+1. 分支管理
+- main: 主分支
+- develop: 开发分支
+- feature/*: 功能分支
+- bugfix/*: 修复分支
+- release/*: 发布分支
+
+2. 提交规范
+- feat: 新功能
+- fix: 修复bug
+- docs: 文档更新
+- style: 代码格式
+- refactor: 重构
+- test: 测试
+- chore: 构建过程或辅助工具的变动
+
+// 七、安全规范
+1. 前端安全
+- XSS 防护
+- CSRF 防护
+- 敏感信息加密
+- 输入验证
+- 权限控制
+
+2. 后端安全
+- 数据加密
+- 接口认证
+- SQL注入防护
+- 日志脱敏
+- 服务器安全
+
+// 八、部署规范
+1. 环境配置
+- 开发环境
+- 测试环境
+- 生产环境
+- 环境变量管理
+- 配置文件管理
+
+2. CI/CD
+- 自动化构建
+- 自动化测试
+- 自动化部署
+- 监控告警
+- 回滚机制 
