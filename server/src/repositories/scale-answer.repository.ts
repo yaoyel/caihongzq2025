@@ -1,21 +1,27 @@
-import { EntityRepository, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ScaleAnswer } from '../entities/ScaleAnswer';
 import { Service } from 'typedi';
+import { AppDataSource } from '../data-source';
 
 @Service()
-@EntityRepository(ScaleAnswer)
-export class ScaleAnswerRepository extends Repository<ScaleAnswer> {
+export class ScaleAnswerRepository {
+  private repository: Repository<ScaleAnswer>;
+
+  constructor() {
+    this.repository = AppDataSource.getRepository(ScaleAnswer);
+  }
+
   async findLatestByUserId(userId: number): Promise<ScaleAnswer | null> {
-    return this.createQueryBuilder('answer')
+    return this.repository.createQueryBuilder('answer')
       .where('answer.userId = :userId', { userId })
       .orderBy('answer.submittedAt', 'DESC')
       .getOne();
   }
 
   async findAllByUserIdWithScale(userId: number): Promise<ScaleAnswer[]> {
-    return this.createQueryBuilder('answer')
+    return this.repository.createQueryBuilder('answer')
       .leftJoinAndSelect('answer.scale', 'scale')
       .where('answer.userId = :userId', { userId })
       .getMany();
   }
-} 
+}

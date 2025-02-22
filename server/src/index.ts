@@ -24,8 +24,8 @@ import { RequestLoggerMiddleware } from './middlewares/request-logger.middleware
 async function bootstrap() {
     try {
         // 1. 设置依赖注入容器
-        typeormUseContainer(Container);
         useContainer(Container);
+        typeormUseContainer(Container);
 
         // 2. 初始化数据库连接
         await initializeDataSource();

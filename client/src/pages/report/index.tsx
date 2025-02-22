@@ -5,6 +5,8 @@ import styled from '@emotion/styled';
 import { HomeOutlined, DownloadOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import html2pdf from 'html2pdf.js';
+import axios from 'axios';
+import { getApiUrl } from '../../config';
 
 const { Title, Paragraph, Text } = Typography;
 const { Panel } = Collapse;
@@ -151,10 +153,46 @@ const ReportPage: React.FC = () => {
   };
 
   // 修改雷达图配置
+  const [dimensionScores, setDimensionScores] = useState<Record<string, number>>({});
+
+  React.useEffect(() => {
+    const fetchScaleAnswers = async () => {
+      try {
+        // 需要先导入axios 
+        const response = await axios.get(getApiUrl('/scales/answers/user/1/summary'));
+        const answers = response.data;
+
+        // 按维度统计分数
+        const scores: Record<string, { total: number; count: number }> = {};
+        answers.forEach((answer: any) => {
+          const { dimension, score } = answer;
+          if (!scores[dimension]) {
+            scores[dimension] = { total: 0, count: 0 };
+          }
+          scores[dimension].total += score;
+          scores[dimension].count += 1;
+        });
+
+        // 计算每个维度的平均分
+        const averageScores = Object.entries(scores).reduce((acc, [dimension, { total, count }]) => {
+          acc[dimension] = (total / count) * 20; // 将1-5的分数转换为0-100的范围
+          return acc;
+        }, {} as Record<string, number>);
+
+        setDimensionScores(averageScores);
+      } catch (error) {
+        console.error('获取答题数据失败:', error);
+        message.error('获取答题数据失败');
+      }
+    };
+
+    fetchScaleAnswers();
+  }, []);
+
   const radarConfig = {
     data: dimensions.map(dim => ({
       name: dim,
-      value: Math.random() * 100 // 这里需要根据实际分析结果设置数值
+      value: dimensionScores[dim] || 0
     })),
     xField: 'name',
     yField: 'value',
@@ -439,4 +477,4 @@ const ReportPage: React.FC = () => {
   );
 };
 
-export default ReportPage; 
+export default ReportPage;

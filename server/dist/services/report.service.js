@@ -70,7 +70,7 @@ let ReportService = class ReportService {
                     scores.likeNegative >= 3),
                 score: this.calculateScore(scores.talentPositive, scores.talentNegative, scores.likePositive, scores.likeNegative)
             }));
-            logger_1.logger.info({ userId }, 'Talent analysis completed');
+            logger_1.logger.info('Talent analysis completed', { userId });
             return {
                 bothTalentAndInterest: analysis.filter(item => item.hasTalent && item.hasInterest),
                 neitherTalentNorInterest: analysis.filter(item => !item.hasTalent && !item.hasInterest),
@@ -80,7 +80,13 @@ let ReportService = class ReportService {
             };
         }
         catch (error) {
-            logger_1.logger.error({ userId, error }, 'Failed to get talent analysis');
+            logger_1.logger.error('Failed to get talent analysis', {
+                userId,
+                error: error instanceof Error ? {
+                    message: error.message,
+                    stack: error.stack
+                } : error
+            });
             throw error;
         }
     }
@@ -109,11 +115,17 @@ let ReportService = class ReportService {
                     }))
                 }
             };
-            logger_1.logger.info({ userId }, 'Report generated successfully');
+            logger_1.logger.info('Report generated successfully', { userId });
             return reportContent;
         }
         catch (error) {
-            logger_1.logger.error({ userId, error }, 'Failed to generate report');
+            logger_1.logger.error('Failed to generate report', {
+                userId,
+                error: error instanceof Error ? {
+                    message: error.message,
+                    stack: error.stack
+                } : error
+            });
             throw error;
         }
     }
@@ -121,6 +133,6 @@ let ReportService = class ReportService {
 exports.ReportService = ReportService;
 exports.ReportService = ReportService = __decorate([
     (0, typedi_1.Service)(),
-    __param(0, (0, typeorm_typedi_extensions_1.InjectRepository)()),
+    __param(0, (0, typeorm_typedi_extensions_1.InjectRepository)(scale_answer_repository_1.ScaleAnswerRepository)),
     __metadata("design:paramtypes", [scale_answer_repository_1.ScaleAnswerRepository])
 ], ReportService);

@@ -1,17 +1,18 @@
 import { Service } from 'typedi';
-import { InjectRepository } from 'typeorm-typedi-extensions';
 import { Repository } from 'typeorm';
 import { Scale } from '../entities/Scale';
 import { ScaleAnswer } from '../entities/ScaleAnswer';
+import { AppDataSource } from '../data-source';
 
 @Service()
 export class ScaleService {
-    constructor(
-        @InjectRepository(Scale)
-        private scaleRepository: Repository<Scale>,
-        @InjectRepository(ScaleAnswer)
-        private answerRepository: Repository<ScaleAnswer>
-    ) {}
+    private scaleRepository: Repository<Scale>;
+    private answerRepository: Repository<ScaleAnswer>;
+
+    constructor() {
+        this.scaleRepository = AppDataSource.getRepository(Scale);
+        this.answerRepository = AppDataSource.getRepository(ScaleAnswer);
+    }
 
     async findAll(type?: 'like' | 'talent', direction?: 'positive' | 'negative') {
         const query = this.scaleRepository.createQueryBuilder('scale')
@@ -49,4 +50,36 @@ export class ScaleService {
             relations: ['scale', 'scale.element']
         });
     }
-} 
+
+    async getUserAnswersSummary(userId: number) {
+        const answers = await this.answerRepository
+            .createQueryBuilder('answer')
+            .leftJoinAndSelect('answer.scale', 'scale')
+            .leftJoinAndSelect('scale.element', 'element')
+            .where('answer.userId = :userId', { userId })
+            .getMany();
+
+        const dimensionScores = answers.reduce((acc: any[], answer) => {
+            const dimension = answer.scale.element.dimension;
+            const score = answer.score;
+            
+            const existingDimension = acc.find(item => item.dimension === dimension);
+            if (existingDimension) {
+                existingDimension.total += score;
+                existingDimension.count += 1;
+            } else {
+                acc.push({
+                    dimension,
+                    total: score,
+                    count: 1
+                });
+            }
+            return acc;
+        }, []);
+
+        return dimensionScores.map(item => ({
+            dimension: item.dimension,
+            score: item.total / item.count
+        }));
+    }
+}

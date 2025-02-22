@@ -1,16 +1,16 @@
 import { Service } from 'typedi';
 import { InjectRepository } from 'typeorm-typedi-extensions';
-import { ScaleAnswerRepository } from '../repositories/scale-answer.repository';
+import { Repository } from 'typeorm';
+import { ScaleAnswer } from '../entities/ScaleAnswer';
 import { TalentAnalysisResult, DimensionScores, ReportContent } from '../interfaces/report.interface';
-import { logger } from '../config/logger';
+import { AppDataSource } from '../data-source';
 
 @Service()
 export class ReportService {
-  constructor(
-    @InjectRepository()
-    private scaleAnswerRepository: ScaleAnswerRepository
-  ) {}
-
+  private scaleAnswerRepository: Repository<ScaleAnswer>;
+  constructor() {
+    this.scaleAnswerRepository = AppDataSource.getRepository(ScaleAnswer);
+  }
   private calculateScore(
     talentPositive?: number,
     talentNegative?: number,
@@ -27,10 +27,12 @@ export class ReportService {
     
     return (talentScore * 0.6 + interestScore * 0.4);
   }
-
   async getTalentAnalysis(userId: number) {
     try {
-      const answers = await this.scaleAnswerRepository.findAllByUserIdWithScale(userId);
+      const answers = await this.scaleAnswerRepository.find({
+        where: { userId },
+        relations: ['scale']
+      });
       const dimensionMap = new Map<string, DimensionScores>();
 
       answers.forEach(answer => {
@@ -77,7 +79,6 @@ export class ReportService {
           )
         }));
 
-      logger.info('Talent analysis completed', { userId });
       return {
         bothTalentAndInterest: analysis.filter(item => item.hasTalent && item.hasInterest),
         neitherTalentNorInterest: analysis.filter(item => !item.hasTalent && !item.hasInterest),
@@ -86,20 +87,15 @@ export class ReportService {
         rawAnalysis: analysis
       };
     } catch (error) {
-      logger.error('Failed to get talent analysis', { 
-        userId, 
-        error: error instanceof Error ? {
-          message: error.message,
-          stack: error.stack
-        } : error 
-      });
       throw error;
     }
   }
-
   async getReport(userId: number): Promise<ReportContent> {
     try {
-      const latestAnswer = await this.scaleAnswerRepository.findLatestByUserId(userId);
+      const latestAnswer = await this.scaleAnswerRepository.findOne({
+        where: { userId },
+        order: { submittedAt: 'DESC' }
+      });
 
       if (!latestAnswer) {
         throw new Error('No answers found');
@@ -126,17 +122,9 @@ export class ReportService {
         }
       };
 
-      logger.info('Report generated successfully', { userId });
       return reportContent;
     } catch (error) {
-      logger.error('Failed to generate report', { 
-        userId, 
-        error: error instanceof Error ? {
-          message: error.message,
-          stack: error.stack
-        } : error 
-      });
       throw error;
     }
   }
-} 
+}

@@ -17,59 +17,28 @@ const routing_controllers_1 = require("routing-controllers");
 const routing_controllers_openapi_1 = require("routing-controllers-openapi");
 const typedi_1 = require("typedi");
 const question_service_1 = require("../services/question.service");
-const logger_1 = require("../config/logger");
 let QuestionController = class QuestionController {
     questionService;
     constructor(questionService) {
         this.questionService = questionService;
     }
     async getAll(ageRange) {
-        try {
-            if (!ageRange) {
-                throw new Error('必须指定年龄段');
-            }
-            return await this.questionService.findByAgeRange(ageRange);
+        if (!ageRange) {
+            throw new Error('必须指定年龄段');
         }
-        catch (error) {
-            logger_1.logger.error({ ageRange, error }, 'Failed to get questions');
-            throw error;
-        }
+        return await this.questionService.findByAgeRange(ageRange);
     }
     async getUserAnswers(userId, ageRange) {
-        try {
-            return await this.questionService.getUserAnswers(userId, ageRange);
-        }
-        catch (error) {
-            logger_1.logger.error({ userId, ageRange, error }, 'Failed to get user answers');
-            throw error;
-        }
+        return await this.questionService.getUserAnswers(userId, ageRange);
     }
     async getUserAnswerSummary(userId, ageRange) {
-        try {
-            return await this.questionService.getUserAnswerSummary(userId, ageRange);
-        }
-        catch (error) {
-            logger_1.logger.error({ userId, ageRange, error }, 'Failed to get answer summary');
-            throw error;
-        }
+        return await this.questionService.getUserAnswerSummary(userId, ageRange);
     }
     async submitAnswer(questionId, data) {
-        try {
-            return await this.questionService.submitAnswer(questionId, data);
-        }
-        catch (error) {
-            logger_1.logger.error({ questionId, data, error }, 'Failed to submit answer');
-            throw error;
-        }
+        return await this.questionService.submitAnswer(questionId, data);
     }
     async updateAnswer(id, data) {
-        try {
-            return await this.questionService.updateAnswer(id, data.content);
-        }
-        catch (error) {
-            logger_1.logger.error({ id, data, error }, 'Failed to update answer');
-            throw error;
-        }
+        return await this.questionService.updateAnswer(id, data.content);
     }
 };
 exports.QuestionController = QuestionController;

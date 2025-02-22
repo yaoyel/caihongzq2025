@@ -17,29 +17,16 @@ const routing_controllers_1 = require("routing-controllers");
 const routing_controllers_openapi_1 = require("routing-controllers-openapi");
 const typedi_1 = require("typedi");
 const report_service_1 = require("../services/report.service");
-const logger_1 = require("../config/logger");
 let ReportController = class ReportController {
     reportService;
     constructor(reportService) {
         this.reportService = reportService;
     }
     async getReport(userId) {
-        try {
-            return await this.reportService.getReport(userId);
-        }
-        catch (error) {
-            logger_1.logger.error({ userId, error }, 'Failed to get report');
-            throw error;
-        }
+        return await this.reportService.getReport(userId);
     }
     async getTalentAnalysis(userId) {
-        try {
-            return await this.reportService.getTalentAnalysis(userId);
-        }
-        catch (error) {
-            logger_1.logger.error({ userId, error }, 'Failed to get talent analysis');
-            throw error;
-        }
+        return await this.reportService.getTalentAnalysis(userId);
     }
 };
 exports.ReportController = ReportController;

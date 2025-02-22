@@ -10,12 +10,10 @@ const koa_bodyparser_1 = __importDefault(require("koa-bodyparser"));
 const koa_logger_1 = __importDefault(require("koa-logger"));
 const routing_controllers_1 = require("routing-controllers");
 const typedi_1 = require("typedi");
-const data_source_1 = require("./data-source");
 const typeorm_1 = require("typeorm");
-const wechat_1 = __importDefault(require("./routes/wechat"));
+const data_source_1 = require("./data-source");
 const logger_1 = require("./config/logger");
-const logger_middleware_1 = require("./middlewares/logger.middleware");
-const typeorm_2 = require("typeorm");
+const wechat_1 = __importDefault(require("./routes/wechat"));
 // 导入所有控制器
 const element_controller_1 = require("./controllers/element.controller");
 const question_controller_1 = require("./controllers/question.controller");
@@ -23,28 +21,25 @@ const scale_controller_1 = require("./controllers/scale.controller");
 const user_controller_1 = require("./controllers/user.controller");
 const chat_controller_1 = require("./controllers/chat.controller");
 const report_controller_1 = require("./controllers/report.controller");
-// 设置依赖注入
-typedi_1.Container.reset();
-(0, routing_controllers_1.useContainer)(typedi_1.Container);
-(0, typeorm_1.useContainer)(typedi_1.Container);
+const error_handler_middleware_1 = require("./middlewares/error-handler.middleware");
+const request_logger_middleware_1 = require("./middlewares/request-logger.middleware");
 async function bootstrap() {
     try {
-        // 初始化数据库
-        await data_source_1.AppDataSource.initialize();
-        logger_1.logger.info('Database connection established');
-        // 设置数据源
-        typedi_1.Container.set(typeorm_2.DataSource, data_source_1.AppDataSource);
-        // 创建应用
+        // 1. 设置依赖注入容器
+        (0, routing_controllers_1.useContainer)(typedi_1.Container);
+        (0, typeorm_1.useContainer)(typedi_1.Container);
+        // 2. 初始化数据库连接
+        await (0, data_source_1.initializeDataSource)();
+        // 3. 创建应用
         const app = new koa_1.default();
-        // 中间件
+        // 4. 基础中间件
         app.use((0, cors_1.default)());
         app.use((0, koa_bodyparser_1.default)());
         app.use((0, koa_logger_1.default)());
-        app.use(logger_middleware_1.loggerMiddleware);
-        // 注入微信路由
+        // 5. 注入微信路由
         app.use(wechat_1.default.routes());
         app.use(wechat_1.default.allowedMethods());
-        // 路由设置
+        // 6. 配置路由控制器
         (0, routing_controllers_1.useKoaServer)(app, {
             controllers: [
                 element_controller_1.ElementController,
@@ -54,42 +49,49 @@ async function bootstrap() {
                 chat_controller_1.ChatController,
                 report_controller_1.ReportController
             ],
+            middlewares: [
+                error_handler_middleware_1.ErrorHandlerMiddleware,
+                request_logger_middleware_1.RequestLoggerMiddleware
+            ],
             routePrefix: '/api',
             defaultErrorHandler: false,
             validation: true
         });
-        // 启动服务器
-        const port = process.env.PORT || 3000;
-        app.listen(port, () => {
+        // 7. 启动服务器
+        const port = process.env.PORT || 80;
+        const server = app.listen(port, () => {
             logger_1.logger.info(`Server running at http://localhost:${port}`);
         });
-        return app;
+        // 8. 优雅关闭
+        const gracefulShutdown = async () => {
+            logger_1.logger.info('Received shutdown signal. Starting graceful shutdown...');
+            server.close(() => {
+                logger_1.logger.info('HTTP server closed.');
+                process.exit(0);
+            });
+        };
+        process.on('SIGTERM', gracefulShutdown);
+        process.on('SIGINT', gracefulShutdown);
+        return { app, server };
     }
     catch (error) {
         if (error instanceof Error) {
-            logger_1.logger.error('Failed to start server. Full error details:', {
+            logger_1.logger.error('Failed to start server:', {
                 message: error.message,
                 stack: error.stack,
                 name: error.name,
-                ...(error.cause ? { cause: error.cause } : {}),
-                code: error.code,
-                detail: error.detail
+                ...(error.cause ? { cause: error.cause } : {})
             });
         }
         else {
             logger_1.logger.error('Failed to start server with unknown error:', error);
-        }
-        // 检查数据库连接状态
-        if (data_source_1.AppDataSource.isInitialized) {
-            logger_1.logger.info('Closing database connection...');
-            await data_source_1.AppDataSource.destroy();
         }
         process.exit(1);
     }
 }
 bootstrap().catch((error) => {
     if (error instanceof Error) {
-        logger_1.logger.error('Bootstrap failed. Error details:', {
+        logger_1.logger.error('Bootstrap failed:', {
             message: error.message,
             stack: error.stack,
             name: error.name

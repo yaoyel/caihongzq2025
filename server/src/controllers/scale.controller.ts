@@ -37,4 +37,10 @@ export class ScaleController {
     async getUserAnswers(@Param('userId') userId: number) {
         return await this.scaleService.getUserAnswers(userId);
     }
-} 
+
+    @Get('/answers/user/:userId/summary')
+    @OpenAPI({ summary: '获取用户量表答题汇总' })
+    async getUserAnswersSummary(@Param('userId') userId: number) {
+        return await this.scaleService.getUserAnswersSummary(userId);
+    }
+}

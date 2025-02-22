@@ -17,29 +17,16 @@ const routing_controllers_1 = require("routing-controllers");
 const routing_controllers_openapi_1 = require("routing-controllers-openapi");
 const typedi_1 = require("typedi");
 const user_service_1 = require("../services/user.service");
-const logger_1 = require("../config/logger");
 let UserController = class UserController {
     userService;
     constructor(userService) {
         this.userService = userService;
     }
     async login(userData) {
-        try {
-            return await this.userService.login(userData.code);
-        }
-        catch (error) {
-            logger_1.logger.error({ userData, error }, 'Failed to login');
-            throw error;
-        }
+        return await this.userService.login(userData.code);
     }
     async getUser(id) {
-        try {
-            return await this.userService.findOne(id);
-        }
-        catch (error) {
-            logger_1.logger.error({ id, error }, 'Failed to get user');
-            throw error;
-        }
+        return await this.userService.findOne(id);
     }
 };
 exports.UserController = UserController;

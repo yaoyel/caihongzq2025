@@ -17,47 +17,22 @@ const routing_controllers_1 = require("routing-controllers");
 const routing_controllers_openapi_1 = require("routing-controllers-openapi");
 const typedi_1 = require("typedi");
 const scale_service_1 = require("../services/scale.service");
-const logger_1 = require("../config/logger");
 let ScaleController = class ScaleController {
     scaleService;
     constructor(scaleService) {
         this.scaleService = scaleService;
     }
     async getAll(type, direction) {
-        try {
-            return await this.scaleService.findAll(type, direction);
-        }
-        catch (error) {
-            logger_1.logger.error({ type, direction, error }, 'Failed to get scales');
-            throw error;
-        }
+        return await this.scaleService.findAll(type, direction);
     }
     async getOne(id) {
-        try {
-            return await this.scaleService.findOne(id);
-        }
-        catch (error) {
-            logger_1.logger.error({ id, error }, 'Failed to get scale');
-            throw error;
-        }
+        return await this.scaleService.findOne(id);
     }
     async submitAnswer(scaleId, data) {
-        try {
-            return await this.scaleService.submitAnswer(scaleId, data);
-        }
-        catch (error) {
-            logger_1.logger.error({ scaleId, data, error }, 'Failed to submit answer');
-            throw error;
-        }
+        return await this.scaleService.submitAnswer(scaleId, data);
     }
     async getUserAnswers(userId) {
-        try {
-            return await this.scaleService.getUserAnswers(userId);
-        }
-        catch (error) {
-            logger_1.logger.error({ userId, error }, 'Failed to get user answers');
-            throw error;
-        }
+        return await this.scaleService.getUserAnswers(userId);
     }
 };
 exports.ScaleController = ScaleController;

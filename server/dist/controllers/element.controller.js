@@ -17,57 +17,26 @@ const routing_controllers_1 = require("routing-controllers");
 const routing_controllers_openapi_1 = require("routing-controllers-openapi");
 const typedi_1 = require("typedi");
 const element_service_1 = require("../services/element.service");
-const logger_1 = require("../config/logger");
 let ElementController = class ElementController {
     elementService;
     constructor(elementService) {
         this.elementService = elementService;
     }
     async getAll() {
-        try {
-            return await this.elementService.findAll();
-        }
-        catch (error) {
-            logger_1.logger.error({ error }, 'Failed to get elements');
-            throw error;
-        }
+        return await this.elementService.findAll();
     }
     async getOne(id) {
-        try {
-            return await this.elementService.findOne(id);
-        }
-        catch (error) {
-            logger_1.logger.error({ id, error }, 'Failed to get element');
-            throw error;
-        }
+        return await this.elementService.findOne(id);
     }
     async create(data) {
-        try {
-            return await this.elementService.create(data);
-        }
-        catch (error) {
-            logger_1.logger.error({ data, error }, 'Failed to create element');
-            throw error;
-        }
+        return await this.elementService.create(data);
     }
     async update(id, data) {
-        try {
-            return await this.elementService.update(id, data);
-        }
-        catch (error) {
-            logger_1.logger.error({ id, data, error }, 'Failed to update element');
-            throw error;
-        }
+        return await this.elementService.update(id, data);
     }
     async delete(id) {
-        try {
-            await this.elementService.delete(id);
-            return { success: true };
-        }
-        catch (error) {
-            logger_1.logger.error({ id, error }, 'Failed to delete element');
-            throw error;
-        }
+        await this.elementService.delete(id);
+        return { success: true };
     }
 };
 exports.ElementController = ElementController;

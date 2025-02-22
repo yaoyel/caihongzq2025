@@ -17,86 +17,37 @@ const routing_controllers_1 = require("routing-controllers");
 const routing_controllers_openapi_1 = require("routing-controllers-openapi");
 const typedi_1 = require("typedi");
 const chat_service_1 = require("../services/chat.service");
-const logger_1 = require("../config/logger");
 let ChatController = class ChatController {
     chatService;
     constructor(chatService) {
         this.chatService = chatService;
     }
     async getSessions(userId) {
-        try {
-            return await this.chatService.getSessions(userId);
-        }
-        catch (error) {
-            logger_1.logger.error({ userId, error }, 'Failed to get chat sessions');
-            throw error;
-        }
+        return await this.chatService.getSessions(userId);
     }
     async getSharedSession(shareCode) {
-        try {
-            return await this.chatService.getSessionByShareCode(shareCode);
-        }
-        catch (error) {
-            logger_1.logger.error({ shareCode, error }, 'Failed to get shared session');
-            throw error;
-        }
+        return await this.chatService.getSessionByShareCode(shareCode);
     }
     async sendMessage(data) {
-        try {
-            return await this.chatService.sendMessage(data.sessionId, data.content, data.role);
-        }
-        catch (error) {
-            logger_1.logger.error({ data, error }, 'Failed to send message');
-            throw error;
-        }
+        return await this.chatService.sendMessage(data.sessionId, data.content, data.role);
     }
     async shareSession(id) {
-        try {
-            return await this.chatService.shareSession(id);
-        }
-        catch (error) {
-            logger_1.logger.error({ id, error }, 'Failed to share session');
-            throw error;
-        }
+        return await this.chatService.shareSession(id);
     }
     async updateSession(id, data) {
-        try {
-            return await this.chatService.updateSession(id, data.title);
-        }
-        catch (error) {
-            logger_1.logger.error({ id, data, error }, 'Failed to update session');
-            throw error;
-        }
+        return await this.chatService.updateSession(id, data.title);
     }
     async createSession(data) {
-        try {
-            // 如果title未定义则使用空字符串作为默认值
-            const sessionTitle = data.title || '';
-            return await this.chatService.createSession(data.userId, sessionTitle);
-        }
-        catch (error) {
-            logger_1.logger.error({ data, error }, 'Failed to create session');
-            throw error;
-        }
+        // 如果title未定义则使用空字符串作为默认值
+        const sessionTitle = data.title || '';
+        return await this.chatService.createSession(data.userId, sessionTitle);
     }
     async getSessionMessages(sessionId) {
-        try {
-            return await this.chatService.getMessages(sessionId);
-        }
-        catch (error) {
-            logger_1.logger.error({ sessionId, error }, 'Failed to get session messages');
-            throw error;
-        }
+        return await this.chatService.getMessages(sessionId);
     }
     async deleteSession(id) {
-        try {
-            await this.chatService.deleteSession(id);
-            return { success: true };
-        }
-        catch (error) {
-            logger_1.logger.error({ id, error }, 'Failed to delete session');
-            throw error;
-        }
+        await this.chatService.deleteSession(id);
+        return { success: true };
     }
 };
 exports.ChatController = ChatController;
