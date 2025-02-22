@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { DataSource } from 'typeorm';
+import { DataSource, DefaultNamingStrategy } from 'typeorm';
 import { Container } from 'typedi';
 import { useContainer as typeormUseContainer } from 'typeorm';
 import { User } from './entities/User';
@@ -11,8 +11,7 @@ import { QuestionAnswer } from './entities/QuestionAnswer';
 import { ChatSession } from './entities/ChatSession';
 import { ChatMessage } from './entities/ChatMessage';
 import { logger } from './config/logger';
-import { config } from 'dotenv';
-
+import { config } from 'dotenv'; 
 // 加载环境变量
 config();
 
@@ -27,8 +26,13 @@ export const AppDataSource = new DataSource({
     username: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || 'chrdwvr450G',
     database: process.env.DB_NAME || 'rbridge',
-    synchronize: process.env.NODE_ENV !== 'production',
+    // synchronize: false,
     logging: process.env.NODE_ENV === 'development',
+    namingStrategy: new class extends DefaultNamingStrategy {
+        columnName(propertyName: string, customName: string): string {
+            return customName || propertyName;
+        }
+    },
     entities: [
         User,
         Element,

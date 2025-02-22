@@ -1,4 +1,4 @@
-import { JsonController, Get, Post, Put, Delete, Body, Param, QueryParam, Authorized } from 'routing-controllers';
+import { JsonController, Get, Post, Put, Delete, Body, Param, QueryParam, QueryParams, Authorized } from 'routing-controllers';
 import { OpenAPI } from 'routing-controllers-openapi';
 import { Service } from 'typedi';
 import { ScaleService } from '../services/scale.service';
@@ -8,6 +8,31 @@ import { ScaleService } from '../services/scale.service';
 export class ScaleController {
     constructor(private scaleService: ScaleService) {}
 
+    @Get('/by-elements')
+    @OpenAPI({ summary: '通过元素ID列表获取量表' })
+    async getByElements(@QueryParam('ids') elementIds: string) {
+        if (!elementIds || elementIds.trim() === '') {
+            return [];
+        }
+        try {
+            // 移除所有空格，然后按逗号分割
+            const elementIdArray = elementIds
+                .trim()
+                .split(',')
+                .map(Number)
+                .filter(id => !isNaN(id) && id > 0);
+
+            if (elementIdArray.length === 0) {
+                return [];
+            }
+            return await this.scaleService.findByElements(elementIdArray);
+        } catch (error) {
+            console.error('Error in getByElements:', error);
+            return [];
+        }
+    }
+    
+    
     @Get()
     @OpenAPI({ summary: '获取量表列表' })
     async getAll(
@@ -43,4 +68,5 @@ export class ScaleController {
     async getUserAnswersSummary(@Param('userId') userId: number) {
         return await this.scaleService.getUserAnswersSummary(userId);
     }
+   
 }

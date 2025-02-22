@@ -1,181 +1,112 @@
- 
--- 插入positive_preference数据
-INSERT INTO scales (content, "elementId", type, direction, dimension) VALUES
-('动物相关内容，更能引发兴趣',(SELECT id FROM elements WHERE name = '看-来自大自然或自然环境中-动的'), 'like', 'positive', '看'),
-('喜欢植物、山水、星空',(SELECT id FROM elements WHERE name = '看-来自大自然或自然环境中-静的'), 'like', 'positive', '看'),
-('了解人类，感兴趣',(SELECT id FROM elements WHERE name = '看-人类学习/工作/生活环境中-与人相关的'), 'like', 'positive', '看'),
-('琢磨物件，很乐意',(SELECT id FROM elements WHERE name = '看-人类学习/工作/生活环境中-与物相关的'), 'like', 'positive', '看'),
-('倾听声/音/乐/歌，孩子乐趣所在',(SELECT id FROM elements WHERE name = '听-在接收中听-人/乐器声为主旋律的音/乐'), 'like', 'positive', '听'),
-('懂得欣赏自然之声',(SELECT id FROM elements WHERE name = '听-在接收中听-雨声/鸟鸣等自然之声'), 'like', 'positive', '听'),
-('喜欢聊着听',(SELECT id FROM elements WHERE name = '听-在交互中听-交谈'), 'like', 'positive', '听'),
-('喜欢唱歌、玩乐器',(SELECT id FROM elements WHERE name = '听-在交互中听-玩出声音，如玩乐器/玩具'), 'like', 'positive', '听'),
-('喜欢记忆经历过的点点滴滴',(SELECT id FROM elements WHERE name = '记-自动记忆-生活中亲身体验过的'), 'like', 'positive', '记'),
-('乐意回忆看过的书、影视作品里的内容与情景',(SELECT id FROM elements WHERE name = '记-自动记忆-看书/影视作品等看到的或听说的'), 'like', 'positive', '记'),
-('需要记的内容，只要理解，就愿意记',(SELECT id FROM elements WHERE name = '记-主动记忆-理解的'), 'like', 'positive', '记'),
-('需要记的内容，哪怕不理解，也乐意记住',(SELECT id FROM elements WHERE name = '记-主动记忆-不理解的'), 'like', 'positive', '记'),
-('对过去、现在、未来的生活想象丰富',(SELECT id FROM elements WHERE name = '想-自然联想-与现实生活有关的'), 'like', 'positive', '想'),
-('天马行空的想象，塑造着丰富的内心世界',(SELECT id FROM elements WHERE name = '想-自然联想-与现实生活无关的'), 'like', 'positive', '想'),
-('一旦有目标，就会想方法',(SELECT id FROM elements WHERE name = '想-刻意思考-想达到的'), 'like', 'positive', '想'),
-('就算没目标，也不断琢磨各种妙法',(SELECT id FROM elements WHERE name = '想-刻意思考-不需要达到的'), 'like', 'positive', '想'),
-('人越多，越爱说',(SELECT id FROM elements WHERE name = '说-沟通-多人沟通'), 'like', 'positive', '说'),
-('一对一，挺话痨',(SELECT id FROM elements WHERE name = '说-沟通-一对一'), 'like', 'positive', '说'),
-('滔滔不绝，自带舞台感',(SELECT id FROM elements WHERE name = '说-演说-分享'), 'like', 'positive', '说'),
-('绘声绘色，各种表演',(SELECT id FROM elements WHERE name = '说-演说-表演'), 'like', 'positive', '说'),
-('动手的同时喜欢动脑，享受逻辑演算',(SELECT id FROM elements WHERE name = '做-能独立完成的-偏思维运算类'), 'like', 'positive', '做'),
-('享受动手的时光、哪怕无需动脑',(SELECT id FROM elements WHERE name = '做-能独立完成的-偏手工制作类'), 'like', 'positive', '做'),
-('为一起玩，愿做出让步',(SELECT id FROM elements WHERE name = '做-不能独立完成的-一对一协作'), 'like', 'positive', '做'),
-('为了大家一起玩儿，愿干好多活',(SELECT id FROM elements WHERE name = '做-不能独立完成的-多人协作'), 'like', 'positive', '做'),
-('为体验协调感，乐意创造变化',(SELECT id FROM elements WHERE name = '运动-技巧类-变化中协调'), 'like', 'positive', '运动'),
-('为享受平衡感，经常各种移动',(SELECT id FROM elements WHERE name = '运动-技巧类-移动中平衡'), 'like', 'positive', '运动'),
-('享受爆发时保持稳定的掌控感',(SELECT id FROM elements WHERE name = '运动-非技巧类-爆发时保持稳定'), 'like', 'positive', '运动'),
-('像大号电池，喜欢一直玩儿一直玩儿持续放电的感觉',(SELECT id FROM elements WHERE name = '运动-非技巧类-持续中保持活力'), 'like', 'positive', '运动');
-
--- 插入negative_preference数据
-INSERT INTO scales (content, "elementId", type, direction, dimension) VALUES
-('自然动物，不太能吸引其注意力',(SELECT id FROM elements WHERE name = '看-来自大自然或自然环境中-动的'), 'like', 'negative', '看'),
-('自然静物，也许不会非常有兴趣',(SELECT id FROM elements WHERE name = '看-来自大自然或自然环境中-静的'), 'like', 'negative', '看'),
-('对人可能不太关注',(SELECT id FROM elements WHERE name = '看-人类学习/工作/生活环境中-与人相关的'), 'like', 'negative', '看'),
-('对物的观察可能不是很上心',(SELECT id FROM elements WHERE name = '看-人类学习/工作/生活环境中-与物相关的'), 'like', 'negative', '看'),
-('声/音/乐/歌，较少主动或自发欣赏',(SELECT id FROM elements WHERE name = '听-在接收中听-人/乐器声为主旋律的音/乐'), 'like', 'negative', '听'),
-('自然之声，较少自然而然沉浸其中',(SELECT id FROM elements WHERE name = '听-在接收中听-雨声/鸟鸣等自然之声'), 'like', 'negative', '听'),
-('交谈中倾听，未必乐意',(SELECT id FROM elements WHERE name = '听-在交互中听-交谈'), 'like', 'negative', '听'),
-('唱歌或玩乐器，未见兴趣',(SELECT id FROM elements WHERE name = '听-在交互中听-玩出声音，如玩乐器/玩具'), 'like', 'negative', '听'),
-('生活经历，较少主动或自发提及',(SELECT id FROM elements WHERE name = '记-自动记忆-生活中亲身体验过的'), 'like', 'negative', '记'),
-('看书看剧，很少自觉或自愿提及',(SELECT id FROM elements WHERE name = '记-自动记忆-看书/影视作品等看到的或听说的'), 'like', 'negative', '记'),
-('理解的，未必愿意主动记忆',(SELECT id FROM elements WHERE name = '记-主动记忆-理解的'), 'like', 'negative', '记'),
-('不理解的内容，不太愿意主动或自发记忆',(SELECT id FROM elements WHERE name = '记-主动记忆-不理解的'), 'like', 'negative', '记'),
-('不会过多想象未来生活的各种可能性',(SELECT id FROM elements WHERE name = '想-自然联想-与现实生活有关的'), 'like', 'negative', '想'),
-('对和现实生活无关的东西，不爱联想',(SELECT id FROM elements WHERE name = '想-自然联想-与现实生活无关的'), 'like', 'negative', '想'),
-('就算想要的，也未必一直琢磨、不断想方法实现',(SELECT id FROM elements WHERE name = '想-刻意思考-想达到的'), 'like', 'negative', '想'),
-('如果不是需要达成的目标，很少会因为兴趣，不断琢磨',(SELECT id FROM elements WHERE name = '想-刻意思考-不需要达到的'), 'like', 'negative', '想'),
-('人多时，经常是说话相对偏少的那个',(SELECT id FROM elements WHERE name = '说-沟通-多人沟通'), 'like', 'negative', '说'),
-('一对一，不爱聊天',(SELECT id FROM elements WHERE name = '说-沟通-一对一'), 'like', 'negative', '说'),
-('让分享，总有点抵触',(SELECT id FROM elements WHERE name = '说-演说-分享'), 'like', 'negative', '说'),
-('让表演，会有些抗拒',(SELECT id FROM elements WHERE name = '说-演说-表演'), 'like', 'negative', '说'),
-('又要动手又要动脑时，会有些犯懒',(SELECT id FROM elements WHERE name = '做-能独立完成的-偏思维运算类'), 'like', 'negative', '做'),
-('光动手，不那么需要逻辑推演时，不怎么感兴趣',(SELECT id FROM elements WHERE name = '做-能独立完成的-偏手工制作类'), 'like', 'negative', '做'),
-('大家一起玩时，不是很投入',(SELECT id FROM elements WHERE name = '做-不能独立完成的-一对一协作'), 'like', 'negative', '做'),
-('不会为了和朋友一起玩，过于主动付出',(SELECT id FROM elements WHERE name = '做-不能独立完成的-多人协作'), 'like', 'negative', '做'),
-('变化太多的活动，参与积极性不高',(SELECT id FROM elements WHERE name = '运动-技巧类-变化中协调'), 'like', 'negative', '运动'),
-('平衡要求高的活动，投入度不足',(SELECT id FROM elements WHERE name = '运动-技巧类-移动中平衡'), 'like', 'negative', '运动'),
-('猛烈冲击类活动，掌控欲不足',(SELECT id FROM elements WHERE name = '运动-非技巧类-爆发时保持稳定'), 'like', 'negative', '运动'),
-('重复度高且体力输出大的活动，不愿持续投入',(SELECT id FROM elements WHERE name = '运动-非技巧类-持续中保持活力'), 'like', 'negative', '运动');
-
--- 插入positive_talent数据
-INSERT INTO scales (content, "elementId", type, direction, dimension) VALUES
-('对人观察细致',(SELECT id FROM elements WHERE name = '看-能发现有趣的点-人所展现的'), 'talent', 'positive', '看'),
-('对物发现深入',(SELECT id FROM elements WHERE name = '看-能发现有趣的点-事/物所展现的'), 'talent', 'positive', '看'),
-('能用人所长',(SELECT id FROM elements WHERE name = '看-能发现有用的点-人所具备的'), 'talent', 'positive', '看'),
-('能用物所长',(SELECT id FROM elements WHERE name = '看-能发现有用的点-事/物所具备的'), 'talent', 'positive', '看'),
-('善于理解言辞语意',(SELECT id FROM elements WHERE name = '听-能听出相同的点-熟悉内容'), 'talent', 'positive', '听'),
-('善于模仿各类发音',(SELECT id FROM elements WHERE name = '听-能听出相同的点-不熟悉内容'), 'talent', 'positive', '听'),
-('对语言中不认同的部分反应敏感',(SELECT id FROM elements WHERE name = '听-能听出不同的点-需理解内容'), 'talent', 'positive', '听'),
-('对声音中不和谐的点辨识能力强',(SELECT id FROM elements WHERE name = '听-能听出不同的点-不需理解内容'), 'talent', 'positive', '听'),
-('对引起过情感共鸣或情绪波动的内容印象深刻',(SELECT id FROM elements WHERE name = '记-能记住有意义的内容-印象深刻的内容'), 'talent', 'positive', '记'),
-('对启发过自己的内容记忆犹新',(SELECT id FROM elements WHERE name = '记-能记住有意义的内容-得到启发的内容'), 'talent', 'positive', '记'),
-('善于记住有用、而且马上能用的内容',(SELECT id FROM elements WHERE name = '记-能记住有价值的内容-马上要用到'), 'talent', 'positive', '记'),
-('对于将来能用的内容，会习惯性记住',(SELECT id FROM elements WHERE name = '记-能记住有价值的内容-将来能用到'), 'talent', 'positive', '记'),
-('创意奇特，且可行',(SELECT id FROM elements WHERE name = '想-能想到奇特的点子-可预见实现时间'), 'talent', 'positive', '想'),
-('创意奇特，是否可行，不在其考虑范围',(SELECT id FROM elements WHERE name = '想-能想到奇特的点子-不可预见实现时间'), 'talent', 'positive', '想'),
-('创意实用，当下可行',(SELECT id FROM elements WHERE name = '想-能想到实用的点子-马上能用'), 'talent', 'positive', '想'),
-('创意实用，具前瞻性',(SELECT id FROM elements WHERE name = '想-能想到实用的点子-以后能用'), 'talent', 'positive', '想'),
-('多人沟通时，言辞简洁，能增进共识',(SELECT id FROM elements WHERE name = '说-能说出对方一听就明白的话-多人沟通'), 'talent', 'positive', '说'),
-('一对一沟通时，表达清晰、能促进了解',(SELECT id FROM elements WHERE name = '说-能说出对方一听就明白的话-一对一'), 'talent', 'positive', '说'),
-('探讨问题时，常触动对方',(SELECT id FROM elements WHERE name = '说-能说出对方一听就被启发的话-互动'), 'talent', 'positive', '说'),
-('公开分享观点时，能引发联想',(SELECT id FROM elements WHERE name = '说-能说出对方一听就被启发的话-演说'), 'talent', 'positive', '说'),
-('干喜欢的事，快而且结果超预期的好',(SELECT id FROM elements WHERE name = '做-能把喜欢的事做得超出预期-短时间内能看到结果的'), 'talent', 'positive', '做'),
-('探索喜欢的事，能持续取得超预期成果',(SELECT id FROM elements WHERE name = '做-能把喜欢的事做得超出预期-长周期才可能看到结果的'), 'talent', 'positive', '做'),
-('坚持的事，一步一步，不断出超预期成果',(SELECT id FROM elements WHERE name = '做-能把结果导向的事做得超出预期-短期内能实现结果的'), 'talent', 'positive', '做'),
-('想干的事，又快又好，常能出意料外的结果',(SELECT id FROM elements WHERE name = '做-能把结果导向的事做得超出预期-长周期能实现结果的'), 'talent', 'positive', '做'),
-('动中有变时，常能玩出花',(SELECT id FROM elements WHERE name = '运动-调节性好-变化中调节'), 'talent', 'positive', '运动'),
-('动得飞快时，能玩出速度与激情',(SELECT id FROM elements WHERE name = '运动-调节性好-高速中调节'), 'talent', 'positive', '运动'),
-('大变大动中，常能应变从容',(SELECT id FROM elements WHERE name = '运动-适应性强-快速适应'), 'talent', 'positive', '运动'),
-('不断变动中，状态稳定持续',(SELECT id FROM elements WHERE name = '运动-适应性强-长期适应'), 'talent', 'positive', '运动');
- 
-
--- 插入negative_talent数据
-INSERT INTO scales (content, "elementId", type, direction, dimension) VALUES
-('遣词造句时，人的刻画也许会相对单调', 
-(SELECT id FROM elements WHERE name = '看-能发现有趣的点-人所展现的'), 
-'talent', 'negative', '看'),
-('遣词造句时，物的描述可能会略显粗糙', 
-(SELECT id FROM elements WHERE name = '看-能发现有趣的点-事/物所展现的'), 
-'talent', 'negative', '看'),
-('对发现身边人能用的点，看起来不太敏感', 
-(SELECT id FROM elements WHERE name = '看-能发现有用的点-人所具备的'), 
-'talent', 'negative', '看'),
-('对发现事/物有用的点，看起来缺乏意识', 
-(SELECT id FROM elements WHERE name = '看-能发现有用的点-事/物所具备的'), 
-'talent', 'negative', '看'),
-('理解言辞语意需要时间', 
-(SELECT id FROM elements WHERE name = '听-能听出相同的点-熟悉内容'), 
-'talent', 'negative', '听'),
-('模仿发音小有挑战', 
-(SELECT id FROM elements WHERE name = '听-能听出相同的点-不熟悉内容'), 
-'talent', 'negative', '听'),
-('对认同与不认同，不容易反应过激', 
-(SELECT id FROM elements WHERE name = '听-能听出不同的点-需理解内容'), 
-'talent', 'negative', '听'),
-('音声辨识度相对低', 
-(SELECT id FROM elements WHERE name = '听-能听出不同的点-不需理解内容'), 
-'talent', 'negative', '听'),
-('情感感知度暂时有些低', 
-(SELECT id FROM elements WHERE name = '记-能记住有意义的内容-印象深刻的内容'), 
-'talent', 'negative', '记'),
-('探求新知的意识暂时不那么强烈', 
-(SELECT id FROM elements WHERE name = '记-能记住有意义的内容-得到启发的内容'), 
-'talent', 'negative', '记'),
-('价值驱动记忆的情形暂时不明显', 
-(SELECT id FROM elements WHERE name = '记-能记住有价值的内容-马上要用到'), 
-'talent', 'negative', '记'),
-('能自然而然记住未来能用的、有价值内容的潜力尚未凸显', 
-(SELECT id FROM elements WHERE name = '记-能记住有价值的内容-将来能用到'), 
-'talent', 'negative', '记'),
-('暂时未显现出奇特可行的创意能力', 
-(SELECT id FROM elements WHERE name = '想-能想到奇特的点子-可预见实现时间'), 
-'talent', 'negative', '想'),
-('暂时未见天马行空的奇特创意能力', 
-(SELECT id FROM elements WHERE name = '想-能想到奇特的点子-不可预见实现时间'), 
-'talent', 'negative', '想'),
-('马上能用的实用点子还不多见', 
-(SELECT id FROM elements WHERE name = '想-能想到实用的点子-马上能用'), 
-'talent', 'negative', '想'),
-('琢磨以后能用的实用点子暂时还不擅长', 
-(SELECT id FROM elements WHERE name = '想-能想到实用的点子-以后能用'), 
-'talent', 'negative', '想'),
-('人多时不排除表达有点啰嗦', 
-(SELECT id FROM elements WHERE name = '说-能说出对方一听就明白的话-多人沟通'), 
-'talent', 'negative', '说'),
-('一对一沟通时，不排除说话有点儿绕', 
-(SELECT id FROM elements WHERE name = '说-能说出对方一听就明白的话-一对一'), 
-'talent', 'negative', '说'),
-('探讨问题时，比较少让人觉得被启发', 
-(SELECT id FROM elements WHERE name = '说-能说出对方一听就被启发的话-互动'), 
-'talent', 'negative', '说'),
-('表达可能会平平无奇，较少形象生动的表情或动作', 
-(SELECT id FROM elements WHERE name = '说-能说出对方一听就被启发的话-演说'), 
-'talent', 'negative', '说'),
-('做喜欢的事时，短期快速出好结果的能力似乎还需加强', 
-(SELECT id FROM elements WHERE name = '做-能把喜欢的事做得超出预期-短时间内能看到结果的'), 
-'talent', 'negative', '做'),
-('做喜欢的事时，长期持续出好结果的能力似乎还可以提升', 
-(SELECT id FROM elements WHERE name = '做-能把喜欢的事做得超出预期-长周期才可能看到结果的'), 
-'talent', 'negative', '做'),
-('想干的事，高效干好的能力可以继续强化', 
-(SELECT id FROM elements WHERE name = '做-能把结果导向的事做得超出预期-短期内能实现结果的'), 
-'talent', 'negative', '做'),
-('要干的事，持续做出好结果的能力可以继续加强', 
-(SELECT id FROM elements WHERE name = '做-能把结果导向的事做得超出预期-长周期能实现结果的'), 
-'talent', 'negative', '做'),
-('充满变化的活动中，显得呆萌', 
-(SELECT id FROM elements WHERE name = '运动-调节性好-变化中调节'), 
-'talent', 'negative', '运动'),
-('高速推进的活动中，有点儿慢热', 
-(SELECT id FROM elements WHERE name = '运动-调节性好-高速中调节'), 
-'talent', 'negative', '运动'),
-('面对不断变化的环境，有些措手不及', 
-(SELECT id FROM elements WHERE name = '运动-适应性强-快速适应'), 
-'talent', 'negative', '运动'),
-('面对长期不适应的环境，有些无能为力', 
-(SELECT id FROM elements WHERE name = '运动-适应性强-长期适应'), 
-'talent', 'negative', '运动'); 
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (1, '看', 'like', 'positive', '观察各种动物，饶有兴致', 1);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (2, '看', 'like', 'positive', '欣赏植物、山水、星空...，乐在其中', 2);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (3, '看', 'like', 'positive', '观察“人”，感兴趣', 3);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (4, '看', 'like', 'positive', '欣赏“事/物”，很乐意', 4);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (5, '听', 'like', 'positive', '倾听声/音/乐/歌，乐趣所在', 5);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (6, '听', 'like', 'positive', '风声、雨声、蛙声、鸟鸣....欣赏自然之声时，非常沉静', 6);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (7, '听', 'like', 'positive', '聊天时愿意倾听', 7);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (8, '听', 'like', 'positive', '喜欢唱歌、玩乐器', 8);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (9, '说', 'like', 'positive', '人越多，越爱说', 9);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (10, '说', 'like', 'positive', '一对一，挺“话痨”', 10);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (11, '说', 'like', 'positive', '滔滔不绝，自带舞台感', 11);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (12, '说', 'like', 'positive', '绘声绘色，各种表演', 12);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (13, '记', 'like', 'positive', '喜欢记忆经历过的点点滴滴', 13);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (14, '记', 'like', 'positive', '经常回忆看过的书、影视作品里的内容与情景', 14);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (15, '记', 'like', 'positive', '需要记的内容，只要理解，就愿意记', 15);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (16, '记', 'like', 'positive', '需要记的内容，哪怕不理解，也乐意记住', 16);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (17, '想', 'like', 'positive', '对过去、现在、未来的生活想象丰富', 17);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (18, '想', 'like', 'positive', '天马行空的想象，塑造着丰富的内心世界', 18);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (19, '想', 'like', 'positive', '一旦有“想要的”，就会反复琢磨、不断想办法实现', 19);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (20, '想', 'like', 'positive', '就算没目标，也喜欢各种“发现”', 20);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (21, '做', 'like', 'positive', '喜欢手脑结合，验证方法正确、想法可行', 21);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (22, '做', 'like', 'positive', '享受整理或创作的时光、哪怕无需动脑，全凭直觉与本能', 22);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (23, '做', 'like', 'positive', '为和好朋友一起玩，愿做出让步', 23);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (24, '做', 'like', 'positive', '为了大家一起玩儿，愿干好多活', 24);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (25, '运动', 'like', 'positive', '为体验“协调感”，乐意“创造变化”', 25);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (26, '运动', 'like', 'positive', '为享受“平衡感”，经常各种“移动”', 26);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (27, '运动', 'like', 'positive', '享受爆发时保持稳定的“掌控感”', 27);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (28, '运动', 'like', 'positive', '像大号电池，喜欢一直玩儿一直玩儿持续放电的感觉', 28);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (29, '看', 'like', 'negative', '自然动物，不太能吸引其注意力', 1);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (30, '看', 'like', 'negative', '自然静物，也许不会非常有兴趣', 2);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (31, '看', 'like', 'negative', '对人可能不太关注', 3);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (32, '看', 'like', 'negative', '对事/物的观察可能不是很上心', 4);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (33, '听', 'like', 'negative', '声/音/乐/歌，较少主动或自发欣赏', 5);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (34, '听', 'like', 'negative', '自然之声，较少自然而然沉浸其中', 6);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (35, '听', 'like', 'negative', '交谈中倾听，未必乐意', 7);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (36, '听', 'like', 'negative', '唱歌或玩乐器，未见兴趣', 8);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (37, '说', 'like', 'negative', '人多时，经常是说话相对偏少的那个', 9);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (38, '说', 'like', 'negative', '一对一，不爱聊天', 10);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (39, '说', 'like', 'negative', '让分享，总有点抵触', 11);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (40, '说', 'like', 'negative', '让表演，会有些抗拒', 12);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (41, '记', 'like', 'negative', '生活经历，较少主动或自发提及', 13);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (42, '记', 'like', 'negative', '看书看剧，很少自觉或自愿提及', 14);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (43, '记', 'like', 'negative', '理解的，未必愿意主动记忆', 15);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (44, '记', 'like', 'negative', '不理解的内容，不太愿意主动或自发记忆', 16);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (45, '想', 'like', 'negative', '不会过多想象未来生活的各种可能性', 17);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (46, '想', 'like', 'negative', '对和现实生活无关的东西，不爱联想', 18);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (47, '想', 'like', 'negative', '就算想要的，也未必一直琢磨、不断想方法实现', 19);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (48, '想', 'like', 'negative', '如果不是“需要达成的目标”，很少会因为兴趣，不断发现', 20);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (49, '做', 'like', 'negative', '又要动手又要动脑时，会有些“犯懒”', 21);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (50, '做', 'like', 'negative', '凭直觉和本能创作，不怎么感兴趣', 22);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (51, '做', 'like', 'negative', '不会为了和好朋友一起玩，过于主动付出', 23);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (52, '做', 'like', 'negative', '大家一起玩时，不是很投入', 24);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (53, '运动', 'like', 'negative', '变化太多的活动，参与积极性不高', 25);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (54, '运动', 'like', 'negative', '平衡要求高的活动，投入度不足', 26);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (55, '运动', 'like', 'negative', '猛烈冲击类活动，掌控欲不足', 27);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (56, '运动', 'like', 'negative', '重复度高且体力输出大的活动，不愿持续投入', 28);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (57, '看', 'talent', 'positive', '对人观察细致', 29);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (58, '看', 'talent', 'positive', '对物发现深入', 30);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (59, '看', 'talent', 'positive', '能用人所长', 31);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (60, '看', 'talent', 'positive', '能用物所长', 32);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (61, '听', 'talent', 'positive', '善于理解言辞语意', 33);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (62, '听', 'talent', 'positive', '善于模仿各类发音', 34);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (63, '听', 'talent', 'positive', '对语言中不认同的部分反应敏感，容易反应过激', 35);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (64, '听', 'talent', 'positive', '对音声中不和谐的点辨识能力强', 36);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (65, '说', 'talent', 'positive', '多人沟通时，言辞简洁，能增进共识', 37);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (66, '说', 'talent', 'positive', '一对一沟通时，表达清晰、能促进了解', 38);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (67, '说', 'talent', 'positive', '分享思想时，常触动对方思考与探讨', 39);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (68, '说', 'talent', 'positive', '惟妙惟肖的表达，常能引发联想与想象', 40);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (69, '记', 'talent', 'positive', '对引起过情感共鸣或情绪波动的内容印象深刻', 41);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (70, '记', 'talent', 'positive', '对启发过自己的内容记忆犹新', 42);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (71, '记', 'talent', 'positive', '善于记住“有用”、而且“马上能用”的内容', 43);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (72, '记', 'talent', 'positive', '对于有价值但不知道啥时候能用的内容，会习惯性记住', 44);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (73, '想', 'talent', 'positive', '创意奇特，且可行', 45);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (74, '想', 'talent', 'positive', '创意奇特，是否可行，不在其考虑范围', 46);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (75, '想', 'talent', 'positive', '创意实用，当下可行', 47);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (76, '想', 'talent', 'positive', '创意实用，具前瞻性', 48);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (77, '做', 'talent', 'positive', '干喜欢的事，快而且结果超预期的好', 49);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (78, '做', 'talent', 'positive', '探索喜欢的事，能持续取得超预期成果', 50);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (79, '做', 'talent', 'positive', '想干的事，又快又好，常能出意料外的结果', 51);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (80, '做', 'talent', 'positive', '坚持的事，一步一步，不断出超预期成果', 52);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (81, '运动', 'talent', 'positive', '动中有变时，常能“玩出花”', 53);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (82, '运动', 'talent', 'positive', '动得飞快时，能“玩出速度与激情”', 54);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (83, '运动', 'talent', 'positive', '大变大动中，常能应变从容', 55);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (84, '运动', 'talent', 'positive', '不断变动中，状态稳定持续', 56);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (85, '看', 'talent', 'negative', '遣词造句时，人的刻画也许会相对单调', 29);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (86, '看', 'talent', 'negative', '遣词造句时，物的描述可能会略显粗糙', 30);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (87, '看', 'talent', 'negative', '对发现身边人“能用的点”，看起来不太敏感', 31);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (88, '看', 'talent', 'negative', '对发现事/物“有用的点”，看起来缺乏意识', 32);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (89, '听', 'talent', 'negative', '理解言辞语意需要时间', 33);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (90, '听', 'talent', 'negative', '模仿发音小有挑战', 34);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (91, '听', 'talent', 'negative', '对认同与不认同，不容易反应过激', 35);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (92, '听', 'talent', 'negative', '音声辨识度相对低', 36);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (93, '说', 'talent', 'negative', '人多时不排除表达有点啰嗦', 37);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (94, '说', 'talent', 'negative', '一对一沟通时，不排除说话有点儿绕', 38);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (95, '说', 'talent', 'negative', '探讨问题时，比较少让人觉得被启发', 39);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (96, '说', 'talent', 'negative', '表达可能会平平无奇，较少形象生动的表情或动作', 40);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (97, '记', 'talent', 'negative', '情感感知度暂时有些低', 41);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (98, '记', 'talent', 'negative', '探求新知的意识暂时不那么强烈', 42);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (99, '记', 'talent', 'negative', '价值驱动记忆的情形暂时不明显', 43);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (100, '记', 'talent', 'negative', '能自然而然记住未来能用的、有价值内容的潜力尚未凸显', 44);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (101, '想', 'talent', 'negative', '暂时未显现出奇特可行的创意能力', 45);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (102, '想', 'talent', 'negative', '暂时未见天马行空的奇特创意能力', 46);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (103, '想', 'talent', 'negative', '马上能用的实用点子还不多见', 47);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (104, '想', 'talent', 'negative', '琢磨以后能用的实用点子暂时还不擅长', 48);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (105, '做', 'talent', 'negative', '做喜欢的事时，“短期快速出好结果”的意识不够强烈', 49);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (106, '做', 'talent', 'negative', '做喜欢的事时，长期持续做出好结果的意志不够坚定', 50);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (107, '做', 'talent', 'negative', '想干的事，“高效干出好结果”的意识不够强烈', 51);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (108, '做', 'talent', 'negative', '要干的事，长期持续做出好结果的意志不够坚定', 52);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (109, '运动', 'talent', 'negative', '充满变化的活动中，显得“呆萌”', 53);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (110, '运动', 'talent', 'negative', '高速推进的活动中，有点儿“慢热”', 54);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (111, '运动', 'talent', 'negative', '面对不断变化的环境，有些“措手不及”', 55);
+INSERT INTO scales (id, dimension, type, direction, content, element_id) VALUES (112, '运动', 'talent', 'negative', '面对长期不适应的环境，有些“无能为力”', 56);

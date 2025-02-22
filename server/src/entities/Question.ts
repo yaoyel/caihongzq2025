@@ -6,9 +6,9 @@ export class Question {
   @Generated('increment')
   id: number;
 
-  @Column('text')
+  @Column({ type: 'text', name: 'content' })
   content: string;
 
-  @Column()
+  @Column({ name: 'age_range' })
   ageRange: '4-8' | '9-14' | '14+';
-} 
+}

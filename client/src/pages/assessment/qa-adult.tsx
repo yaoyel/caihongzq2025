@@ -56,18 +56,25 @@ const StyledMenuItem = styled(Menu.Item as React.FC<MenuItemProps>)`
       }
     }
     .question-preview {
-      display: inline-block;
-      flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       margin-bottom: 4px;
       font-size: 13px;
       color: rgba(0, 0, 0, 0.65);
       word-break: break-all;
-      width: calc(100% - 70px);
+      width: 100%;
+      
+      .question-number {
+        flex-shrink: 0;
+        min-width: 24px;
+      }
+      .question-content {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
     }
     .answer-preview {
       position: relative;
@@ -292,7 +299,7 @@ const AdultQAAssessment: React.FC = () => {
 
   return (
     <StyledLayout>
-      <Sider width={300} style={{ background: '#fff', padding: '24px 0' }}>
+      <Sider width={320} style={{ background: '#fff', padding: '24px 0' }}>
         <div style={{ padding: '0 24px', marginBottom: 16 }}>
           <Progress
             percent={Math.round(progress)}
@@ -346,9 +353,9 @@ const AdultQAAssessment: React.FC = () => {
                       icon={answer ? <CheckCircleOutlined style={{ color: '#52c41a' }} /> : null}
                     >
                       <Space direction="vertical" style={{ width: '100%' }}>
-                        <Text strong>问题 {globalIndex + 1}</Text>
                         <div className="question-preview">
-                          {question.content}
+                          <span className="question-number">Q{globalIndex + 1}:</span>
+                          <span className="question-content">{question.content}</span>
                         </div>
                         {answer && (
                           <div className="answer-preview">

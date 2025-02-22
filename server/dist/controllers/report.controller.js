@@ -28,6 +28,9 @@ let ReportController = class ReportController {
     async getTalentAnalysis(userId) {
         return await this.reportService.getTalentAnalysis(userId);
     }
+    async getElementAnalysis(userId) {
+        return await this.reportService.getElementAnalysis(userId);
+    }
 };
 exports.ReportController = ReportController;
 __decorate([
@@ -46,6 +49,14 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], ReportController.prototype, "getTalentAnalysis", null);
+__decorate([
+    (0, routing_controllers_1.Get)('/element-analysis/:userId'),
+    (0, routing_controllers_openapi_1.OpenAPI)({ summary: '获取用户元素分析详情' }),
+    __param(0, (0, routing_controllers_1.Param)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ReportController.prototype, "getElementAnalysis", null);
 exports.ReportController = ReportController = __decorate([
     (0, routing_controllers_1.JsonController)('/report'),
     (0, typedi_1.Service)(),

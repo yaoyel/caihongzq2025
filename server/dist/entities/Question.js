@@ -23,11 +23,11 @@ __decorate([
     __metadata("design:type", Number)
 ], Question.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)('text'),
+    (0, typeorm_1.Column)({ type: 'text', name: 'content' }),
     __metadata("design:type", String)
 ], Question.prototype, "content", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'age_range' }),
     __metadata("design:type", String)
 ], Question.prototype, "ageRange", void 0);
 exports.Question = Question = __decorate([

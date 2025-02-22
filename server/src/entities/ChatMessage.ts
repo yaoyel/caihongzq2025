@@ -6,21 +6,22 @@ export class ChatMessage {
     @PrimaryGeneratedColumn()
     id!: number;
 
-    @Column()
+    @Column({ name: 'session_id' })
     sessionId!: number;
 
     @Column({
         type: 'enum',
-        enum: ['user', 'assistant']
+        enum: ['user', 'assistant'],
+        name: 'role'
     })
     role: 'user' | 'assistant';
 
-    @Column('text')
+    @Column({ type: 'text', name: 'content' })
     content: string;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
     @ManyToOne(() => ChatSession, session => session.messages)
     session: ChatSession;
-} 
+}

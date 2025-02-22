@@ -47,7 +47,7 @@ async function bootstrap() {
                 scale_controller_1.ScaleController,
                 user_controller_1.UserController,
                 chat_controller_1.ChatController,
-                report_controller_1.ReportController
+                report_controller_1.ReportController,
             ],
             middlewares: [
                 error_handler_middleware_1.ErrorHandlerMiddleware,

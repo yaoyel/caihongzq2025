@@ -8,19 +8,18 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReportService = void 0;
 const typedi_1 = require("typedi");
-const typeorm_typedi_extensions_1 = require("typeorm-typedi-extensions");
-const scale_answer_repository_1 = require("../repositories/scale-answer.repository");
-const logger_1 = require("../config/logger");
+const ScaleAnswer_1 = require("../entities/ScaleAnswer");
+const data_source_1 = require("../data-source");
+const report_repository_1 = require("../repositories/report.repository");
 let ReportService = class ReportService {
+    reportRepository;
     scaleAnswerRepository;
-    constructor(scaleAnswerRepository) {
-        this.scaleAnswerRepository = scaleAnswerRepository;
+    constructor(reportRepository) {
+        this.reportRepository = reportRepository;
+        this.scaleAnswerRepository = data_source_1.AppDataSource.getRepository(ScaleAnswer_1.ScaleAnswer);
     }
     calculateScore(talentPositive, talentNegative, likePositive, likeNegative) {
         const normalizeScore = (score) => {
@@ -32,9 +31,15 @@ let ReportService = class ReportService {
         const interestScore = (normalizeScore(likePositive) + normalizeScore(likeNegative)) / 2;
         return (talentScore * 0.6 + interestScore * 0.4);
     }
+    async getElementAnalysis(userId) {
+        return await this.reportRepository.getElementAnalysis(userId);
+    }
     async getTalentAnalysis(userId) {
         try {
-            const answers = await this.scaleAnswerRepository.findAllByUserIdWithScale(userId);
+            const answers = await this.scaleAnswerRepository.find({
+                where: { userId },
+                relations: ['scale', 'scale.element']
+            });
             const dimensionMap = new Map();
             answers.forEach(answer => {
                 const dimension = answer.scale.dimension;
@@ -42,23 +47,42 @@ let ReportService = class ReportService {
                 if (answer.scale.type === 'talent') {
                     if (answer.scale.direction === 'positive') {
                         current.talentPositive = answer.score;
+                        current.talentPositiveElement = {
+                            id: answer.scale.element.id,
+                            name: answer.scale.element.name,
+                            score: answer.score
+                        };
                     }
                     else {
                         current.talentNegative = answer.score;
+                        current.talentNegativeElement = {
+                            id: answer.scale.element.id,
+                            name: answer.scale.element.name,
+                            score: answer.score
+                        };
                     }
                 }
                 else {
                     if (answer.scale.direction === 'positive') {
                         current.likePositive = answer.score;
+                        current.likePositiveElement = {
+                            id: answer.scale.element.id,
+                            name: answer.scale.element.name,
+                            score: answer.score
+                        };
                     }
                     else {
                         current.likeNegative = answer.score;
+                        current.likeNegativeElement = {
+                            id: answer.scale.element.id,
+                            name: answer.scale.element.name,
+                            score: answer.score
+                        };
                     }
                 }
                 dimensionMap.set(dimension, current);
             });
-            const analysis = Array.from(dimensionMap.entries())
-                .map(([dimension, scores]) => ({
+            const analysis = Array.from(dimensionMap.entries()).map(([dimension, scores]) => ({
                 dimension,
                 hasTalent: Boolean(scores.talentPositive &&
                     scores.talentNegative &&
@@ -68,9 +92,26 @@ let ReportService = class ReportService {
                     scores.likeNegative &&
                     scores.likePositive <= 2 &&
                     scores.likeNegative >= 3),
-                score: this.calculateScore(scores.talentPositive, scores.talentNegative, scores.likePositive, scores.likeNegative)
+                score: this.calculateScore(scores.talentPositive, scores.talentNegative, scores.likePositive, scores.likeNegative),
+                elements: {
+                    talent: {
+                        positive: scores.talentPositiveElement ?
+                            { elementId: scores.talentPositiveElement.id, name: scores.talentPositiveElement.name, score: scores.talentPositiveElement.score } :
+                            { elementId: 0, name: '', score: 0 },
+                        negative: scores.talentNegativeElement ?
+                            { elementId: scores.talentNegativeElement.id, name: scores.talentNegativeElement.name, score: scores.talentNegativeElement.score } :
+                            { elementId: 0, name: '', score: 0 }
+                    },
+                    interest: {
+                        positive: scores.likePositiveElement ?
+                            { elementId: scores.likePositiveElement.id, name: scores.likePositiveElement.name, score: scores.likePositiveElement.score } :
+                            { elementId: 0, name: '', score: 0 },
+                        negative: scores.likeNegativeElement ?
+                            { elementId: scores.likeNegativeElement.id, name: scores.likeNegativeElement.name, score: scores.likeNegativeElement.score } :
+                            { elementId: 0, name: '', score: 0 }
+                    }
+                }
             }));
-            logger_1.logger.info('Talent analysis completed', { userId });
             return {
                 bothTalentAndInterest: analysis.filter(item => item.hasTalent && item.hasInterest),
                 neitherTalentNorInterest: analysis.filter(item => !item.hasTalent && !item.hasInterest),
@@ -80,19 +121,15 @@ let ReportService = class ReportService {
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to get talent analysis', {
-                userId,
-                error: error instanceof Error ? {
-                    message: error.message,
-                    stack: error.stack
-                } : error
-            });
             throw error;
         }
     }
     async getReport(userId) {
         try {
-            const latestAnswer = await this.scaleAnswerRepository.findLatestByUserId(userId);
+            const latestAnswer = await this.scaleAnswerRepository.findOne({
+                where: { userId },
+                order: { submittedAt: 'DESC' }
+            });
             if (!latestAnswer) {
                 throw new Error('No answers found');
             }
@@ -115,17 +152,9 @@ let ReportService = class ReportService {
                     }))
                 }
             };
-            logger_1.logger.info('Report generated successfully', { userId });
             return reportContent;
         }
         catch (error) {
-            logger_1.logger.error('Failed to generate report', {
-                userId,
-                error: error instanceof Error ? {
-                    message: error.message,
-                    stack: error.stack
-                } : error
-            });
             throw error;
         }
     }
@@ -133,6 +162,5 @@ let ReportService = class ReportService {
 exports.ReportService = ReportService;
 exports.ReportService = ReportService = __decorate([
     (0, typedi_1.Service)(),
-    __param(0, (0, typeorm_typedi_extensions_1.InjectRepository)(scale_answer_repository_1.ScaleAnswerRepository)),
-    __metadata("design:paramtypes", [scale_answer_repository_1.ScaleAnswerRepository])
+    __metadata("design:paramtypes", [report_repository_1.ReportRepository])
 ], ReportService);

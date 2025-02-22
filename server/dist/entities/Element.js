@@ -27,23 +27,23 @@ __decorate([
     __metadata("design:type", Number)
 ], Element.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'name' }),
     __metadata("design:type", String)
 ], Element.prototype, "name", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'type' }),
     __metadata("design:type", String)
 ], Element.prototype, "type", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'status' }),
     __metadata("design:type", String)
 ], Element.prototype, "status", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'dimension' }),
     __metadata("design:type", String)
 ], Element.prototype, "dimension", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.Column)({ nullable: true, name: 'corresponding_element_id' }),
     __metadata("design:type", Number)
 ], Element.prototype, "correspondingElementId", void 0);
 __decorate([

@@ -82,4 +82,11 @@ export class ScaleService {
             score: item.total / item.count
         }));
     }
+    async findByElements(elementIds: number[]) {
+        return this.scaleRepository.createQueryBuilder('scale')
+            .leftJoinAndSelect('scale.element', 'element')
+            .where('element.id IN (:...elementIds)', { elementIds })
+            .orderBy('scale.id', 'ASC')
+            .getMany();
+    }
 }

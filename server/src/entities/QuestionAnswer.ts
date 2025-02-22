@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, Generated, Unique } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, Generated, Unique, JoinColumn } from 'typeorm';
 import { Question } from './Question';
 import { User } from './User';
 
@@ -9,27 +9,29 @@ export class QuestionAnswer {
   @Generated('increment')
   id: number;
 
-  @Column()
+  @Column({ name: 'user_id' })
   userId: number;
 
-  @Column()
+  @Column({ name: 'question_id' })
   questionId: number;
 
-  @Column('text')
+  @Column({ type: 'text', name: 'content' })
   content: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'submitted_at' })
   submittedAt: Date;
 
-  @Column()
+  @Column({ name: 'submitted_by' })
   submittedBy: string;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'last_modified_at' })
   lastModifiedAt: Date;
 
   @ManyToOne(() => Question)
+  @JoinColumn({name: 'question_id'})
   question: Question;
 
+  @JoinColumn({name: 'user_id'})
   @ManyToOne(() => User)
   user: User;
-} 
+}

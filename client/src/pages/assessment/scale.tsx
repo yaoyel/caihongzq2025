@@ -370,10 +370,10 @@ const ScaleAssessment: React.FC = () => {
                         </Text>
                         {answer && (
                           <Text type="secondary" className="answer-preview">
-                            答：{answer === 5 ? '非常符合' : 
-                                answer === 4 ? '比较符合' : 
+                            答：{answer === 1 ? '非常符合' : 
+                                answer === 2 ? '比较符合' : 
                                 answer === 3 ? '一般' : 
-                                answer === 2 ? '不太符合' : '完全不符合'}
+                                answer === 4 ? '不太符合' : '完全不符合'}
                           </Text>
                         )}
                       </Space>
@@ -435,11 +435,11 @@ const ScaleAssessment: React.FC = () => {
                 style={{ width: '100%' }}
               >
                 <Space direction="vertical" style={{ width: '100%' }}>
-                  <Radio value={5}>非常符合</Radio>
-                  <Radio value={4}>比较符合</Radio>
+                  <Radio value={1}>非常符合</Radio>
+                  <Radio value={2}>比较符合</Radio>
                   <Radio value={3}>一般</Radio>
-                  <Radio value={2}>不太符合</Radio>
-                  <Radio value={1}>完全不符合</Radio>
+                  <Radio value={4}>不太符合</Radio>
+                  <Radio value={5}>完全不符合</Radio>
                 </Space>
               </Radio.Group>
 
@@ -470,4 +470,4 @@ const ScaleAssessment: React.FC = () => {
   );
 };
 
-export default ScaleAssessment; 
+export default ScaleAssessment;

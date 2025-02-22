@@ -31,27 +31,27 @@ __decorate([
     __metadata("design:type", Number)
 ], QuestionAnswer.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'user_id' }),
     __metadata("design:type", Number)
 ], QuestionAnswer.prototype, "userId", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'question_id' }),
     __metadata("design:type", Number)
 ], QuestionAnswer.prototype, "questionId", void 0);
 __decorate([
-    (0, typeorm_1.Column)('text'),
+    (0, typeorm_1.Column)({ type: 'text', name: 'content' }),
     __metadata("design:type", String)
 ], QuestionAnswer.prototype, "content", void 0);
 __decorate([
-    (0, typeorm_1.CreateDateColumn)(),
+    (0, typeorm_1.CreateDateColumn)({ name: 'submitted_at' }),
     __metadata("design:type", Date)
 ], QuestionAnswer.prototype, "submittedAt", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'submitted_by' }),
     __metadata("design:type", String)
 ], QuestionAnswer.prototype, "submittedBy", void 0);
 __decorate([
-    (0, typeorm_1.UpdateDateColumn)(),
+    (0, typeorm_1.UpdateDateColumn)({ name: 'last_modified_at' }),
     __metadata("design:type", Date)
 ], QuestionAnswer.prototype, "lastModifiedAt", void 0);
 __decorate([

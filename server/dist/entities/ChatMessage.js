@@ -26,22 +26,23 @@ __decorate([
     __metadata("design:type", Number)
 ], ChatMessage.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'session_id' }),
     __metadata("design:type", Number)
 ], ChatMessage.prototype, "sessionId", void 0);
 __decorate([
     (0, typeorm_1.Column)({
         type: 'enum',
-        enum: ['user', 'assistant']
+        enum: ['user', 'assistant'],
+        name: 'role'
     }),
     __metadata("design:type", String)
 ], ChatMessage.prototype, "role", void 0);
 __decorate([
-    (0, typeorm_1.Column)('text'),
+    (0, typeorm_1.Column)({ type: 'text', name: 'content' }),
     __metadata("design:type", String)
 ], ChatMessage.prototype, "content", void 0);
 __decorate([
-    (0, typeorm_1.CreateDateColumn)(),
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)
 ], ChatMessage.prototype, "createdAt", void 0);
 __decorate([

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne,JoinColumn } from 'typeorm';
 import { Element } from './Element';
 
 @Entity('scales')
@@ -6,21 +6,18 @@ export class Scale {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column('text')
+  @Column({ type: 'text', name: 'content' })
   content: string;
 
-  @Column()
+  @Column({ name: 'element_id' })
   elementId: number;
-
-  @Column()
+  @Column({ name: 'type' })
   type: 'like' | 'talent';
-
-  @Column()
+  @Column({ name: 'direction' })
   direction: 'positive' | 'negative';
-
-  @Column()
+  @Column({ name: 'dimension' })
   dimension: '看' | '听' | '说' | '记' | '想' | '做' | '运动';
-
   @ManyToOne(() => Element)
+  @JoinColumn({ name: 'element_id' })
   element: Element;
-} 
+}

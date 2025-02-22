@@ -1,17 +1,17 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, JoinColumn } from 'typeorm';
-import { Scale } from './Scale';
+import { DoubleEdged } from './DoubleEdged';
 import { User } from './User';
 
-@Entity('scale_answers')
-export class ScaleAnswer {
+@Entity('double_edged_answers')
+export class DoubleEdgedAnswer {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'scale_id' })
-  scaleId: number;
-
   @Column({ name: 'user_id' })
   userId: number;
+
+  @Column({ name: 'double_edged_id' })
+  doubleEdgedId: number;
 
   @Column({ name: 'score' })
   score: number;
@@ -19,11 +19,10 @@ export class ScaleAnswer {
   @CreateDateColumn({ name: 'submitted_at' })
   submittedAt: Date;
 
-  @ManyToOne(() => Scale)
-  @JoinColumn({ name: 'scale_id' })
-  scale: Scale;
+  @ManyToOne(() => DoubleEdged)
+  doubleEdged: DoubleEdged;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'user_id' })
+  @JoinColumn({name:"user_id"})
   user: User;
 }

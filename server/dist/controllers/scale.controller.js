@@ -22,6 +22,27 @@ let ScaleController = class ScaleController {
     constructor(scaleService) {
         this.scaleService = scaleService;
     }
+    async getByElements(elementIds) {
+        if (!elementIds || elementIds.trim() === '') {
+            return [];
+        }
+        try {
+            // 移除所有空格，然后按逗号分割
+            const elementIdArray = elementIds
+                .trim()
+                .split(',')
+                .map(Number)
+                .filter(id => !isNaN(id) && id > 0);
+            if (elementIdArray.length === 0) {
+                return [];
+            }
+            return await this.scaleService.findByElements(elementIdArray);
+        }
+        catch (error) {
+            console.error('Error in getByElements:', error);
+            return [];
+        }
+    }
     async getAll(type, direction) {
         return await this.scaleService.findAll(type, direction);
     }
@@ -34,8 +55,19 @@ let ScaleController = class ScaleController {
     async getUserAnswers(userId) {
         return await this.scaleService.getUserAnswers(userId);
     }
+    async getUserAnswersSummary(userId) {
+        return await this.scaleService.getUserAnswersSummary(userId);
+    }
 };
 exports.ScaleController = ScaleController;
+__decorate([
+    (0, routing_controllers_1.Get)('/byelements/:Ids'),
+    (0, routing_controllers_openapi_1.OpenAPI)({ summary: '通过元素ID列表获取量表' }),
+    __param(0, (0, routing_controllers_1.Param)('ids')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], ScaleController.prototype, "getByElements", null);
 __decorate([
     (0, routing_controllers_1.Get)(),
     (0, routing_controllers_openapi_1.OpenAPI)({ summary: '获取量表列表' }),
@@ -70,6 +102,14 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], ScaleController.prototype, "getUserAnswers", null);
+__decorate([
+    (0, routing_controllers_1.Get)('/answers/user/:userId/summary'),
+    (0, routing_controllers_openapi_1.OpenAPI)({ summary: '获取用户量表答题汇总' }),
+    __param(0, (0, routing_controllers_1.Param)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ScaleController.prototype, "getUserAnswersSummary", null);
 exports.ScaleController = ScaleController = __decorate([
     (0, routing_controllers_1.JsonController)('/scales'),
     (0, typedi_1.Service)(),

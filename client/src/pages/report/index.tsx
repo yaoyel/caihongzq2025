@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Layout, Typography, Card, Row, Col, Collapse, Tabs, Progress, List, Tag, Button, Divider, message, Space, Tooltip, Alert } from 'antd';
 import { Radar } from '@ant-design/plots';
 import styled from '@emotion/styled';
@@ -7,6 +7,13 @@ import { useNavigate } from 'react-router-dom';
 import html2pdf from 'html2pdf.js';
 import axios from 'axios';
 import { getApiUrl } from '../../config';
+
+// 子组件
+import TalentAnalysis from './components/TalentAnalysis';
+import DoubleEdgedAnalysis from './components/DoubleEdgedAnalysis';
+import ClassroomPerformance from './components/ClassroomPerformance';
+import AgeSpecificAnalysis from './components/AgeSpecificAnalysis';
+import DevelopmentSuggestions from './components/DevelopmentSuggestions';
 
 const { Title, Paragraph, Text } = Typography;
 const { Panel } = Collapse;
@@ -69,100 +76,58 @@ interface TalentAnalysis {
 
 const ReportPage: React.FC = () => {
   const navigate = useNavigate();
-  const [activeKey, setActiveKey] = useState(['1']);
   const componentRef = useRef<HTMLDivElement>(null);
-
-  const mockData = {
-    dimensions: [
-      { name: '认知力', score: 85 },
-      { name: '创造力', score: 92 },
-      { name: '运动力', score: 75 },
-      { name: '艺术力', score: 88 },
-      { name: '社交力', score: 95 },
-      { name: '内省力', score: 82 },
-      { name: '自然力', score: 78 }
-    ],
-    talents: [
-      {
-        name: '空间思维',
-        score: 95,
-        rank: 'TOP 5%',
-        potential: '极高',
-        suggestions: [
-          '推荐参加机器人编程课程',
-          '可以尝试3D建模设计',
-          '适合参加创客空间活动'
-        ]
-      }
-    ],
-    warnings: [
-      {
-        type: '注意力分散',
-        level: '中度',
-        description: '在需要长时间专注的活动中容易分心',
-        suggestions: [
-          '建议采用番茄工作法',
-          '环境要保持安静整洁',
-          '可以尝试正念练习'
-        ]
-      }
-    ]
-  };
-
-  // 修改维度数据结构
   const dimensions = ['看', '听', '说', '记', '想', '做', '运动'];
   
-  // 模拟用户答案数据，实际使用时需要从props或API获取
-  const [talentAnalysis, setTalentAnalysis] = useState<TalentAnalysis[]>([]);
-
-  // 分析天赋和兴趣
-  const analyzeTalentAndInterest = (scaleAnswers: any) => {
-    const analysis = dimensions.map(dim => {
-      // 这里需要根据实际数据结构调整获取答案的方式
-      const talentForward = scaleAnswers[`${dim}_talent_forward`] || 0;
-      const talentReverse = scaleAnswers[`${dim}_talent_reverse`] || 0;
-      const interestForward = scaleAnswers[`${dim}_interest_forward`] || 0;
-      const interestReverse = scaleAnswers[`${dim}_interest_reverse`] || 0;
-
-      const hasTalent = (talentForward <= 2 && talentReverse >= 3);
-      const hasInterest = (interestForward <= 2 && interestReverse >= 3);
-
-      return {
-        dimension: dim,
-        hasTalent,
-        hasInterest
-      };
-    });
-
-    setTalentAnalysis(analysis);
-  };
-
-  // 获取不同类别的维度
-  const getTalentCategories = () => {
-    const bothTalentAndInterest = talentAnalysis.filter(t => t.hasTalent && t.hasInterest);
-    const neitherTalentNorInterest = talentAnalysis.filter(t => !t.hasTalent && !t.hasInterest);
-    const onlyInterest = talentAnalysis.filter(t => !t.hasTalent && t.hasInterest);
-    const onlyTalent = talentAnalysis.filter(t => t.hasTalent && !t.hasInterest);
-
-    return {
-      bothTalentAndInterest,
-      neitherTalentNorInterest,
-      onlyInterest,
-      onlyTalent
-    };
-  };
-
-  // 修改雷达图配置
   const [dimensionScores, setDimensionScores] = useState<Record<string, number>>({});
+  const [talentAnalysisData, setTalentAnalysisData] = useState<any>(null);
+  const [elementAnalysisData, setElementAnalysisData] = useState<any>(null);
+  const [doubleEdgedTraits, setDoubleEdgedTraits] = useState({
+    manifested: [
+      { trait: '好强心理', positive: '追求卓越', negative: '容易产生挫败感' },
+      { trait: '创新思维', positive: '思维活跃', negative: '注意力容易分散' }
+    ],
+    potential: []
+  });
+  const [performances] = useState([
+    { name: '专注度', score: 85, color: '#1890ff' },
+    { name: '参与度', score: 88, color: '#52c41a' },
+    { name: '理解力', score: 92, color: '#722ed1' },
+    { name: '表达力', score: 78, color: '#fa8c16' },
+    { name: '合作性', score: 95, color: '#eb2f96' },
+    { name: '自主性', score: 82, color: '#faad14' },
+    { name: '创造力', score: 90, color: '#13c2c2' }
+  ]);
+  const [ageSpecificData] = useState({
+    anxietyIssues: [
+      {
+        title: '学业压力',
+        solutions: ['制定合理的学习计划', '培养良好的学习习惯', '适当的运动放松']
+      },
+      {
+        title: '人际关系',
+        solutions: ['参加团体活动', '提升沟通技巧', '建立自信心']
+      }
+    ],
+    learningObstacles: [],
+    capacityBuilding: []
+  });
+  const [developmentSuggestions] = useState([
+    '充分发挥人际交往能力，参与更多团队活动',
+    '注意力训练，提高学习效率',
+    '平衡个人发展，建立健康的学习心态'
+  ]);
 
-  React.useEffect(() => {
-    const fetchScaleAnswers = async () => {
+  useEffect(() => {
+    const fetchData = async () => {
       try {
-        // 需要先导入axios 
-        const response = await axios.get(getApiUrl('/scales/answers/user/1/summary'));
-        const answers = response.data;
+        const [scaleResponse, talentResponse, elementResponse] = await Promise.all([
+          axios.get(getApiUrl('/scales/answers/user/1/summary')),
+          axios.get(getApiUrl('/report/talent-analysis/1')),
+          axios.get(getApiUrl('/report/element-analysis/1'))
+        ]);
 
-        // 按维度统计分数
+        const answers = scaleResponse.data;
         const scores: Record<string, { total: number; count: number }> = {};
         answers.forEach((answer: any) => {
           const { dimension, score } = answer;
@@ -173,93 +138,22 @@ const ReportPage: React.FC = () => {
           scores[dimension].count += 1;
         });
 
-        // 计算每个维度的平均分
         const averageScores = Object.entries(scores).reduce((acc, [dimension, { total, count }]) => {
-          acc[dimension] = (total / count) * 20; // 将1-5的分数转换为0-100的范围
+          acc[dimension] = (total / count) * 20;
           return acc;
         }, {} as Record<string, number>);
 
         setDimensionScores(averageScores);
+        setTalentAnalysisData(talentResponse.data);
+        setElementAnalysisData(elementResponse.data);
       } catch (error) {
-        console.error('获取答题数据失败:', error);
-        message.error('获取答题数据失败');
+        console.error('获取数据失败:', error);
+        message.error('获取数据失败');
       }
     };
 
-    fetchScaleAnswers();
+    fetchData();
   }, []);
-
-  const radarConfig = {
-    data: dimensions.map(dim => ({
-      name: dim,
-      value: dimensionScores[dim] || 0
-    })),
-    xField: 'name',
-    yField: 'value',
-    meta: {
-      value: {
-        min: 0,
-        max: 100
-      }
-    },
-    area: {
-      style: {
-        fill: '#FFD700',
-        fillOpacity: 0.3
-      }
-    }
-  };
-
-  // 在天赋与喜好分析卡片中展示分类结果
-  const renderTalentAnalysis = () => {
-    const categories = getTalentCategories();
-    
-    return (
-      <Space direction="vertical" style={{ width: '100%' }}>
-        {categories.bothTalentAndInterest.length > 0 && (
-          <Card title="有天赋且感兴趣">
-            {categories.bothTalentAndInterest.map(item => (
-              <Tag color="success" key={item.dimension}>{item.dimension}</Tag>
-            ))}
-          </Card>
-        )}
-        
-        {categories.neitherTalentNorInterest.length > 0 && (
-          <Card title="既无天赋也无兴趣">
-            {categories.neitherTalentNorInterest.map(item => (
-              <Tag color="error" key={item.dimension}>{item.dimension}</Tag>
-            ))}
-          </Card>
-        )}
-        
-        {categories.onlyInterest.length > 0 && (
-          <Card title="有兴趣但暂无天赋">
-            {categories.onlyInterest.map(item => (
-              <Tag color="warning" key={item.dimension}>{item.dimension}</Tag>
-            ))}
-          </Card>
-        )}
-        
-        {categories.onlyTalent.length > 0 && (
-          <Card title="有天赋但缺乏兴趣">
-            {categories.onlyTalent.map(item => (
-              <Tag color="processing" key={item.dimension}>{item.dimension}</Tag>
-            ))}
-          </Card>
-        )}
-      </Space>
-    );
-  };
-
-  // 添加雷达图事件的类型定义
-  interface RadarEvent {
-    data: {
-      data: {
-        name: string;
-        value: number;
-      }
-    }
-  }
 
   const handleExportPDF = () => {
     const element = componentRef.current;
@@ -270,72 +164,57 @@ const ReportPage: React.FC = () => {
       filename: '学生综合能力评估报告.pdf',
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    message.loading('正在生成PDF...');
-    html2pdf().set(opt).from(element).save().then(() => {
-      message.success('PDF导出成功');
-    });
+    html2pdf().set(opt).from(element).save();
+  };
+
+  const radarConfig = {
+    data: Object.entries(dimensionScores).map(([dimension, score]) => ({
+      dimension,
+      score
+    })),
+    xField: 'dimension',
+    yField: 'score',
+    meta: {
+      score: {
+        min: 0,
+        max: 100
+      }
+    },
+    area: {
+      style: {
+        fillOpacity: 0.3
+      }
+    }
   };
 
   return (
     <StyledLayout>
-      {/* 操作按钮区 */}
-      <Row justify="space-between" className="no-print">
-        <Button icon={<HomeOutlined />} onClick={() => navigate('/home')}>
-          返回主页
-        </Button>
-      </Row>
+      <PrintableContent ref={componentRef}>
+        <Row>
+          <Col span={24}>
+            <Space style={{ marginBottom: 24 }}>
+              <Button icon={<HomeOutlined />} onClick={() => navigate('/home')}>
+                返回主页
+              </Button>
+              <Button icon={<DownloadOutlined />} onClick={handleExportPDF}>
+                导出PDF
+              </Button>
+            </Space>
 
-      <div ref={componentRef}>
-        <ReportTitle level={2}>学生综合能力评估报告</ReportTitle>
+            <ReportTitle level={2}>学生综合能力评估报告</ReportTitle>
 
-        {/* 基本信息 */}
-        <ReportCard title="基本信息">
-          <Row gutter={24}>
-            <Col span={8}>
-              <Text strong>姓名：</Text> 张三
-            </Col>
-            <Col span={8}>
-              <Text strong>年龄：</Text> 12岁
-            </Col>
-            <Col span={8}>
-              <Text strong>年级：</Text> 初中一年级
-            </Col>
-          </Row>
-        </ReportCard>
+            {/* 天赋分析 */}
+            <TalentAnalysis
+              talentAnalysisData={talentAnalysisData}
+              elementAnalysisData={elementAnalysisData}
+              dimensionScores={dimensionScores}
+              dimensions={dimensions}
+            />
 
-        {/* 天赋与喜好分析 */}
-        <ReportCard title="天赋与喜好分析">
-          <Collapse activeKey={activeKey} onChange={setActiveKey}>
-            <Panel 
-              header="天赋与喜好雷达图" 
-              key="1"
-              extra={
-                <Tooltip title="点击雷达图各点可查看详细说明">
-                  <InfoCircleOutlined />
-                </Tooltip>
-              }
-            >
-              <Row gutter={24}>
-                <Col span={12}>
-                  <Radar {...radarConfig} onReady={(plot) => {
-                    plot.on('element:click', (evt: RadarEvent) => {
-                      const { name, value } = evt.data.data;
-                      message.info(`${name}: ${value}分`);
-                    });
-                  }} />
-                </Col>
-                <Col span={12}>
-                  {renderTalentAnalysis()}
-                </Col>
-              </Row>
-            </Panel>
-          </Collapse>
-        </ReportCard>
-
-        {/* 双刃剑分析 */}
+            {/* 双刃剑分析 */}
         <ReportCard title="性格特征双刃剑分析">
           <Alert
             type="info"
@@ -460,21 +339,26 @@ const ReportPage: React.FC = () => {
             注：本报告基于学生问答和行为数据分析生成，仅供参考。建议结合专业教师意见和实际情况使用。
           </Text>
         </Card>
-      </div>
+          </Col>
+        </Row>
+      </PrintableContent>
 
       {/* 咨询专家按钮 */}
-      <Row justify="center" style={{ marginTop: '40px' }} className="no-print">
-        <Space size="large">
-          <Button type="primary" size="large">
-            咨询专家解读
-          </Button>
-          <Button size="large">
-            分享报告
-          </Button>
-        </Space>
-      </Row>
+      <div style={{ marginTop: '40px' }} className="no-print">
+        <Row justify="center">
+          <Space size="large">
+            <Button type="primary" size="large">
+              咨询专家解读
+            </Button>
+            <Button size="large">
+              分享报告
+            </Button>
+          </Space>
+        </Row>
+      </div>
     </StyledLayout>
   );
-};
+  
+}
 
 export default ReportPage;

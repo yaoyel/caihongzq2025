@@ -28,19 +28,19 @@ __decorate([
     __metadata("design:type", Number)
 ], ScaleAnswer.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'scale_id' }),
     __metadata("design:type", Number)
 ], ScaleAnswer.prototype, "scaleId", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'user_id' }),
     __metadata("design:type", Number)
 ], ScaleAnswer.prototype, "userId", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'score' }),
     __metadata("design:type", Number)
 ], ScaleAnswer.prototype, "score", void 0);
 __decorate([
-    (0, typeorm_1.CreateDateColumn)(),
+    (0, typeorm_1.CreateDateColumn)({ name: 'submitted_at' }),
     __metadata("design:type", Date)
 ], ScaleAnswer.prototype, "submittedAt", void 0);
 __decorate([

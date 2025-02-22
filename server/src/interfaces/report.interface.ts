@@ -3,6 +3,32 @@ export interface TalentAnalysisResult {
   hasTalent: boolean;
   hasInterest: boolean;
   score: number;
+  elements: {
+    talent: {
+      positive: {
+        elementId: number;
+        name: string;
+        score: number;
+      };
+      negative: {
+        elementId: number;
+        name: string;
+        score: number;
+      };
+    };
+    interest: {
+      positive: {
+        elementId: number;
+        name: string;
+        score: number;
+      };
+      negative: {
+        elementId: number;
+        name: string;
+        score: number;
+      };
+    };
+  };
 }
 
 export interface DimensionScores {
@@ -29,4 +55,4 @@ export interface ReportContent {
       score: number;
     }[];
   };
-} 
+}

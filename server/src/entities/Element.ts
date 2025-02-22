@@ -6,22 +6,22 @@ export class Element {
   @Generated('increment')
   id: number;
 
-  @Column()
+  @Column({ name: 'name' })
   name: string;
 
-  @Column()
+  @Column({ name: 'type' })
   type: 'like' | 'talent';
 
-  @Column()
+  @Column({ name: 'status' })
   status: string;
 
-  @Column()
+  @Column({ name: 'dimension' })
   dimension: '看' | '听' | '说' | '记' | '想' | '做' | '运动';
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'corresponding_element_id' })
   correspondingElementId: number;
 
   @OneToOne(() => Element)
-  @JoinColumn()
+  @JoinColumn({ name: 'corresponding_element_id'})
   correspondingElement: Element;
-} 
+}

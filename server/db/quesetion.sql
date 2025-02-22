@@ -1,4 +1,4 @@
-INSERT INTO questions (content, "ageRange") VALUES
+INSERT INTO questions (content, age_range) VALUES
 ('玩什么游戏时你会不愿意停下来？', '4-8'),
 ('干什么的时候你经常不专心？', '4-8'),
 ('遇到什么时你会不由自主的被吸引？', '4-8'),
@@ -37,7 +37,7 @@ INSERT INTO questions (content, "ageRange") VALUES
 ('什么事上你总能带领小朋友一起玩？', '4-8');
 
 -- 插入 9 - 14 岁的题目
-INSERT INTO questions (content, "ageRange") VALUES
+INSERT INTO questions (content, age_range) VALUES
 ('你最近喜欢对什么发表自己的看法？', '9-14'),
 ('你最近曾经因为什么不高兴？', '9-14'),
 ('什么情形下你愿意说心里话？', '9-14'),
@@ -76,7 +76,7 @@ INSERT INTO questions (content, "ageRange") VALUES
 ('在什么事上你对自己实现的效果总是有点不满意？', '9-14');
 
 -- 插入 14 岁及以上的题目
-INSERT INTO questions (content, "ageRange") VALUES
+INSERT INTO questions (content, age_range) VALUES
 ('什么情形下你会表现出兴奋？', '14+'),
 ('什么情形下你会表现出不开心？', '14+'),
 ('什么情形下你曾经看起来很难过？', '14+'),

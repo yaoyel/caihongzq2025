@@ -8,22 +8,18 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ScaleService = void 0;
 const typedi_1 = require("typedi");
-const typeorm_typedi_extensions_1 = require("typeorm-typedi-extensions");
-const typeorm_1 = require("typeorm");
 const Scale_1 = require("../entities/Scale");
 const ScaleAnswer_1 = require("../entities/ScaleAnswer");
+const data_source_1 = require("../data-source");
 let ScaleService = class ScaleService {
     scaleRepository;
     answerRepository;
-    constructor(scaleRepository, answerRepository) {
-        this.scaleRepository = scaleRepository;
-        this.answerRepository = answerRepository;
+    constructor() {
+        this.scaleRepository = data_source_1.AppDataSource.getRepository(Scale_1.Scale);
+        this.answerRepository = data_source_1.AppDataSource.getRepository(ScaleAnswer_1.ScaleAnswer);
     }
     async findAll(type, direction) {
         const query = this.scaleRepository.createQueryBuilder('scale')
@@ -56,12 +52,45 @@ let ScaleService = class ScaleService {
             relations: ['scale', 'scale.element']
         });
     }
+    async getUserAnswersSummary(userId) {
+        const answers = await this.answerRepository
+            .createQueryBuilder('answer')
+            .leftJoinAndSelect('answer.scale', 'scale')
+            .leftJoinAndSelect('scale.element', 'element')
+            .where('answer.userId = :userId', { userId })
+            .getMany();
+        const dimensionScores = answers.reduce((acc, answer) => {
+            const dimension = answer.scale.element.dimension;
+            const score = answer.score;
+            const existingDimension = acc.find(item => item.dimension === dimension);
+            if (existingDimension) {
+                existingDimension.total += score;
+                existingDimension.count += 1;
+            }
+            else {
+                acc.push({
+                    dimension,
+                    total: score,
+                    count: 1
+                });
+            }
+            return acc;
+        }, []);
+        return dimensionScores.map(item => ({
+            dimension: item.dimension,
+            score: item.total / item.count
+        }));
+    }
+    async findByElements(elementIds) {
+        return this.scaleRepository.createQueryBuilder('scale')
+            .leftJoinAndSelect('scale.element', 'element')
+            .where('element.id IN (:...elementIds)', { elementIds })
+            .orderBy('scale.id', 'ASC')
+            .getMany();
+    }
 };
 exports.ScaleService = ScaleService;
 exports.ScaleService = ScaleService = __decorate([
     (0, typedi_1.Service)(),
-    __param(0, (0, typeorm_typedi_extensions_1.InjectRepository)(Scale_1.Scale)),
-    __param(1, (0, typeorm_typedi_extensions_1.InjectRepository)(ScaleAnswer_1.ScaleAnswer)),
-    __metadata("design:paramtypes", [typeorm_1.Repository,
-        typeorm_1.Repository])
+    __metadata("design:paramtypes", [])
 ], ScaleService);

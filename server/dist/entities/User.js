@@ -28,35 +28,36 @@ __decorate([
     __metadata("design:type", Number)
 ], User.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ length: 100, unique: true }),
+    (0, typeorm_1.Column)({ length: 100, unique: true, name: 'openid' }),
     __metadata("design:type", String)
 ], User.prototype, "openid", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ length: 100, nullable: true }),
+    (0, typeorm_1.Column)({ length: 100, nullable: true, name: 'nickname' }),
     __metadata("design:type", String)
 ], User.prototype, "nickname", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.Column)({ nullable: true, name: 'avatar_url' }),
     __metadata("design:type", String)
 ], User.prototype, "avatarUrl", void 0);
 __decorate([
     (0, typeorm_1.Column)({
         type: "enum",
         enum: ["child", "adult"],
-        default: "child"
+        default: "child",
+        name: 'user_type'
     }),
     __metadata("design:type", String)
 ], User.prototype, "userType", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.Column)({ nullable: true, name: 'age' }),
     __metadata("design:type", Number)
 ], User.prototype, "age", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.Column)({ nullable: true, name: 'gender' }),
     __metadata("design:type", String)
 ], User.prototype, "gender", void 0);
 __decorate([
-    (0, typeorm_1.CreateDateColumn)(),
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)
 ], User.prototype, "createdAt", void 0);
 exports.User = User = __decorate([
