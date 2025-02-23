@@ -1,9 +1,8 @@
 import React from 'react';
-import { Card, Collapse, List, Typography } from 'antd';
+import { Card, Collapse, List } from 'antd';
 import styled from '@emotion/styled';
 
 const { Panel } = Collapse;
-const { Text } = Typography;
 
 const StyledCard = styled(Card)`
   margin-bottom: 24px;

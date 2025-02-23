@@ -36,6 +36,7 @@ element_analysis AS (
     e.id as element_id,
     e.name as element_name,
 	e.type,
+	e.status,
     e.type as element_type,
     e.dimension,
     e.corresponding_Element_Id,
@@ -57,12 +58,14 @@ paired_analysis AS (
     l.element_id,
 	l.corresponding_Element_Id,
 	l.type,
+	l.status as like_status, 
     l.element_name as like_element,
     t.element_name as talent_element,
     l.dimension,
     l.user_Id,
     l.analysis_result as like_result,
-    t.analysis_result as talent_result
+    t.analysis_result as talent_result,
+	t.status as talent_status 
   FROM element_analysis l
   JOIN element_analysis t ON l.corresponding_Element_Id = t.element_id
   WHERE l.element_type = 'like' AND t.element_type = 'talent'
@@ -73,6 +76,8 @@ SELECT
   element_id,
   corresponding_Element_Id,
   user_Id,
+  like_status,
+  talent_status,
   type,
   dimension,
   like_element,

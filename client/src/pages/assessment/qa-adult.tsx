@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Card, Button, Steps, Space, Progress, Menu, Badge, message } from 'antd';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Layout, Typography, Card, Button, Steps, Space, Progress, Menu, message } from 'antd';
 import type { MenuItemProps } from 'antd';
 import styled from '@emotion/styled';
 import { ArrowLeftOutlined, ArrowRightOutlined, SendOutlined, HomeOutlined, CheckCircleOutlined } from '@ant-design/icons';
@@ -9,8 +9,12 @@ import { IDomEditor, IEditorConfig } from '@wangeditor/editor';
 import '@wangeditor/editor/dist/css/style.css';
 import axios from 'axios';
 import { getApiUrl } from '../../config';
+import { useDispatch, useSelector } from 'react-redux';
+import { debounce } from 'lodash';
+import { setQuestions, setAnswers, setSummary } from '../../store/slices/assessmentSlice';
+import { RootState } from '../../store';
 
-const { Title, Paragraph, Text } = Typography;
+const { Title, Paragraph } = Typography;
 const { Content, Sider } = Layout;
 
 const StyledLayout = styled(Layout)`
@@ -159,6 +163,7 @@ interface Answer {
   submittedAt: string;
 }
 
+// @ts-ignore
 interface AnswerSummary {
   total: number;
   completed: number;
@@ -167,52 +172,60 @@ interface AnswerSummary {
 
 const AdultQAAssessment: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
   const [editor, setEditor] = useState<IDomEditor | null>(null);
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState<AnswerSummary | null>(null);
+
+  const questions = useSelector((state: RootState) => state.assessment.questions);
+  const answers = useSelector((state: RootState) => state.assessment.answers);
+  const summary = useSelector((state: RootState) => state.assessment.summary);
 
   useEffect(() => {
     fetchQuestions();
     fetchAnswerSummary();
   }, []);
 
-  const fetchQuestions = async () => {
+  const fetchQuestions = useCallback(async () => {
     try {
       const response = await axios.get(getApiUrl('/questions'), {
         params: { ageRange: '14+' }
       });
-      setQuestions(response.data);
+      if (response.data) {
+        dispatch(setQuestions(response.data));
+      }
     } catch (error) {
       console.error('获取题目失败:', error);
       message.error('获取题目失败');
     } finally {
       setLoading(false);
     }
-  };
+  }, [dispatch]);
 
-  const fetchAnswerSummary = async () => {
+  const fetchAnswerSummary = useCallback(async () => {
     try {
       const response = await axios.get(getApiUrl('/questions/answers/user/1/summary'), {
         params: { ageRange: '14+' }
       });
-      setSummary(response.data);
+      if (response.data) {
+        dispatch(setSummary(response.data));
+      }
     } catch (error) {
       console.error('获取答题进度失败:', error);
       message.error('获取答题进度失败');
     }
-  };
+  }, [dispatch]);
 
-  const handleAnswer = (editor: IDomEditor) => {
-    const html = editor.getHtml();
-    const currentQuestionId = questions[currentQuestion].id;
-    setAnswers(prev => ({
-      ...prev,
-      [currentQuestionId]: html
-    }));
-  };
+  const handleAnswer = useCallback(
+    debounce((editor: IDomEditor) => {
+      const html = editor.getHtml();
+      const currentQuestionId = questions[currentQuestion]?.id;
+      if (currentQuestionId) {
+        dispatch(setAnswers({ ...answers, [currentQuestionId]: html }));
+      }
+    }, 500),
+    [currentQuestion, questions, answers, dispatch]
+  );
 
   const handleSubmit = async () => {
     if (!editor) return;
@@ -253,31 +266,27 @@ const AdultQAAssessment: React.FC = () => {
   };
 
   const handleSelectQuestion = (questionId: number) => {
-    const index = questions.findIndex(q => q.id === questionId);
+    const index = questions.findIndex((q: Question) => q.id === questionId);
     if (index !== -1) {
       setCurrentQuestion(index);
     }
   };
   useEffect(() => {
-    if (summary?.answers) {
-      const savedAnswers = summary.answers.reduce((acc, answer) => ({
+    if (summary?.answers && questions.length > 0) {
+      const savedAnswers = summary.answers.reduce((acc: Record<number, string>, answer: Answer) => ({
         ...acc,
         [answer.questionId]: answer.content
       }), {});
-      setAnswers(prev => ({ ...prev, ...savedAnswers }));
+      dispatch(setAnswers(savedAnswers));
       
       // 如果编辑器已经创建，设置当前问题的答案
       if (editor && questions[currentQuestion]) {
         const currentQuestionId = questions[currentQuestion].id;
-        const savedAnswer = summary.answers.find(a => a.questionId === currentQuestionId);
-        if (savedAnswer) {
-          editor.setHtml(savedAnswer.content);
-        } else {
-          editor.setHtml('');
-        }
+        const savedAnswer = summary.answers.find((a: Answer) => a.questionId === currentQuestionId);
+        editor.setHtml(savedAnswer?.content || '');
       }
     }
-  }, [summary, currentQuestion, questions, editor]);
+  }, [summary, currentQuestion, questions, editor, dispatch]);
   const editorConfig: Partial<IEditorConfig> = {
     placeholder: '请输入你的答案...',
     MENU_CONF: {},
@@ -286,7 +295,7 @@ const AdultQAAssessment: React.FC = () => {
       // 在编辑器创建后设置初始答案
       if (questions[currentQuestion]) {
         const currentQuestionId = questions[currentQuestion].id;
-        const savedAnswer = summary?.answers?.find(a => a.questionId === currentQuestionId);
+        const savedAnswer = summary?.answers?.find((a: Answer) => a.questionId === currentQuestionId);
         if (savedAnswer) {
           editor.setHtml(savedAnswer.content);
         }
@@ -310,7 +319,7 @@ const AdultQAAssessment: React.FC = () => {
               type="primary"
               block
               onClick={() => {
-                const nextUnanswered = questions.findIndex((q, idx) => !summary?.answers.find(a => a.questionId === q.id));
+                const nextUnanswered = questions.findIndex((q: Question) => !summary?.answers.find((a: Answer) => a.questionId === q.id));
                 if (nextUnanswered !== -1) {
                   setCurrentQuestion(nextUnanswered);
                 }
@@ -344,7 +353,7 @@ const AdultQAAssessment: React.FC = () => {
                 }
               >
                 {getThemeQuestions(themeIndex, questions).map((question, index) => {
-                  const answer = summary?.answers.find(a => a.questionId === question.id);
+                  const answer = summary?.answers.find((a: Answer) => a.questionId === question.id);
                   const globalIndex = themeIndex * 12 + index;
                   return (
                     <StyledMenuItem

@@ -2,7 +2,7 @@ import axios from 'axios';
 import { config } from '../config';
 
 const request = axios.create({
-  baseURL: `${config.apiHost}${config.api.baseURL}`,
+  baseURL: `${config.apiHost}${config.apiPrefix}`,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -32,4 +32,4 @@ request.interceptors.response.use(
   }
 );
 
-export default request; 
+export default request;

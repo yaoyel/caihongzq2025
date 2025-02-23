@@ -136,7 +136,6 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [showNotice, setShowNotice] = useState(true);
   const [qrUrl, setQrUrl] = useState('');
-  const [sceneStr, setSceneStr] = useState('');
   const [polling, setPolling] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -172,7 +171,6 @@ const LoginPage: React.FC = () => {
 
       // 更新状态
       setQrUrl(qrUrl);
-      setSceneStr(sceneStr);
       
       if (!isTest) {
         startPolling(sceneStr);
@@ -369,4 +367,4 @@ const LoginPage: React.FC = () => {
   );
 };
 
-export default LoginPage; 
+export default LoginPage;

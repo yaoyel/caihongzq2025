@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Steps, Card, Button, Progress, Image, Typography, Radio, Space, Row } from 'antd';
+import { Steps, Card, Button, Progress, Image, Typography } from 'antd';
 import { RocketOutlined, TrophyOutlined, HomeOutlined } from '@ant-design/icons';
 import styled from '@emotion/styled';
 import { useNavigate } from 'react-router-dom';
 
-const { Title, Paragraph } = Typography;
+const { Title } = Typography;
 
 const StyledCard = styled(Card)`
   margin: 20px 0;
@@ -28,9 +28,8 @@ const SceneImage = styled(Image)`
 
 const AssessmentPage: React.FC = () => {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, any>>({});
+  const [currentStep] = useState(0);
+  const [currentQuestion] = useState(0);
 
   const mockQuestions = [
     {
@@ -45,15 +44,6 @@ const AssessmentPage: React.FC = () => {
       sceneDescription: "观察孩子在自由玩耍时的表现"
     }
   ];
-
-  const handleAnswer = (value: any) => {
-    setAnswers({ ...answers, [currentQuestion]: value });
-    if (currentQuestion < mockQuestions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    } else {
-      setCurrentStep(currentStep + 1);
-    }
-  };
 
   const calculateProgress = () => {
     return (currentQuestion / mockQuestions.length) * 100;

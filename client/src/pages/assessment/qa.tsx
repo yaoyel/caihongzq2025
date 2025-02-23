@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Layout, Typography, Card, Button, Steps, Space, Progress, Menu, message, Tooltip } from 'antd';
 import type { MenuItemProps } from 'antd';
 import styled from '@emotion/styled';
@@ -9,8 +9,12 @@ import { IDomEditor, IEditorConfig } from '@wangeditor/editor';
 import '@wangeditor/editor/dist/css/style.css';
 import axios from 'axios';
 import { getApiUrl } from '../../config';
+import { useDispatch, useSelector } from 'react-redux';
+import { debounce } from 'lodash';
+import { setQuestions, setAnswers, setSummary } from '../../store/slices/assessmentSlice';
+import { RootState } from '../../store';
 
-const { Title, Paragraph, Text } = Typography;
+const { Title, Paragraph } = Typography;
 const { Content, Sider } = Layout;
 
 const StyledLayout = styled(Layout)`
@@ -121,21 +125,17 @@ interface Answer {
   submittedAt: string;
 }
 
-interface AnswerSummary {
-  total: number;
-  completed: number;
-  answers: Answer[];
-}
-
 const QAAssessment: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
   const [editor, setEditor] = useState<IDomEditor | null>(null);
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState<AnswerSummary | null>(null);
   const [ageRange] = useState<'4-8' | '9-14' | '14+'>('4-8');
+
+  const questions = useSelector((state: RootState) => state.assessment.questions);
+  const answers = useSelector((state: RootState) => state.assessment.answers);
+  const summary = useSelector((state: RootState) => state.assessment.summary);
 
   useEffect(() => {
     fetchQuestions();
@@ -144,16 +144,16 @@ const QAAssessment: React.FC = () => {
 
   useEffect(() => {
     if (summary?.answers) {
-      const savedAnswers = summary.answers.reduce((acc, answer) => ({
+      const savedAnswers = summary.answers.reduce((acc: Record<number, string>, answer: Answer) => ({
         ...acc,
         [answer.questionId]: answer.content
       }), {});
-      setAnswers(prev => ({ ...prev, ...savedAnswers }));
+      dispatch(setAnswers({ ...answers, ...savedAnswers }));
       
       // 如果编辑器已经创建，设置当前问题的答案
       if (editor && questions[currentQuestion]) {
         const currentQuestionId = questions[currentQuestion].id;
-        const savedAnswer = summary.answers.find(a => a.questionId === currentQuestionId);
+        const savedAnswer = summary.answers.find((a: Answer) => a.questionId === currentQuestionId);
         if (savedAnswer) {
           editor.setHtml(savedAnswer.content);
         } else {
@@ -163,45 +163,48 @@ const QAAssessment: React.FC = () => {
     }
   }, [summary, currentQuestion, questions, editor]);
 
-  const fetchQuestions = async () => {
+  const fetchQuestions = useCallback(async () => {
     try {
       const response = await axios.get(getApiUrl('/questions'), {
         params: { ageRange }
       });
-      setQuestions(response.data);
+      if (response.data) {
+        dispatch(setQuestions(response.data));
+      }
     } catch (error) {
       console.error('获取题目失败:', error);
+      message.error('获取题目失败');
     } finally {
       setLoading(false);
     }
-  };
+  }, [dispatch, ageRange]);
 
-  const fetchAnswerSummary = async () => {
+  const fetchAnswerSummary = useCallback(async () => {
     try {
       const response = await axios.get(getApiUrl('/questions/answers/user/1/summary'), {
         params: { ageRange }
       });
-      setSummary(response.data);
+      if (response.data) {
+        dispatch(setSummary(response.data));
+      }
     } catch (error) {
       console.error('获取答题进度失败:', error);
+      message.error('获取答题进度失败');
     }
-  };
+  }, [dispatch, ageRange]);
 
-  const handleAnswer = (editor: IDomEditor) => {
-    if (!editor) return;
-    
-    const html = editor.getHtml();
-    const currentQuestionId = questions[currentQuestion].id;
-    
-    // 只有当内容真正改变时才更新状态
-    const plainText = html.replace(/<[^>]+>/g, '').trim();
-    if (plainText || html !== answers[currentQuestionId]) {
-      setAnswers(prev => ({
-        ...prev,
-        [currentQuestionId]: html
-      }));
-    }
-  };
+  const handleAnswer = useCallback(
+    debounce((editor: IDomEditor) => {
+      if (!editor) return;
+      
+      const html = editor.getHtml();
+      const currentQuestionId = questions[currentQuestion]?.id;
+      if (currentQuestionId) {
+        dispatch(setAnswers({ ...answers, [currentQuestionId]: html }));
+      }
+    }, 500),
+    [currentQuestion, questions, answers, dispatch]
+  );
 
   const handleSubmit = async () => {
     if (!editor) return;
@@ -236,7 +239,7 @@ const QAAssessment: React.FC = () => {
   };
 
   const handleSelectQuestion = (questionId: number) => {
-    const index = questions.findIndex(q => q.id === questionId);
+    const index = questions.findIndex((q: Question) => q.id === questionId);
     if (index !== -1) {
       setCurrentQuestion(index);
     }
@@ -250,7 +253,7 @@ const QAAssessment: React.FC = () => {
       // 在编辑器创建后设置初始答案
       if (questions[currentQuestion]) {
         const currentQuestionId = questions[currentQuestion].id;
-        const savedAnswer = summary?.answers?.find(a => a.questionId === currentQuestionId);
+        const savedAnswer = summary?.answers?.find((a: Answer) => a.questionId === currentQuestionId);
         if (savedAnswer) {
           editor.setHtml(savedAnswer.content);
         }
@@ -261,8 +264,8 @@ const QAAssessment: React.FC = () => {
   const getNextUnansweredQuestion = () => {
     if (!summary?.answers || !questions.length) return -1;
     
-    const answeredQuestionIds = new Set(summary.answers.map(a => a.questionId));
-    const nextUnansweredIndex = questions.findIndex(q => !answeredQuestionIds.has(q.id));
+    const answeredQuestionIds = new Set(summary.answers.map((a: Answer) => a.questionId));
+    const nextUnansweredIndex = questions.findIndex((q: Question) => !answeredQuestionIds.has(q.id));
     return nextUnansweredIndex;
   };
 
@@ -273,7 +276,7 @@ const QAAssessment: React.FC = () => {
     }
   };
 
-  if (loading) return null;
+  if (loading || !questions.length) return null;
 
   const progress = summary ? (summary.completed / summary.total * 100) : 0;
 

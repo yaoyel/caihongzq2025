@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Card, Button, Steps, Space, Progress, Menu, Badge, message } from 'antd';
+import { Layout, Typography, Card, Button, Steps, Space, Progress, Menu, message } from 'antd';
 import type { MenuItemProps } from 'antd';
 import styled from '@emotion/styled';
 import { ArrowLeftOutlined, ArrowRightOutlined, SendOutlined, HomeOutlined, CheckCircleOutlined } from '@ant-design/icons';
@@ -10,7 +10,7 @@ import '@wangeditor/editor/dist/css/style.css';
 import axios from 'axios';
 import { getApiUrl } from '../../config';
 
-const { Title, Paragraph, Text } = Typography;
+const { Title, Paragraph } = Typography;
 const { Content, Sider } = Layout;
 
 const StyledLayout = styled(Layout)`
@@ -331,7 +331,7 @@ const TeenQAAssessment: React.FC = () => {
               type="primary"
               block
               onClick={() => {
-                const nextUnanswered = questions.findIndex((q, idx) => !summary?.answers.find(a => a.questionId === q.id));
+                const nextUnanswered = questions.findIndex(q => !summary?.answers.find(a => a.questionId === q.id));
                 if (nextUnanswered !== -1) {
                   setCurrentQuestion(nextUnanswered);
                 }

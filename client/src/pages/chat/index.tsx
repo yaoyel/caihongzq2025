@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Button, Input, List, Avatar, Card, Space, Divider, message, Modal } from 'antd';
+import { Layout, Typography, Button, Input, List, Avatar, Space, message, Modal } from 'antd';
 import { SendOutlined, PlusOutlined, MessageOutlined, HomeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import styled from '@emotion/styled';
 import { useNavigate } from 'react-router-dom';
@@ -7,8 +7,8 @@ import axios from 'axios';
 import { getApiUrl } from '../../config';
 import ReactMarkdown from 'react-markdown';
 
-const { Title, Text } = Typography;
-const { Content, Sider } = Layout;
+const { Text } = Typography;
+const { Sider } = Layout;
 
 const StyledLayout = styled(Layout)`
   height: 100vh;
@@ -180,7 +180,7 @@ const ChatPage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [activeChat, setActiveChat] = useState('');
-  const [loading, setLoading] = useState(false);
+
 
   useEffect(() => {
     fetchChats();

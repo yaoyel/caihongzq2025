@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Steps, Card, Radio, Progress, Space, Button, Divider, Menu, message, Row } from 'antd';
 import type { MenuItemProps } from 'antd';
 import styled from '@emotion/styled';
-import { ArrowRightOutlined, ArrowLeftOutlined, HomeOutlined, CheckCircleOutlined, CaretRightOutlined } from '@ant-design/icons';
+import { HomeOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { getApiUrl } from '../../config';
@@ -135,7 +135,7 @@ const ScaleAssessment: React.FC = () => {
   const [questions, setQuestions] = useState<Scale[]>([]);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
-  const [savedAnswers, setSavedAnswers] = useState<Record<number, number>>({});
+
 
   useEffect(() => {
     fetchAllQuestions();
@@ -177,7 +177,6 @@ const ScaleAssessment: React.FC = () => {
         acc[answer.scaleId] = answer.score;
         return acc;
       }, {});
-      setSavedAnswers(savedAnswersMap);
       setAnswers(prev => ({...prev, ...savedAnswersMap}));
     } catch (error) {
       console.error('获取已保存答案失败:', error);
@@ -225,12 +224,7 @@ const ScaleAssessment: React.FC = () => {
     }
   };
 
-  const handleSelectQuestion = (questionId: number) => {
-    const index = questions.findIndex(q => q.id === questionId);
-    if (index !== -1) {
-      setCurrentQuestion(index);
-    }
-  };
+
 
   const handleComplete = async () => {
     const currentAnswer = answers[currentQuestionData.id];
