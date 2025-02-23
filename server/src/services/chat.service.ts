@@ -1,20 +1,22 @@
 import { Service } from 'typedi';
-import { InjectRepository } from 'typeorm-typedi-extensions';
+import { Repository } from 'typeorm';
 import { ChatSession } from '../entities/ChatSession';
 import { ChatMessage } from '../entities/ChatMessage';
-import { Repository } from 'typeorm';
 import { OpenAI } from 'openai';
+import { AppDataSource } from '../data-source';
 
 @Service()
 export class ChatService {
     private openai: OpenAI;
+    private sessionRepository: Repository<ChatSession>;
+    private messageRepository: Repository<ChatMessage>;
 
-    constructor(
-        @InjectRepository(ChatSession)
-        private sessionRepository: Repository<ChatSession>,
-        @InjectRepository(ChatMessage)
-        private messageRepository: Repository<ChatMessage>
-    ) {
+    constructor() {
+        // 使用 AppDataSource 获取仓库实例
+        this.sessionRepository = AppDataSource.getRepository(ChatSession);
+        this.messageRepository = AppDataSource.getRepository(ChatMessage);
+        
+        // 初始化 OpenAI 客户端
         this.openai = new OpenAI({
             apiKey: process.env.DEEPSEEK_API_KEY,
             baseURL: process.env.DEEPSEEK_API_BASE_URL || 'https://api.deepseek.com/v1'

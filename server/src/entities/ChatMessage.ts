@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { ChatSession } from './ChatSession';
 
 @Entity('chat_messages')
@@ -23,5 +23,6 @@ export class ChatMessage {
     createdAt: Date;
 
     @ManyToOne(() => ChatSession, session => session.messages)
+    @JoinColumn({name:"session_id"})
     session: ChatSession;
 }
