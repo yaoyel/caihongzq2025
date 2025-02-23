@@ -48,6 +48,7 @@ __decorate([
 ], Scale.prototype, "dimension", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => Element_1.Element),
+    (0, typeorm_1.JoinColumn)({ name: 'element_id' }),
     __metadata("design:type", Element_1.Element)
 ], Scale.prototype, "element", void 0);
 exports.Scale = Scale = __decorate([

@@ -8,24 +8,22 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChatService = void 0;
 const typedi_1 = require("typedi");
-const typeorm_typedi_extensions_1 = require("typeorm-typedi-extensions");
 const ChatSession_1 = require("../entities/ChatSession");
 const ChatMessage_1 = require("../entities/ChatMessage");
-const typeorm_1 = require("typeorm");
 const openai_1 = require("openai");
+const data_source_1 = require("../data-source");
 let ChatService = class ChatService {
+    openai;
     sessionRepository;
     messageRepository;
-    openai;
-    constructor(sessionRepository, messageRepository) {
-        this.sessionRepository = sessionRepository;
-        this.messageRepository = messageRepository;
+    constructor() {
+        // 使用 AppDataSource 获取仓库实例
+        this.sessionRepository = data_source_1.AppDataSource.getRepository(ChatSession_1.ChatSession);
+        this.messageRepository = data_source_1.AppDataSource.getRepository(ChatMessage_1.ChatMessage);
+        // 初始化 OpenAI 客户端
         this.openai = new openai_1.OpenAI({
             apiKey: process.env.DEEPSEEK_API_KEY,
             baseURL: process.env.DEEPSEEK_API_BASE_URL || 'https://api.deepseek.com/v1'
@@ -108,8 +106,5 @@ let ChatService = class ChatService {
 exports.ChatService = ChatService;
 exports.ChatService = ChatService = __decorate([
     (0, typedi_1.Service)(),
-    __param(0, (0, typeorm_typedi_extensions_1.InjectRepository)(ChatSession_1.ChatSession)),
-    __param(1, (0, typeorm_typedi_extensions_1.InjectRepository)(ChatMessage_1.ChatMessage)),
-    __metadata("design:paramtypes", [typeorm_1.Repository,
-        typeorm_1.Repository])
+    __metadata("design:paramtypes", [])
 ], ChatService);

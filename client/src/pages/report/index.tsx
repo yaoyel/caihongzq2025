@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { Layout, Typography, Card, Row, Col, Collapse, Tabs, Progress, List, Button, message, Space, Alert, Tag, Tooltip } from 'antd';
 import styled from '@emotion/styled';
-import { HomeOutlined, DownloadOutlined } from '@ant-design/icons';
+import { HomeOutlined, DownloadOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import html2pdf from 'html2pdf.js';
 import axios from 'axios';
@@ -91,6 +91,38 @@ const CLASSROOM_PERFORMANCE_ELEMENTS = {
     title: '上好体育课（运动）',
     elementIds: [25, 26, 27, 28, 53, 54, 55, 56]
   }
+};
+
+// 添加提示内容配置
+const CATEGORY_TIPS = {
+  '有喜欢有天赋': (
+    <div>
+      <p>• 爸爸妈妈共识后放手，让孩子享受自我成就的快乐。当喜欢与天赋相结合，孩子会开心且自然而然做出好结果。</p>
+      <p>• 爸爸妈妈夸赞孩子取得的好结果。</p>
+      <p>• 要注意喜欢和天赋兼具点的双刃剑。</p>
+    </div>
+  ),
+  '没喜欢没天赋': (
+    <div>
+      <p>• 爸爸妈妈懂得创新，让孩子体验克服困难、战胜挑战的快乐。</p>
+      <p>• 爸爸妈妈夸赞孩子付出的努力。</p>
+      <p>• 即便老师或家长耐心陪伴，孩子也可能很不情愿磨炼。此时，老师或家长可借助孩子喜欢与天赋兼具的点，为孩子创新发展方法。当孩子体验到逐渐做出好结果的乐趣，会慢慢提升付出意愿，不断积累克服困难、战胜挑战的能力与信心，坚持做出一定结果。</p>
+    </div>
+  ),
+  '有天赋没喜欢': (
+    <div>
+      <p>• 爸爸妈妈精准鼓励，让孩子体验释放潜能的快乐。</p>
+      <p>• 在喜欢不明显的维度，孩子不会自愿付出与投入。老师或家长在耐心陪伴时，要不断鼓励孩子发现天赋、体验天赋释放所带来的乐趣，这样孩子会慢慢提升付出意愿，持续做出好结果。</p>
+      <p>• 爸爸妈妈夸赞孩子展现天赋的行为。</p>
+    </div>
+  ),
+  '有喜欢没天赋': (
+    <div>
+      <p>• 爸爸妈妈在包容中等待，让孩子享受自我成长的快乐。</p>
+      <p>• 爸爸妈妈要夸赞孩子的进步。</p>
+      <p>• 在喜欢的方向上，哪怕欠缺天赋，孩子也会主动、经常投入，自觉自愿磨炼，慢慢地，也能逐渐做出好结果。</p>
+    </div>
+  )
 };
 
 const ReportPage: React.FC = () => {
@@ -200,7 +232,17 @@ const ReportPage: React.FC = () => {
                         label: '按结果分组',
                         children: (
                           <Collapse defaultActiveKey={[]}>
-                            <Panel header="有喜欢有天赋" key="1">
+                            <Panel 
+                              header={
+                                <Space>
+                                  <Text strong>有喜欢有天赋</Text>
+                                  <Tooltip title={CATEGORY_TIPS['有喜欢有天赋']} overlayStyle={{ maxWidth: '500px' }}>
+                                    <QuestionCircleOutlined />
+                                  </Tooltip>
+                                </Space>
+                              } 
+                              key="1"
+                            >
                               <List
                                 grid={{ gutter: 16, column: 4 }}
                                 dataSource={elementAnalysis
@@ -235,7 +277,17 @@ const ReportPage: React.FC = () => {
                                 )}
                               />
                             </Panel>
-                            <Panel header="有喜欢没天赋" key="2">
+                            <Panel 
+                              header={
+                                <Space>
+                                  <Text strong>有喜欢没天赋</Text>
+                                  <Tooltip title={CATEGORY_TIPS['有喜欢没天赋']} overlayStyle={{ maxWidth: '500px' }}>
+                                    <QuestionCircleOutlined />
+                                  </Tooltip>
+                                </Space>
+                              } 
+                              key="2"
+                            >
                               <List
                                 grid={{ gutter: 16, column: 4 }}
                                 dataSource={elementAnalysis.filter(item => item.category === '有喜欢没天赋').sort(sortByDimension)}
@@ -267,7 +319,17 @@ const ReportPage: React.FC = () => {
                                 )}
                               />
                             </Panel>
-                            <Panel header="有天赋没喜欢" key="3">
+                            <Panel 
+                              header={
+                                <Space>
+                                  <Text strong>有天赋没喜欢</Text>
+                                  <Tooltip title={CATEGORY_TIPS['有天赋没喜欢']} overlayStyle={{ maxWidth: '500px' }}>
+                                    <QuestionCircleOutlined />
+                                  </Tooltip>
+                                </Space>
+                              } 
+                              key="3"
+                            >
                               <List
                                 grid={{ gutter: 16, column: 4 }}
                                 dataSource={elementAnalysis.filter(item => item.category === '有天赋没喜欢').sort(sortByDimension)}
@@ -299,7 +361,17 @@ const ReportPage: React.FC = () => {
                                 )}
                               />
                             </Panel>
-                            <Panel header="没喜欢没天赋" key="4">
+                            <Panel 
+                              header={
+                                <Space>
+                                  <Text strong>没喜欢没天赋</Text>
+                                  <Tooltip title={CATEGORY_TIPS['没喜欢没天赋']} overlayStyle={{ maxWidth: '500px' }}>
+                                    <QuestionCircleOutlined />
+                                  </Tooltip>
+                                </Space>
+                              } 
+                              key="4"
+                            >
                               <List
                                 grid={{ gutter: 16, column: 4 }}
                                 dataSource={elementAnalysis.filter(item => item.category === '没喜欢没天赋').sort(sortByDimension)}
@@ -375,7 +447,10 @@ const ReportPage: React.FC = () => {
                         children: (
                           <Collapse defaultActiveKey={[]}>
                             {['看', '听', '说', '记', '想', '做', '运动'].map(dimension => (
-                              <Panel header={dimension} key={dimension}>
+                              <Panel 
+                                header={dimension}
+                                key={dimension}
+                              >
                                 <List
                                   grid={{ gutter: 16, column: 4 }}
                                   dataSource={elementAnalysis.filter(item => item.dimension === dimension)}

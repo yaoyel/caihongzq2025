@@ -27,8 +27,13 @@ exports.AppDataSource = new typeorm_1.DataSource({
     username: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || 'chrdwvr450G',
     database: process.env.DB_NAME || 'rbridge',
-    synchronize: process.env.NODE_ENV !== 'production',
+    // synchronize: false,
     logging: process.env.NODE_ENV === 'development',
+    namingStrategy: new class extends typeorm_1.DefaultNamingStrategy {
+        columnName(propertyName, customName) {
+            return customName || propertyName;
+        }
+    },
     entities: [
         User_1.User,
         Element_1.Element,

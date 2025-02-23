@@ -61,9 +61,9 @@ let ScaleController = class ScaleController {
 };
 exports.ScaleController = ScaleController;
 __decorate([
-    (0, routing_controllers_1.Get)('/byelements/:Ids'),
+    (0, routing_controllers_1.Get)('/by-elements'),
     (0, routing_controllers_openapi_1.OpenAPI)({ summary: '通过元素ID列表获取量表' }),
-    __param(0, (0, routing_controllers_1.Param)('ids')),
+    __param(0, (0, routing_controllers_1.QueryParam)('ids')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
@@ -113,5 +113,6 @@ __decorate([
 exports.ScaleController = ScaleController = __decorate([
     (0, routing_controllers_1.JsonController)('/scales'),
     (0, typedi_1.Service)(),
+    (0, routing_controllers_1.Authorized)(),
     __metadata("design:paramtypes", [scale_service_1.ScaleService])
 ], ScaleController);

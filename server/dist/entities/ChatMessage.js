@@ -47,6 +47,7 @@ __decorate([
 ], ChatMessage.prototype, "createdAt", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => ChatSession_1.ChatSession, session => session.messages),
+    (0, typeorm_1.JoinColumn)({ name: "session_id" }),
     __metadata("design:type", ChatSession_1.ChatSession)
 ], ChatMessage.prototype, "session", void 0);
 exports.ChatMessage = ChatMessage = __decorate([

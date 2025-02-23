@@ -85,6 +85,7 @@ __decorate([
 ], ElementController.prototype, "delete", null);
 exports.ElementController = ElementController = __decorate([
     (0, routing_controllers_1.JsonController)('/elements'),
+    (0, routing_controllers_1.Authorized)(),
     (0, typedi_1.Service)(),
     __metadata("design:paramtypes", [element_service_1.ElementService])
 ], ElementController);

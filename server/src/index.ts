@@ -19,7 +19,7 @@ import { UserController } from './controllers/user.controller';
 import { ChatController } from './controllers/chat.controller';
 import { ReportController } from './controllers/report.controller';
 import { ErrorHandlerMiddleware } from './middlewares/error-handler.middleware';
-import { RequestLoggerMiddleware } from './middlewares/request-logger.middleware'; 
+import { RequestLoggerMiddleware } from './middlewares/request-logger.middleware';  
 async function bootstrap() {
     try {
         // 1. 设置依赖注入容器
@@ -51,7 +51,7 @@ async function bootstrap() {
                 ChatController,
                 ReportController, 
             ],
-            middlewares: [
+            middlewares: [ 
                 ErrorHandlerMiddleware,
                 RequestLoggerMiddleware
             ],
@@ -107,5 +107,4 @@ bootstrap().catch((error) => {
     }
     process.exit(1);
 });
-
 export default bootstrap;

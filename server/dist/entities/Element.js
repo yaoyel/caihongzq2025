@@ -48,7 +48,7 @@ __decorate([
 ], Element.prototype, "correspondingElementId", void 0);
 __decorate([
     (0, typeorm_1.OneToOne)(() => Element),
-    (0, typeorm_1.JoinColumn)(),
+    (0, typeorm_1.JoinColumn)({ name: 'corresponding_element_id' }),
     __metadata("design:type", Element)
 ], Element.prototype, "correspondingElement", void 0);
 exports.Element = Element = __decorate([

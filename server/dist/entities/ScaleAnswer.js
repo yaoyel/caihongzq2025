@@ -45,10 +45,12 @@ __decorate([
 ], ScaleAnswer.prototype, "submittedAt", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => Scale_1.Scale),
+    (0, typeorm_1.JoinColumn)({ name: 'scale_id' }),
     __metadata("design:type", Scale_1.Scale)
 ], ScaleAnswer.prototype, "scale", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => User_1.User),
+    (0, typeorm_1.JoinColumn)({ name: 'user_id' }),
     __metadata("design:type", User_1.User)
 ], ScaleAnswer.prototype, "user", void 0);
 exports.ScaleAnswer = ScaleAnswer = __decorate([

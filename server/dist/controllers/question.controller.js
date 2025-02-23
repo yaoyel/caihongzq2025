@@ -17,6 +17,7 @@ const routing_controllers_1 = require("routing-controllers");
 const routing_controllers_openapi_1 = require("routing-controllers-openapi");
 const typedi_1 = require("typedi");
 const question_service_1 = require("../services/question.service");
+const routing_controllers_2 = require("routing-controllers");
 let QuestionController = class QuestionController {
     questionService;
     constructor(questionService) {
@@ -89,5 +90,6 @@ __decorate([
 exports.QuestionController = QuestionController = __decorate([
     (0, routing_controllers_1.JsonController)('/questions'),
     (0, typedi_1.Service)(),
+    (0, routing_controllers_2.Authorized)(),
     __metadata("design:paramtypes", [question_service_1.QuestionService])
 ], QuestionController);

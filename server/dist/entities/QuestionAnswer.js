@@ -56,9 +56,11 @@ __decorate([
 ], QuestionAnswer.prototype, "lastModifiedAt", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => Question_1.Question),
+    (0, typeorm_1.JoinColumn)({ name: 'question_id' }),
     __metadata("design:type", Question_1.Question)
 ], QuestionAnswer.prototype, "question", void 0);
 __decorate([
+    (0, typeorm_1.JoinColumn)({ name: 'user_id' }),
     (0, typeorm_1.ManyToOne)(() => User_1.User),
     __metadata("design:type", User_1.User)
 ], QuestionAnswer.prototype, "user", void 0);
