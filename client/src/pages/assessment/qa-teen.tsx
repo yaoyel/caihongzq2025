@@ -379,6 +379,7 @@ const TeenQAAssessment: React.FC = () => {
                       icon={answer ? <CheckCircleOutlined style={{ color: '#52c41a' }} /> : null}
                     >
                       <Space direction="vertical" style={{ width: '100%', gap: '4px' }}>
+                        <Typography.Text strong>Q{globalIndex + 1}</Typography.Text>
                         <div className="question-preview">
                           <span className="question-number">Q{globalIndex + 1}:</span>
                           <span className="question-content">{question.content}</span>

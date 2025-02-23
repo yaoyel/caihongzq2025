@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Layout, Typography, Card, Button, Steps, Space, Progress, Menu, message } from 'antd';
+const { Text } = Typography;
 import type { MenuItemProps } from 'antd';
 import styled from '@emotion/styled';
 import { ArrowLeftOutlined, ArrowRightOutlined, SendOutlined, HomeOutlined, CheckCircleOutlined } from '@ant-design/icons';
@@ -353,8 +354,8 @@ const AdultQAAssessment: React.FC = () => {
                 }
               >
                 {getThemeQuestions(themeIndex, questions).map((question, index) => {
-                  const answer = summary?.answers.find((a: Answer) => a.questionId === question.id);
                   const globalIndex = themeIndex * 12 + index;
+                  const answer = summary?.answers.find((a: Answer) => a.questionId === question.id);
                   return (
                     <StyledMenuItem
                       key={question.id}
