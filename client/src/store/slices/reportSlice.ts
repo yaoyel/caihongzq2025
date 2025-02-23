@@ -1,12 +1,16 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface ElementAnalysis {
+  element_id: number;
   dimension: string;
   like_element: string;
   talent_element: string;
   category: '有喜欢有天赋' | '有喜欢没天赋' | '有天赋没喜欢' | '没喜欢没天赋' | '待确认';
   hasInterest: boolean | null;
   hasTalent: boolean | null;
+  like_status: string;
+  talent_status: string;
+  status: string;
 }
 
 interface ReportState {

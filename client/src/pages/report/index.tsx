@@ -61,6 +61,38 @@ const PrintableContent = styled.div`
   }
 `;
 
+// 添加课堂表现与元素ID的映射
+const CLASSROOM_PERFORMANCE_ELEMENTS = {
+  '看': {
+    title: '看黑板板书（看）',
+    elementIds: [4, 30, 32]
+  },
+  '听': {
+    title: '听老师讲课（听）',
+    elementIds: [5, 34, 36]
+  },
+  '说': {
+    title: '积极回答问题（说）',
+    elementIds: [10, 38]
+  },
+  '记': {
+    title: '记忆老师授课内容（记）',
+    elementIds: [15, 43]
+  },
+  '想': {
+    title: '跟随老师提问思考（想）',
+    elementIds: [19, 46, 47]
+  },
+  '做': {
+    title: '完成作业（做）',
+    elementIds: [21, 22, 51]
+  },
+  '运动': {
+    title: '上好体育课（运动）',
+    elementIds: [25, 26, 27, 28, 53, 54, 55, 56]
+  }
+};
+
 const ReportPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -171,35 +203,34 @@ const ReportPage: React.FC = () => {
                             <Panel header="有喜欢有天赋" key="1">
                               <List
                                 grid={{ gutter: 16, column: 4 }}
-                                dataSource={elementAnalysis.filter(item => item.hasInterest && item.hasTalent).sort(sortByDimension)}
+                                dataSource={elementAnalysis
+                                  .filter(item => item.category === '有喜欢有天赋')
+                                  .sort(sortByDimension)
+                                }
                                 renderItem={item => (
                                   <List.Item>
-                                    <Tooltip title={`${item.dimension}：${item.like_element || '暂无'}/${item.talent_element || '暂无'}`}>
-                                      <Card title={item.dimension} size="small">
-                                        <Space direction="vertical" style={{ width: '100%' }}>
-                                          <div>
-                                            <Text type="secondary">喜欢：</Text>
-                                            <Tooltip title={item.like_status}>
-                                              <Text>{item.like_element}</Text>
-                                            </Tooltip>
-                                          </div>
-                                          <div>
-                                            <Text type="secondary">天赋：</Text>
-                                            <Tooltip title={item.talent_status}>
-                                              <Text>{item.talent_element}</Text>
-                                            </Tooltip>
-                                          </div>
-                                          <Space>
-                                            <Tooltip title={item.like_status}>
-                                              <Tag color="green">喜欢</Tag>
-                                            </Tooltip>
-                                            <Tooltip title={item.talent_status}>
-                                              <Tag color="blue">有天赋</Tag>
-                                            </Tooltip>
-                                          </Space>
-                                        </Space>
-                                      </Card>
-                                    </Tooltip>
+                                    <Card title={item.dimension} size="small">
+                                      <Space direction="vertical" style={{ width: '100%' }}>
+                                        <div>
+                                          <Text type="secondary">喜欢：</Text>
+                                          <Tooltip title={item.like_status}>
+                                            <Tag color={item.category.includes('有喜欢') ? 'green' : 'default'}>
+                                              {item.like_element}
+                                              {item.category.includes('有喜欢') ? ' ✓' : ' ✗'}
+                                            </Tag>
+                                          </Tooltip>
+                                        </div>
+                                        <div>
+                                          <Text type="secondary">天赋：</Text>
+                                          <Tooltip title={item.talent_status}>
+                                            <Tag color={item.category.includes('有天赋') ? 'blue' : 'default'}>
+                                              {item.talent_element}
+                                              {item.category.includes('有天赋') ? ' ✓' : ' ✗'}
+                                            </Tag>
+                                          </Tooltip>
+                                        </div>
+                                      </Space>
+                                    </Card>
                                   </List.Item>
                                 )}
                               />
@@ -215,19 +246,21 @@ const ReportPage: React.FC = () => {
                                         <div>
                                           <Text type="secondary">喜欢：</Text>
                                           <Tooltip title={item.like_status}>
-                                            <Text>{item.like_element}</Text>
+                                            <Tag color={item.category.includes('有喜欢') ? 'green' : 'default'}>
+                                              {item.like_element}
+                                              {item.category.includes('有喜欢') ? ' ✓' : ' ✗'}
+                                            </Tag>
                                           </Tooltip>
                                         </div>
                                         <div>
                                           <Text type="secondary">天赋：</Text>
                                           <Tooltip title={item.talent_status}>
-                                            <Text>{item.talent_element}</Text>
+                                            <Tag color={item.category.includes('有天赋') ? 'blue' : 'default'}>
+                                              {item.talent_element}
+                                              {item.category.includes('有天赋') ? ' ✓' : ' ✗'}
+                                            </Tag>
                                           </Tooltip>
                                         </div>
-                                        <Space>
-                                          <Tag color="green">有喜欢</Tag>
-                                          <Tag color="default">无天赋</Tag>
-                                        </Space>
                                       </Space>
                                     </Card>
                                   </List.Item>
@@ -240,26 +273,28 @@ const ReportPage: React.FC = () => {
                                 dataSource={elementAnalysis.filter(item => item.category === '有天赋没喜欢').sort(sortByDimension)}
                                 renderItem={item => (
                                   <List.Item>
-                                    <Tooltip title={item.status}>
-                                      <Card title={item.dimension} size="small">
-                                        <Space direction="vertical" style={{ width: '100%' }}>
+                                    <Card title={item.dimension} size="small">
+                                      <Space direction="vertical" style={{ width: '100%' }}>
                                         <div>
                                           <Text type="secondary">喜欢：</Text>
-                                          <Text>{item.like_element}</Text>
+                                          <Tooltip title={item.like_status}>
+                                            <Tag color={item.category.includes('有喜欢') ? 'green' : 'default'}>
+                                              {item.like_element}
+                                              {item.category.includes('有喜欢') ? ' ✓' : ' ✗'}
+                                            </Tag>
+                                          </Tooltip>
                                         </div>
                                         <div>
                                           <Text type="secondary">天赋：</Text>
-                                          <Text>{item.talent_element}</Text>
-                                        </div>
-                                        <Space>
-                                          <Tag color="default">无喜欢</Tag>
-                                          <Tooltip title={item.talent_element}>
-                                            <Tag color="blue">有天赋</Tag>
+                                          <Tooltip title={item.talent_status}>
+                                            <Tag color={item.category.includes('有天赋') ? 'blue' : 'default'}>
+                                              {item.talent_element}
+                                              {item.category.includes('有天赋') ? ' ✓' : ' ✗'}
+                                            </Tag>
                                           </Tooltip>
-                                        </Space>
+                                        </div>
                                       </Space>
-                                      </Card>
-                                    </Tooltip>
+                                    </Card>
                                   </List.Item>
                                 )}
                               />
@@ -270,24 +305,28 @@ const ReportPage: React.FC = () => {
                                 dataSource={elementAnalysis.filter(item => item.category === '没喜欢没天赋').sort(sortByDimension)}
                                 renderItem={item => (
                                   <List.Item>
-                                    <Tooltip title={item.status}>
-                                      <Card title={item.dimension} size="small">
-                                        <Space direction="vertical" style={{ width: '100%' }}>
+                                    <Card title={item.dimension} size="small">
+                                      <Space direction="vertical" style={{ width: '100%' }}>
                                         <div>
                                           <Text type="secondary">喜欢：</Text>
-                                          <Text>{item.like_element}</Text>
+                                          <Tooltip title={item.like_status}>
+                                            <Tag color={item.category.includes('有喜欢') ? 'green' : 'default'}>
+                                              {item.like_element}
+                                              {item.category.includes('有喜欢') ? ' ✓' : ' ✗'}
+                                            </Tag>
+                                          </Tooltip>
                                         </div>
                                         <div>
                                           <Text type="secondary">天赋：</Text>
-                                          <Text>{item.talent_element}</Text>
+                                          <Tooltip title={item.talent_status}>
+                                            <Tag color={item.category.includes('有天赋') ? 'blue' : 'default'}>
+                                              {item.talent_element}
+                                              {item.category.includes('有天赋') ? ' ✓' : ' ✗'}
+                                            </Tag>
+                                          </Tooltip>
                                         </div>
-                                        <Space>
-                                          <Tag color="default">无兴趣</Tag>
-                                          <Tag color="default">无天赋</Tag>
-                                        </Space>
                                       </Space>
-                                      </Card>
-                                    </Tooltip>
+                                    </Card>
                                   </List.Item>
                                 )}
                               />
@@ -299,20 +338,26 @@ const ReportPage: React.FC = () => {
                                 renderItem={item => (
                                   <List.Item>
                                     <Card title={item.dimension} size="small">
-                                      <Space direction="vertical">
+                                      <Space direction="vertical" style={{ width: '100%' }}>
                                         <Space>
                                           <Tag color="warning">待确认</Tag>
                                         </Space>
                                         <div>
                                           <Text type="secondary">喜欢：</Text>
                                           <Tooltip title={item.like_status}>
-                                            <Text>{item.like_element}</Text>
+                                            <Tag color={item.category.includes('有喜欢') ? 'green' : 'default'}>
+                                              {item.like_element}
+                                              {item.category.includes('有喜欢') ? ' ✓' : ' ✗'}
+                                            </Tag>
                                           </Tooltip>
                                         </div>
                                         <div>
                                           <Text type="secondary">天赋：</Text>
                                           <Tooltip title={item.talent_status}>
-                                            <Text>{item.talent_element}</Text>
+                                            <Tag color={item.category.includes('有天赋') ? 'blue' : 'default'}>
+                                              {item.talent_element}
+                                              {item.category.includes('有天赋') ? ' ✓' : ' ✗'}
+                                            </Tag>
                                           </Tooltip>
                                         </div>
                                       </Space>
@@ -341,27 +386,21 @@ const ReportPage: React.FC = () => {
                                           <div>
                                             <Text type="secondary">喜欢：</Text>
                                             <Tooltip title={item.like_status}>
-                                              <Text>{item.like_element}</Text>
+                                              <Tag color={item.category.includes('有喜欢') ? 'green' : 'default'}>
+                                                {item.like_element}
+                                                {item.category.includes('有喜欢') ? ' ✓' : ' ✗'}
+                                              </Tag>
                                             </Tooltip>
                                           </div>
                                           <div>
                                             <Text type="secondary">天赋：</Text>
                                             <Tooltip title={item.talent_status}>
-                                              <Text>{item.talent_element}</Text>
+                                              <Tag color={item.category.includes('有天赋') ? 'blue' : 'default'}>
+                                                {item.talent_element}
+                                                {item.category.includes('有天赋') ? ' ✓' : ' ✗'}
+                                              </Tag>
                                             </Tooltip>
                                           </div>
-                                          <Space>
-                                            <Tooltip title={item.like_status}>
-                                              <Tag color={item.category.includes('有喜欢') ? 'green' : 'default'}>
-                                                {item.category.includes('有喜欢') ? '喜欢' : '无喜欢'}
-                                              </Tag>
-                                            </Tooltip>
-                                            <Tooltip title={item.talent_status}>
-                                              <Tag color={item.category.includes('有天赋') ? 'blue' : 'default'}>
-                                                {item.category.includes('有天赋') ? '有天赋' : '无天赋'}
-                                              </Tag>
-                                            </Tooltip>
-                                          </Space>
                                         </Space>
                                       </Card>
                                     </List.Item>
@@ -392,12 +431,12 @@ const ReportPage: React.FC = () => {
                                             <div>
                                               <Text type="secondary">喜欢：</Text>
                                               <Tooltip title={item.like_status}>
-                                                <Text>{item.like_element}</Text>
+                                                <Tag color={item.category.includes('有喜欢') ? 'green' : 'default'}>
+                                                  {item.like_element}
+                                                  {item.category.includes('有喜欢') ? ' ✓' : ' ✗'}
+                                                </Tag>
                                               </Tooltip>
                                             </div>
-                                            <Tag color={item.category.includes('有喜欢') ? 'green' : 'default'}>
-                                              {item.category.includes('有喜欢') ? '喜欢' : '无喜欢'}
-                                            </Tag>
                                           </Space>
                                         </Card>
                                       </List.Item>
@@ -419,12 +458,12 @@ const ReportPage: React.FC = () => {
                                             <div>
                                               <Text type="secondary">天赋：</Text>
                                               <Tooltip title={item.talent_status}>
-                                                <Text>{item.talent_element}</Text>
+                                                <Tag color={item.category.includes('有天赋') ? 'blue' : 'default'}>
+                                                  {item.talent_element}
+                                                  {item.category.includes('有天赋') ? ' ✓' : ' ✗'}
+                                                </Tag>
                                               </Tooltip>
                                             </div>
-                                            <Tag color={item.category.includes('有天赋') ? 'blue' : 'default'}>
-                                              {item.category.includes('有天赋') ? '有天赋' : '无天赋'}
-                                            </Tag>
                                           </Space>
                                         </Card>
                                       </List.Item>
@@ -488,17 +527,60 @@ const ReportPage: React.FC = () => {
 
             <ReportCard title="课堂表现分析">
               <Row gutter={24}>
-                {['专注度', '参与度', '理解力', '表达力', '合作性', '自主性', '创造力'].map(item => (
-                  <Col span={8} key={item}>
-                    <Card title={item} bordered={false}>
-                      <Progress
-                        type="circle"
-                        percent={Math.floor(Math.random() * 30) + 70}
-                        format={percent => `${percent}分`}
-                      />
-                    </Card>
-                  </Col>
-                ))}
+                {Object.entries(CLASSROOM_PERFORMANCE_ELEMENTS).map(([dimension, config]) => {
+                  const dimensionElements = elementAnalysis.filter(item => 
+                    item.dimension === dimension && 
+                    config.elementIds.includes(item.element_id)
+                  );
+
+                  return (
+                    <Col span={8} key={dimension}>
+                      <Card 
+                        title={config.title} 
+                        bordered={false}
+                      >
+                        <Space direction="vertical" style={{ width: '100%' }}>
+                          <div>
+                            <Text type="secondary">喜欢：</Text>
+                            <Space wrap>
+                              {dimensionElements
+                                .filter(element => element.like_status)
+                                .map(element => (
+                                  <Tooltip 
+                                    key={element.element_id}
+                                    title={element.like_status}
+                                  >
+                                    <Tag color={element.category.includes('有喜欢') ? 'green' : 'default'}>
+                                      {element.like_element}
+                                      {element.category.includes('有喜欢') ? ' ✓' : ' ✗'}
+                                    </Tag>
+                                  </Tooltip>
+                                ))}
+                            </Space>
+                          </div>
+                          <div>
+                            <Text type="secondary">天赋：</Text>
+                            <Space wrap>
+                              {dimensionElements
+                                .filter(element => element.talent_status)
+                                .map(element => (
+                                  <Tooltip 
+                                    key={element.element_id}
+                                    title={element.talent_status}
+                                  >
+                                    <Tag color={element.category.includes('有天赋') ? 'blue' : 'default'}>
+                                      {element.talent_element}
+                                      {element.category.includes('有天赋') ? ' ✓' : ' ✗'}
+                                    </Tag>
+                                  </Tooltip>
+                                ))}
+                            </Space>
+                          </div>
+                        </Space>
+                      </Card>
+                    </Col>
+                  );
+                })}
               </Row>
             </ReportCard>
 
