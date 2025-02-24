@@ -57,6 +57,7 @@ async function bootstrap() {
 
         // 6. 注入微信路由
         app.use(wechatRouter.routes());
+        app.use(jwtMiddleware);
         app.use(wechatRouter.allowedMethods());
 
         // 7. 配置路由控制器

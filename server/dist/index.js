@@ -34,8 +34,17 @@ async function bootstrap() {
         const app = new koa_1.default();
         // 4. 基础中间件
         app.use((0, cors_1.default)());
-        app.use((0, koa_bodyparser_1.default)());
+        app.use((0, koa_bodyparser_1.default)({
+            enableTypes: ['json', 'form', 'text'],
+            extendTypes: {
+                text: ['text/xml', 'application/xml']
+            },
+            onerror: (err, ctx) => {
+                ctx.throw(422, '请求体解析失败');
+            }
+        }));
         app.use((0, koa_logger_1.default)());
+        // app.use(jwtMiddleware)
         // 5. 注册请求日志中间件
         const requestLogger = typedi_1.Container.get(request_logger_middleware_1.RequestLoggerMiddleware);
         app.use(requestLogger.use.bind(requestLogger));

@@ -28,6 +28,11 @@ let UserController = class UserController {
     async getUser(id) {
         return await this.userService.findOne(id);
     }
+    async me(ctx) {
+        const userId = ctx.state.user.id;
+        console.log(ctx.state);
+        return await this.userService.findOne(userId);
+    }
 };
 exports.UserController = UserController;
 __decorate([
@@ -39,14 +44,21 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "login", null);
 __decorate([
-    (0, routing_controllers_1.Get)('/:id'),
-    (0, routing_controllers_1.Authorized)(),
+    (0, routing_controllers_1.Get)('/getById/:id'),
     (0, routing_controllers_openapi_1.OpenAPI)({ summary: '获取用户信息' }),
     __param(0, (0, routing_controllers_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "getUser", null);
+__decorate([
+    (0, routing_controllers_1.Get)('/me'),
+    (0, routing_controllers_openapi_1.OpenAPI)({ summary: '获取用户信息' }),
+    __param(0, (0, routing_controllers_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "me", null);
 exports.UserController = UserController = __decorate([
     (0, routing_controllers_1.JsonController)('/users'),
     (0, typedi_1.Service)(),

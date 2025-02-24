@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Button, Row, Col, Space, Card, Carousel, Statistic, message, Spin } from 'antd';
-import { WechatOutlined, SafetyCertificateOutlined, PlayCircleOutlined, BookOutlined } from '@ant-design/icons';
+import { Layout, Typography, Button, Row, Col, Space, Card, Carousel, Statistic, message, Spin, Menu, Dropdown } from 'antd';
+import { WechatOutlined, SafetyCertificateOutlined, PlayCircleOutlined, BookOutlined, UserOutlined, SettingOutlined, LogoutOutlined, CaretDownOutlined } from '@ant-design/icons';
 import styled from '@emotion/styled';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { getApiUrl } from '../../config';
+import Avatar from '../../components/Avatar';
 
 const { Title, Text, Paragraph } = Typography;
 const { Content } = Layout;
@@ -44,6 +46,16 @@ const Logo = styled.div`
   color: #333;
 `;
 
+const UserInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const UserAvatar = styled(Avatar)`
+  cursor: pointer;
+  background: #1890ff;
+`;
 const MainContent = styled(Content)`
   padding: 40px;
   position: relative;
@@ -139,7 +151,41 @@ const LoginPage: React.FC = () => {
   const [polling, setPolling] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [userInfo, setUserInfo] = useState<any>(null);
 
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setUserInfo(user);
+      } catch (error) {
+        console.error('解析用户信息失败:', error);
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    delete axios.defaults.headers.common['Authorization'];
+    navigate('/login');
+  };
+
+  const userMenu = (
+    <Menu>
+      <Menu.Item key="profile">
+        <UserOutlined /> 个人资料
+      </Menu.Item>
+      <Menu.Item key="settings">
+        <SettingOutlined /> 设置
+      </Menu.Item>
+      <Menu.Divider />
+      <Menu.Item key="logout" onClick={handleLogout}>
+        <LogoutOutlined /> 退出登录
+      </Menu.Item>
+    </Menu>
+  );
   // 获取登录二维码
   const getLoginQrCode = async () => {
     try {
@@ -192,14 +238,20 @@ const LoginPage: React.FC = () => {
     const timer = setInterval(async () => {
       try {
         const response = await axios.get(`http://stjauc.natappfree.cc/api/wechat/check-login?scene=${scene}`);
-        const { success, user } = response.data;
+        const { success, user,token } = response.data;
         
         if (success) {
           clearInterval(timer);
           setPolling(false);
-          // 存储用户信息
+          // 存储用户信息和token
           localStorage.setItem('user', JSON.stringify(user));
+          localStorage.setItem('token', token);
+          
+          // 设置全局请求头
+          axios.defaults.headers.common['Authorization'] = `Bearer ${user.token}`;
+          console.log(user,token)
           message.success('登录成功');
+
           navigate('/home');
         }
       } catch (error) {
@@ -216,10 +268,43 @@ const LoginPage: React.FC = () => {
     };
   };
 
-  // 初始化时获取二维码
+  // 检查本地存储并尝试自动登录
   useEffect(() => {
-    getLoginQrCode();
-  }, []);
+    const checkLocalAuth = async () => {
+      const token = localStorage.getItem('token');
+      const userStr = localStorage.getItem('user');
+
+      if (token && userStr) {
+        try {
+          // 设置全局请求头
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          
+          // 获取用户信息
+          const response = await axios.get(getApiUrl('/users/me'));
+          
+          if (response.status === 200) {
+            // 更新用户信息
+            localStorage.setItem('user', JSON.stringify(response.data));
+            message.success('自动登录成功');
+            navigate('/home');
+            return;
+          }
+        } catch (error: any) {
+          if (error.response?.status === 401) {
+            // 清除无效的认证信息
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+          }
+          console.error('自动登录失败:', error);
+        }
+      }
+      
+      // 如果没有本地认证信息或认证失败，则获取登录二维码
+      getLoginQrCode();
+    };
+
+    checkLocalAuth();
+  }, [navigate]);
 
   const handleWechatLogin = () => {
     if (!polling) {
@@ -236,6 +321,19 @@ const LoginPage: React.FC = () => {
             中国科学院心理研究所战略合作
           </Text>
         </Logo>
+        {userInfo && (
+          <UserInfo>
+            <Dropdown overlay={userMenu} placement="bottomRight">
+              <Space>
+                <UserAvatar size="large">
+                  {userInfo.nickname?.[0] || userInfo.username?.[0] || 'U'}
+                </UserAvatar>
+                <Text strong>{userInfo.nickname || userInfo.username}</Text>
+                <CaretDownOutlined />
+              </Space>
+            </Dropdown>
+          </UserInfo>
+        )}
       </NavBar>
 
       <MainContent>

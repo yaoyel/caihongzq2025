@@ -9,6 +9,7 @@ const fast_xml_parser_1 = require("fast-xml-parser");
 const data_source_1 = require("../data-source");
 const User_1 = require("../entities/User");
 const helper_1 = require("../utils/helper");
+const jwt_1 = require("../utils/jwt");
 const router = new router_1.default({ prefix: '/api/wechat' });
 const userRepository = data_source_1.AppDataSource.getRepository(User_1.User);
 // 存储scene和用户信息的映射
@@ -176,12 +177,15 @@ router.all('/callback', async (ctx) => {
                     user.avatarUrl = userInfo.data.headimgurl;
                     await userRepository.save(user);
                     console.log('用户信息已保存:', user);
+                    // 生成JWT token
+                    const token = jwt_1.JwtUtil.generateToken({ userId: user.id, nickname: user.nickname, avatarUrl: user.avatarUrl });
                     // 更新scene映射
                     const sceneInfo = sceneMap.get(sceneStr);
                     if (!sceneInfo.scanned) {
                         sceneMap.set(sceneStr, {
                             ...sceneInfo,
                             user,
+                            token,
                             scanned: true,
                             scanTime: Date.now()
                         });
@@ -229,7 +233,8 @@ router.get('/check-login', async (ctx) => {
                 id: sceneInfo.user.id,
                 nickname: sceneInfo.user.nickname,
                 avatarUrl: sceneInfo.user.avatarUrl
-            }
+            },
+            token: sceneInfo.token
         };
     }
     else {
