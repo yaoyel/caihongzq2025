@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback } from 'react';
-import { Layout, Typography, Card, Row, Col, Collapse, Tabs, Progress, List, Button, message, Space, Alert, Tag, Tooltip } from 'antd';
+import { Layout, Typography, Card, Row, Col, Collapse, Tabs, List, Button, message, Space, Alert, Tag, Tooltip } from 'antd';
 import styled from '@emotion/styled';
 import { HomeOutlined, DownloadOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';

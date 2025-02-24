@@ -15,7 +15,8 @@ export async function jwtMiddleware(ctx: Context, next: Next) {
             '/api/wechat/qrcode',
             '/api/wechat/callback',
             '/api/wechat/check-login',
-           '/ api/wechat/check'
+           '/ api/wechat/check',
+           '/api/chat/stream'
         ];
 
         if (publicPaths.includes(ctx.path)) {
