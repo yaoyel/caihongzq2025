@@ -29,8 +29,10 @@ let UserController = class UserController {
         return await this.userService.findOne(id);
     }
     async me(ctx) {
-        const userId = ctx.state.user.id;
-        console.log(ctx.state);
+        if (!ctx?.state?.user?.userId) {
+            throw new Error('未获取到用户信息');
+        }
+        const userId = ctx.state.user.userId;
         return await this.userService.findOne(userId);
     }
 };

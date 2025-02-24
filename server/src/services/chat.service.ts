@@ -20,8 +20,8 @@ export class ChatService {
         
         // 初始化 OpenAI 客户端
         this.openai = new OpenAI({
-            apiKey: process.env.DEEPSEEK_API_KEY || "sk-7b5d228aeb7e41a988bfbc1cf61fbd48",
-            baseURL: process.env.DEEPSEEK_API_BASE_URL || 'https://api.deepseek.com/v1'
+            apiKey: process.env.DEEPSEEK_API_KEY  ,
+            baseURL: process.env.DEEPSEEK_API_BASE_URL || 'https://api.deepseek.com'
         });
 
         this.eventEmitter = new EventEmitter();
@@ -50,88 +50,94 @@ export class ChatService {
     }
 
     async processMessage(data: { sessionId: number; role: "user" | "assistant"; content: string }) {
-        // 保存用户消息
-        const userMessage = await this.addMessage(data.sessionId, data.role, data.content);
-
-        if (data.role === 'user') {
-            try {
-                const sessionMessages = await this.getMessages(data.sessionId);
-                const messageHistory = sessionMessages.map(msg => ({
-                    role: msg.role,
-                    content: msg.content
-                }));
-
-                // 创建一个空的 AI 消息用于后续更新
+        try {
+            console.log('开始处理消息:', data);
+            
+            // 保存用户消息
+            const userMessage = await this.addMessage(data.sessionId, data.role, data.content);
+            
+            if (data.role === 'user') {
+                // 创建空的AI消息
                 const aiMessage = await this.addMessage(data.sessionId, 'assistant', '');
-
-                // 使用流式输出获取思考过程
-                const thinkingStream = await this.openai.chat.completions.create({
-                    model: 'deepseek-reasoner',
-                    messages: [
-                        { 
-                            role: 'system', 
-                            content: '请先分析问题并说明思考过程。' 
-                        },
-                        { 
-                            role: 'user', 
-                            content: `请分析以下问题并说明思考过程：${data.content}\n\n历史对话：${messageHistory.map(m => `${m.role}: ${m.content}`).join('\n')}` 
+                
+                try {
+                    // 获取历史消息
+                    const sessionMessages = await this.getMessages(data.sessionId);
+                    const messageHistory = [];
+                    let lastRole: string | null = null;
+                    
+                    // 处理历史消息，确保交替顺序
+                    for (const msg of sessionMessages) {
+                        if (msg.role !== lastRole) {
+                            messageHistory.push({
+                                role: msg.role,
+                                content: msg.content
+                            });
+                            lastRole = msg.role;
                         }
-                    ],
-                    temperature: 0.7,
-                    stream: true
-                });
+                    } 
+                
+                    // 创建流式请求
+                    const stream = await this.openai.chat.completions.create({
+                        model: 'deepseek-reasoner',
+                        messages: [
+                            { 
+                                role: 'system', 
+                                content: 'You are a helpful assistant.' 
+                            },
+                            ...messageHistory,
+                            { role: 'user', content: data.content }
+                        ],
+                        stream: true,
+                        temperature: 0.7,
+                        max_tokens: 2000
+                    });
 
-                let thinking = '';
-                for await (const chunk of thinkingStream) {
-                    const content = chunk.choices[0]?.delta?.content || '';
-                    thinking += content;
-                    // 实时发送思考过程更新
-                    this.sendStreamUpdate(aiMessage.id, '', thinking);
-                }
+                    let content = '';
 
-                // 使用流式输出生成最终回答
-                const answerStream = await this.openai.chat.completions.create({
-                    model: 'deepseek-reasoner',
-                    messages: [
-                        { 
-                            role: 'system', 
-                            content: '基于分析给出清晰的回答。' 
-                        },
-                        { 
-                            role: 'user', 
-                            content: `${data.content}\n\n分析过程：${thinking}\n\n请基于以上分析给出回答。` 
+                    try {
+                        for await (const chunk of stream) {
+                            const chunkContent = chunk.choices[0]?.delta?.content || '';
+                            if (!chunkContent) continue;
+                            
+                            content += chunkContent;
+                            console.log('收到内容:', chunkContent);
+                            
+                            // 发送实时更新
+                            this.sendStreamUpdate(aiMessage.id, content);
                         }
-                    ],
-                    temperature: 0.7,
-                    stream: true
-                });
 
-                let answer = '';
-                for await (const chunk of answerStream) {
-                    const content = chunk.choices[0]?.delta?.content || '';
-                    answer += content;
-                    // 实时发送回答更新
-                    this.sendStreamUpdate(aiMessage.id, answer, thinking);
-                }
+                        // 保存最终内容
+                        await this.messageRepository.update(aiMessage.id, { 
+                            content: content 
+                        });
 
-                // 更新最终的 AI 消息
-                await this.messageRepository.update(aiMessage.id, { content: answer });
-
-                return { 
-                    userMessage, 
-                    aiMessage: {
-                        ...aiMessage,
-                        content: answer,
-                        thinking
+                    } catch (streamError) {
+                        console.error('流处理错误:', streamError);
+                        this.sendStreamUpdate(aiMessage.id, '抱歉，处理您的请求时出现错误，请稍后重试');
+                        throw streamError;
                     }
-                };
-            } catch (error) {
-                console.error('AI处理消息失败:', error);
-                throw new Error('AI处理消息失败');
-            }
-        }
 
-        return userMessage;
+                    return { userMessage, aiMessage };
+
+                } catch (error) {
+                    console.error('AI处理失败:', error);
+                    // 更新AI消息为错误状态
+                    await this.messageRepository.update(aiMessage.id, { 
+                        content: '抱歉，处理您的请求时出现错误，请稍后重试'
+                    });
+                    throw error;
+                }
+            }
+            return { userMessage };
+        } catch (error) {
+            console.error('消息处理失败:', {
+                error,
+                message: (error as Error).message,
+                stack: (error as Error).stack
+            });
+            throw error;
+        }
     }
 
     async addMessage(sessionId: number, role: "user" | "assistant", content: string) {
@@ -174,7 +180,8 @@ export class ChatService {
     async getMessages(sessionId: number) {
         return this.messageRepository.find({
             where: { sessionId },
-            order: { createdAt: 'ASC' }
+            order: { createdAt: 'ASC' },
+            take: 100
         });
     }
 
@@ -183,12 +190,27 @@ export class ChatService {
     }
 
     // 添加用于发送流式更新的方法
-    private sendStreamUpdate(messageId: number, content: string, thinking: string) {
-        this.eventEmitter.emit('message-update', {
-            messageId,
-            content,
-            thinking,
-            timestamp: new Date().toISOString()
-        });
+    private sendStreamUpdate(messageId: number, content: string) {
+        try {
+            const updateData = {
+                messageId,
+                content  
+            };
+            console.log('发送流更新:', updateData);
+            
+            const eventData = `data: ${JSON.stringify(updateData)}\n\n`;
+            this.eventEmitter.emit('message-update', eventData);
+        } catch (error) {
+            console.error('发送流更新失败:', error);
+        }
+    }
+
+    async deleteMessage(id: number) {
+        try {
+            await this.messageRepository.delete(id);
+        } catch (error) {
+            console.error('删除消息失败:', error);
+            throw new Error('删除消息失败');
+        }
     }
 }

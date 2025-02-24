@@ -28,11 +28,11 @@ const StyledSider = styled(Sider)`
 
 const ChatList = styled(List)`
   .ant-list-item {
-    padding: 12px 20px;
+    padding: 10px 16px;
     cursor: pointer;
     transition: all 0.3s;
     border-radius: 0;
-    margin: 4px 8px;
+    margin: 3px 6px;
     
     &:hover {
       background: #e6f7ff;
@@ -40,6 +40,10 @@ const ChatList = styled(List)`
     
     &.active {
       background: #e6f7ff;
+    }
+
+    .ant-typography {
+      font-size: 13px;
     }
   }
 `;
@@ -54,7 +58,7 @@ const ChatContainer = styled(Layout)`
   min-height: 100vh;
 `;
 
-const MessageList = styled(List)`
+const MessageList = styled(List<Message>)`
   flex: 1;
   padding: 0 24px;
   background: #fff;
@@ -70,66 +74,105 @@ const MessageList = styled(List)`
   }
 `;
 
-const MessageBubble = styled.div<{ isUser: boolean }>`
+const StyledMessageBubble = styled.div<{ isUser: boolean }>`
   background-color: ${props => props.isUser ? '#e6f7ff' : '#f5f5f5'};
-  padding: 12px 16px;
-  border-radius: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
   display: inline-block;
   border: 1px solid ${props => props.isUser ? '#91d5ff' : '#e8e8e8'};
+  max-width: 100%;
   
   .markdown-content {
-    font-size: 15px;
-    line-height: 1.6;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #333;
     
     p {
       margin: 0;
       display: inline;
-      white-space: pre;
+      white-space: pre-wrap;
       word-wrap: break-word;
       word-break: break-word;
     }
     
     code {
+      font-size: 12px;
       background-color: rgba(0, 0, 0, 0.05);
       padding: 2px 4px;
-      border-radius: 4px;
-      font-family: monospace;
-      white-space: pre;
+      border-radius: 3px;
+      font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
     }
     
     pre {
-      background-color: rgba(0, 0, 0, 0.05);
-      padding: 12px;
+      padding: 10px;
       border-radius: 4px;
-      margin: 8px 0;
-      overflow-x: auto;
+      margin: 6px 0;
+    }
+  }
+
+  .thinking {
+    margin-bottom: 8px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 8px;
+    
+    &-content {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.5;
       
-      code {
-        background-color: transparent;
-        padding: 0;
+      p {
+        margin: 4px 0;
       }
     }
   }
 `;
 
+// 修改加载动画样式
+const LoadingDots = styled.div`
+  display: inline-block;
+  font-size: 13px;
+  color: #666;
+  &::after {
+    content: '...';
+    animation: dots 1.5s steps(4, end) infinite;
+  }
+`;
+
+// 修改消息气泡组件
+const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
+  return (
+    <StyledMessageBubble isUser={message.isUser}>
+      <div className="markdown-content">
+        {message.content ? (
+          <ReactMarkdown>{message.content}</ReactMarkdown>
+        ) : !message.isUser ? (
+          <LoadingDots>思考中</LoadingDots>
+        ) : null}
+      </div>
+    </StyledMessageBubble>
+  );
+};
+
 const InputContainer = styled.div`
-  padding: 24px 24px;
+  padding: 16px;
   background: #fff;
   border-top: 1px solid #f0f0f0;
   display: flex;
-  gap: 16px;
+  gap: 10px;
   align-items: flex-start;
   
   .ant-input-textarea {
     flex: 1;
     textarea {
-      padding: 16px 20px;
-      font-size: 16px;
-      min-height: 120px;
-      border: 2px solid #e8e8e8;
-      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 13px;
+      min-height: 90px;
+      border: 1px solid #e8e8e8;
+      border-radius: 6px;
       resize: none;
       transition: all 0.3s ease;
+      will-change: border-color;
       
       &:hover {
         border-color: #40a9ff;
@@ -144,26 +187,27 @@ const InputContainer = styled.div`
   
   .send-button {
     height: auto;
-    width: 100px;
-    padding: 16px;
-    font-size: 16px;
+    padding: 10px 14px;
+    font-size: 13px;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
-    gap: 8px;
+    gap: 6px;
+    border-radius: 6px;
     
     .anticon {
-      font-size: 24px;
+      font-size: 14px;
     }
   }
 `;
 
 interface Message {
-  id: string;
+  id: number;
   content: string;
   isUser: boolean;
   timestamp: Date;
+  thinking?: string;
+  role: 'user' | 'assistant';
 }
 
 interface Chat {
@@ -180,6 +224,87 @@ const ChatPage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [activeChat, setActiveChat] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    let eventSource: EventSource | null = null;
+
+    const setupEventSource = () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      console.log('建立SSE连接...');
+      eventSource = new EventSource(`${getApiUrl('/chat/stream')}?token=${encodeURIComponent(token)}`);
+
+      eventSource.onopen = () => {
+        console.log('SSE连接已建立');
+      };
+
+      eventSource.addEventListener('message-update', (event) => {
+        try {
+          if (!event.data) {
+            console.log('收到空消息');
+            return;
+          }
+
+          let data;
+          try {
+            const parsedData = JSON.parse(event.data);
+            if (typeof parsedData === 'string' && parsedData.startsWith('data: ')) {
+              data = JSON.parse(parsedData.slice(6));
+            } else {
+              data = parsedData;
+            }
+          } catch (e) {
+            console.error('JSON解析失败:', e);
+            return;
+          }
+
+          // 直接更新最后一条消息
+          setMessages(prevMessages => {
+            const newMessages = [...prevMessages];
+            const lastMessage = newMessages[newMessages.length - 1];
+            
+            if (lastMessage && !lastMessage.isUser) {
+              lastMessage.content = data.content;
+              if (data.content) {
+                setIsLoading(false); // 收到内容时解除加载状态
+              }
+            }
+            
+            return newMessages;
+          });
+
+          // 滚动到底部
+          requestAnimationFrame(() => {
+            if (messageListRef.current) {
+              messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+            }
+          });
+
+        } catch (error) {
+          console.error('处理消息更新失败:', error);
+          setIsLoading(false); // 出错时也解除加载状态
+        }
+      });
+
+      eventSource.onerror = (error) => {
+        console.error('SSE连接错误:', error);
+        eventSource?.close();
+        setTimeout(setupEventSource, 3000);
+      };
+    };
+
+    setupEventSource();
+    return () => {
+      console.log('关闭SSE连接');
+      eventSource?.close();
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log('消息列表已更新:', messages);
+  }, [messages]);
 
   useEffect(() => {
     fetchChats();
@@ -192,10 +317,14 @@ const ChatPage: React.FC = () => {
   }, [activeChat]);
 
   useEffect(() => {
-    if (messageListRef.current) {
-      const element = messageListRef.current;
-      element.scrollTop = element.scrollHeight;
-    }
+    const scrollToBottom = () => {
+      if (messageListRef.current) {
+        const element = messageListRef.current;
+        element.scrollTop = element.scrollHeight;
+      }
+    };
+
+    requestAnimationFrame(scrollToBottom);
   }, [messages]);
 
   const getUserId = () => {
@@ -241,7 +370,7 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  const fetchMessages = async (chatId: string) => {
+  const fetchMessages = async (sessionId: string) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -250,87 +379,94 @@ const ChatPage: React.FC = () => {
         return;
       }
 
-      const response = await axios.get(getApiUrl(`/chat/sessions/${chatId}/messages`), {
+      const response = await axios.get(getApiUrl(`/chat/sessions/${sessionId}/messages`), {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
+      
       if (response.data && Array.isArray(response.data)) {
-        setMessages(response.data.map((msg: any) => ({
-          id: msg.id,
+        const messages = response.data.map((msg: any) => ({
+          id: Number(msg.id),
           content: msg.content,
           isUser: msg.role === 'user',
-          timestamp: new Date(msg.createdAt)
-        })));
+          role: msg.role as 'user' | 'assistant',
+          timestamp: new Date(msg.createdAt),
+          thinking: msg.thinking || ''
+        }));
+        console.log('获取到的消息:', messages);
+        setMessages(messages);
       } else {
         setMessages([]);
       }
     } catch (error) {
       console.error('获取消息失败:', error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        message.error('登录已过期，请重新登录');
-        navigate('/login');
-      } else {
-        message.error('获取消息失败');
-      }
+      message.error('获取消息失败');
     }
   };
 
+  const handleInputChange = React.useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputValue(e.target.value);
+  }, []);
+
   const handleSend = async () => {
-    if (!inputValue.trim() || !activeChat) return;
+    if (!inputValue.trim() || !activeChat || isLoading) return;
 
-    const userId = getUserId();
-    if (!userId) return;
-
-    const token = localStorage.getItem('token');
-    if (!token) {
-      message.error('请先登录');
-      navigate('/login');
-      return;
-    }
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      content: inputValue.trim(),
-      isUser: true,
-      timestamp: new Date()
-    };
+    const currentInput = inputValue.trim();
+    setInputValue('');
+    setIsLoading(true);
 
     try {
-      setMessages(prev => [...prev, newMessage]);
-      const currentInput = inputValue.trim();
-      setInputValue('');
+        const response = await fetch(getApiUrl('/chat/messages'), {
+            method: 'POST',
+            body: JSON.stringify({
+                userId: getUserId(),
+                sessionId: activeChat,
+                content: currentInput,
+                role: 'user' as const
+            }),
+            headers: getAuthHeaders()
+        });
 
-      const response = await axios.post(getApiUrl('/chat/messages'), {
-        userId,
-        content: currentInput,
-        sessionId: activeChat,
-        role: 'user'
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-      });
 
-      const { aiMessage } = response.data;
-      if (aiMessage) {
-        setMessages(prev => [...prev, {
-          id: aiMessage.id.toString(),
-          content: aiMessage.content,
-          isUser: false,
-          timestamp: new Date(aiMessage.createdAt)
-        }]);
-      }
+        const data = await response.json();
+
+        // 立即更新消息列表
+        const newMessages: Message[] = [
+            {
+                id: Number(data.userMessage.id),
+                content: currentInput,
+                isUser: true,
+                role: 'user',
+                timestamp: new Date()
+            },
+            {
+                id: Number(data.aiMessage.id),
+                content: '',
+                isUser: false,
+                role: 'assistant',
+                timestamp: new Date()
+            }
+        ];
+
+        // 直接更新消息列表，不需要重新获取
+        setMessages(prev => [...prev, ...newMessages]);
+
+        // 滚动到底部
+        requestAnimationFrame(() => {
+            if (messageListRef.current) {
+                messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+            }
+        });
+
     } catch (error) {
-      console.error('发送消息失败:', error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        message.error('登录已过期，请重新登录');
-        navigate('/login');
-      } else {
+        console.error('发送消息失败:', error);
         message.error('发送失败');
-        setMessages(prev => prev.filter(msg => msg.id !== newMessage.id));
-        setInputValue(newMessage.content);
-      }
+        setInputValue(currentInput);
+        setIsLoading(false);
     }
   };
 
@@ -421,6 +557,42 @@ const ChatPage: React.FC = () => {
         message.error('修改失败');
       }
     }
+  };
+
+  // 修改消息气泡容器样式
+  const MessageContainer = styled.div<{ isUser: boolean }>`
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    max-width: 90%;
+
+    .delete-icon {
+      opacity: 0;
+      transition: opacity 0.2s;
+      cursor: pointer;
+      color: #ff4d4f;
+      position: absolute;
+      top: 0;
+      ${props => props.isUser ? 'left: -24px' : 'right: -24px'};
+    }
+
+    &:hover .delete-icon {
+      opacity: 1;
+    }
+  `;
+
+  // 添加获取认证信息的辅助函数
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        message.error('请先登录');
+        throw new Error('未登录');
+    }
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+    };
   };
 
   return (
@@ -525,24 +697,55 @@ const ChatPage: React.FC = () => {
         <MessageList
           ref={messageListRef}
           dataSource={messages}
-          renderItem={(message: any) => (
+          renderItem={(item: Message) => (
             <List.Item style={{ 
-              justifyContent: message.isUser ? 'flex-end' : 'flex-start',
+              justifyContent: item.isUser ? 'flex-end' : 'flex-start',
               display: 'flex'
-            }}>
-              <Space align="start" size={12} style={{ maxWidth: '90%' }}>
-                {!message.isUser && (
+            }}>              
+              <MessageContainer isUser={item.isUser}>
+                {!item.isUser && (
                   <Avatar style={{ backgroundColor: '#1890ff', flexShrink: 0 }}>AI</Avatar>
                 )}
-                <MessageBubble isUser={message.isUser}>
-                  <div className="markdown-content">
-                    <ReactMarkdown>{message.content}</ReactMarkdown>
-                  </div>
-                </MessageBubble>
-                {message.isUser && (
+                <MessageBubble message={item} />
+                {item.isUser && (
                   <Avatar style={{ backgroundColor: '#52c41a', flexShrink: 0 }}>我</Avatar>
                 )}
-              </Space>
+                <DeleteOutlined 
+                  className="delete-icon"
+                  onClick={() => {
+                    Modal.confirm({
+                      title: '确认删除',
+                      content: '确定要删除这条消息吗？',
+                      okText: '确定',
+                      cancelText: '取消',
+                      okType: 'danger',
+                      onOk: async () => {
+                        try {
+                          const response = await fetch(getApiUrl(`/chat/messages/${item.id}`), {
+                            method: 'DELETE',
+                            headers: getAuthHeaders()
+                          });
+
+                          if (!response.ok) {
+                            if (response.status === 401) {
+                              message.error('登录已过期，请重新登录');
+                              navigate('/login');
+                              return;
+                            }
+                            throw new Error(`删除失败: ${response.status}`);
+                          }
+
+                          setMessages(prev => prev.filter(msg => msg.id !== item.id));
+                          message.success('删除成功');
+                        } catch (error) {
+                          console.error('删除消息失败:', error);
+                          message.error('删除失败');
+                        }
+                      }
+                    });
+                  }}
+                />
+              </MessageContainer>
             </List.Item>
           )}
         />
@@ -550,9 +753,10 @@ const ChatPage: React.FC = () => {
         <InputContainer>
           <Input.TextArea
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={handleInputChange}
             placeholder="输入消息..."
             autoSize={{ minRows: 4, maxRows: 8 }}
+            disabled={isLoading}
             onPressEnter={(e) => {
               if (!e.shiftKey) {
                 e.preventDefault();
@@ -564,10 +768,10 @@ const ChatPage: React.FC = () => {
             type="primary"
             icon={<SendOutlined />}
             onClick={handleSend}
-            disabled={!inputValue.trim()}
+            disabled={!inputValue.trim() || !activeChat || isLoading}
             className="send-button"
           >
-            发送
+            {isLoading ? '等待回复' : '发送'}
           </Button>
         </InputContainer>
       </ChatContainer>

@@ -3,6 +3,7 @@ import { OpenAPI } from 'routing-controllers-openapi';
 import { Service } from 'typedi';
 import { ChatService } from '../services/chat.service';
 import { Context } from 'koa';
+import jwt from 'jsonwebtoken';
 
 @JsonController('/chat') 
 @Service()
@@ -73,31 +74,52 @@ export class ChatController {
     }
 
     @Get('/stream') 
-    async stream(@Res() ctx: Context) {
+    async stream(@Res() ctx: Context, @QueryParam('token') token: string) {
+        // 添加token验证
+        if (!token || !jwt.verify(token, process.env.JWT_SECRET!)) {
+            ctx.status = 401;
+            return;
+        }
+
         ctx.set({
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive'
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no'
         });
         
         ctx.status = 200;
         ctx.flushHeaders();
 
         const listener = (data: any) => {
-            ctx.res.write(`data: ${JSON.stringify(data)}\n\n`);
+            // 修改：添加事件类型和确保正确的SSE格式
+            ctx.res.write(`event: message-update\ndata: ${JSON.stringify(data)}\n\n`);
         };
 
         this.chatService.eventEmitter.on('message-update', listener);
 
-        // 处理连接关闭
+        // 发送初始连接成功消息
+        ctx.res.write('event: connected\ndata: {"status":"connected"}\n\n');
+        
         ctx.req.on('close', () => {
             this.chatService.eventEmitter.off('message-update', listener);
             ctx.res.end();
         });
 
-        // 保持连接开启
         return new Promise((resolve) => {
             ctx.req.on('close', resolve);
         });
+    }
+
+    @Delete('/messages/:id')
+    async deleteMessage(@Param('id') id: number) {
+        try {
+            
+            await this.chatService.deleteMessage(id);
+            
+           return { message: '消息删除成功' };
+        } catch (error) {
+            return { error: '删除消息失败' }; 
+        }
     }
 }

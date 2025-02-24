@@ -11,12 +11,16 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChatController = void 0;
 const routing_controllers_1 = require("routing-controllers");
 const routing_controllers_openapi_1 = require("routing-controllers-openapi");
 const typedi_1 = require("typedi");
 const chat_service_1 = require("../services/chat.service");
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 let ChatController = class ChatController {
     chatService;
     constructor(chatService) {
@@ -29,7 +33,13 @@ let ChatController = class ChatController {
         return await this.chatService.getSessionByShareCode(shareCode);
     }
     async sendMessage(data) {
-        return await this.chatService.sendMessage(data.sessionId, data.content, data.role);
+        // 调用 processMessage 来处理消息并获取 AI 响应
+        const result = await this.chatService.processMessage({
+            sessionId: data.sessionId,
+            content: data.content,
+            role: data.role
+        });
+        return result; // 这将返回 { userMessage, aiMessage } 对象
     }
     async shareSession(id) {
         return await this.chatService.shareSession(id);
@@ -48,6 +58,35 @@ let ChatController = class ChatController {
     async deleteSession(id) {
         await this.chatService.deleteSession(id);
         return { success: true };
+    }
+    async stream(ctx, token) {
+        // 添加token验证
+        if (!token || !jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET)) {
+            ctx.status = 401;
+            return;
+        }
+        ctx.set({
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no'
+        });
+        ctx.status = 200;
+        ctx.flushHeaders();
+        const listener = (data) => {
+            // 修改：添加事件类型和确保正确的SSE格式
+            ctx.res.write(`event: message-update\ndata: ${JSON.stringify(data)}\n\n`);
+        };
+        this.chatService.eventEmitter.on('message-update', listener);
+        // 发送初始连接成功消息
+        ctx.res.write('event: connected\ndata: {"status":"connected"}\n\n');
+        ctx.req.on('close', () => {
+            this.chatService.eventEmitter.off('message-update', listener);
+            ctx.res.end();
+        });
+        return new Promise((resolve) => {
+            ctx.req.on('close', resolve);
+        });
     }
 };
 exports.ChatController = ChatController;
@@ -69,7 +108,7 @@ __decorate([
 ], ChatController.prototype, "getSharedSession", null);
 __decorate([
     (0, routing_controllers_1.Post)('/messages'),
-    (0, routing_controllers_openapi_1.OpenAPI)({ summary: '发送消息' }),
+    (0, routing_controllers_openapi_1.OpenAPI)({ summary: '发送消息并处理AI响应' }),
     __param(0, (0, routing_controllers_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -116,6 +155,14 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], ChatController.prototype, "deleteSession", null);
+__decorate([
+    (0, routing_controllers_1.Get)('/stream'),
+    __param(0, (0, routing_controllers_1.Res)()),
+    __param(1, (0, routing_controllers_1.QueryParam)('token')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], ChatController.prototype, "stream", null);
 exports.ChatController = ChatController = __decorate([
     (0, routing_controllers_1.JsonController)('/chat'),
     (0, typedi_1.Service)(),

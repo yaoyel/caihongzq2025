@@ -191,7 +191,7 @@ const LoginPage: React.FC = () => {
     try {
       setLoading(true);
       setError('');
-      const response = await axios.get('http://a8tak5.natappfree.cc/api/wechat/qrcode');
+      const response = await axios.get('http://stjauc.natappfree.cc/api/wechat/qrcode');
       console.log('接口返回数据:', response);
 
       // 检查响应状态
@@ -237,21 +237,19 @@ const LoginPage: React.FC = () => {
     setPolling(true);
     const timer = setInterval(async () => {
       try {
-        const response = await axios.get(`http://a8tak5.natappfree.cc/api/wechat/check-login?scene=${scene}`);
-        const { success, user,token } = response.data;
+        const response = await axios.get(`http://stjauc.natappfree.cc/api/wechat/check-login?scene=${scene}`);
+        const { success, user } = response.data;
         
         if (success) {
           clearInterval(timer);
           setPolling(false);
           // 存储用户信息和token
           localStorage.setItem('user', JSON.stringify(user));
-          localStorage.setItem('token', token);
+          localStorage.setItem('token', user.token);
           
           // 设置全局请求头
           axios.defaults.headers.common['Authorization'] = `Bearer ${user.token}`;
-          console.log(user,token)
           message.success('登录成功');
-
           navigate('/home');
         }
       } catch (error) {
@@ -274,37 +272,46 @@ const LoginPage: React.FC = () => {
       const token = localStorage.getItem('token');
       const userStr = localStorage.getItem('user');
 
-      if (token && userStr) {
-        try {
-          // 设置全局请求头
-          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-          
-          // 获取用户信息
-          const response = await axios.get(getApiUrl('/users/me'));
-          
-          if (response.status === 200) {
-            // 更新用户信息
-            localStorage.setItem('user', JSON.stringify(response.data));
-            message.success('自动登录成功');
-            navigate('/home');
-            return;
-          }
-        } catch (error: any) {
-          if (error.response?.status === 401) {
-            // 清除无效的认证信息
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-          }
-          console.error('自动登录失败:', error);
-        }
+      if (!token || !userStr) {
+        // 如果没有本地认证信息，显示二维码
+        getLoginQrCode();
+        return;
       }
-      
-      // 如果没有本地认证信息或认证失败，则获取登录二维码
-      getLoginQrCode();
+
+      try {
+        const user = JSON.parse(userStr);
+        setUserInfo(user);
+        
+        // 设置全局请求头
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        // 获取用户信息
+        const response = await axios.get(getApiUrl('/users/me'));
+        
+        if (response.status === 200) {
+          // 更新用户信息
+          localStorage.setItem('user', JSON.stringify(response.data));
+          navigate('/home');
+          return;
+        }
+      } catch (error: any) {
+        console.error('自动登录失败:', error);
+        
+        if (error.response?.status === 401) {
+          // 清除无效的认证信息
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUserInfo(null);
+        }
+        
+        // 如果获取用户信息失败，显示二维码
+        getLoginQrCode();
+      }
     };
 
     checkLocalAuth();
   }, [navigate]);
+
 
   const handleWechatLogin = () => {
     if (!polling) {
