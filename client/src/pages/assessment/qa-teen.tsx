@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Card, Button, Steps, Space, Progress, Menu, message } from 'antd';
+import { Layout, Typography, Card, Button, Steps, Space, Progress, Menu, Badge, message } from 'antd';
 import type { MenuItemProps } from 'antd';
 import styled from '@emotion/styled';
 import { ArrowLeftOutlined, ArrowRightOutlined, SendOutlined, HomeOutlined, CheckCircleOutlined } from '@ant-design/icons';
@@ -10,7 +10,7 @@ import '@wangeditor/editor/dist/css/style.css';
 import axios from 'axios';
 import { getApiUrl } from '../../config';
 
-const { Title, Paragraph } = Typography;
+const { Title, Paragraph, Text } = Typography;
 const { Content, Sider } = Layout;
 
 const StyledLayout = styled(Layout)`
@@ -35,81 +35,67 @@ const QuestionCard = styled(Card)`
 `;
 
 const StyledMenuItem = styled(Menu.Item as React.FC<MenuItemProps>)`
-  padding: 12px 16px !important;
-  min-height: 80px;
+  padding: 8px 16px !important;
+  min-height: 60px;
   position: relative;
-  margin: 4px 8px !important;
+  margin: 2px 8px !important;
   border-radius: 8px;
+  
   .ant-menu-title-content {
-    white-space: normal;
-    line-height: 1.5;
-    padding-right: 24px;
+    white-space: normal !important;
+    line-height: 1.3;
+    padding-right: 28px;
     width: 100%;
+    
     .ant-space {
       width: 100%;
-      .ant-typography-strong {
-        display: inline-block;
-        margin-right: 8px;
-        min-width: 60px;
-      }
+      gap: 2px !important;
     }
-    .question-preview {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 4px;
-      font-size: 13px;
-      color: rgba(0, 0, 0, 0.65);
+    
+    .question-text {
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.85);
+      white-space: normal;
+      word-wrap: break-word;
       word-break: break-all;
-      width: 100%;
+      line-height: 1.4;
+      
       .question-number {
-        flex-shrink: 0;
-        min-width: 24px;
-      }
-      .question-content {
-        flex: 1;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        font-weight: bold;
+        margin-right: 2px;
       }
     }
+    
     .answer-preview {
-      position: relative;
       overflow: hidden;
       text-overflow: ellipsis;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
-      font-size: 12px;
+      font-size: 11px;
       color: rgba(0, 0, 0, 0.45);
-      margin-top: 4px;
+      margin-top: 2px;
+      white-space: normal;
+      word-wrap: break-word;
       word-break: break-all;
-      width: 100%;
-      max-height: 36px;
-      padding-right: 24px;
-      &::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        right: 0;
-        width: 40px;
-        height: 18px;
-        background: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1) 90%);
-      }
+      line-height: 1.3;
     }
   }
+
   .ant-menu-item-icon {
     position: absolute;
-    right: 12px;
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 16px;
+    font-size: 14px;
   }
 `;
+
 const StyledSubMenu = styled(Menu.SubMenu)`
   .ant-menu-sub {
     background: #fafafa !important;
   }
+  
   .ant-menu-item {
     margin: 4px 0 !important;
   }
@@ -118,6 +104,7 @@ const StyledSubMenu = styled(Menu.SubMenu)`
     font-weight: bold;
     height: auto !important;
     padding: 12px 24px !important;
+    
     .ant-progress {
       margin-top: 8px;
     }
@@ -193,29 +180,67 @@ const TeenQAAssessment: React.FC = () => {
     }
   }, [summary, currentQuestion, questions, editor]);
 
+  const getUserId = () => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      message.error('用户未登录');
+      navigate('/login');
+      return null;
+    }
+    const user = JSON.parse(userStr);
+    return user.id;
+  };
+
   const fetchQuestions = async () => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        message.error('请先登录');
+        navigate('/login');
+        return;
+      }
+
       const response = await axios.get(getApiUrl('/questions'), {
-        params: { ageRange: '9-14' }
+        params: { ageRange: '9-14' },
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
       setQuestions(response.data);
     } catch (error) {
       console.error('获取题目失败:', error);
-      message.error('获取题目失败');
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        message.error('登录已过期，请重新登录');
+        navigate('/login');
+      } else {
+        message.error('获取题目失败');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const fetchAnswerSummary = async () => {
+    const userId = getUserId();
+    if (!userId) return;
+
     try {
-      const response = await axios.get(getApiUrl('/questions/answers/user/1/summary'), {
-        params: { ageRange: '9-14' }
+      const token = localStorage.getItem('token');
+      const response = await axios.get(getApiUrl(`/questions/answers/user/${userId}/summary`), {
+        params: { ageRange: '9-14' },
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
       setSummary(response.data);
     } catch (error) {
       console.error('获取答题进度失败:', error);
-      message.error('获取答题进度失败');
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        message.error('登录已过期，请重新登录');
+        navigate('/login');
+      } else {
+        message.error('获取答题进度失败');
+      }
     }
   };
 
@@ -238,10 +263,12 @@ const TeenQAAssessment: React.FC = () => {
   const handleSubmit = async () => {
     if (!editor) return;
 
+    const userId = getUserId();
+    if (!userId) return;
+
     const currentQuestionId = questions[currentQuestion].id;
     const content = editor.getHtml();
     
-    // 移除 HTML 标签，检查实际内容
     const plainText = content?.replace(/<[^>]+>/g, '').trim();
     
     if (!plainText) {
@@ -250,10 +277,16 @@ const TeenQAAssessment: React.FC = () => {
     }
 
     try {
+      const token = localStorage.getItem('token');
       await axios.post(getApiUrl(`/questions/${currentQuestionId}/answers`), {
-        userId: 1, // TODO: 使用实际的用户ID
+        userId,
         content,
-        submittedBy: '用户名' // TODO: 使用实际的用户名
+        submittedBy: '用户名', // TODO: 使用实际的用户名
+        ageRange: '9-14'
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
       
       message.success('保存成功');
@@ -261,14 +294,18 @@ const TeenQAAssessment: React.FC = () => {
       
       if (currentQuestion < questions.length - 1) {
         setCurrentQuestion(currentQuestion + 1);
-        // 清空编辑器内容
         editor.setHtml('');
       } else {
         navigate('/report');
       }
     } catch (error) {
       console.error('保存答案失败:', error);
-      message.error('保存失败');
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        message.error('登录已过期，请重新登录');
+        navigate('/login');
+      } else {
+        message.error('保存失败');
+      }
     }
   };
 
@@ -313,15 +350,19 @@ const TeenQAAssessment: React.FC = () => {
   return (
     <StyledLayout>
       <Sider 
-        width={320} 
+        width={320}
         style={{ 
           background: '#fff',
-          padding: '24px 0',
-          height: 'calc(100vh - 120px)',
-          overflowY: 'auto'
+          borderRight: '1px solid #f0f0f0',
+          height: '100vh',
+          position: 'fixed',
+          left: 0,
+          overflow: 'auto',
+          minWidth: '320px',
+          maxWidth: '320px'
         }}
       >
-        <div style={{ padding: '0 24px', marginBottom: 16 }}>
+        <div style={{ padding: '24px 24px 16px' }}>
           <Progress
             percent={Math.round(progress)}
             format={percent => `已完成 ${percent}%`}
@@ -331,7 +372,7 @@ const TeenQAAssessment: React.FC = () => {
               type="primary"
               block
               onClick={() => {
-                const nextUnanswered = questions.findIndex(q => !summary?.answers.find(a => a.questionId === q.id));
+                const nextUnanswered = questions.findIndex((q, idx) => !summary?.answers.find(a => a.questionId === q.id));
                 if (nextUnanswered !== -1) {
                   setCurrentQuestion(nextUnanswered);
                 }
@@ -378,16 +419,15 @@ const TeenQAAssessment: React.FC = () => {
                       onClick={() => handleSelectQuestion(question.id)}
                       icon={answer ? <CheckCircleOutlined style={{ color: '#52c41a' }} /> : null}
                     >
-                      <Space direction="vertical" style={{ width: '100%', gap: '4px' }}>
-                        <Typography.Text strong>Q{globalIndex + 1}</Typography.Text>
-                        <div className="question-preview">
-                          <span className="question-number">Q{globalIndex + 1}:</span>
-                          <span className="question-content">{question.content}</span>
-                        </div>
+                      <Space direction="vertical" style={{ width: '100%' }}>
+                        <Text className="question-text">
+                          <span className="question-number">Q{globalIndex + 1}：</span>
+                          {question.content}
+                        </Text>
                         {answer && (
-                          <div className="answer-preview">
-                            答：{answer.content.replace(/<[^>]+>/g, '')}
-                          </div>
+                          <Text className="answer-preview">
+                            答：{answer.content?.replace(/<[^>]+>/g, '').trim()}
+                          </Text>
                         )}
                       </Space>
                     </StyledMenuItem>

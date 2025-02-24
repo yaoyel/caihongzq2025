@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Card, Button, Steps, Space, Progress, Menu, message, Tooltip } from 'antd';
 import type { MenuItemProps } from 'antd';
 import styled from '@emotion/styled';
@@ -9,12 +9,8 @@ import { IDomEditor, IEditorConfig } from '@wangeditor/editor';
 import '@wangeditor/editor/dist/css/style.css';
 import axios from 'axios';
 import { getApiUrl } from '../../config';
-import { useDispatch, useSelector } from 'react-redux';
-import { debounce } from 'lodash';
-import { setQuestions, setAnswers, setSummary } from '../../store/slices/assessmentSlice';
-import { RootState } from '../../store';
 
-const { Title, Paragraph } = Typography;
+const { Title, Paragraph, Text } = Typography;
 const { Content, Sider } = Layout;
 
 const StyledLayout = styled(Layout)`
@@ -39,68 +35,59 @@ const QuestionCard = styled(Card)`
 `;
 
 const StyledMenuItem = styled(Menu.Item as React.FC<MenuItemProps>)`
-  padding: 12px 16px !important;
-  min-height: 80px;
+  padding: 8px 16px !important;
+  min-height: 60px;
   position: relative;
-  margin: 4px 8px !important  border-radius: 8px;
+  margin: 2px 8px !important;
+  border-radius: 8px;
+  
   .ant-menu-title-content {
-    white-space: normal;
-    line-height: 1.5;
-    padding-right: 24px;
+    white-space: normal !important;
+    line-height: 1.3;
+    padding-right: 28px;
     width: 100%;
     
-    .question-preview {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 4px;
-      font-size: 13px;
-      color: rgba(0, 0, 0, 0.65);
-      word-break: break-all;
+    .ant-space {
       width: 100%;
+      gap: 2px !important;
+    }
+    
+    .question-text {
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.85);
+      white-space: normal;
+      word-wrap: break-word;
+      word-break: break-all;
+      line-height: 1.4;
       
       .question-number {
-        flex-shrink: 0;
-        min-width: 24px;
-      }
-      .question-content {
-        flex: 1;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        font-weight: bold;
+        margin-right: 2px;
       }
     }
+    
     .answer-preview {
-      position: relative;
       overflow: hidden;
       text-overflow: ellipsis;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
-      font-size: 12px;
+      font-size: 11px;
       color: rgba(0, 0, 0, 0.45);
-      margin-top: 4px;
+      margin-top: 2px;
+      white-space: normal;
+      word-wrap: break-word;
       word-break: break-all;
-      width: 100%;
-      max-height: 36px;
-      padding-right: 24px;
-      &::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        right: 0;
-        width: 40px;
-        height: 18px;
-        background: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1) 90%);
-      }
+      line-height: 1.3;
     }
   }
+
   .ant-menu-item-icon {
     position: absolute;
-    right: 12px;
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 16px;
+    font-size: 14px;
   }
 `;
 
@@ -108,6 +95,7 @@ const StyledSubMenu = styled(Menu.SubMenu)`
   .ant-menu-sub {
     background: #fafafa !important;
   }
+  
   .ant-menu-item {
     margin: 4px 0 !important;
   }
@@ -125,17 +113,21 @@ interface Answer {
   submittedAt: string;
 }
 
+interface AnswerSummary {
+  total: number;
+  completed: number;
+  answers: Answer[];
+}
+
 const QAAssessment: React.FC = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [answers, setAnswers] = useState<Record<number, string>>({});
   const [editor, setEditor] = useState<IDomEditor | null>(null);
   const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState<AnswerSummary | null>(null);
   const [ageRange] = useState<'4-8' | '9-14' | '14+'>('4-8');
-
-  const questions = useSelector((state: RootState) => state.assessment.questions);
-  const answers = useSelector((state: RootState) => state.assessment.answers);
-  const summary = useSelector((state: RootState) => state.assessment.summary);
 
   useEffect(() => {
     fetchQuestions();
@@ -144,16 +136,16 @@ const QAAssessment: React.FC = () => {
 
   useEffect(() => {
     if (summary?.answers) {
-      const savedAnswers = summary.answers.reduce((acc: Record<number, string>, answer: Answer) => ({
+      const savedAnswers = summary.answers.reduce((acc, answer) => ({
         ...acc,
         [answer.questionId]: answer.content
       }), {});
-      dispatch(setAnswers({ ...answers, ...savedAnswers }));
+      setAnswers(prev => ({ ...prev, ...savedAnswers }));
       
       // 如果编辑器已经创建，设置当前问题的答案
       if (editor && questions[currentQuestion]) {
         const currentQuestionId = questions[currentQuestion].id;
-        const savedAnswer = summary.answers.find((a: Answer) => a.questionId === currentQuestionId);
+        const savedAnswer = summary.answers.find(a => a.questionId === currentQuestionId);
         if (savedAnswer) {
           editor.setHtml(savedAnswer.content);
         } else {
@@ -163,51 +155,87 @@ const QAAssessment: React.FC = () => {
     }
   }, [summary, currentQuestion, questions, editor]);
 
-  const fetchQuestions = useCallback(async () => {
+  const getUserId = () => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      message.error('用户未登录');
+      navigate('/login');
+      return null;
+    }
+    const user = JSON.parse(userStr);
+    return user.id;
+  };
+
+  const fetchQuestions = async () => {
     try {
-      const response = await axios.get(getApiUrl('/questions'), {
-        params: { ageRange }
-      });
-      if (response.data) {
-        dispatch(setQuestions(response.data));
+      const token = localStorage.getItem('token');
+      if (!token) {
+        message.error('请先登录');
+        navigate('/login');
+        return;
       }
+
+      const response = await axios.get(getApiUrl('/questions'), {
+        params: { ageRange },
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setQuestions(response.data);
     } catch (error) {
       console.error('获取题目失败:', error);
-      message.error('获取题目失败');
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        message.error('登录已过期，请重新登录');
+        navigate('/login');
+      }
     } finally {
       setLoading(false);
     }
-  }, [dispatch, ageRange]);
+  };
 
-  const fetchAnswerSummary = useCallback(async () => {
+  const fetchAnswerSummary = async () => {
+    const userId = getUserId();
+    if (!userId) return;
+
     try {
-      const response = await axios.get(getApiUrl('/questions/answers/user/1/summary'), {
-        params: { ageRange }
+      const token = localStorage.getItem('token');
+      const response = await axios.get(getApiUrl(`/questions/answers/user/${userId}/summary`), {
+        params: { ageRange },
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
-      if (response.data) {
-        dispatch(setSummary(response.data));
-      }
+      setSummary(response.data);
     } catch (error) {
       console.error('获取答题进度失败:', error);
-      message.error('获取答题进度失败');
-    }
-  }, [dispatch, ageRange]);
-
-  const handleAnswer = useCallback(
-    debounce((editor: IDomEditor) => {
-      if (!editor) return;
-      
-      const html = editor.getHtml();
-      const currentQuestionId = questions[currentQuestion]?.id;
-      if (currentQuestionId) {
-        dispatch(setAnswers({ ...answers, [currentQuestionId]: html }));
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        message.error('登录已过期，请重新登录');
+        navigate('/login');
       }
-    }, 500),
-    [currentQuestion, questions, answers, dispatch]
-  );
+    }
+  };
+
+  const handleAnswer = (editor: IDomEditor) => {
+    if (!editor) return;
+    
+    const html = editor.getHtml();
+    const currentQuestionId = questions[currentQuestion].id;
+    
+    // 只有当内容真正改变时才更新状态
+    const plainText = html.replace(/<[^>]+>/g, '').trim();
+    if (plainText || html !== answers[currentQuestionId]) {
+      setAnswers(prev => ({
+        ...prev,
+        [currentQuestionId]: html
+      }));
+    }
+  };
 
   const handleSubmit = async () => {
     if (!editor) return;
+    
+    const userId = getUserId();
+    if (!userId) return;
     
     const currentQuestionId = questions[currentQuestion].id;
     const content = editor.getHtml();
@@ -219,11 +247,16 @@ const QAAssessment: React.FC = () => {
     }
 
     try {
+      const token = localStorage.getItem('token');
       await axios.post(getApiUrl(`/questions/${currentQuestionId}/answers`), {
-        userId: 1,
+        userId,
         content,
         submittedBy: '用户名',
         ageRange
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
       
       message.success('保存成功');
@@ -234,12 +267,17 @@ const QAAssessment: React.FC = () => {
       }
     } catch (error) {
       console.error('保存答案失败:', error);
-      message.error('保存失败');
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        message.error('登录已过期，请重新登录');
+        navigate('/login');
+      } else {
+        message.error('保存失败');
+      }
     }
   };
 
   const handleSelectQuestion = (questionId: number) => {
-    const index = questions.findIndex((q: Question) => q.id === questionId);
+    const index = questions.findIndex(q => q.id === questionId);
     if (index !== -1) {
       setCurrentQuestion(index);
     }
@@ -253,7 +291,7 @@ const QAAssessment: React.FC = () => {
       // 在编辑器创建后设置初始答案
       if (questions[currentQuestion]) {
         const currentQuestionId = questions[currentQuestion].id;
-        const savedAnswer = summary?.answers?.find((a: Answer) => a.questionId === currentQuestionId);
+        const savedAnswer = summary?.answers?.find(a => a.questionId === currentQuestionId);
         if (savedAnswer) {
           editor.setHtml(savedAnswer.content);
         }
@@ -264,8 +302,8 @@ const QAAssessment: React.FC = () => {
   const getNextUnansweredQuestion = () => {
     if (!summary?.answers || !questions.length) return -1;
     
-    const answeredQuestionIds = new Set(summary.answers.map((a: Answer) => a.questionId));
-    const nextUnansweredIndex = questions.findIndex((q: Question) => !answeredQuestionIds.has(q.id));
+    const answeredQuestionIds = new Set(summary.answers.map(a => a.questionId));
+    const nextUnansweredIndex = questions.findIndex(q => !answeredQuestionIds.has(q.id));
     return nextUnansweredIndex;
   };
 
@@ -276,7 +314,7 @@ const QAAssessment: React.FC = () => {
     }
   };
 
-  if (loading || !questions.length) return null;
+  if (loading) return null;
 
   const progress = summary ? (summary.completed / summary.total * 100) : 0;
 
@@ -311,7 +349,11 @@ const QAAssessment: React.FC = () => {
           mode="inline"
           selectedKeys={[questions[currentQuestion]?.id.toString()]}
           defaultOpenKeys={[]}
-          style={{ height: 'calc(100vh - 120px)', overflowY: 'auto' }}
+          style={{ 
+            height: 'calc(100vh - 120px)', 
+            overflowY: 'auto',
+            overflowX: 'hidden'
+          }}
         >
           {['兴趣探索', '能力认知', '天赋发现'].map((stage, stageIndex) => (
             <StyledSubMenu
@@ -321,7 +363,6 @@ const QAAssessment: React.FC = () => {
               {getStageQuestions(stageIndex).map((question, index) => {
                 const answer = summary?.answers.find(a => a.questionId === question.id);
                 const globalIndex = stageIndex * 12 + index;
-                const plainAnswer = answer ? answer.content.replace(/<[^>]*>/g, '').trim() : '';
                 return (
                   <StyledMenuItem
                     key={question.id}
@@ -329,16 +370,14 @@ const QAAssessment: React.FC = () => {
                     icon={answer ? <CheckCircleOutlined style={{ color: '#52c41a' }} /> : null}
                   >
                     <Space direction="vertical" style={{ width: '100%' }}>
-                      <div className="question-preview">
-                        <span className="question-number">Q{globalIndex + 1}.</span>
-                        <span className="question-content">{question.content}</span>
-                      </div>
+                      <Text className="question-text">
+                        <span className="question-number">Q{globalIndex + 1}：</span>
+                        {question.content}
+                      </Text>
                       {answer && (
-                        <Tooltip title={answer.content.replace(/<[^>]*>/g, '')}>
-                          <div className="answer-preview">
-                            答：{plainAnswer}
-                          </div>
-                        </Tooltip>
+                        <Text className="answer-preview">
+                          答：{answer.content?.replace(/<[^>]+>/g, '').trim()}
+                        </Text>
                       )}
                     </Space>
                   </StyledMenuItem>

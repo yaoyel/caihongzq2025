@@ -136,7 +136,6 @@ const ScaleAssessment: React.FC = () => {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
 
-
   useEffect(() => {
     fetchAllQuestions();
     fetchSavedAnswers();
@@ -151,11 +150,27 @@ const ScaleAssessment: React.FC = () => {
   const fetchAllQuestions = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(getApiUrl('/scales'));
+      const token = localStorage.getItem('token');
+      if (!token) {
+        message.error('请先登录');
+        navigate('/login');
+        return;
+      }
+
+      const response = await axios.get(getApiUrl('/scales'), {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       setAllQuestions(response.data);
     } catch (error) {
       console.error('获取题目失败:', error);
-      message.error('获取题目失败');
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        message.error('登录已过期，请重新登录');
+        navigate('/login');
+      } else {
+        message.error('获取题目失败');
+      }
     } finally {
       setLoading(false);
     }
@@ -170,9 +185,34 @@ const ScaleAssessment: React.FC = () => {
     setCurrentQuestion(0);
   };
 
+  const getUserId = () => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      message.error('用户未登录');
+      navigate('/login');
+      return null;
+    }
+    const user = JSON.parse(userStr);
+    return user.id;
+  };
+
   const fetchSavedAnswers = async () => {
+    const userId = getUserId();
+    if (!userId) return;
+
     try {
-      const response = await axios.get(getApiUrl('/scales/answers/user/1')); // TODO: 使用实际的用户ID
+      const token = localStorage.getItem('token');
+      if (!token) {
+        message.error('请先登录');
+        navigate('/login');
+        return;
+      }
+
+      const response = await axios.get(getApiUrl(`/scales/answers/user/${userId}`), {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       const savedAnswersMap = response.data.reduce((acc: Record<number, number>, answer: any) => {
         acc[answer.scaleId] = answer.score;
         return acc;
@@ -180,18 +220,43 @@ const ScaleAssessment: React.FC = () => {
       setAnswers(prev => ({...prev, ...savedAnswersMap}));
     } catch (error) {
       console.error('获取已保存答案失败:', error);
-      message.error('获取已保存答案失败');
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        message.error('登录已过期，请重新登录');
+        navigate('/login');
+      } else {
+        message.error('获取已保存答案失败');
+      }
     }
   };
 
   const saveAnswer = async (questionId: number, score: number) => {
+    const userId = getUserId();
+    if (!userId) return;
+
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        message.error('请先登录');
+        navigate('/login');
+        return;
+      }
+
       await axios.post(getApiUrl(`/scales/${questionId}/answers`), {
-        userId: 1, // TODO: 使用实际的用户ID
+        userId,
         score
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
     } catch (error) {
       console.error('保存答案失败:', error);
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        message.error('登录已过期，请重新登录');
+        navigate('/login');
+      } else {
+        message.error('保存答案失败');
+      }
     }
   };
 
@@ -223,8 +288,6 @@ const ScaleAssessment: React.FC = () => {
       setCurrentSection(prev => prev - 1);
     }
   };
-
-
 
   const handleComplete = async () => {
     const currentAnswer = answers[currentQuestionData.id];
@@ -285,7 +348,6 @@ const ScaleAssessment: React.FC = () => {
   const currentQuestionIndex = Math.min(currentQuestion, questions.length - 1);
   const currentQuestionData = questions[currentQuestionIndex];
 
-  // 添加一个检查是否所有题目都已回答的函数
   const isAllQuestionsAnswered = () => {
     return allQuestions.every(question => answers[question.id]);
   };

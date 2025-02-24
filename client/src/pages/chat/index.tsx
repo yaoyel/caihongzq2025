@@ -181,7 +181,6 @@ const ChatPage: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [activeChat, setActiveChat] = useState('');
 
-
   useEffect(() => {
     fetchChats();
   }, []);
@@ -193,29 +192,69 @@ const ChatPage: React.FC = () => {
   }, [activeChat]);
 
   useEffect(() => {
-    // 当消息列表更新时，自动滚动到底部
     if (messageListRef.current) {
       const element = messageListRef.current;
       element.scrollTop = element.scrollHeight;
     }
   }, [messages]);
 
+  const getUserId = () => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      message.error('用户未登录');
+      navigate('/login');
+      return null;
+    }
+    const user = JSON.parse(userStr);
+    return user.id;
+  };
+
   const fetchChats = async () => {
+    const userId = getUserId();
+    if (!userId) return;
+
     try {
-      const response = await axios.get(getApiUrl('/chat/sessions/user/1')); // TODO: 使用实际的用户ID
+      const token = localStorage.getItem('token');
+      if (!token) {
+        message.error('请先登录');
+        navigate('/login');
+        return;
+      }
+
+      const response = await axios.get(getApiUrl(`/chat/sessions/user/${userId}`), {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       setChats(response.data);
       if (response.data.length > 0) {
         setActiveChat(response.data[0].id);
       }
     } catch (error) {
       console.error('获取对话列表失败:', error);
-      message.error('获取对话列表失败');
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        message.error('登录已过期，请重新登录');
+        navigate('/login');
+      } else {
+        message.error('获取对话列表失败');
+      }
     }
   };
 
   const fetchMessages = async (chatId: string) => {
     try {
-      const response = await axios.get(getApiUrl(`/chat/sessions/${chatId}/messages`));
+      const token = localStorage.getItem('token');
+      if (!token) {
+        message.error('请先登录');
+        navigate('/login');
+        return;
+      }
+
+      const response = await axios.get(getApiUrl(`/chat/sessions/${chatId}/messages`), {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       if (response.data && Array.isArray(response.data)) {
         setMessages(response.data.map((msg: any) => ({
           id: msg.id,
@@ -228,31 +267,51 @@ const ChatPage: React.FC = () => {
       }
     } catch (error) {
       console.error('获取消息失败:', error);
-      message.error('获取消息失败');
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        message.error('登录已过期，请重新登录');
+        navigate('/login');
+      } else {
+        message.error('获取消息失败');
+      }
     }
   };
 
   const handleSend = async () => {
     if (!inputValue.trim() || !activeChat) return;
 
+    const userId = getUserId();
+    if (!userId) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      message.error('请先登录');
+      navigate('/login');
+      return;
+    }
+
     const newMessage: Message = {
       id: Date.now().toString(),
-      content: inputValue,
+      content: inputValue.trim(),
       isUser: true,
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, newMessage]);
-    setInputValue('');
-
     try {
+      setMessages(prev => [...prev, newMessage]);
+      const currentInput = inputValue.trim();
+      setInputValue('');
+
       const response = await axios.post(getApiUrl('/chat/messages'), {
-        content: inputValue,
-        sessionId: Number(activeChat),
-        role: "user", 
+        userId,
+        content: currentInput,
+        sessionId: activeChat,
+        role: 'user'
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
 
-      // 更新处理AI回复的数据结构
       const { aiMessage } = response.data;
       if (aiMessage) {
         setMessages(prev => [...prev, {
@@ -264,7 +323,14 @@ const ChatPage: React.FC = () => {
       }
     } catch (error) {
       console.error('发送消息失败:', error);
-      message.error('发送消息失败');
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        message.error('登录已过期，请重新登录');
+        navigate('/login');
+      } else {
+        message.error('发送失败');
+        setMessages(prev => prev.filter(msg => msg.id !== newMessage.id));
+        setInputValue(newMessage.content);
+      }
     }
   };
 
@@ -272,10 +338,24 @@ const ChatPage: React.FC = () => {
   const [newChatTitle, setNewChatTitle] = useState('');
 
   const createNewChat = async () => {
+    const userId = getUserId();
+    if (!userId) return;
+
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        message.error('请先登录');
+        navigate('/login');
+        return;
+      }
+
       const response = await axios.post(getApiUrl('/chat/sessions'), {
-        userId: 1, // TODO: 使用实际的用户ID
+        userId,
         title: `新对话 ${new Date().toLocaleString()}`
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
 
       const newChat = response.data;
@@ -283,7 +363,6 @@ const ChatPage: React.FC = () => {
       setActiveChat(newChat.id);
       setMessages([]);
       
-      // 确保消息列表滚动到底部
       if (messageListRef.current) {
         setTimeout(() => {
           const element = messageListRef.current;
@@ -294,7 +373,12 @@ const ChatPage: React.FC = () => {
       }
     } catch (error) {
       console.error('创建对话失败:', error);
-      message.error('创建对话失败');
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        message.error('登录已过期，请重新登录');
+        navigate('/login');
+      } else {
+        message.error('创建对话失败');
+      }
     }
   };
 
@@ -306,8 +390,19 @@ const ChatPage: React.FC = () => {
     }
 
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        message.error('请先登录');
+        navigate('/login');
+        return;
+      }
+
       await axios.put(getApiUrl(`/chat/sessions/${editingChatId}`), {
         title: newChatTitle.trim()
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
 
       setChats(prev => prev.map(chat => 
@@ -319,7 +414,12 @@ const ChatPage: React.FC = () => {
       message.success('修改成功');
     } catch (error) {
       console.error('修改对话标题失败:', error);
-      message.error('修改失败');
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        message.error('登录已过期，请重新登录');
+        navigate('/login');
+      } else {
+        message.error('修改失败');
+      }
     }
   };
 
@@ -379,7 +479,18 @@ const ChatPage: React.FC = () => {
                           okType: 'danger',
                           async onOk() {
                             try {
-                              await axios.delete(getApiUrl(`/chat/sessions/${chat.id}`));
+                              const token = localStorage.getItem('token');
+                              if (!token) {
+                                message.error('请先登录');
+                                navigate('/login');
+                                return;
+                              }
+
+                              await axios.delete(getApiUrl(`/chat/sessions/${chat.id}`), {
+                                headers: {
+                                  Authorization: `Bearer ${token}`
+                                }
+                              });
                               setChats(prev => prev.filter(c => c.id !== chat.id));
                               if (activeChat === chat.id) {
                                 setActiveChat('');
@@ -388,7 +499,12 @@ const ChatPage: React.FC = () => {
                               message.success('删除成功');
                             } catch (error) {
                               console.error('删除对话失败:', error);
-                              message.error('删除失败');
+                              if (axios.isAxiosError(error) && error.response?.status === 401) {
+                                message.error('登录已过期，请重新登录');
+                                navigate('/login');
+                              } else {
+                                message.error('删除失败');
+                              }
                             }
                           }
                         });

@@ -138,11 +138,41 @@ const ReportPage: React.FC = () => {
 
   const elementAnalysis = useSelector((state: RootState) => state.report.elementAnalysis);
 
+  // 添加获取用户ID的函数
+  const getUserId = () => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      message.error('用户未登录');
+      navigate('/login');
+      return null;
+    }
+    const user = JSON.parse(userStr);
+    return user.id;
+  };
+
   const fetchData = useCallback(async () => {
+    const userId = getUserId();
+    if (!userId) return;
+
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        message.error('请先登录');
+        navigate('/login');
+        return;
+      }
+
       const [scaleResponse, elementResponse] = await Promise.all([
-        axios.get(getApiUrl('/scales/answers/user/1/summary')),
-        axios.get(getApiUrl('/report/element-analysis/1'))
+        axios.get(getApiUrl(`/scales/answers/user/${userId}/summary`), {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }),
+        axios.get(getApiUrl(`/report/element-analysis/${userId}`), {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
       ]);
 
       const answers = scaleResponse.data;
@@ -158,12 +188,16 @@ const ReportPage: React.FC = () => {
 
       dispatch(setElementAnalysis(elementResponse.data));
 
-
     } catch (error) {
       console.error('获取数据失败:', error);
-      message.error('获取数据失败');
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        message.error('登录已过期，请重新登录');
+        navigate('/login');
+      } else {
+        message.error('获取数据失败');
+      }
     }
-  }, [dispatch]);
+  }, [dispatch, navigate]);
 
   useEffect(() => {
     fetchData();
