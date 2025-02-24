@@ -1,14 +1,16 @@
-import { Service } from 'typedi';
-import { InjectRepository } from 'typeorm-typedi-extensions';
+import { Service } from 'typedi'; 
 import { Repository } from 'typeorm';
 import { Element } from '../entities/Element';
+import { AppDataSource } from '../data-source';
 
 @Service()
 export class ElementService {
-    constructor(
-        @InjectRepository(Element)
-        private elementRepository: Repository<Element>
-    ) {}
+    private elementRepository: Repository<Element>; 
+
+    constructor() { 
+        this.elementRepository = AppDataSource.getRepository(Element);
+    }
+ 
 
     async findAll() {
         return this.elementRepository.find();

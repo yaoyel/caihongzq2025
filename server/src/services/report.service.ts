@@ -1,5 +1,4 @@
-import { Service } from 'typedi';
-import { InjectRepository } from 'typeorm-typedi-extensions';
+import { Service } from 'typedi'; 
 import { Repository } from 'typeorm';
 import { ScaleAnswer } from '../entities/ScaleAnswer';
 import { TalentAnalysisResult, DimensionScores, ReportContent } from '../interfaces/report.interface';

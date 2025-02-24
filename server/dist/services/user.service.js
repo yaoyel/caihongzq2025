@@ -8,63 +8,41 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserService = void 0;
 const typedi_1 = require("typedi");
-const typeorm_typedi_extensions_1 = require("typeorm-typedi-extensions");
-const typeorm_1 = require("typeorm");
 const User_1 = require("../entities/User");
-const axios_1 = __importDefault(require("axios"));
+const data_source_1 = require("../data-source");
+const jwt_1 = require("../utils/jwt");
 let UserService = class UserService {
     userRepository;
-    constructor(userRepository) {
-        this.userRepository = userRepository;
+    constructor() {
+        this.userRepository = data_source_1.AppDataSource.getRepository(User_1.User);
     }
     async login(code) {
-        try {
-            // 调用微信接口获取openId
-            const response = await axios_1.default.get(`https://api.weixin.qq.com/sns/jscode2session`, {
-                params: {
-                    appid: process.env.WECHAT_APPID,
-                    secret: process.env.WECHAT_SECRET,
-                    js_code: code,
-                    grant_type: 'authorization_code'
-                }
-            });
-            const { openid } = response.data;
-            // 查找或创建用户
-            let user = await this.userRepository.findOne({ where: { openid } });
-            if (!user) {
-                user = this.userRepository.create({
-                    openid,
-                    userType: 'child' // 设置默认值
-                });
-                await this.userRepository.save(user);
-            }
-            return user;
-        }
-        catch (error) {
-            console.error('Login error:', error);
-            throw new Error('登录失败');
-        }
-    }
-    async findOne(id) {
-        const user = await this.userRepository.findOne({ where: { id } });
+        // 微信登录逻辑
+        const user = await this.userRepository.findOne({ where: { openid: code } });
         if (!user) {
             throw new Error('用户不存在');
         }
-        return user;
+        // 生成JWT令牌
+        const token = jwt_1.JwtUtil.generateToken({ userId: user.id });
+        return {
+            status: 'success',
+            token,
+            user: {
+                id: user.id,
+                nickname: user.nickname,
+                avatarUrl: user.avatarUrl
+            }
+        };
+    }
+    async findOne(id) {
+        return this.userRepository.findOne({ where: { id } });
     }
 };
 exports.UserService = UserService;
 exports.UserService = UserService = __decorate([
     (0, typedi_1.Service)(),
-    __param(0, (0, typeorm_typedi_extensions_1.InjectRepository)(User_1.User)),
-    __metadata("design:paramtypes", [typeorm_1.Repository])
+    __metadata("design:paramtypes", [])
 ], UserService);

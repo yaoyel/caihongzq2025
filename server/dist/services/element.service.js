@@ -8,19 +8,15 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ElementService = void 0;
 const typedi_1 = require("typedi");
-const typeorm_typedi_extensions_1 = require("typeorm-typedi-extensions");
-const typeorm_1 = require("typeorm");
 const Element_1 = require("../entities/Element");
+const data_source_1 = require("../data-source");
 let ElementService = class ElementService {
     elementRepository;
-    constructor(elementRepository) {
-        this.elementRepository = elementRepository;
+    constructor() {
+        this.elementRepository = data_source_1.AppDataSource.getRepository(Element_1.Element);
     }
     async findAll() {
         return this.elementRepository.find();
@@ -43,6 +39,5 @@ let ElementService = class ElementService {
 exports.ElementService = ElementService;
 exports.ElementService = ElementService = __decorate([
     (0, typedi_1.Service)(),
-    __param(0, (0, typeorm_typedi_extensions_1.InjectRepository)(Element_1.Element)),
-    __metadata("design:paramtypes", [typeorm_1.Repository])
+    __metadata("design:paramtypes", [])
 ], ElementService);

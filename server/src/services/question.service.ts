@@ -18,7 +18,7 @@ export class QuestionService {
 
     async findByAgeRange(ageRange: AgeRange) {
         return this.questionRepository.find({
-            where: { ageRange },
+            where: { ageRange: ageRange as '4-8' | '9-14' | '14+' },
             order: { id: 'ASC' }
         });
     }
@@ -85,4 +85,4 @@ export class QuestionService {
 
         return this.answerRepository.save(answer);
     }
-} 
+}

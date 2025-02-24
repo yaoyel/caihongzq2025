@@ -1,14 +1,15 @@
 import { Service } from 'typedi';
-import { InjectRepository } from 'typeorm-typedi-extensions';
 import { Repository } from 'typeorm';
 import { User } from '../entities/User';
+import { AppDataSource } from '../data-source';
 
 @Service()
 export class UserService {
-    constructor(
-        @InjectRepository(User)
-        private userRepository: Repository<User>
-    ) {}
+    private userRepository: Repository<User>;
+
+    constructor() {
+        this.userRepository = AppDataSource.getRepository(User);
+    }
 
     async login(code: string) {
         // 微信登录逻辑

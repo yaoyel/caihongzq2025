@@ -37,11 +37,19 @@ async function bootstrap() {
         app.use(bodyParser());
         app.use(koaLogger());
 
-        // 5. 注入微信路由
+        // 5. 注册请求日志中间件
+        const requestLogger = Container.get(RequestLoggerMiddleware);
+        app.use(requestLogger.use.bind(requestLogger));
+
+        // 6. 注册错误处理中间件
+        const errorHandler = Container.get(ErrorHandlerMiddleware);
+        app.use(errorHandler.use.bind(errorHandler));
+
+        // 6. 注入微信路由
         app.use(wechatRouter.routes());
         app.use(wechatRouter.allowedMethods());
 
-        // 6. 配置路由控制器
+        // 7. 配置路由控制器
         useKoaServer(app, {
             controllers: [
                 ElementController,
@@ -51,10 +59,7 @@ async function bootstrap() {
                 ChatController,
                 ReportController, 
             ],
-            middlewares: [ 
-                ErrorHandlerMiddleware,
-                RequestLoggerMiddleware
-            ],
+            middlewares: [],
             routePrefix: '/api',
             defaultErrorHandler: false,
             validation: true
