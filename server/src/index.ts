@@ -20,6 +20,7 @@ import { ChatController } from './controllers/chat.controller';
 import { ReportController } from './controllers/report.controller';
 import { ErrorHandlerMiddleware } from './middlewares/error-handler.middleware';
 import { RequestLoggerMiddleware } from './middlewares/request-logger.middleware';  
+import { jwtMiddleware } from './middlewares/jwt.middleware';
 async function bootstrap() {
     try {
         // 1. 设置依赖注入容器
@@ -34,8 +35,17 @@ async function bootstrap() {
 
         // 4. 基础中间件
         app.use(cors());
-        app.use(bodyParser());
+        app.use(bodyParser({
+          enableTypes: ['json', 'form', 'text'],
+          extendTypes: {
+            text: ['text/xml', 'application/xml']
+          },
+          onerror: (err: Error, ctx: Koa.Context) => {
+            ctx.throw(422, '请求体解析失败');
+          }
+        }));
         app.use(koaLogger());
+        // app.use(jwtMiddleware)
 
         // 5. 注册请求日志中间件
         const requestLogger = Container.get(RequestLoggerMiddleware);

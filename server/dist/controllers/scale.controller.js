@@ -113,6 +113,5 @@ __decorate([
 exports.ScaleController = ScaleController = __decorate([
     (0, routing_controllers_1.JsonController)('/scales'),
     (0, typedi_1.Service)(),
-    (0, routing_controllers_1.Authorized)(),
     __metadata("design:paramtypes", [scale_service_1.ScaleService])
 ], ScaleController);

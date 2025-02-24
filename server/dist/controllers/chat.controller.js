@@ -119,6 +119,5 @@ __decorate([
 exports.ChatController = ChatController = __decorate([
     (0, routing_controllers_1.JsonController)('/chat'),
     (0, typedi_1.Service)(),
-    (0, routing_controllers_1.Authorized)(),
     __metadata("design:paramtypes", [chat_service_1.ChatService])
 ], ChatController);

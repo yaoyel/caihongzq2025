@@ -13,7 +13,6 @@ exports.UserService = void 0;
 const typedi_1 = require("typedi");
 const User_1 = require("../entities/User");
 const data_source_1 = require("../data-source");
-const jwt_1 = require("../utils/jwt");
 let UserService = class UserService {
     userRepository;
     constructor() {
@@ -21,21 +20,7 @@ let UserService = class UserService {
     }
     async login(code) {
         // 微信登录逻辑
-        const user = await this.userRepository.findOne({ where: { openid: code } });
-        if (!user) {
-            throw new Error('用户不存在');
-        }
-        // 生成JWT令牌
-        const token = jwt_1.JwtUtil.generateToken({ userId: user.id });
-        return {
-            status: 'success',
-            token,
-            user: {
-                id: user.id,
-                nickname: user.nickname,
-                avatarUrl: user.avatarUrl
-            }
-        };
+        return { status: 'success' };
     }
     async findOne(id) {
         return this.userRepository.findOne({ where: { id } });

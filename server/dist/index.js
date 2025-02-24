@@ -36,10 +36,16 @@ async function bootstrap() {
         app.use((0, cors_1.default)());
         app.use((0, koa_bodyparser_1.default)());
         app.use((0, koa_logger_1.default)());
-        // 5. 注入微信路由
+        // 5. 注册请求日志中间件
+        const requestLogger = typedi_1.Container.get(request_logger_middleware_1.RequestLoggerMiddleware);
+        app.use(requestLogger.use.bind(requestLogger));
+        // 6. 注册错误处理中间件
+        const errorHandler = typedi_1.Container.get(error_handler_middleware_1.ErrorHandlerMiddleware);
+        app.use(errorHandler.use.bind(errorHandler));
+        // 6. 注入微信路由
         app.use(wechat_1.default.routes());
         app.use(wechat_1.default.allowedMethods());
-        // 6. 配置路由控制器
+        // 7. 配置路由控制器
         (0, routing_controllers_1.useKoaServer)(app, {
             controllers: [
                 element_controller_1.ElementController,
@@ -49,10 +55,7 @@ async function bootstrap() {
                 chat_controller_1.ChatController,
                 report_controller_1.ReportController,
             ],
-            middlewares: [
-                error_handler_middleware_1.ErrorHandlerMiddleware,
-                request_logger_middleware_1.RequestLoggerMiddleware
-            ],
+            middlewares: [],
             routePrefix: '/api',
             defaultErrorHandler: false,
             validation: true

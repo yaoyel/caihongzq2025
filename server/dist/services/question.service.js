@@ -23,7 +23,7 @@ let QuestionService = class QuestionService {
     }
     async findByAgeRange(ageRange) {
         return this.questionRepository.find({
-            where: { ageRange },
+            where: { ageRange: ageRange },
             order: { id: 'ASC' }
         });
     }

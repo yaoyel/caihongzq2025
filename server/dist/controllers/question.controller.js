@@ -89,6 +89,5 @@ __decorate([
 exports.QuestionController = QuestionController = __decorate([
     (0, routing_controllers_1.JsonController)('/questions'),
     (0, typedi_1.Service)(),
-    (0, routing_controllers_1.Authorized)(),
     __metadata("design:paramtypes", [question_service_1.QuestionService])
 ], QuestionController);

@@ -60,6 +60,5 @@ __decorate([
 exports.ReportController = ReportController = __decorate([
     (0, routing_controllers_1.JsonController)('/report'),
     (0, typedi_1.Service)(),
-    (0, routing_controllers_1.Authorized)(),
     __metadata("design:paramtypes", [report_service_1.ReportService])
 ], ReportController);

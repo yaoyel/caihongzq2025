@@ -5,6 +5,7 @@ import { XMLParser } from 'fast-xml-parser';
 import { AppDataSource } from '../data-source';
 import { User } from '../entities/User';
 import { generateRandomString, getAccessToken } from '../utils/helper';
+import { JwtUtil } from '../utils/jwt';
 
 // 微信接口返回数据类型定义
 interface WechatQRCodeResponse {
@@ -239,12 +240,16 @@ router.all('/callback', async (ctx: Context) => {
 
           console.log('用户信息已保存:', user);
 
+          // 生成JWT token
+          const token = JwtUtil.generateToken({ userId: user.id, nickname: user.nickname, avatarUrl: user.avatarUrl });
+
           // 更新scene映射
           const sceneInfo = sceneMap.get(sceneStr);
           if (!sceneInfo.scanned) {
             sceneMap.set(sceneStr, {
               ...sceneInfo,
               user,
+              token,
               scanned: true,
               scanTime: Date.now()
             });
@@ -295,7 +300,8 @@ router.get('/check-login', async (ctx: Context) => {
         id: sceneInfo.user.id,
         nickname: sceneInfo.user.nickname,
         avatarUrl: sceneInfo.user.avatarUrl
-      }
+      },
+      token: sceneInfo.token
     };
   } else {
     ctx.body = { success: false };
@@ -332,4 +338,4 @@ router.get('/check', async (ctx: Context) => {
   }
 });
 
-export default router; 
+export default router;
