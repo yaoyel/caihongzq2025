@@ -256,6 +256,90 @@ const QuestionCard = styled(Card)`
   }
 `;
 
+// 添加类型定义和配置
+interface TopicConfig {
+  topic: string;
+  options: Array<{ label: string; value: number }>;
+}
+
+const TYPE_CONFIGS: Record<string, TopicConfig> = {
+  'inner_state': {
+    topic: '您经常感受到下述哪种内在状态',
+    options: [
+      { label: '总是', value: 1 },
+      { label: '经常', value: 2 },
+      { label: '很少', value: 3 },
+      { label: '从未', value: 4 },
+      { label: '没注意', value: 5 }
+    ]
+  },
+  'associate_with_people': {
+    topic: '与人相处时，您经常感受到下述哪种内在状态？',
+    options: [
+      { label: '总是', value: 1 },
+      { label: '经常', value: 2 },
+      { label: '很少', value: 3 },
+      { label: '从未', value: 4 },
+      { label: '没注意', value: 5 }
+    ]
+  },
+  'tackle_issues': {
+    topic: '处理事情时，您经常感受到下述哪种内在状态？',
+    options: [
+      { label: '总是', value: 1 },
+      { label: '经常', value: 2 },
+      { label: '很少', value: 3 },
+      { label: '从未', value: 4 },
+      { label: '没注意', value: 5 }
+    ]
+  },
+  'face_choices': {
+    topic: '面对取舍时，您经常感受到下述哪种内在状态？',
+    options: [
+      { label: '总是', value: 1 },
+      { label: '经常', value: 2 },
+      { label: '很少', value: 3 },
+      { label: '从未', value: 4 },
+      { label: '没注意', value: 5 },
+      { label: '"但"前符合，"但"后不符', value: 6 },
+      { label: '从前经常，现在很少', value: 7 }
+    ]
+  },
+  'common_outcome': {
+    topic: '请感受一下，自己通常结果处于下述哪种状态？',
+    options: [
+      { label: '总是', value: 1 },
+      { label: '经常', value: 2 },
+      { label: '很少', value: 3 },
+      { label: '从未', value: 4 },
+      { label: '没注意', value: 5 },
+      { label: '"但"前符合，"但"后不符', value: 6 },
+      { label: '从前经常，现在很少', value: 7 }
+    ]
+  },
+  'normal_state': {
+    topic: '请感受一下，自己通常处于下述哪种状态？',
+    options: [
+      { label: '总是', value: 1 },
+      { label: '经常', value: 2 },
+      { label: '很少', value: 3 },
+      { label: '从未', value: 4 },
+      { label: '没注意', value: 5 },
+      { label: '"但"前符合，"但"后不符', value: 6 },
+      { label: '从前经常，现在很少', value: 7 }
+    ]
+  }
+};
+
+// 添加新的样式组件
+const TopicText = styled(Text)`
+  font-size: 16px;
+  font-weight: bold;
+  color: #1890ff;
+  margin-bottom: 12px;
+  display: block;
+`;
+
 const ReportPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -555,26 +639,30 @@ const ReportPage: React.FC = () => {
         style={{ marginBottom: 24 }}
       />
       
-      {scaleData.map((scale) => (
-        <QuestionCard key={scale.id}>
-          <Space direction="vertical" style={{ width: '100%' }}>
-            <Text>{scale.content}</Text>
-            <Divider />
-            <Radio.Group
-              onChange={(e) => handleAnswer(scale.id, e.target.value)}
-              value={scaleAnswers[scale.id]}
-            >
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <Radio value={1}>非常符合</Radio>
-                <Radio value={2}>比较符合</Radio>
-                <Radio value={3}>一般</Radio>
-                <Radio value={4}>不太符合</Radio>
-                <Radio value={5}>完全不符合</Radio>
-              </Space>
-            </Radio.Group>
-          </Space>
-        </QuestionCard>
-      ))}
+      {scaleData.map((scale) => {
+        const config = TYPE_CONFIGS[scale.type];
+        return (
+          <QuestionCard key={scale.id}>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <TopicText>{config.topic}</TopicText>
+              <Text>{scale.content}</Text>
+              <Divider />
+              <Radio.Group
+                onChange={(e) => handleAnswer(scale.id, e.target.value)}
+                value={scaleAnswers[scale.id]}
+              >
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  {config.options.map(option => (
+                    <Radio key={option.value} value={option.value}>
+                      {option.label}（{option.value}分）
+                    </Radio>
+                  ))}
+                </Space>
+              </Radio.Group>
+            </Space>
+          </QuestionCard>
+        );
+      })}
     </StyledModal>
   );
 
