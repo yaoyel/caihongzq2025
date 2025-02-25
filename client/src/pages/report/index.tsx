@@ -340,6 +340,150 @@ const TopicText = styled(Text)`
   display: block;
 `;
 
+// 添加年龄段配置类型
+interface AgeGroupAnalysis {
+  key: string;
+  title: string;
+  prompt: string;  // 存储提示词但不显示
+  items: Array<{
+    key: string;
+    title: string;
+    prompt: string;  // 存储提示词但不显示
+    content?: React.ReactNode;
+  }>;
+}
+
+// 年龄段配置
+const AGE_GROUP_ANALYSIS: AgeGroupAnalysis[] = [
+  {
+    key: 'kindergarten',
+    title: '幼儿园及小学初年级',
+    prompt: '完成喜欢与天赋量表，双刃剑深度确认，4-8岁的36问以后，结果非常准确',
+    items: [
+      {
+        key: 'anxiety',
+        title: '焦虑点分析',
+        prompt: '作为一名脑神经科学专家、心理学家、儿童发展专家、教育，请基于孩子基础信息...'
+      },
+      {
+        key: 'interest',
+        title: '兴趣班选择指导',
+        prompt: '作为一名脑神经科学专家、心理学家、儿童发展专家、教育家，请基于孩子基础信息...'
+      },
+      {
+        key: 'learning',
+        title: '学习/课堂行为分析',
+        prompt: '作为一名脑神经科学专家、心理学家、儿童发展专家、教育家，基于孩子基础信息...'
+      },
+      {
+        key: 'obstacle',
+        title: '学习障碍分析',
+        prompt: '作为一名脑神经科学专家、心理学家、儿童发展专家、教育家，基于孩子基础信息...'
+      }
+    ]
+  },
+  {
+    key: 'primary',
+    title: '小学高年级及初中',
+    prompt: '完成喜欢与天赋量表，双刃剑深度确认，9-14岁的36问以后，结果非常准确',
+    items: [
+      {
+        key: 'interest',
+        title: '兴趣/热爱方向分析',
+        prompt: '作为一名脑神经科学专家、心理学家、儿童发展专家、教育家，基于孩子基础信息...'
+      },
+      {
+        key: 'obstacle',
+        title: '学习障碍分析',
+        prompt: '作为一名脑神经科学专家、心理学家、儿童发展专家、教育家，基于孩子基础信息...'
+      },
+      {
+        key: 'puberty',
+        title: '青春期问题分析',
+        prompt: '作为一名脑神经科学专家、心理学家、儿童发展专家、教育家，基于孩子基础信息...'
+      }
+    ]
+  },
+  {
+    key: 'highSchool',
+    title: '高中',
+    prompt: '完成喜欢与天赋量表，双刃剑深度确认，15+岁的36问和48问，结果非常准确',
+    items: [
+      {
+        key: 'subject',
+        title: '文理选科分析',
+        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家...'
+      },
+      {
+        key: 'major',
+        title: '适合专业评估',
+        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家...'
+      },
+      {
+        key: 'obstacle',
+        title: '学习障碍分析',
+        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家...'
+      }
+    ]
+  },
+  {
+    key: 'university',
+    title: '大学',
+    prompt: '完成喜欢与天赋量表，双刃剑深度确认，15+岁的36问和48问，结果非常准确',
+    items: [
+      {
+        key: 'career',
+        title: '职业规划建议',
+        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家...'
+      },
+      {
+        key: 'employment',
+        title: '就业建议',
+        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家...'
+      },
+      {
+        key: 'postgraduate',
+        title: '考研建议',
+        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家...'
+      },
+      {
+        key: 'relationship',
+        title: '另一半画像',
+        prompt: '结合孩子行为与状态画像、问答集内容...'
+      }
+    ]
+  }
+];
+
+// 添加新的样式组件
+const AnalysisCard = styled(Card)`
+  margin-bottom: 16px;
+  
+  .ant-card-head {
+    background: #fafafa;
+  }
+  
+  .ant-card-head-wrapper {
+    display: flex;
+    align-items: center;
+  }
+
+  .ant-card-head-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .analysis-content {
+    padding: 16px 0;
+  }
+
+  .ai-button {
+    margin-left: 8px;
+    padding: 0;
+  }
+`;
+
 const ReportPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -620,14 +764,7 @@ const ReportPage: React.FC = () => {
         <Button
           key="submit"
           type="primary"
-          onClick={async () => {
-            const success = await saveScaleAnswers();
-            if (success) {
-              message.success('提交成功');
-              setModalVisible(false);
-              setScaleAnswers({});  // 清空答案
-            }
-          }}
+          onClick={handleSubmit}
         >
           确认提交
         </Button>
@@ -654,7 +791,7 @@ const ReportPage: React.FC = () => {
                 <Space direction="vertical" style={{ width: '100%' }}>
                   {config.options.map(option => (
                     <Radio key={option.value} value={option.value}>
-                      {option.label}（{option.value}分）
+                      {option.label}
                     </Radio>
                   ))}
                 </Space>
@@ -707,6 +844,30 @@ const ReportPage: React.FC = () => {
   useEffect(() => {
     fetchAnswerStats();
   }, []);
+
+  // 修改提交处理逻辑
+  const handleSubmit = async () => {
+    const success = await saveScaleAnswers();
+    if (success) {
+      message.success('提交成功');
+      setModalVisible(false);
+      // 立即更新统计数据
+      await fetchAnswerStats();
+      // 清空答案
+      setScaleAnswers({});
+    }
+  };
+
+  // 添加新的状态来控制展开/收起
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+
+  // 添加处理展开/收起的函数
+  const handleExpand = (itemKey: string) => {
+    setExpandedItems(prev => ({
+      ...prev,
+      [itemKey]: !prev[itemKey]
+    }));
+  };
 
   return (
     <StyledLayout>
@@ -1203,47 +1364,50 @@ const ReportPage: React.FC = () => {
             </ReportCard>
 
             <ReportCard title="年龄段个性化分析">
-              <Collapse>
-                <Panel header="焦虑问题及解决方案" key="1">
-                  <List
-                    dataSource={[
-                      {
-                        title: '学业压力',
-                        solutions: [
-                          '制定合理的学习计划',
-                          '培养良好的学习习惯',
-                          '适当的运动放松'
-                        ]
-                      },
-                      {
-                        title: '人际关系',
-                        solutions: [
-                          '参加团体活动',
-                          '提升沟通技巧',
-                          '建立自信心'
-                        ]
-                      }
-                    ]}
-                    renderItem={item => (
-                      <List.Item>
-                        <Card title={item.title} style={{ width: '100%' }}>
-                          <ul>
-                            {item.solutions.map((solution, index) => (
-                              <li key={index}>{solution}</li>
-                            ))}
-                          </ul>
-                        </Card>
-                      </List.Item>
-                    )}
-                  />
-                </Panel>
-                <Panel header="学习障碍及改进方法" key="2">
-                  {/* 学习障碍内容 */}
-                </Panel>
-                <Panel header="能力建设建议" key="3">
-                  {/* 能力建设内容 */}
-                </Panel>
-              </Collapse>
+              <Tabs
+                type="card"
+                items={AGE_GROUP_ANALYSIS.map(group => ({
+                  key: group.key,
+                  label: group.title,
+                  children: (
+                    <div>
+                      <Alert
+                        type="info"
+                        message={group.prompt}
+                        style={{ marginBottom: 16 }}
+                      />
+                      {group.items.map(item => {
+                        const itemKey = `${group.key}-${item.key}`;
+                        return (
+                          <AnalysisCard
+                            key={item.key}
+                            title={
+                              <Space>
+                                {item.title}
+                                <Button
+                                  type="link"
+                                  className="ai-button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    message.info('正在分析中...');
+                                    handleExpand(itemKey);
+                                  }}
+                                >
+                                  AI分析
+                                </Button>
+                              </Space>
+                            }
+                          >
+                            <div className="analysis-content" style={{ display: expandedItems[itemKey] ? 'block' : 'none' }}>
+                              <Empty description="暂无分析结果" />
+                            </div>
+                          </AnalysisCard>
+                        );
+                      })}
+                    </div>
+                  )
+                }))}
+              />
             </ReportCard>
 
             <ReportCard title="发展建议总结" className="page-break">
