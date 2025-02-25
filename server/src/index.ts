@@ -22,6 +22,9 @@ import { ErrorHandlerMiddleware } from './middlewares/error-handler.middleware';
 import { RequestLoggerMiddleware } from './middlewares/request-logger.middleware';  
 import { jwtMiddleware } from './middlewares/jwt.middleware';
 import { DoubleEdgedInfoController } from './controllers/doubleEdgedInfo.controller';
+import { DoubleEdgedScaleController } from './controllers/doubleEdgedScale.controller';
+import { DoubleEdgedAnswerController } from './controllers/doubleEdgedAnswer.controller';
+
 async function bootstrap() {
     try {
         // 1. 设置依赖注入容器
@@ -64,13 +67,16 @@ async function bootstrap() {
         // 7. 配置路由控制器
         useKoaServer(app, {
             controllers: [
+                DoubleEdgedAnswerController,
                 ElementController,
                 QuestionController,
                 ScaleController,
                 UserController,
                 ChatController,
                 ReportController, 
-                DoubleEdgedInfoController
+                DoubleEdgedInfoController,
+                DoubleEdgedScaleController,
+        
             ],
             middlewares: [],
             routePrefix: '/api',

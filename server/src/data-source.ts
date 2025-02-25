@@ -11,8 +11,9 @@ import { ChatMessage } from './entities/ChatMessage';
 import { logger } from './config/logger';
 import { config } from 'dotenv'; 
 import { DoubleEdgedInfo } from './entities/DoubleEdgedInfo';
-import { DoubleEdgedScale } from './entities/DoubleEdged';
+import { DoubleEdgedScale } from './entities/DoubleEdgedScale';
 import { DoubleEdgedAnswer } from './entities/DoubleEdgedAnswer';
+
 // 加载环境变量
 config();
 

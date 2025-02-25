@@ -1,31 +1,49 @@
-import { KoaMiddlewareInterface } from 'routing-controllers';
 import { Service } from 'typedi';
-import { Context } from 'koa';
+import { KoaMiddlewareInterface } from 'routing-controllers';
+import { Context, Next } from 'koa';
 import { logger } from '../config/logger';
 
 @Service()
 export class RequestLoggerMiddleware implements KoaMiddlewareInterface {
-    async use(ctx: Context, next: (err?: any) => Promise<any>): Promise<any> {
+    async use(ctx: Context, next: Next): Promise<void> {
         const start = Date.now();
-        
-        // 记录请求开始
-        logger.info('Request started', {
-            path: ctx.path,
+        const requestId = Math.random().toString(36).substring(7);
+
+        // 记录请求信息
+        logger.info(`[${requestId}] Incoming Request`, {
             method: ctx.method,
-            params: ctx.params,
+            url: ctx.url,
             query: ctx.query,
-            body: ctx.request.body
+            body: ctx.request.body,
+            headers: ctx.headers,
         });
 
-        await next();
+        try {
+            await next();
 
-        // 记录请求完成
-        const ms = Date.now() - start;
-        logger.info('Request completed', {
-            path: ctx.path,
-            method: ctx.method,
-            status: ctx.status,
-            duration: `${ms}ms`
-        });
+            // 记录响应信息
+            const ms = Date.now() - start;
+            logger.info(`[${requestId}] Request Completed`, {
+                method: ctx.method,
+                url: ctx.url,
+                status: ctx.status,
+                duration: `${ms}ms`,
+                response: ctx.body,
+            });
+        } catch (error) {
+            // 记录错误信息
+            const ms = Date.now() - start;
+            logger.error(`[${requestId}] Request Failed`, {
+                method: ctx.method,
+                url: ctx.url,
+                status: ctx.status,
+                duration: `${ms}ms`,
+                error: {
+                    message: error instanceof Error ? error.message : String(error),
+                    stack: error instanceof Error ? error.stack : undefined,
+                },
+            });
+            throw error;
+        }
     }
 } 

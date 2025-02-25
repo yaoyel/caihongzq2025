@@ -88,6 +88,15 @@ let ChatController = class ChatController {
             ctx.req.on('close', resolve);
         });
     }
+    async deleteMessage(id) {
+        try {
+            await this.chatService.deleteMessage(id);
+            return { message: '消息删除成功' };
+        }
+        catch (error) {
+            return { error: '删除消息失败' };
+        }
+    }
 };
 exports.ChatController = ChatController;
 __decorate([
@@ -163,6 +172,13 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], ChatController.prototype, "stream", null);
+__decorate([
+    (0, routing_controllers_1.Delete)('/messages/:id'),
+    __param(0, (0, routing_controllers_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ChatController.prototype, "deleteMessage", null);
 exports.ChatController = ChatController = __decorate([
     (0, routing_controllers_1.JsonController)('/chat'),
     (0, typedi_1.Service)(),

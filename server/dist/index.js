@@ -24,6 +24,9 @@ const report_controller_1 = require("./controllers/report.controller");
 const error_handler_middleware_1 = require("./middlewares/error-handler.middleware");
 const request_logger_middleware_1 = require("./middlewares/request-logger.middleware");
 const jwt_middleware_1 = require("./middlewares/jwt.middleware");
+const doubleEdgedInfo_controller_1 = require("./controllers/doubleEdgedInfo.controller");
+const doubleEdgedScale_controller_1 = require("./controllers/doubleEdgedScale.controller");
+const doubleEdgedAnswer_controller_1 = require("./controllers/doubleEdgedAnswer.controller");
 async function bootstrap() {
     try {
         // 1. 设置依赖注入容器
@@ -65,6 +68,9 @@ async function bootstrap() {
                 user_controller_1.UserController,
                 chat_controller_1.ChatController,
                 report_controller_1.ReportController,
+                doubleEdgedInfo_controller_1.DoubleEdgedInfoController,
+                doubleEdgedScale_controller_1.DoubleEdgedScaleController,
+                doubleEdgedAnswer_controller_1.DoubleEdgedAnswerController
             ],
             middlewares: [],
             routePrefix: '/api',

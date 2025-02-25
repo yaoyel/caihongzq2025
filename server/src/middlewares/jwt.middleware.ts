@@ -16,7 +16,7 @@ export async function jwtMiddleware(ctx: Context, next: Next) {
             '/api/wechat/callback',
             '/api/wechat/check-login',
            '/ api/wechat/check',
-           '/api/chat/stream'
+           '/api/chat/stream' 
         ];
 
         if (publicPaths.includes(ctx.path)) {
@@ -40,10 +40,17 @@ export async function jwtMiddleware(ctx: Context, next: Next) {
             throw new UnauthorizedError(error?.message || '无效的token');
         }
     } catch (error: any) {
-        ctx.status = error?.httpCode || 401;
-        ctx.body = {
-            code: ctx.status,
-            message: error?.message || '认证失败'
-        };
+        if (ctx.status == 401) {
+            ctx.body = {
+                code: ctx.status,
+                message: error?.message || '认证失败'
+            };
+        } else {
+            ctx.body = {
+                code: ctx.status || 500,
+                message: error?.message || '服务器内部错误'
+            };
+        }
+        
     }
 }

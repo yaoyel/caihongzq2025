@@ -11,6 +11,9 @@ interface ElementAnalysis {
   like_status: string;
   talent_status: string;
   status: string;
+  like_element_id: number;
+  talent_element_id: number;
+  double_edged_id: number;
 }
 
 interface ReportState {

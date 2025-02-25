@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { Layout, Typography, Card, Row, Col, Collapse, Tabs, List, Button, message, Space, Alert, Tag, Tooltip, Spin, Empty, Divider } from 'antd';
+import { Layout, Typography, Card, Row, Col, Collapse, Tabs, List, Button, message, Space, Alert, Tag, Tooltip, Spin, Empty, Modal, Divider, Radio } from 'antd';
 import styled from '@emotion/styled';
 import { HomeOutlined, DownloadOutlined, QuestionCircleOutlined, BulbOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -143,6 +143,14 @@ interface DoubleEdgedInfo {
   };
 }
 
+// 添加新的类型定义
+interface DoubleEdgedScale {
+  id: number;
+  dimension: string;
+  content: string;
+  type: 'inner_state' | 'associate_with_people' | 'tackle_issues' | 'face_choices' | 'common_outcome' | 'normal_state';
+}
+
 // 修改样式组件
 const StyledPanel = styled(Panel)`
   .ant-collapse-header {
@@ -167,6 +175,10 @@ const StyledPanel = styled(Panel)`
       border-color: #ffc069;
       color: #d46b08;
     }
+  }
+
+  .trait-name {
+    color: rgba(0, 0, 0, 0.85);
   }
 `;
 
@@ -199,10 +211,7 @@ const ElementsGrid = styled.div`
   margin-top: 16px;
   
   .element-card {
-    background: #fff;
     padding: 16px;
-    border-radius: 6px;
-    border: 1px solid #f0f0f0;
     
     .element-title {
       color: #8c8c8c;
@@ -210,10 +219,40 @@ const ElementsGrid = styled.div`
     }
     
     .element-content {
-      display: flex;
+      display: inline-flex;
       flex-direction: column;
       gap: 8px;
+      
+      .text-content {
+        display: inline-block;
+        background: #f5f5f5;
+        padding: 4px 8px;
+        border-radius: 4px;
+      }
     }
+  }
+`;
+
+// 添加新的样式组件
+const StyledModal = styled(Modal)`
+  .ant-modal-body {
+    padding: 24px;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+`;
+
+const QuestionCard = styled(Card)`
+  margin: 16px 0;
+  border-radius: 8px;
+  transition: all 0.3s;
+  
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  .ant-radio-group {
+    width: 100%;
   }
 `;
 
@@ -230,7 +269,74 @@ const ReportPage: React.FC = () => {
 
   const elementAnalysis = useSelector((state: RootState) => state.report.elementAnalysis);
 
-  // 添加获取用户ID的函数
+  // 在 ReportPage 组件中添加这些函数
+  const handleConfirm = async (doubleEdgedId: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      const userStr = localStorage.getItem('user');
+      
+      if (!token || !userStr) {
+        message.error('请先登录');
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+      setCurrentDoubleEdgedId(doubleEdgedId);
+
+      // 修改 API 请求格式
+      const answersResponse = await axios.get(
+        getApiUrl(`/double-edged-answers/findByDoubleEdgedIdAndUserId?doubleEdgedId=${doubleEdgedId}&userId=${user.id}`),
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      // 获取量表数据
+      const scaleResponse = await axios.get(
+        getApiUrl(`/double-edged-scale/double-edged/${doubleEdgedId}`),
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      // 设置量表数据
+      setScaleData(scaleResponse.data);
+
+      // 如果有已存在的答案，设置到状态中
+      if (answersResponse.data && answersResponse.data.length > 0) {
+        const existingAnswers = answersResponse.data.reduce((acc: Record<number, number>, answer: any) => {
+          acc[answer.scaleId] = answer.score;
+          return acc;
+        }, {});
+        setScaleAnswers(existingAnswers);
+      } else {
+        // 如果没有答案，清空之前的答案
+        setScaleAnswers({});
+      }
+
+      // 如果没有统计数据，先获取
+      if (Object.keys(answerStats).length === 0) {
+        await fetchAnswerStats();
+      }
+
+      const stats = answerStats[doubleEdgedId] || { completed: 0, total: 6 };
+      message.info(`已完成 ${stats.completed}/${stats.total} 个确认题`);
+
+      setModalVisible(true);
+    } catch (error) {
+      console.error('获取数据失败:', error);
+      message.error('获取数据失败');
+    }
+  };
+
+  const handleAnswer = (scaleId: number, value: number) => {
+    setScaleAnswers(prev => ({
+      ...prev,
+      [scaleId]: value
+    }));
+  };
+
+  // 获取用户ID的函数（如果还没有的话）
   const getUserId = () => {
     const userStr = localStorage.getItem('user');
     if (!userStr) {
@@ -356,8 +462,8 @@ const ReportPage: React.FC = () => {
 
         // 过滤出与有喜欢有天赋元素相关的双刃剑数据
         const filteredData = response.data.filter((item: DoubleEdgedInfo) => 
-          likeAndTalentElements.some(element => 
-            element.double_edged_id === item.id
+          likeAndTalentElements.some((element: any) => 
+            element.double_edged_id && element.double_edged_id === item.id
           )
         );
 
@@ -374,6 +480,145 @@ const ReportPage: React.FC = () => {
       fetchData();
     }
   }, [elementAnalysis]);
+
+  // 在 ReportPage 组件中添加状态
+  const [modalVisible, setModalVisible] = useState(false);
+  const [scaleData, setScaleData] = useState<DoubleEdgedScale[]>([]);
+  const [scaleAnswers, setScaleAnswers] = useState<Record<number, number>>({});
+  const [currentDoubleEdgedId, setCurrentDoubleEdgedId] = useState<number | null>(null);
+
+  // 添加保存答案的函数
+  const saveScaleAnswers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        message.error('请先登录');
+        return false;
+      }
+
+      const userId = getUserId();
+      if (!userId) return false;
+
+      const answers = Object.entries(scaleAnswers).map(([scaleId, score]) => ({
+        userId,
+        scaleId: parseInt(scaleId),
+        score,
+        doubleEdgedId: currentDoubleEdgedId
+      }));
+
+      await axios.post(
+        getApiUrl('/double-edged-scale/answers'),
+        { answers },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      return true;
+    } catch (error) {
+      console.error('保存答案失败:', error);
+      message.error('保存答案失败');
+      return false;
+    }
+  };
+
+  // 修改弹出框组件
+  const renderModal = () => (
+    <StyledModal
+      title="深度确认"
+      open={modalVisible}
+      onCancel={() => setModalVisible(false)}
+      width={800}
+      footer={[
+        <Button key="cancel" onClick={() => setModalVisible(false)}>
+          取消
+        </Button>,
+        <Button
+          key="submit"
+          type="primary"
+          onClick={async () => {
+            const success = await saveScaleAnswers();
+            if (success) {
+              message.success('提交成功');
+              setModalVisible(false);
+              setScaleAnswers({});  // 清空答案
+            }
+          }}
+        >
+          确认提交
+        </Button>
+      ]}
+    >
+      <Alert
+        type="info"
+        message="请根据实际情况选择最符合的选项"
+        style={{ marginBottom: 24 }}
+      />
+      
+      {scaleData.map((scale) => (
+        <QuestionCard key={scale.id}>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Text>{scale.content}</Text>
+            <Divider />
+            <Radio.Group
+              onChange={(e) => handleAnswer(scale.id, e.target.value)}
+              value={scaleAnswers[scale.id]}
+            >
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Radio value={1}>非常符合</Radio>
+                <Radio value={2}>比较符合</Radio>
+                <Radio value={3}>一般</Radio>
+                <Radio value={4}>不太符合</Radio>
+                <Radio value={5}>完全不符合</Radio>
+              </Space>
+            </Radio.Group>
+          </Space>
+        </QuestionCard>
+      ))}
+    </StyledModal>
+  );
+
+  // 添加新的状态
+  const [answerStats, setAnswerStats] = useState<Record<number, { completed: number, total: number }>>({});
+
+  // 添加获取答题统计的函数
+  const fetchAnswerStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const userStr = localStorage.getItem('user');
+      
+      if (!token || !userStr) {
+        message.error('请先登录');
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+      const response = await axios.get(
+        getApiUrl(`/double-edged-answers/findByUserId?userId=${user.id}`),
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      // 统计每个双刃剑的答题情况
+      const stats = response.data.reduce((acc: Record<number, { completed: number, total: number }>, answer: any) => {
+        if (!acc[answer.doubleEdgedId]) {
+          acc[answer.doubleEdgedId] = { completed: 0, total: 6 };
+        }
+        acc[answer.doubleEdgedId].completed += 1;
+        return acc;
+      }, {});
+
+      setAnswerStats(stats);
+    } catch (error) {
+      console.error('获取答题统计失败:', error);
+    }
+  };
+
+  // 在组件初始化时获取答题统计
+  useEffect(() => {
+    fetchAnswerStats();
+  }, []);
 
   return (
     <StyledLayout>
@@ -741,20 +986,26 @@ const ReportPage: React.FC = () => {
                       key={item.id}
                       header={
                         <div className="header-content">
-                          <Text strong>{item.name}</Text>
-                          <Tag color="blue">双刃剑特征</Tag>
-                          <Tooltip title="点击进行深度确认，帮助您更好地理解和应对这些特征">
-                            <Button 
-                              size="small"
-                              className="confirm-button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                message.success('已进入深度确认流程');
-                              }}
-                            >
-                              深度确认
-                            </Button>
-                          </Tooltip>
+                          <span className="trait-name">
+                            双刃剑名称: <strong>{item.name}</strong>
+                          </span>
+                          <Space>
+                            <Tooltip title="点击进行深度确认，帮助您更好地理解和应对这些特征">
+                              <Button 
+                                size="small"
+                                className="confirm-button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleConfirm(item.id);
+                                }}
+                              >
+                                深度确认
+                              </Button>
+                            </Tooltip>
+                            <Text type="secondary">
+                              ({answerStats[item.id]?.completed || 0}/6)
+                            </Text>
+                          </Space>
                         </div>
                       }
                     >
@@ -783,14 +1034,14 @@ const ReportPage: React.FC = () => {
                           <div className="element-title">关联喜欢</div>
                           <div className="element-content">
                             <Tag color="green">{item.likeElement.name}</Tag>
-                            <Text>{item.likeElement.status}</Text>
+                            <span className="text-content">{item.likeElement.status}</span>
                           </div>
                         </div>
                         <div className="element-card">
                           <div className="element-title">关联天赋</div>
                           <div className="element-content">
                             <Tag color="purple">{item.talentElement.name}</Tag>
-                            <Text>{item.talentElement.status}</Text>
+                            <span className="text-content">{item.talentElement.status}</span>
                           </div>
                         </div>
                       </ElementsGrid>
@@ -939,6 +1190,8 @@ const ReportPage: React.FC = () => {
           </Space>
         </Row>
       </div>
+
+      {renderModal()}
     </StyledLayout>
   );
 }

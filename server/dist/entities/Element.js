@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Element = void 0;
 const typeorm_1 = require("typeorm");
+const DoubleEdgedInfo_1 = require("./DoubleEdgedInfo");
 let Element = class Element {
     id;
     name;
@@ -19,6 +20,8 @@ let Element = class Element {
     dimension;
     correspondingElementId;
     correspondingElement;
+    doubleEdgedId;
+    doubleEdgedInfo;
 };
 exports.Element = Element;
 __decorate([
@@ -51,6 +54,15 @@ __decorate([
     (0, typeorm_1.JoinColumn)({ name: 'corresponding_element_id' }),
     __metadata("design:type", Element)
 ], Element.prototype, "correspondingElement", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'double_edged_id' }),
+    __metadata("design:type", Number)
+], Element.prototype, "doubleEdgedId", void 0);
+__decorate([
+    (0, typeorm_1.OneToOne)(() => DoubleEdgedInfo_1.DoubleEdgedInfo),
+    (0, typeorm_1.JoinColumn)({ name: 'double_edged_id' }),
+    __metadata("design:type", DoubleEdgedInfo_1.DoubleEdgedInfo)
+], Element.prototype, "doubleEdgedInfo", void 0);
 exports.Element = Element = __decorate([
     (0, typeorm_1.Entity)('elements')
 ], Element);

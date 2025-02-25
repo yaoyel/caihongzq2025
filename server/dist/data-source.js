@@ -3,8 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.initializeDataSource = exports.AppDataSource = void 0;
 require("reflect-metadata");
 const typeorm_1 = require("typeorm");
-const typedi_1 = require("typedi");
-const typeorm_2 = require("typeorm");
 const User_1 = require("./entities/User");
 const Element_1 = require("./entities/Element");
 const Scale_1 = require("./entities/Scale");
@@ -15,10 +13,11 @@ const ChatSession_1 = require("./entities/ChatSession");
 const ChatMessage_1 = require("./entities/ChatMessage");
 const logger_1 = require("./config/logger");
 const dotenv_1 = require("dotenv");
+const DoubleEdgedInfo_1 = require("./entities/DoubleEdgedInfo");
+const DoubleEdgedScale_1 = require("./entities/DoubleEdgedScale");
+const DoubleEdgedAnswer_1 = require("./entities/DoubleEdgedAnswer");
 // 加载环境变量
 (0, dotenv_1.config)();
-// 设置 TypeORM 容器
-(0, typeorm_2.useContainer)(typedi_1.Container);
 exports.AppDataSource = new typeorm_1.DataSource({
     name: 'default', // 设置默认连接名
     type: 'postgres',
@@ -42,18 +41,21 @@ exports.AppDataSource = new typeorm_1.DataSource({
         Question_1.Question,
         QuestionAnswer_1.QuestionAnswer,
         ChatSession_1.ChatSession,
-        ChatMessage_1.ChatMessage
+        ChatMessage_1.ChatMessage,
+        DoubleEdgedInfo_1.DoubleEdgedInfo,
+        DoubleEdgedScale_1.DoubleEdgedScale,
+        DoubleEdgedAnswer_1.DoubleEdgedAnswer
     ],
-    migrations: [],
+    migrations: [
+    //  __dirname + '/migrations/*.ts'  // 使用绝对路径
+    ],
+    // migrationsTableName: "migrations",  // 添加这行
     subscribers: []
 });
 const initializeDataSource = async () => {
     try {
         const dataSource = await exports.AppDataSource.initialize();
         logger_1.logger.info('Database connection established');
-        // 将 DataSource 实例注册到容器
-        typedi_1.Container.set(typeorm_1.DataSource, dataSource);
-        typedi_1.Container.set('connection.default', dataSource); // 注册为默认连接
         return dataSource;
     }
     catch (error) {

@@ -19,21 +19,21 @@ export class DoubleEdgedAnswerService {
 
   async findAll(): Promise<DoubleEdgedAnswer[]> {
     return await this.doubleEdgedAnswerRepository.find({
-      relations: ['doubleEdged', 'user']
+      relations: ['scale', 'user']
     });
   }
 
   async findOne(id: number): Promise<DoubleEdgedAnswer | null> {
     return await this.doubleEdgedAnswerRepository.findOne({
       where: { id },
-      relations: ['doubleEdged', 'user']
+      relations: ['scale', 'user']
     });
   }
 
   async findByUserId(userId: number): Promise<DoubleEdgedAnswer[]> {
     return await this.doubleEdgedAnswerRepository.find({
       where: { userId },
-      relations: ['doubleEdged']
+      relations: ['scale']
     });
   }
 
@@ -41,11 +41,21 @@ export class DoubleEdgedAnswerService {
     await this.doubleEdgedAnswerRepository.update(id, updateDto);
     return await this.doubleEdgedAnswerRepository.findOne({
       where: { id },
-      relations: ['doubleEdged', 'user']
+      relations: ['scale', 'user']
     });
   }
 
   async remove(id: number): Promise<void> {
     await this.doubleEdgedAnswerRepository.delete(id);
+  }
+
+  async findByDoubleEdgedIdAndUserId(doubleEdgedId: number, userId: number): Promise<DoubleEdgedAnswer[]> {
+    return await this.doubleEdgedAnswerRepository.find({
+      where: {
+        doubleEdgedId,
+        userId
+      },
+      relations: ['scale']
+    });
   }
 }

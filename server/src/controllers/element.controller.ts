@@ -29,15 +29,13 @@ export class ElementController {
         return await this.elementService.create(data);
     }
 
-    @Put('/:id')
-    @Authorized()
+    @Put('/:id') 
     @OpenAPI({ summary: '更新元素' })
     async update(@Param('id') id: number, @Body() data: Partial<Element>) {
         return await this.elementService.update(id, data);
     }
 
-    @Delete('/:id')
-    @Authorized()
+    @Delete('/:id') 
     @OpenAPI({ summary: '删除元素' })
     async delete(@Param('id') id: number) {
         await this.elementService.delete(id);
