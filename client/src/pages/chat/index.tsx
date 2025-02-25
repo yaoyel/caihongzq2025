@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Layout, Typography, Button, Input, List, Avatar, Space, message, Modal } from 'antd';
 import { SendOutlined, PlusOutlined, MessageOutlined, HomeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import styled from '@emotion/styled';
@@ -56,6 +56,7 @@ const ChatContainer = styled(Layout)`
   flex-direction: column;
   padding: 0;
   min-height: 100vh;
+  background: #fff;
 `;
 
 const MessageList = styled(List<Message>)`
@@ -65,26 +66,40 @@ const MessageList = styled(List<Message>)`
   overflow-y: auto;
   
   .ant-list-item {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
     padding: 0;
-
+    background: #fff;
+    border: none !important;
+    
     &:first-child {
-      margin-top: 24px;
+      margin-top: 20px;
     }
+
+    &:last-child {
+      margin-bottom: 32px;
+    }
+  }
+
+  .ant-list-split .ant-list-item {
+    border-bottom: none;
+  }
+
+  .ant-list {
+    border: none;
   }
 `;
 
 const StyledMessageBubble = styled.div<{ isUser: boolean }>`
   background-color: ${props => props.isUser ? '#e6f7ff' : '#f5f5f5'};
-  padding: 10px 14px;
-  border-radius: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
   display: inline-block;
   border: 1px solid ${props => props.isUser ? '#91d5ff' : '#e8e8e8'};
   max-width: 100%;
   
   .markdown-content {
-    font-size: 13px;
-    line-height: 1.5;
+    font-size: 12px;
+    line-height: 1.4;
     color: #333;
     
     p {
@@ -96,17 +111,17 @@ const StyledMessageBubble = styled.div<{ isUser: boolean }>`
     }
     
     code {
-      font-size: 12px;
+      font-size: 11px;
       background-color: rgba(0, 0, 0, 0.05);
-      padding: 2px 4px;
-      border-radius: 3px;
+      padding: 1px 3px;
+      border-radius: 2px;
       font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
     }
     
     pre {
-      padding: 10px;
+      padding: 8px;
       border-radius: 4px;
-      margin: 6px 0;
+      margin: 4px 0;
     }
   }
 
@@ -128,18 +143,27 @@ const StyledMessageBubble = styled.div<{ isUser: boolean }>`
   }
 `;
 
-// 修改加载动画样式
+// 1. 修改加载动画样式
 const LoadingDots = styled.div`
   display: inline-block;
-  font-size: 13px;
+  font-size: 12px;
   color: #666;
+
+  @keyframes dots {
+    0% { content: ''; }
+    25% { content: '.'; }
+    50% { content: '..'; }
+    75% { content: '...'; }
+    100% { content: ''; }
+  }
+
   &::after {
-    content: '...';
-    animation: dots 1.5s steps(4, end) infinite;
+    content: '';
+    animation: dots 1.5s infinite;
   }
 `;
 
-// 修改消息气泡组件
+// 2. 修改消息气泡组件中的加载显示
 const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
   return (
     <StyledMessageBubble isUser={message.isUser}>
@@ -147,7 +171,7 @@ const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
         {message.content ? (
           <ReactMarkdown>{message.content}</ReactMarkdown>
         ) : !message.isUser ? (
-          <LoadingDots>思考中</LoadingDots>
+          <span>思考中<LoadingDots /></span>
         ) : null}
       </div>
     </StyledMessageBubble>
@@ -157,10 +181,13 @@ const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
 const InputContainer = styled.div`
   padding: 16px;
   background: #fff;
-  border-top: 1px solid #f0f0f0;
   display: flex;
   gap: 10px;
   align-items: flex-start;
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: #fff;
   
   .ant-input-textarea {
     flex: 1;
@@ -168,6 +195,7 @@ const InputContainer = styled.div`
       padding: 10px 14px;
       font-size: 13px;
       min-height: 90px;
+      max-height: 200px;
       border: 1px solid #e8e8e8;
       border-radius: 6px;
       resize: none;
@@ -226,6 +254,17 @@ const ChatPage: React.FC = () => {
   const [activeChat, setActiveChat] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const scrollToBottom = useCallback(() => {
+    if (messageListRef.current) {
+      const element = messageListRef.current;
+      const isScrolledToBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + 100;
+      
+      if (isScrolledToBottom) {
+        element.scrollTop = element.scrollHeight;
+      }
+    }
+  }, []);
+
   useEffect(() => {
     let eventSource: EventSource | null = null;
 
@@ -239,6 +278,9 @@ const ChatPage: React.FC = () => {
       eventSource.onopen = () => {
         console.log('SSE连接已建立');
       };
+
+      // 使用防抖进行消息更新
+      let updateTimeout: NodeJS.Timeout;
 
       eventSource.addEventListener('message-update', (event) => {
         try {
@@ -260,31 +302,32 @@ const ChatPage: React.FC = () => {
             return;
           }
 
-          // 直接更新最后一条消息
-          setMessages(prevMessages => {
-            const newMessages = [...prevMessages];
-            const lastMessage = newMessages[newMessages.length - 1];
-            
-            if (lastMessage && !lastMessage.isUser) {
-              lastMessage.content = data.content;
-              if (data.content) {
-                setIsLoading(false); // 收到内容时解除加载状态
+          // 使用防抖处理更新
+          clearTimeout(updateTimeout);
+          updateTimeout = setTimeout(() => {
+            setMessages(prevMessages => {
+              const newMessages = [...prevMessages];
+              const lastMessage = newMessages[newMessages.length - 1];
+              
+              if (lastMessage && !lastMessage.isUser) {
+                // 只在内容真正变化时才更新
+                if (lastMessage.content !== data.content) {
+                  lastMessage.content = data.content;
+                  // 使用 RAF 优化滚动
+                  requestAnimationFrame(scrollToBottom);
+                }
+                if (data.content) {
+                  setIsLoading(false);
+                }
               }
-            }
-            
-            return newMessages;
-          });
-
-          // 滚动到底部
-          requestAnimationFrame(() => {
-            if (messageListRef.current) {
-              messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
-            }
-          });
+              
+              return newMessages;
+            });
+          }, 50); // 50ms 的防抖延迟
 
         } catch (error) {
           console.error('处理消息更新失败:', error);
-          setIsLoading(false); // 出错时也解除加载状态
+          setIsLoading(false);
         }
       });
 
@@ -300,7 +343,7 @@ const ChatPage: React.FC = () => {
       console.log('关闭SSE连接');
       eventSource?.close();
     };
-  }, []);
+  }, [scrollToBottom]);
 
   useEffect(() => {
     console.log('消息列表已更新:', messages);
@@ -406,6 +449,7 @@ const ChatPage: React.FC = () => {
   };
 
   const handleInputChange = React.useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
     setInputValue(e.target.value);
   }, []);
 
@@ -415,6 +459,18 @@ const ChatPage: React.FC = () => {
     const currentInput = inputValue.trim();
     setInputValue('');
     setIsLoading(true);
+
+    // 1. 立即添加用户消息到界面
+    const userMessage: Message = {
+        id: Date.now(), // 临时ID
+        content: currentInput,
+        isUser: true,
+        role: 'user',
+        timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    scrollToBottom();
 
     try {
         const response = await fetch(getApiUrl('/chat/messages'), {
@@ -434,38 +490,28 @@ const ChatPage: React.FC = () => {
 
         const data = await response.json();
 
-        // 立即更新消息列表
-        const newMessages: Message[] = [
-            {
-                id: Number(data.userMessage.id),
-                content: currentInput,
-                isUser: true,
-                role: 'user',
-                timestamp: new Date()
-            },
-            {
+        // 2. 更新用户消息的真实ID，并添加AI消息占位
+        setMessages(prev => {
+            const newMessages = prev.map(msg => 
+                msg.id === userMessage.id ? { ...msg, id: Number(data.userMessage.id) } : msg
+            );
+            
+            return [...newMessages, {
                 id: Number(data.aiMessage.id),
                 content: '',
                 isUser: false,
                 role: 'assistant',
                 timestamp: new Date()
-            }
-        ];
-
-        // 直接更新消息列表，不需要重新获取
-        setMessages(prev => [...prev, ...newMessages]);
-
-        // 滚动到底部
-        requestAnimationFrame(() => {
-            if (messageListRef.current) {
-                messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
-            }
+            }];
         });
 
     } catch (error) {
         console.error('发送消息失败:', error);
         message.error('发送失败');
+        // 3. 发送失败时恢复输入
         setInputValue(currentInput);
+        // 4. 移除失败的消息
+        setMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
         setIsLoading(false);
     }
   };
@@ -564,8 +610,16 @@ const ChatPage: React.FC = () => {
     position: relative;
     display: flex;
     align-items: flex-start;
-    gap: 12px;
-    max-width: 90%;
+    gap: 8px;
+    max-width: 85%;
+
+    .message-time {
+      position: absolute;
+      bottom: -16px;
+      font-size: 11px;
+      color: #999;
+      ${props => props.isUser ? 'right: 0' : 'left: 0'};
+    }
 
     .delete-icon {
       opacity: 0;
@@ -594,6 +648,79 @@ const ChatPage: React.FC = () => {
         'Authorization': `Bearer ${token}`
     };
   };
+
+  const MessageListMemo = useMemo(() => (
+    <MessageList
+      ref={messageListRef}
+      dataSource={messages}
+      renderItem={(item: Message) => (
+        <List.Item 
+          style={{ 
+            justifyContent: item.isUser ? 'flex-end' : 'flex-start',
+            display: 'flex',
+            marginBottom: '24px',
+            border: 'none',
+            borderBottom: 'none'
+          }}
+        >
+          <MessageContainer isUser={item.isUser}>
+            {!item.isUser && (
+              <Avatar size={24} style={{ backgroundColor: '#1890ff', flexShrink: 0 }}>AI</Avatar>
+            )}
+            <div style={{ position: 'relative' }}>
+              <MessageBubble message={item} />
+              <div className="message-time">
+                {new Date(item.timestamp).toLocaleString('zh-CN', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                  hour12: false
+                })}
+              </div>
+            </div>
+            {item.isUser && (
+              <Avatar size={24} style={{ backgroundColor: '#52c41a', flexShrink: 0 }}>我</Avatar>
+            )}
+            <DeleteOutlined 
+              className="delete-icon"
+              onClick={() => {
+                Modal.confirm({
+                  title: '确认删除',
+                  content: '确定要删除这条消息吗？',
+                  okText: '确定',
+                  cancelText: '取消',
+                  okType: 'danger',
+                  onOk: async () => {
+                    try {
+                      const response = await fetch(getApiUrl(`/chat/messages/${item.id}`), {
+                        method: 'DELETE',
+                        headers: getAuthHeaders()
+                      });
+
+                      if (!response.ok) {
+                        if (response.status === 401) {
+                          message.error('登录已过期，请重新登录');
+                          navigate('/login');
+                          return;
+                        }
+                        throw new Error(`删除失败: ${response.status}`);
+                      }
+
+                      setMessages(prev => prev.filter(msg => msg.id !== item.id));
+                      message.success('删除成功');
+                    } catch (error) {
+                      console.error('删除消息失败:', error);
+                      message.error('删除失败');
+                    }
+                  }
+                });
+              }}
+            />
+          </MessageContainer>
+        </List.Item>
+      )}
+    />
+  ), [messages]);
 
   return (
     <StyledLayout>
@@ -694,61 +821,7 @@ const ChatPage: React.FC = () => {
       </StyledSider>
       
       <ChatContainer>
-        <MessageList
-          ref={messageListRef}
-          dataSource={messages}
-          renderItem={(item: Message) => (
-            <List.Item style={{ 
-              justifyContent: item.isUser ? 'flex-end' : 'flex-start',
-              display: 'flex'
-            }}>              
-              <MessageContainer isUser={item.isUser}>
-                {!item.isUser && (
-                  <Avatar style={{ backgroundColor: '#1890ff', flexShrink: 0 }}>AI</Avatar>
-                )}
-                <MessageBubble message={item} />
-                {item.isUser && (
-                  <Avatar style={{ backgroundColor: '#52c41a', flexShrink: 0 }}>我</Avatar>
-                )}
-                <DeleteOutlined 
-                  className="delete-icon"
-                  onClick={() => {
-                    Modal.confirm({
-                      title: '确认删除',
-                      content: '确定要删除这条消息吗？',
-                      okText: '确定',
-                      cancelText: '取消',
-                      okType: 'danger',
-                      onOk: async () => {
-                        try {
-                          const response = await fetch(getApiUrl(`/chat/messages/${item.id}`), {
-                            method: 'DELETE',
-                            headers: getAuthHeaders()
-                          });
-
-                          if (!response.ok) {
-                            if (response.status === 401) {
-                              message.error('登录已过期，请重新登录');
-                              navigate('/login');
-                              return;
-                            }
-                            throw new Error(`删除失败: ${response.status}`);
-                          }
-
-                          setMessages(prev => prev.filter(msg => msg.id !== item.id));
-                          message.success('删除成功');
-                        } catch (error) {
-                          console.error('删除消息失败:', error);
-                          message.error('删除失败');
-                        }
-                      }
-                    });
-                  }}
-                />
-              </MessageContainer>
-            </List.Item>
-          )}
-        />
+        {MessageListMemo}
         
         <InputContainer>
           <Input.TextArea

@@ -53,89 +53,24 @@ export class ChatService {
         try {
             console.log('开始处理消息:', data);
             
-            // 保存用户消息
+            // 1. 保存用户消息
             const userMessage = await this.addMessage(data.sessionId, data.role, data.content);
             
             if (data.role === 'user') {
-                // 创建空的AI消息
+                // 2. 创建空的AI消息并立即返回ID
                 const aiMessage = await this.addMessage(data.sessionId, 'assistant', '');
                 
-                try {
-                    // 获取历史消息
-                    const sessionMessages = await this.getMessages(data.sessionId);
-                    const messageHistory = [];
-                    let lastRole: string | null = null;
-                    
-                    // 处理历史消息，确保交替顺序
-                    for (const msg of sessionMessages) {
-                        if (msg.role !== lastRole) {
-                            messageHistory.push({
-                                role: msg.role,
-                                content: msg.content
-                            });
-                            lastRole = msg.role;
-                        }
-                    } 
+                // 3. 异步处理AI响应
+                this.processAIResponse(data.sessionId, data.content, aiMessage.id).catch(error => {
+                    console.error('AI响应处理失败:', error);
+                });
                 
-                    // 创建流式请求
-                    const stream = await this.openai.chat.completions.create({
-                        model: 'deepseek-reasoner',
-                        messages: [
-                            { 
-                                role: 'system', 
-                                content: 'You are a helpful assistant.' 
-                            },
-                            ...messageHistory,
-                            { role: 'user', content: data.content }
-                        ],
-                        stream: true,
-                        temperature: 0.7,
-                        max_tokens: 2000
-                    });
-
-                    let content = '';
-
-                    try {
-                        for await (const chunk of stream) {
-                            const chunkContent = chunk.choices[0]?.delta?.content || '';
-                            if (!chunkContent) continue;
-                            
-                            content += chunkContent;
-                            console.log('收到内容:', chunkContent);
-                            
-                            // 发送实时更新
-                            this.sendStreamUpdate(aiMessage.id, content);
-                        }
-
-                        // 保存最终内容
-                        await this.messageRepository.update(aiMessage.id, { 
-                            content: content 
-                        });
-
-                    } catch (streamError) {
-                        console.error('流处理错误:', streamError);
-                        this.sendStreamUpdate(aiMessage.id, '抱歉，处理您的请求时出现错误，请稍后重试');
-                        throw streamError;
-                    }
-
-                    return { userMessage, aiMessage };
-
-                } catch (error) {
-                    console.error('AI处理失败:', error);
-                    // 更新AI消息为错误状态
-                    await this.messageRepository.update(aiMessage.id, { 
-                        content: '抱歉，处理您的请求时出现错误，请稍后重试'
-                    });
-                    throw error;
-                }
+                // 4. 立即返回两个消息的ID
+                return { userMessage, aiMessage };
             }
             return { userMessage };
         } catch (error) {
-            console.error('消息处理失败:', {
-                error,
-                message: (error as Error).message,
-                stack: (error as Error).stack
-            });
+            console.error('消息处理失败:', error);
             throw error;
         }
     }
@@ -211,6 +146,60 @@ export class ChatService {
         } catch (error) {
             console.error('删除消息失败:', error);
             throw new Error('删除消息失败');
+        }
+    }
+
+    // 新增方法：处理AI响应
+    private async processAIResponse(sessionId: number, userContent: string, aiMessageId: number) {
+        try {
+            // 获取历史消息
+            const sessionMessages = await this.getMessages(sessionId);
+            const messageHistory = [];
+            let lastRole: string | null = null;
+            
+            // 处理历史消息，确保交替顺序
+            for (const msg of sessionMessages) {
+                if (msg.role !== lastRole) {
+                    messageHistory.push({
+                        role: msg.role,
+                        content: msg.content
+                    });
+                    lastRole = msg.role;
+                }
+            }
+
+            // 创建流式请求
+            const stream = await this.openai.chat.completions.create({
+                model: 'deepseek-reasoner',
+                messages: [
+                    { role: 'system', content: 'You are a helpful assistant.' },
+                    ...messageHistory,
+                    { role: 'user', content: userContent }
+                ],
+                stream: true,
+                temperature: 0.7,
+                max_tokens: 2000
+            });
+
+            let content = '';
+
+            for await (const chunk of stream) {
+                const chunkContent = chunk.choices[0]?.delta?.content || '';
+                if (!chunkContent) continue;
+                
+                content += chunkContent;
+                this.sendStreamUpdate(aiMessageId, content);
+            }
+
+            // 保存最终内容
+            await this.messageRepository.update(aiMessageId, { content });
+
+        } catch (error) {
+            console.error('AI处理失败:', error);
+            this.sendStreamUpdate(aiMessageId, '抱歉，处理您的请求时出现错误，请稍后重试');
+            await this.messageRepository.update(aiMessageId, { 
+                content: '抱歉，处理您的请求时出现错误，请稍后重试'
+            });
         }
     }
 }
