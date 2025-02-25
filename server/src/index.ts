@@ -24,7 +24,7 @@ import { jwtMiddleware } from './middlewares/jwt.middleware';
 import { DoubleEdgedInfoController } from './controllers/doubleEdgedInfo.controller';
 import { DoubleEdgedScaleController } from './controllers/doubleEdgedScale.controller';
 import { DoubleEdgedAnswerController } from './controllers/doubleEdgedAnswer.controller';
-
+import { UserAnalysisController } from './controllers/userAnalysis.controller';
 async function bootstrap() {
     try {
         // 1. 设置依赖注入容器
@@ -76,7 +76,7 @@ async function bootstrap() {
                 ReportController, 
                 DoubleEdgedInfoController,
                 DoubleEdgedScaleController,
-        
+                UserAnalysisController
             ],
             middlewares: [],
             routePrefix: '/api',

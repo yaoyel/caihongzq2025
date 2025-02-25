@@ -2,6 +2,8 @@ import { JsonController, Get, Post, Put, Delete, Body, Param, QueryParam, QueryP
 import { OpenAPI } from 'routing-controllers-openapi';
 import { Service } from 'typedi';
 import { ScaleService } from '../services/scale.service';
+import { AppDataSource } from '../data-source';
+import { ScaleAnswer } from '../entities/ScaleAnswer';
 
 @JsonController('/scales')
 @Service()
@@ -54,7 +56,58 @@ export class ScaleController {
         @Param('id') scaleId: number,
         @Body() data: { userId: number; score: number }
     ) {
-        return await this.scaleService.submitAnswer(scaleId, data);
+        try {
+            // 1. 检查是否存在答案
+            const existingAnswer = await AppDataSource
+                .getRepository(ScaleAnswer)
+                .findOne({
+                    where: {
+                        scaleId: scaleId,
+                        userId: data.userId
+                    }
+                });
+
+            if (existingAnswer) {
+                // 2. 如果存在则更新
+                await AppDataSource
+                    .getRepository(ScaleAnswer)
+                    .update(
+                        { id: existingAnswer.id },
+                        { score: data.score }
+                    );
+
+                return {
+                    success: true,
+                    message: '答案已更新',
+                    data: {
+                        ...existingAnswer,
+                        score: data.score
+                    }
+                };
+            } else {
+                // 3. 如果不存在则创建新答案
+                const newAnswer = await AppDataSource
+                    .getRepository(ScaleAnswer)
+                    .save({
+                        scaleId: scaleId,
+                        userId: data.userId,
+                        score: data.score
+                    });
+
+                return {
+                    success: true,
+                    message: '答案已保存',
+                    data: newAnswer
+                };
+            }
+        } catch (error) {
+            console.error('Error submitting answer:', error);
+            return {
+                success: false,
+                message: '保存答案失败',
+                error: error instanceof Error ? error.message : String(error)
+            };
+        }
     }
 
     @Get('/answers/user/:userId')
