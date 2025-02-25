@@ -1,7 +1,5 @@
 import 'reflect-metadata';
 import { DataSource, DefaultNamingStrategy } from 'typeorm';
-import { Container } from 'typedi';
-import { useContainer as typeormUseContainer } from 'typeorm';
 import { User } from './entities/User';
 import { Element } from './entities/Element';
 import { Scale } from './entities/Scale';
@@ -12,11 +10,11 @@ import { ChatSession } from './entities/ChatSession';
 import { ChatMessage } from './entities/ChatMessage';
 import { logger } from './config/logger';
 import { config } from 'dotenv'; 
+import { DoubleEdgedInfo } from './entities/DoubleEdgedInfo';
+import { DoubleEdgedScale } from './entities/DoubleEdged';
+import { DoubleEdgedAnswer } from './entities/DoubleEdgedAnswer';
 // 加载环境变量
 config();
-
-// 设置 TypeORM 容器
-typeormUseContainer(Container);
 
 export const AppDataSource = new DataSource({
     name: 'default', // 设置默认连接名
@@ -41,9 +39,15 @@ export const AppDataSource = new DataSource({
         Question,
         QuestionAnswer,
         ChatSession,
-        ChatMessage
+        ChatMessage,
+        DoubleEdgedInfo,
+        DoubleEdgedScale,
+        DoubleEdgedAnswer
     ],
-    migrations: [],
+    migrations: [
+      //  __dirname + '/migrations/*.ts'  // 使用绝对路径
+    ],
+    // migrationsTableName: "migrations",  // 添加这行
     subscribers: []
 });
 
@@ -52,10 +56,6 @@ export const initializeDataSource = async () => {
         
         const dataSource = await AppDataSource.initialize();
         logger.info('Database connection established');
-        
-        // 将 DataSource 实例注册到容器
-        Container.set(DataSource, dataSource);
-        Container.set('connection.default', dataSource); // 注册为默认连接
         
         return dataSource;
     } catch (error) {

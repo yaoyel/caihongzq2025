@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { DoubleEdgedInfo } from './DoubleEdgedInfo';
 
 export type DoubleEdgedType = 
   | 'inner_state'
@@ -8,19 +9,20 @@ export type DoubleEdgedType =
   | 'common_outcome'
   | 'normal_state';
 
-@Entity('double_edgeds')
-export class DoubleEdged {
+@Entity('double_edgeds_scales')
+export class DoubleEdgedScale {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
   dimension: string;
+ 
+  @Column({name:"double_edged_id"})
+  doubleEdgedId: number;
 
-  @Column({ name: 'like_element_id' })
-  likeElementId: number;
-
-  @Column({ name: 'talent_element_id' })
-  talentElementId: number;
+  @ManyToOne(() => DoubleEdgedInfo)
+  @JoinColumn({name:"double_edged_id"})
+  doubleEdged: DoubleEdgedInfo;
 
   @Column()
   content: string;

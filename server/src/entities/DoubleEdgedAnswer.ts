@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, JoinColumn } from 'typeorm';
-import { DoubleEdged } from './DoubleEdged';
+import { DoubleEdgedScale } from './DoubleEdged';
 import { User } from './User';
 
 @Entity('double_edged_answers')
@@ -19,8 +19,9 @@ export class DoubleEdgedAnswer {
   @CreateDateColumn({ name: 'submitted_at' })
   submittedAt: Date;
 
-  @ManyToOne(() => DoubleEdged)
-  doubleEdged: DoubleEdged;
+  @ManyToOne(() => DoubleEdgedScale)
+  @JoinColumn({name:"double_edged_id"})
+  doubleEdged: DoubleEdgedScale;
 
   @ManyToOne(() => User)
   @JoinColumn({name:"user_id"})

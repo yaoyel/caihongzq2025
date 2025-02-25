@@ -20,7 +20,7 @@ export class ChatService {
         
         // 初始化 OpenAI 客户端
         this.openai = new OpenAI({
-            apiKey: process.env.DEEPSEEK_API_KEY  ,
+            apiKey: "sk-3dda0942e09c4945aba010492dd9e34f",
             baseURL: process.env.DEEPSEEK_API_BASE_URL || 'https://api.deepseek.com'
         });
 

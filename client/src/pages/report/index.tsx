@@ -1,7 +1,7 @@
-import React, { useRef, useEffect, useCallback } from 'react';
-import { Layout, Typography, Card, Row, Col, Collapse, Tabs, List, Button, message, Space, Alert, Tag, Tooltip } from 'antd';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
+import { Layout, Typography, Card, Row, Col, Collapse, Tabs, List, Button, message, Space, Alert, Tag, Tooltip, Spin, Empty, Divider } from 'antd';
 import styled from '@emotion/styled';
-import { HomeOutlined, DownloadOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { HomeOutlined, DownloadOutlined, QuestionCircleOutlined, BulbOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import html2pdf from 'html2pdf.js';
 import axios from 'axios';
@@ -41,8 +41,6 @@ const ReportTitle = styled(Title)`
     margin: 16px auto 0;
   }
 `;
-
-
 
 // 添加打印样式
 const PrintableContent = styled.div`
@@ -124,6 +122,100 @@ const CATEGORY_TIPS = {
     </div>
   )
 };
+
+// 修改 DoubleEdgedInfo 接口定义
+interface DoubleEdgedInfo {
+  id: number;
+  name: string;
+  demonstrate: string;
+  affect: string;
+  likeElement: {
+    id: number;
+    name: string;
+    status: string;
+    double_edged_id: number;
+  };
+  talentElement: {
+    id: number;
+    name: string;
+    status: string;
+    double_edged_id: number;
+  };
+}
+
+// 修改样式组件
+const StyledPanel = styled(Panel)`
+  .ant-collapse-header {
+    display: flex;
+    align-items: center;
+  }
+  
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  
+  .confirm-button {
+    font-size: 12px;
+    background: #fff7e6;
+    border-color: #ffd591;
+    color: #fa8c16;
+    
+    &:hover {
+      background: #fff1d4;
+      border-color: #ffc069;
+      color: #d46b08;
+    }
+  }
+`;
+
+const ContentBox = styled.div`
+  padding: 20px;
+  background: #fafafa;
+  border-radius: 8px;
+  margin-bottom: 16px;
+
+  .title {
+    font-size: 15px;
+    color: #1f1f1f;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .content {
+    color: #595959;
+    line-height: 1.6;
+    padding-left: 24px;
+  }
+`;
+
+const ElementsGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+  
+  .element-card {
+    background: #fff;
+    padding: 16px;
+    border-radius: 6px;
+    border: 1px solid #f0f0f0;
+    
+    .element-title {
+      color: #8c8c8c;
+      margin-bottom: 8px;
+    }
+    
+    .element-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+  }
+`;
 
 const ReportPage: React.FC = () => {
   const navigate = useNavigate();
@@ -238,6 +330,50 @@ const ReportPage: React.FC = () => {
       }
     }
   };*/
+
+  const [doubleEdgedData, setDoubleEdgedData] = useState<DoubleEdgedInfo[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        if (!token) {
+          message.error('请先登录');
+          return;
+        }
+
+        // 获取有喜欢有天赋的元素
+        const likeAndTalentElements = elementAnalysis.filter(item => 
+          item.category === '有喜欢有天赋'
+        );
+
+        // 获取所有双刃剑数据
+        const response = await axios.get(getApiUrl('/double-edged-info/all'), {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        // 过滤出与有喜欢有天赋元素相关的双刃剑数据
+        const filteredData = response.data.filter((item: DoubleEdgedInfo) => 
+          likeAndTalentElements.some(element => 
+            element.double_edged_id === item.id
+          )
+        );
+
+        setDoubleEdgedData(filteredData);
+      } catch (error) {
+        console.error('获取双刃剑数据失败:', error);
+        message.error('获取数据失败');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (elementAnalysis.length > 0) {
+      fetchData();
+    }
+  }, [elementAnalysis]);
 
   return (
     <StyledLayout>
@@ -594,44 +730,78 @@ const ReportPage: React.FC = () => {
               <Alert
                 type="info"
                 message="关于双刃剑特征"
-                description="双刃剑特征指的是某些性格特点既有积极的一面，也有需要注意的方面。了解这些特征有助于扬长避短，更好地发展。"
-                style={{ marginBottom: 16 }}
+                description="这些特征是基于您的喜好和天赋组合分析得出的，了解这些特征有助于扬长避短，更好地发展。"
+                style={{ marginBottom: 24 }}
               />
-              <Tabs
-                items={[
-                  {
-                    key: '1',
-                    label: '已显现特征',
-                    children: (
-                      <List
-                        dataSource={[
-                          { trait: '好强心理', positive: '追求卓越', negative: '容易产生挫败感' },
-                          { trait: '创新思维', positive: '思维活跃', negative: '注意力容易分散' }
-                        ]}
-                        renderItem={item => (
-                          <List.Item>
-                            <Card title={item.trait} style={{ width: '100%' }}>
-                              <Row gutter={24}>
-                                <Col span={12}>
-                                  <Text type="success">优势：{item.positive}</Text>
-                                </Col>
-                                <Col span={12}>
-                                  <Text type="warning">风险：{item.negative}</Text>
-                                </Col>
-                              </Row>
-                            </Card>
-                          </List.Item>
-                        )}
-                      />
-                    )
-                  },
-                  {
-                    key: '2',
-                    label: '潜在特征',
-                    children: '潜在特征内容'
-                  }
-                ]}
-              />
+              
+              <Spin spinning={loading}>
+                <Collapse defaultActiveKey={[]}>
+                  {doubleEdgedData.map((item) => (
+                    <StyledPanel
+                      key={item.id}
+                      header={
+                        <div className="header-content">
+                          <Text strong>{item.name}</Text>
+                          <Tag color="blue">双刃剑特征</Tag>
+                          <Tooltip title="点击进行深度确认，帮助您更好地理解和应对这些特征">
+                            <Button 
+                              size="small"
+                              className="confirm-button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                message.success('已进入深度确认流程');
+                              }}
+                            >
+                              深度确认
+                            </Button>
+                          </Tooltip>
+                        </div>
+                      }
+                    >
+                      <ContentBox>
+                        <div className="title">
+                          <BulbOutlined style={{ color: '#1890ff' }} />
+                          <Text strong>表现特征</Text>
+                        </div>
+                        <div className="content">
+                          {item.demonstrate}
+                        </div>
+                      </ContentBox>
+
+                      <ContentBox>
+                        <div className="title">
+                          <ExclamationCircleOutlined style={{ color: '#faad14' }} />
+                          <Text strong>影响分析</Text>
+                        </div>
+                        <div className="content">
+                          {item.affect}
+                        </div>
+                      </ContentBox>
+
+                      <ElementsGrid>
+                        <div className="element-card">
+                          <div className="element-title">关联喜欢</div>
+                          <div className="element-content">
+                            <Tag color="green">{item.likeElement.name}</Tag>
+                            <Text>{item.likeElement.status}</Text>
+                          </div>
+                        </div>
+                        <div className="element-card">
+                          <div className="element-title">关联天赋</div>
+                          <div className="element-content">
+                            <Tag color="purple">{item.talentElement.name}</Tag>
+                            <Text>{item.talentElement.status}</Text>
+                          </div>
+                        </div>
+                      </ElementsGrid>
+                    </StyledPanel>
+                  ))}
+                </Collapse>
+                
+                {!loading && doubleEdgedData.length === 0 && (
+                  <Empty description="暂无相关的双刃剑特征数据" />
+                )}
+              </Spin>
             </ReportCard>
 
             <ReportCard title="课堂表现分析">

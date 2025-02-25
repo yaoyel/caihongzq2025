@@ -21,6 +21,7 @@ import { ReportController } from './controllers/report.controller';
 import { ErrorHandlerMiddleware } from './middlewares/error-handler.middleware';
 import { RequestLoggerMiddleware } from './middlewares/request-logger.middleware';  
 import { jwtMiddleware } from './middlewares/jwt.middleware';
+import { DoubleEdgedInfoController } from './controllers/doubleEdgedInfo.controller';
 async function bootstrap() {
     try {
         // 1. 设置依赖注入容器
@@ -69,6 +70,7 @@ async function bootstrap() {
                 UserController,
                 ChatController,
                 ReportController, 
+                DoubleEdgedInfoController
             ],
             middlewares: [],
             routePrefix: '/api',

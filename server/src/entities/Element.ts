@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, Generated } from 'typeorm';
-
+import { DoubleEdgedInfo } from './DoubleEdgedInfo';
 @Entity('elements')
 export class Element {
   @PrimaryGeneratedColumn()
@@ -24,4 +24,11 @@ export class Element {
   @OneToOne(() => Element)
   @JoinColumn({ name: 'corresponding_element_id'})
   correspondingElement: Element;
+
+  @Column({ name: 'double_edged_id' })
+  doubleEdgedId: number;  
+
+  @OneToOne(() => DoubleEdgedInfo)
+  @JoinColumn({ name: 'double_edged_id' })
+  doubleEdgedInfo: DoubleEdgedInfo;
 }
