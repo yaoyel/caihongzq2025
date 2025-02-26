@@ -588,14 +588,6 @@ const ChatModal = styled(Modal)`
   }
 `;
 
-// 修改 ChatPage 的类型定义
-interface ChatPageProps {
-  sessionId: string;
-  isModal: boolean;
-  initialPrompt: string;
-  onStreamingChange?: (streaming: boolean) => void;
-}
-
 const ReportPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -971,17 +963,6 @@ const ReportPage: React.FC = () => {
   };
 
   // 添加新的状态来控制展开/收起
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
-
-  // 添加处理展开/收起的函数
-  const handleExpand = (itemKey: string) => {
-    setExpandedItems(prev => ({
-      ...prev,
-      [itemKey]: !prev[itemKey]
-    }));
-  };
-
-  // 添加新的状态
   const [chatModalVisible, setChatModalVisible] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string>('');
 
@@ -990,9 +971,6 @@ const ReportPage: React.FC = () => {
 
   // 添加新的状态来跟踪SSE传输状态
   const [isStreaming, setIsStreaming] = useState(false);
-
-  // 添加新的状态来存储聊天内容
-  const [chatSessions, setChatSessions] = useState<Record<string, string>>({});
 
   // 添加类型定义
   interface Message {
@@ -1690,8 +1668,7 @@ const ReportPage: React.FC = () => {
                         style={{ marginBottom: 16 }}
                       />
                       {group.items.map(item => {
-                        const itemKey = `${group.key}-${item.key}`;
-                        const sessionName = `${group.title}-${item.title}`;
+                        const sessionName = `${group.key}-${item.key}`;
                         const messages = analysisMessages[sessionName] || [];
 
                         useEffect(() => {

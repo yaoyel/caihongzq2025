@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Button, Row, Col, Space, Card, Carousel, Statistic, message, Spin, Menu, Dropdown } from 'antd';
-import { WechatOutlined, SafetyCertificateOutlined, PlayCircleOutlined, BookOutlined, UserOutlined, SettingOutlined, LogoutOutlined, CaretDownOutlined } from '@ant-design/icons';
+import { Layout, Typography, Button, Row, Col, Space, Card, message, Spin, Menu, Dropdown } from 'antd';
+import { WechatOutlined, SafetyCertificateOutlined, UserOutlined, SettingOutlined, LogoutOutlined, CaretDownOutlined } from '@ant-design/icons';
 import styled from '@emotion/styled';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { getApiUrl } from '../../config';
 import Avatar from '../../components/Avatar';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 const { Content } = Layout;
 
 const StyledLayout = styled(Layout)`
@@ -93,16 +93,6 @@ const WechatButton = styled(Button)`
   }
   
   animation: pulse 2s infinite;
-`;
-
-const CaseCard = styled(Card)`
-  margin: 16px 0;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  
-  .ant-card-body {
-    padding: 16px;
-  }
 `;
 
 const RealTimeNotice = styled.div`
@@ -213,24 +203,6 @@ const InteractionItem = styled.div`
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 `;
 
-const cases = [
-  {
-    title: '6岁发现音乐天赋',
-    result: '钢琴比赛金奖',
-    description: '通过天赋测评发现音乐潜能，3个月后参赛获奖'
-  },
-  {
-    title: '8岁确认逻辑天赋',
-    result: '奥数竞赛一等奖',
-    description: '定制学习方案，激发数理思维能力'
-  },
-  {
-    title: '5岁识别运动天赋',
-    result: '少儿体操冠军',
-    description: '科学选择运动项目，充分发挥身体优势'
-  }
-];
-
 const loveInteractions = [
   '不轻易打断孩子说话',
   '能尝试感受孩子心里的感受',
@@ -336,7 +308,7 @@ const LoginPage: React.FC = () => {
     try {
       setLoading(true);
       setError('');
-      const response = await axios.get('http://2znfnd.natappfree.cc/api/wechat/qrcode');
+      const response = await axios.get('h6pma5.natappfree.cc/api/wechat/qrcode');
       console.log('接口返回数据:', response);
 
       // 检查响应状态
@@ -384,7 +356,7 @@ const LoginPage: React.FC = () => {
 
     const checkLogin = async () => {
       try {
-        const response = await axios.get(`http://2znfnd.natappfree.cc/api/wechat/check-login?scene=${scene}`);
+        const response = await axios.get(`http://h6pma5.natappfree.cc/api/wechat/check-login?scene=${scene}`);
         const { success, user, token } = response.data;
         
         if (success) {

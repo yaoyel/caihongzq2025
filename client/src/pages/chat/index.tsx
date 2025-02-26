@@ -228,6 +228,13 @@ const InputContainer = styled.div`
   }
 `;
 
+interface Chat {
+  id: string;
+  title: string;
+  lastMessage: string;
+  timestamp: Date;
+}
+
 interface Message {
   id: number;
   content: string;
@@ -237,24 +244,19 @@ interface Message {
   role: 'user' | 'assistant';
 }
 
-interface Chat {
-  id: string;
-  title: string;
-  lastMessage: string;
-  timestamp: Date;
-}
-
 // 修改props接口
 interface ChatPageProps {
   sessionId?: string;
   isModal?: boolean;
-  initialPrompt?: string; // 添加initialPrompt属性
+  initialPrompt?: string;
+  onStreamingChange?: (streaming: boolean) => void;
 }
 
 const ChatPage: React.FC<ChatPageProps> = ({ 
   sessionId, 
   isModal = false,
-  initialPrompt = '' // 设置默认值
+  initialPrompt = '',
+  onStreamingChange
 }) => {
   const messageListRef = React.useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -391,6 +393,12 @@ const ChatPage: React.FC<ChatPageProps> = ({
       setInputValue(initialPrompt);
     }
   }, [initialPrompt]);
+
+  useEffect(() => {
+    if (onStreamingChange) {
+      onStreamingChange(isLoading);
+    }
+  }, [isLoading, onStreamingChange]);
 
   const getUserId = () => {
     const userStr = localStorage.getItem('user');

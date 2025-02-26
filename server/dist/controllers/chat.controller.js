@@ -51,7 +51,7 @@ let ChatController = class ChatController {
     async createSession(data) {
         // 如果title未定义则使用空字符串作为默认值
         const sessionTitle = data.title || '';
-        return await this.chatService.createSession(data.userId, sessionTitle);
+        return await this.chatService.createSession(data.userId, sessionTitle, data.can_delete || false);
     }
     async getSessionMessages(sessionId) {
         return await this.chatService.getMessages(sessionId);
@@ -96,6 +96,18 @@ let ChatController = class ChatController {
         }
         catch (error) {
             return { error: '删除消息失败' };
+        }
+    }
+    async findSessionByTitle(title, userId) {
+        try {
+            const session = await this.chatService.findSessionByTitle(title, userId);
+            if (!session) {
+                return null;
+            }
+            return session;
+        }
+        catch (error) {
+            throw new Error('获取聊天会话失败');
         }
     }
 };
@@ -180,6 +192,14 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], ChatController.prototype, "deleteMessage", null);
+__decorate([
+    (0, routing_controllers_1.Get)('/sessions/findByTitle'),
+    __param(0, (0, routing_controllers_1.QueryParam)('title')),
+    __param(1, (0, routing_controllers_1.QueryParam)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], ChatController.prototype, "findSessionByTitle", null);
 exports.ChatController = ChatController = __decorate([
     (0, routing_controllers_1.JsonController)('/chat'),
     (0, typedi_1.Service)(),

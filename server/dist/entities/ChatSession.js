@@ -20,6 +20,7 @@ let ChatSession = class ChatSession {
     updatedAt;
     isShared;
     shareCode;
+    canDelete;
     messages;
 };
 exports.ChatSession = ChatSession;
@@ -51,6 +52,10 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], ChatSession.prototype, "shareCode", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'can_delete', nullable: true, default: false }),
+    __metadata("design:type", Boolean)
+], ChatSession.prototype, "canDelete", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => ChatMessage_1.ChatMessage, message => message.session),
     __metadata("design:type", Array)

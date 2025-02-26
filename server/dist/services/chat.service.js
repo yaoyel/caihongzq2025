@@ -37,8 +37,8 @@ let ChatService = class ChatService {
         // 设置最大监听器数量，避免内存泄漏警告
         this.eventEmitter.setMaxListeners(100);
     }
-    async createSession(userId, title) {
-        const session = this.sessionRepository.create({ userId, title });
+    async createSession(userId, title, canDelete) {
+        const session = this.sessionRepository.create({ userId, title, canDelete });
         return this.sessionRepository.save(session);
     }
     async getSessions(userId) {
@@ -164,7 +164,7 @@ let ChatService = class ChatService {
             console.log('userContentFormatted', userContentFormatted);
             // 创建流式请求
             const stream = await this.openai.chat.completions.create({
-                model: 'deepseek-reasoner',
+                model: 'deepseek-chat',
                 messages: [
                     { role: 'system', content: "作为一名脑神经科学专家、心理学家、儿童发展专家、教育专家，请基于用户基础信息，给出个性化/针对性问题解决方案，说人话，不要使用AI语言，用户信息里面的ID等字段信息不要显示给用户，显示对应的具体内容。" },
                     ...messageHistory,
@@ -191,6 +191,24 @@ let ChatService = class ChatService {
             await this.messageRepository.update(aiMessageId, {
                 content: '抱歉，处理您的请求时出现错误，请稍后重试'
             });
+        }
+    }
+    // 添加根据标题查询会话的方法
+    async findSessionByTitle(title, userId) {
+        try {
+            const session = await this.sessionRepository.findOne({
+                where: {
+                    title: title,
+                    userId: parseInt(userId)
+                }
+            });
+            if (!session) {
+                return undefined;
+            }
+            return session;
+        }
+        catch (error) {
+            return undefined;
         }
     }
 };

@@ -11,13 +11,14 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: 80,
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:3000',
         changeOrigin: true,
       },
     },
+    allowedHosts: ['localhost', 'h6pma5.natappfree.cc'],
   },
 }) 

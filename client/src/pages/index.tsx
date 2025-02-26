@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Typography, Button, Card, Row, Col, Statistic, Carousel, Layout, Menu, Badge, Tag, Avatar, Dropdown } from 'antd';
+import { Typography, Button, Card, Row, Col, Statistic, Carousel, Layout, Menu, Badge, Avatar, Dropdown } from 'antd';
 import { ArrowRightOutlined, ClockCircleOutlined, FormOutlined, QuestionCircleOutlined, HeartOutlined, UserOutlined, MessageOutlined, FileTextOutlined, LogoutOutlined } from '@ant-design/icons';
 import styled from '@emotion/styled';
 import { useNavigate } from 'react-router-dom';
@@ -59,26 +59,6 @@ const StyledMenu = styled(Menu)`
 
 const StyledSider = styled(Sider)`
   position: relative;
-`;
-
-const ConsultationTag = styled(Tag)`
-  position: absolute;
-  bottom: 60px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 8px 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  &:hover {
-    background: #f0f0f0;
-  }
-`;
-
-const ReportTag = styled(ConsultationTag)`
-  bottom: 110px;
 `;
 
 const HomePage: React.FC = () => {
@@ -164,6 +144,7 @@ const HomePage: React.FC = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    setUser(null);
     navigate('/');
   };
 
