@@ -27,6 +27,7 @@ const jwt_middleware_1 = require("./middlewares/jwt.middleware");
 const doubleEdgedInfo_controller_1 = require("./controllers/doubleEdgedInfo.controller");
 const doubleEdgedScale_controller_1 = require("./controllers/doubleEdgedScale.controller");
 const doubleEdgedAnswer_controller_1 = require("./controllers/doubleEdgedAnswer.controller");
+const userAnalysis_controller_1 = require("./controllers/userAnalysis.controller");
 async function bootstrap() {
     try {
         // 1. 设置依赖注入容器
@@ -62,6 +63,7 @@ async function bootstrap() {
         // 7. 配置路由控制器
         (0, routing_controllers_1.useKoaServer)(app, {
             controllers: [
+                doubleEdgedAnswer_controller_1.DoubleEdgedAnswerController,
                 element_controller_1.ElementController,
                 question_controller_1.QuestionController,
                 scale_controller_1.ScaleController,
@@ -70,7 +72,7 @@ async function bootstrap() {
                 report_controller_1.ReportController,
                 doubleEdgedInfo_controller_1.DoubleEdgedInfoController,
                 doubleEdgedScale_controller_1.DoubleEdgedScaleController,
-                doubleEdgedAnswer_controller_1.DoubleEdgedAnswerController
+                userAnalysis_controller_1.UserAnalysisController
             ],
             middlewares: [],
             routePrefix: '/api',

@@ -16,15 +16,18 @@ const ChatMessage_1 = require("../entities/ChatMessage");
 const openai_1 = require("openai");
 const data_source_1 = require("../data-source");
 const events_1 = require("events");
+const userAnalysis_service_1 = require("./userAnalysis.service");
 let ChatService = class ChatService {
     openai;
     sessionRepository;
     messageRepository;
     eventEmitter;
+    userAnalysisService;
     constructor() {
         // 使用 AppDataSource 获取仓库实例
         this.sessionRepository = data_source_1.AppDataSource.getRepository(ChatSession_1.ChatSession);
         this.messageRepository = data_source_1.AppDataSource.getRepository(ChatMessage_1.ChatMessage);
+        this.userAnalysisService = new userAnalysis_service_1.UserAnalysisService();
         // 初始化 OpenAI 客户端
         this.openai = new openai_1.OpenAI({
             apiKey: "sk-3dda0942e09c4945aba010492dd9e34f",
@@ -60,7 +63,7 @@ let ChatService = class ChatService {
                 // 2. 创建空的AI消息并立即返回ID
                 const aiMessage = await this.addMessage(data.sessionId, 'assistant', '');
                 // 3. 异步处理AI响应
-                this.processAIResponse(data.sessionId, data.content, aiMessage.id).catch(error => {
+                this.processAIResponse(data.userId, data.sessionId, data.content, aiMessage.id).catch(error => {
                     console.error('AI响应处理失败:', error);
                 });
                 // 4. 立即返回两个消息的ID
@@ -140,7 +143,7 @@ let ChatService = class ChatService {
         }
     }
     // 新增方法：处理AI响应
-    async processAIResponse(sessionId, userContent, aiMessageId) {
+    async processAIResponse(userId, sessionId, userContent, aiMessageId) {
         try {
             // 获取历史消息
             const sessionMessages = await this.getMessages(sessionId);
@@ -156,17 +159,20 @@ let ChatService = class ChatService {
                     lastRole = msg.role;
                 }
             }
+            const userAnalysis = await this.userAnalysisService.getUserAnalysis(userId);
+            const userContentFormatted = `基于用户信息回答:${userContent},用户信息: ${JSON.stringify(userAnalysis, null, 2)}`;
+            console.log('userContentFormatted', userContentFormatted);
             // 创建流式请求
             const stream = await this.openai.chat.completions.create({
                 model: 'deepseek-reasoner',
                 messages: [
-                    { role: 'system', content: 'You are a helpful assistant.' },
+                    { role: 'system', content: "作为一名脑神经科学专家、心理学家、儿童发展专家、教育专家，请基于用户基础信息，给出个性化/针对性问题解决方案，说人话，不要使用AI语言，用户信息里面的ID等字段信息不要显示给用户，显示对应的具体内容。" },
                     ...messageHistory,
-                    { role: 'user', content: userContent }
+                    { role: 'user', content: userContentFormatted }
                 ],
                 stream: true,
-                temperature: 0.7,
-                max_tokens: 2000
+                temperature: 0.6,
+                max_tokens: 8192
             });
             let content = '';
             for await (const chunk of stream) {

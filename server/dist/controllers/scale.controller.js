@@ -17,6 +17,8 @@ const routing_controllers_1 = require("routing-controllers");
 const routing_controllers_openapi_1 = require("routing-controllers-openapi");
 const typedi_1 = require("typedi");
 const scale_service_1 = require("../services/scale.service");
+const data_source_1 = require("../data-source");
+const ScaleAnswer_1 = require("../entities/ScaleAnswer");
 let ScaleController = class ScaleController {
     scaleService;
     constructor(scaleService) {
@@ -50,7 +52,54 @@ let ScaleController = class ScaleController {
         return await this.scaleService.findOne(id);
     }
     async submitAnswer(scaleId, data) {
-        return await this.scaleService.submitAnswer(scaleId, data);
+        try {
+            // 1. 检查是否存在答案
+            const existingAnswer = await data_source_1.AppDataSource
+                .getRepository(ScaleAnswer_1.ScaleAnswer)
+                .findOne({
+                where: {
+                    scaleId: scaleId,
+                    userId: data.userId
+                }
+            });
+            if (existingAnswer) {
+                // 2. 如果存在则更新
+                await data_source_1.AppDataSource
+                    .getRepository(ScaleAnswer_1.ScaleAnswer)
+                    .update({ id: existingAnswer.id }, { score: data.score });
+                return {
+                    success: true,
+                    message: '答案已更新',
+                    data: {
+                        ...existingAnswer,
+                        score: data.score
+                    }
+                };
+            }
+            else {
+                // 3. 如果不存在则创建新答案
+                const newAnswer = await data_source_1.AppDataSource
+                    .getRepository(ScaleAnswer_1.ScaleAnswer)
+                    .save({
+                    scaleId: scaleId,
+                    userId: data.userId,
+                    score: data.score
+                });
+                return {
+                    success: true,
+                    message: '答案已保存',
+                    data: newAnswer
+                };
+            }
+        }
+        catch (error) {
+            console.error('Error submitting answer:', error);
+            return {
+                success: false,
+                message: '保存答案失败',
+                error: error instanceof Error ? error.message : String(error)
+            };
+        }
     }
     async getUserAnswers(userId) {
         return await this.scaleService.getUserAnswers(userId);

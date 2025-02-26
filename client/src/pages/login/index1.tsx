@@ -64,13 +64,17 @@ const UserInfo = styled.div`
 `;
 
 const UserAvatar = styled(Avatar)`
-  cursor: pointer;
   background: #1890ff;
+  border: 2px solid #fff;
 `;
+
 const MainContent = styled(Content)`
-  padding: 40px;
+  padding: 0 40px;
   position: relative;
   z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  margin-top: -32px;
 `;
 
 const WechatButton = styled(Button)`
@@ -105,6 +109,22 @@ const CaseCard = styled(Card)`
   }
 `;
 
+const BottomBar = styled.div`
+  padding: 24px 40px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const QuickLink = styled(Button)`
+  color: #333;
+  &:hover {
+    color: #1890ff;
+  }
+`;
+
 const RealTimeNotice = styled.div`
   position: fixed;
   bottom: 20px;
@@ -120,6 +140,24 @@ const RealTimeNotice = styled.div`
     to { transform: translateX(0); }
   }
 `;
+
+const cases = [
+  {
+    title: '6岁发现音乐天赋',
+    result: '钢琴比赛金奖',
+    description: '通过天赋测评发现音乐潜能，3个月后参赛获奖'
+  },
+  {
+    title: '8岁确认逻辑天赋',
+    result: '奥数竞赛一等奖',
+    description: '定制学习方案，激发数理思维能力'
+  },
+  {
+    title: '5岁识别运动天赋',
+    result: '少儿体操冠军',
+    description: '科学选择运动项目，充分发挥身体优势'
+  }
+];
 
 const GrowthStages = styled.div`
   background: rgba(255, 255, 255, 0.9);
@@ -189,6 +227,7 @@ const StageItem = styled.div`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 `;
 
+// 新增滚动容器样式
 const ScrollContainer = styled.div`
   max-height: 280px;
   overflow-y: auto;
@@ -204,6 +243,7 @@ const ScrollContainer = styled.div`
   }
 `;
 
+// 新增互动条目样式
 const InteractionItem = styled.div`
   padding: 8px;
   margin: 4px 0;
@@ -213,24 +253,7 @@ const InteractionItem = styled.div`
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 `;
 
-const cases = [
-  {
-    title: '6岁发现音乐天赋',
-    result: '钢琴比赛金奖',
-    description: '通过天赋测评发现音乐潜能，3个月后参赛获奖'
-  },
-  {
-    title: '8岁确认逻辑天赋',
-    result: '奥数竞赛一等奖',
-    description: '定制学习方案，激发数理思维能力'
-  },
-  {
-    title: '5岁识别运动天赋',
-    result: '少儿体操冠军',
-    description: '科学选择运动项目，充分发挥身体优势'
-  }
-];
-
+// 爱的互动完整数据
 const loveInteractions = [
   '不轻易打断孩子说话',
   '能尝试感受孩子心里的感受',
@@ -247,9 +270,10 @@ const loveInteractions = [
   '看法不一致很正常，各自保留看法也是共识',
   '不认同时不着急提出，先听、多想想，再提出完善建议',
   '分享时尽量只说确认过的事实、验证过的规律',
-  '不断确认与孩子有共识的点'
+  '不断确认与孩子有共识的点' 
 ];
 
+// 发现场景完整数据
 const talentScenes = [
   '玩什么游戏时孩子会不愿意停下来？',
   '干什么的时候孩子经常不专心？',
@@ -297,6 +321,8 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [userInfo, setUserInfo] = useState<any>(null);
+  const [token, setToken] = useState('');
+  const [userId, setUserId] = useState(0);
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -314,173 +340,83 @@ const LoginPage: React.FC = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     delete axios.defaults.headers.common['Authorization'];
+    setToken('');
+    setUserId(0);
     navigate('/login');
   };
 
   const userMenu = (
-    <Menu>
-      <Menu.Item key="profile">
-        <UserOutlined /> 个人资料
+    <Menu style={{ minWidth: 'm60px' }}>
+      <Menu.Item key="profile" icon={<UserOutlined />}>
+        个人资料
       </Menu.Item>
-      <Menu.Item key="settings">
-        <SettingOutlined /> 设置
+      <Menu.Item key="settings" icon={<SettingOutlined />}>
+        设置
       </Menu.Item>
       <Menu.Divider />
-      <Menu.Item key="logout" onClick={handleLogout}>
-        <LogoutOutlined /> 退出登录
+      <Menu.Item key="logout" onClick={handleLogout} icon={<LogoutOutlined />} danger>
+        退出登录
       </Menu.Item>
     </Menu>
   );
-  // 获取登录二维码
-  const getLoginQrCode = async () => {
+
+  const handleWechatLogin = async () => {
     try {
       setLoading(true);
       setError('');
-      const response = await axios.get('http://3iq87c.natappfree.cc/api/wechat/qrcode');
-      console.log('接口返回数据:', response);
-
-      // 检查响应状态
-      if (response.status !== 200) {
-        throw new Error('服务器响应异常');
-      }
-
-      // 检查是否有错误信息
-      if (response.data.error) {
-        throw new Error(response.data.error);
-      }
-
-      // 检查数据完整性
-      const { ticket, sceneStr, qrUrl, isTest } = response.data;
-      if ((!ticket || !sceneStr) && !isTest) {
-        throw new Error('响应数据不完整');
-      }
-
-      // 检查二维码URL是否有效
-      if (!qrUrl) {
-        throw new Error('无效的二维码URL');
-      }
-
-      // 更新状态
-      setQrUrl(qrUrl);
       
-      if (!isTest) {
-        startPolling(sceneStr);
-      } else {
-        message.info('当前使用测试二维码，请在微信公众平台完成认证后使用正式二维码');
-      }
-    } catch (error: any) {
+      // 修改 API 调用方式
+      const response = await axios.get(getApiUrl('/wechat/qrcode'));  // 添加前导斜杠
+      setQrUrl(response.data.qrUrl);
+      
+      // 开始轮询登录状态
+      const intervalId = setInterval(async () => {
+        try {
+          const statusRes = await axios.get(getApiUrl(`/wechat/status?qrId=${response.data.qrId}`));  // 添加前导斜杠
+          if (statusRes.data.success) {
+            clearInterval(intervalId);
+            
+            // 保存用户信息和token
+            const { token, user } = statusRes.data;
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+            
+            setToken(token);
+            setUserId(user.id);
+            
+            message.success('登录成功');
+            navigate('/home');
+          }
+        } catch (error) {
+          console.error('检查登录状态失败:', error);
+        }
+      }, 2000);
+
+      // 60秒后停止轮询
+      setTimeout(() => {
+        clearInterval(intervalId);
+        setError('二维码已过期，请重新获取');
+        setQrUrl('');
+      }, 60000);
+
+    } catch (error) {
       console.error('获取二维码失败:', error);
-      setError(error.message || '获取二维码失败，请重试');
-      message.error(error.message || '获取二维码失败，请重试');
+      setError('获取二维码失败，请重试');
     } finally {
       setLoading(false);
     }
   };
 
-  // 修改 startPolling 函数
-  const startPolling = (scene: string) => {
-    setPolling(true);
-    let pollingTimer: NodeJS.Timeout;
-
-    const checkLogin = async () => {
-      try {
-        const response = await axios.get(`http://3iq87c.natappfree.cc/api/wechat/check-login?scene=${scene}`);
-        const { success, user, token } = response.data;
-        
-        if (success) {
-          // 清除轮询定时器
-          clearInterval(pollingTimer);
-          setPolling(false);
-          
-          // 存储用户信息和token
-          localStorage.setItem('user', JSON.stringify(user));
-          localStorage.setItem('token', token);
-          
-          // 设置全局请求头
-          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-          
-          message.success('登录成功');
-          navigate('/home');
-          return true; // 登录成功返回 true
-        }
-        return false; // 未登录返回 false
-      } catch (error) {
-        console.error('登录检查失败:', error);
-        clearInterval(pollingTimer);
-        setPolling(false);
-        message.error('登录检查失败，请重试');
-        return true; // 发生错误也返回 true 以停止轮询
-      }
-    };
-
-    // 启动轮询
-    pollingTimer = setInterval(async () => {
-      const shouldStop = await checkLogin();
-      if (shouldStop) {
-        clearInterval(pollingTimer);
-        setPolling(false);
-      }
-    }, 2000);
-
-    // 返回清理函数
-    return () => {
-      clearInterval(pollingTimer);
-      setPolling(false);
-    };
-  };
-
-  // 检查本地存储并尝试自动登录
   useEffect(() => {
-    const checkLocalAuth = async () => {
-      const token = localStorage.getItem('token');
-      const userStr = localStorage.getItem('user');
-
-      if (!token || !userStr) {
-        // 如果没有本地认证信息，显示二维码
-        getLoginQrCode();
-        return;
-      }
-
-      try {
-        const user = JSON.parse(userStr);
-        setUserInfo(user);
-        
-        // 设置全局请求头
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        
-        // 获取用户信息
-        const response = await axios.get(getApiUrl('/users/me'));
-        
-        if (response.status === 200) {
-          // 更新用户信息
-          localStorage.setItem('user', JSON.stringify(response.data));
-          navigate('/home');
-          return;
-        }
-      } catch (error: any) {
-        console.error('自动登录失败:', error);
-        
-        if (error.response?.status === 401) {
-          // 清除无效的认证信息
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setUserInfo(null);
-        }
-        
-        // 如果获取用户信息失败，显示二维码
-        getLoginQrCode();
-      }
-    };
-
-    checkLocalAuth();
-  }, [navigate]);
-
-
-  const handleWechatLogin = () => {
-    if (!polling) {
-      getLoginQrCode();
+    const savedToken = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('user');
+    
+    if (savedToken && savedUser) {
+      setToken(savedToken);
+      setUserId(JSON.parse(savedUser).id);
+      navigate('/home');
     }
-  };
+  }, []);
 
   return (
     <StyledLayout>
@@ -498,8 +434,9 @@ const LoginPage: React.FC = () => {
             }} 
           />
           发现孩子喜欢与天赋
+        
         </Logo>
-        {userInfo && localStorage.getItem('token') && (
+        {userInfo && (
           <UserInfo>
             <Dropdown overlay={userMenu} placement="bottomRight">
               <Space>
@@ -544,8 +481,8 @@ const LoginPage: React.FC = () => {
                 {
                   stage: '第二阶段',
                   title: '自我认知（选择培养）',
-                  timing: '需要付出努力时',
-                  target: '在喜欢的方向中培养自主选择能力，在天赋方向中寻找天赋长项',
+                  timing: '需要付出努力时', 
+                  target: '培养自主选择能力，寻找天赋长项',
                   abilities: [
                     '发展自强与自律',
                     '决策能力：基于兴趣的优先级判断',
@@ -556,9 +493,9 @@ const LoginPage: React.FC = () => {
                   stage: '第三阶段',
                   title: '自我突破（能力锻造）',
                   timing: '需要克服困难时',
-                  target: '在自主选择的方向上自愿坚持，在天赋长项中培养独立思考的能力',
+                  target: '自愿坚持并培养独立思考',
                   abilities: [
-                    '发展韧性（抗压 + 坚持）与思辨',
+                    '发展韧性（抗压+坚持）与思辨',
                     '抗压性：将困难转化为具体可执行步骤',
                     '逻辑验证：用天赋能力反向推导问题本质'
                   ]
@@ -567,22 +504,22 @@ const LoginPage: React.FC = () => {
                   stage: '第四阶段',
                   title: '自我蜕变（创新实践）',
                   timing: '需要战胜挑战时',
-                  target: '在自愿坚持的方向上自我完善，独立思考后自主创新',
+                  target: '自我完善后自主创新',
                   abilities: [
-                    '发展系统化（整合 + 创新）与预见性',
-                    '模式重构：将前两阶段积累的经验模块化',
-                    '风险预判：基于天赋特质的创新可行性评估'
+                    '发展系统化（整合+创新）与预见性',
+                    '模式重构：将经验模块化',
+                    '风险预判：基于天赋评估创新可行性'
                   ]
                 },
                 {
                   stage: '第五阶段',
                   title: '自我超越（认知升级）',
                   timing: '需要面对挫折时',
-                  target: '将自我完善发展成自我发现，自主创新后发现规律',
+                  target: '发现规律并实现认知升维',
                   abilities: [
-                    '发展元认知（规律洞察 + 自我迭代）',
-                    '认知升维：建立跨领域的能力迁移框架',
-                    '动态校准：用失败数据优化天赋应用模型'
+                    '发展元认知（规律洞察+自我迭代）',
+                    '认知升维：建立跨领域迁移框架',
+                    '动态校准：用失败数据优化模型'
                   ]
                 }
               ].map((phase, index) => (
@@ -624,14 +561,23 @@ const LoginPage: React.FC = () => {
             alignItems: 'center',
             marginTop: '100px',
           }}>
-            <Space direction="vertical" size="large" align="center">
+            <Space 
+              direction="vertical" 
+              size="large" 
+              align="center" 
+              style={{ 
+                width: '100%',
+                position: 'relative',
+                top: 0,
+              }}
+            >
               {error ? (
                 <div style={{ textAlign: 'center' }}>
                   <Text type="danger">{error}</Text>
                   <br />
                   <Button 
                     type="primary" 
-                    onClick={() => getLoginQrCode()}
+                    onClick={() => handleWechatLogin()}
                     style={{ marginTop: '16px' }}
                   >
                     重试
@@ -649,7 +595,7 @@ const LoginPage: React.FC = () => {
                     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
                   }}>
                     {loading ? (
                       <div style={{ textAlign: 'center' }}>
@@ -689,7 +635,12 @@ const LoginPage: React.FC = () => {
                 </WechatButton>
               )}
               
-              
+              <Space direction="vertical" size="small" style={{ textAlign: 'center' }}>
+                <Text type="secondary">
+                  <SafetyCertificateOutlined /> 扫码登录
+                </Text>
+              </Space>
+
               <div style={{ width: '100%', marginTop: 40 }}>
                 <Row gutter={[24, 24]}>
                   <Col span={24}>
@@ -701,7 +652,9 @@ const LoginPage: React.FC = () => {
                       }
                       bordered={false}
                     >
-                      <div style={{ paddingRight: '8px' }}>
+                      <div style={{ 
+                        paddingRight: '8px',
+                      }}>
                         {loveInteractions.map((item, index) => (
                           <InteractionItem key={`love-${index}`}>
                             <Text>▫️ {item}</Text>
@@ -720,7 +673,11 @@ const LoginPage: React.FC = () => {
                       }
                       bordered={false}
                     >
-                      <ScrollContainer>
+                      <ScrollContainer style={{ 
+                        height: 400,
+                        overflowY: 'auto',
+                        paddingRight: '8px',
+                      }}>
                         {talentScenes.map((item, index) => (
                           <InteractionItem key={`scene-${index}`}>
                             <Text strong>{index + 1}.</Text> {item}
@@ -735,12 +692,6 @@ const LoginPage: React.FC = () => {
           </Col>
         </Row>
       </MainContent>
-
-      {showNotice && (
-        <RealTimeNotice onClick={() => setShowNotice(false)}>
-          上海张妈妈刚发现孩子的运动天赋
-        </RealTimeNotice>
-      )}
     </StyledLayout>
   );
 };

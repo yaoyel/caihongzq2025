@@ -35,6 +35,7 @@ let ChatController = class ChatController {
     async sendMessage(data) {
         // 调用 processMessage 来处理消息并获取 AI 响应
         const result = await this.chatService.processMessage({
+            userId: data.userId,
             sessionId: data.sessionId,
             content: data.content,
             role: data.role

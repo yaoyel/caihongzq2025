@@ -66,7 +66,6 @@ __decorate([
 ], ElementController.prototype, "create", null);
 __decorate([
     (0, routing_controllers_1.Put)('/:id'),
-    (0, routing_controllers_1.Authorized)(),
     (0, routing_controllers_openapi_1.OpenAPI)({ summary: '更新元素' }),
     __param(0, (0, routing_controllers_1.Param)('id')),
     __param(1, (0, routing_controllers_1.Body)()),
@@ -76,7 +75,6 @@ __decorate([
 ], ElementController.prototype, "update", null);
 __decorate([
     (0, routing_controllers_1.Delete)('/:id'),
-    (0, routing_controllers_1.Authorized)(),
     (0, routing_controllers_openapi_1.OpenAPI)({ summary: '删除元素' }),
     __param(0, (0, routing_controllers_1.Param)('id')),
     __metadata("design:type", Function),
