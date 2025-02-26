@@ -336,7 +336,7 @@ const LoginPage: React.FC = () => {
     try {
       setLoading(true);
       setError('');
-      const response = await axios.get('http://3iq87c.natappfree.cc/api/wechat/qrcode');
+      const response = await axios.get('http://2znfnd.natappfree.cc/api/wechat/qrcode');
       console.log('接口返回数据:', response);
 
       // 检查响应状态
@@ -384,7 +384,7 @@ const LoginPage: React.FC = () => {
 
     const checkLogin = async () => {
       try {
-        const response = await axios.get(`http://3iq87c.natappfree.cc/api/wechat/check-login?scene=${scene}`);
+        const response = await axios.get(`http://2znfnd.natappfree.cc/api/wechat/check-login?scene=${scene}`);
         const { success, user, token } = response.data;
         
         if (success) {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Typography, Button, Card, Row, Col, Statistic, Carousel, Layout, Menu, Badge, Tag } from 'antd';
-import { ArrowRightOutlined, ClockCircleOutlined, FormOutlined, QuestionCircleOutlined, HeartOutlined, UserOutlined, MessageOutlined, FileTextOutlined } from '@ant-design/icons';
+import { Typography, Button, Card, Row, Col, Statistic, Carousel, Layout, Menu, Badge, Tag, Avatar, Dropdown } from 'antd';
+import { ArrowRightOutlined, ClockCircleOutlined, FormOutlined, QuestionCircleOutlined, HeartOutlined, UserOutlined, MessageOutlined, FileTextOutlined, LogoutOutlined } from '@ant-design/icons';
 import styled from '@emotion/styled';
 import { useNavigate } from 'react-router-dom';
 
@@ -40,6 +40,13 @@ const StyledLayout = styled(Layout)`
   }
 `;
 
+const UserContainer = styled.div`
+  position: absolute;
+  top: 20px;
+  right: 40px;
+  z-index: 1000;
+`;
+
 const StyledMenu = styled(Menu)`
   padding: 20px 0;
   .ant-menu-item {
@@ -77,6 +84,10 @@ const ReportTag = styled(ConsultationTag)`
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [selectedMethod, setSelectedMethod] = useState('scale');
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
   const cases = [
     {
@@ -150,8 +161,43 @@ const HomePage: React.FC = () => {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
+  };
+
+  const userMenuItems = [
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: '退出系统',
+      onClick: handleLogout
+    }
+  ];
+
   return (
     <StyledLayout>
+      {user && (
+        <UserContainer>
+          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              cursor: 'pointer',
+              background: 'white',
+              padding: '8px 16px',
+              borderRadius: '6px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+            }}>
+              <Avatar icon={<UserOutlined />} src={user.avatar} />
+              <span style={{ marginLeft: '8px', marginRight: '12px' }}>{user.name || '用户'}</span>
+              <LogoutOutlined style={{ color: '#999' }} />
+            </div>
+          </Dropdown>
+        </UserContainer>
+      )}
+      
       <StyledSider width="auto" theme="light" style={{ minWidth: '200px', maxWidth: '300px' }}>
         <Title level={4} style={{ padding: '20px 24px 0' }}>
           测评方法
