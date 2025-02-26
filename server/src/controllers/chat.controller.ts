@@ -1,10 +1,10 @@
-import { JsonController, Get, Post, Put, Delete, Body, Param, Authorized, Res, QueryParam, UseBefore } from 'routing-controllers';
+import { JsonController, Get, Post, Put, Delete, Body, Param, Res, QueryParam, UseBefore } from 'routing-controllers';
 import { OpenAPI } from 'routing-controllers-openapi';
 import { Service } from 'typedi';
 import { ChatService } from '../services/chat.service';
 import { Context } from 'koa';
-import jwt from 'jsonwebtoken';
-
+import jwt from 'jsonwebtoken'; 
+import { ChatSession } from '../entities/ChatSession';
 @JsonController('/chat') 
 @Service()
 export class ChatController {
@@ -56,10 +56,10 @@ export class ChatController {
 
     @Post('/sessions')
     @OpenAPI({ summary: '创建聊天会话' })
-    async createSession(@Body() data: { userId: number; title?: string }) {
+    async createSession(@Body() data: { userId: number; title?: string, can_delete?: boolean }) {
         // 如果title未定义则使用空字符串作为默认值
         const sessionTitle = data.title || '';
-        return await this.chatService.createSession(data.userId, sessionTitle);
+        return await this.chatService.createSession(data.userId, sessionTitle, data.can_delete || false);
     }
 
     @Get('/sessions/:sessionId/messages')
@@ -122,6 +122,22 @@ export class ChatController {
            return { message: '消息删除成功' };
         } catch (error) {
             return { error: '删除消息失败' }; 
+        }
+    }
+
+    @Get('/sessions/findByTitle')
+    async findSessionByTitle(
+        @QueryParam('title') title: string,
+        @QueryParam('userId') userId: string
+    ): Promise<ChatSession | null> {
+        try {
+            const session = await this.chatService.findSessionByTitle(title, userId);
+            if (!session) {
+                return null;
+            }
+            return session;
+        } catch (error) {
+            throw new Error('获取聊天会话失败');
         }
     }
 }

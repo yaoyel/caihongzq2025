@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Layout, Typography, Card, Row, Col, Collapse, Tabs, List, Button, message, Space, Alert, Tag, Tooltip, Spin, Empty, Modal, Divider, Radio } from 'antd';
 import styled from '@emotion/styled';
-import { HomeOutlined, DownloadOutlined, QuestionCircleOutlined, BulbOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { HomeOutlined, DownloadOutlined, QuestionCircleOutlined, BulbOutlined, ExclamationCircleOutlined, CloseOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import html2pdf from 'html2pdf.js';
 import axios from 'axios';
@@ -9,6 +9,7 @@ import { getApiUrl } from '../../config';
 import { useDispatch, useSelector } from 'react-redux';
 import { setElementAnalysis } from '../../store/slices/reportSlice';
 import { RootState } from '../../store';
+import ChatPage from '../chat';
 
 // 子组件
 const { Title, Paragraph, Text } = Typography;
@@ -24,7 +25,16 @@ const ReportCard = styled(Card)`
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   
   .ant-card-head {
-    border-bottom: 2px solid #f0f0f0;
+    border-bottom: none;
+    padding: 0;
+  }
+
+  .ant-card-head-title {
+    padding: 0;
+  }
+
+  .ant-card-body {
+    padding-top: 0;
   }
 `;
 
@@ -353,7 +363,7 @@ interface AgeGroupAnalysis {
   }>;
 }
 
-// 年龄段配置
+// 修改年龄段配置
 const AGE_GROUP_ANALYSIS: AgeGroupAnalysis[] = [
   {
     key: 'kindergarten',
@@ -363,22 +373,22 @@ const AGE_GROUP_ANALYSIS: AgeGroupAnalysis[] = [
       {
         key: 'anxiety',
         title: '焦虑点分析',
-        prompt: '作为一名脑神经科学专家、心理学家、儿童发展专家、教育，请基于孩子基础信息...'
+        prompt: '请基于孩子基础信息，深入分析孩子幼儿园阶段可能遭遇的问题及其成因（问题包含但不限于"安全感不足、到点不睡觉、分离焦虑、厌园、打人、便秘、不好好吃饭、不爱运动、哭闹、不自信等）"，并请结合附件所述赵巍同学特质，给出个性化/针对性问题解决方案，谢谢！'
       },
       {
         key: 'interest',
         title: '兴趣班选择指导',
-        prompt: '作为一名脑神经科学专家、心理学家、儿童发展专家、教育家，请基于孩子基础信息...'
+        prompt: '请基于孩子基础信息，结合科研成果深入分析孩子在幼儿园阶段可能最适合选择什么兴趣班发展喜欢与天赋（包括但不限于舞蹈、篮球、钢琴、绘画……等），并请结合孩子基础信息，提供适合他的兴趣班学习方式、喜欢的老师类型，……请注意不要把前面对孩子基因、脑神经、激素等方面的推测直接作为结论引用，以确保分析更科学严谨可信……谢谢！'
       },
       {
         key: 'learning',
         title: '学习/课堂行为分析',
-        prompt: '作为一名脑神经科学专家、心理学家、儿童发展专家、教育家，基于孩子基础信息...'
+        prompt: '请基于孩子基础信息，科学严谨的深入分析赵巍同学小学阶段可能遭遇的问题及其成因（问题包含但不限于"做作业拖拉、学习各种偷懒、爱玩游戏、厌学、上课走神、不爱说话、兴趣班没兴趣、记不住古诗和英文单词等、数学题总不会、写作文没思路等），并请并请结合赵巍同学特质，给到适合的针对性解决方案，谢谢！'
       },
       {
         key: 'obstacle',
         title: '学习障碍分析',
-        prompt: '作为一名脑神经科学专家、心理学家、儿童发展专家、教育家，基于孩子基础信息...'
+        prompt: '请基于孩子基础信息，科学严谨的深入分析小学阶段语文、数学、英语可能遭遇的学习障碍及其成因（请以人教版最新小学内容为分析基础），并请给到孩子善用喜欢与天赋化解学习障碍的乐学善学针对性解决方案，谢谢！'
       }
     ]
   },
@@ -390,17 +400,17 @@ const AGE_GROUP_ANALYSIS: AgeGroupAnalysis[] = [
       {
         key: 'interest',
         title: '兴趣/热爱方向分析',
-        prompt: '作为一名脑神经科学专家、心理学家、儿童发展专家、教育家，基于孩子基础信息...'
+        prompt: '请基于孩子基础信息，科学严谨的分析孩子在小学高年级/初中阶段可能的"热爱的种子"（包括但不限于社团组建、班委工作、学生会工作、编程、舞蹈、篮球、钢琴、绘画……等），并请提醒家长适合孩子的发展方式、可能遇到的困难、可能存在的"热爱的双刃剑"，更有助于孩子自驱自信的自我发展的陪伴方法。'
       },
       {
         key: 'obstacle',
         title: '学习障碍分析',
-        prompt: '作为一名脑神经科学专家、心理学家、儿童发展专家、教育家，基于孩子基础信息...'
+        prompt: '基于孩子基础信息，请细致分析孩子在初中阶段语文、数学、英语、物理、化学、生物、政治、地理、历史可能遭遇的学习障碍及其成因（请以人教版最新初中内容为分析基础），并请给到孩子善用喜欢与天赋化解学习障碍的针对性解决方案。'
       },
       {
         key: 'puberty',
         title: '青春期问题分析',
-        prompt: '作为一名脑神经科学专家、心理学家、儿童发展专家、教育家，基于孩子基础信息...'
+        prompt: '基于孩子基础信息，请深入分析孩子在青春期可能的叛逆行为表现、家长和老师要注意的最容易激发孩子反感的行为、以及更有助于孩子身心健康发展的陪伴要点'
       }
     ]
   },
@@ -412,17 +422,17 @@ const AGE_GROUP_ANALYSIS: AgeGroupAnalysis[] = [
       {
         key: 'subject',
         title: '文理选科分析',
-        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家...'
+        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家，请基于我所提供的柏霖同学基础信息，以及我所提供的《喜欢与天赋》框架，对柏霖同学的特质给出您的专业评估，判断柏霖同学哪些维度喜欢明显/不明显，哪些维度天赋明显/不明显，并列出有科学研究依据的判断理由，可以深度思考+联网搜索辅助判断，但请只搜索专业类网站、科研成果类论文作为输入信息，不采用AI生产的内容，避免以讹传讹；同时，请基于柏霖同学特质分析他更适合文科还是理科、并请详细到文理科中的具体组合（如语数英+史地政、语数英+物化生等、请以国家最新文理分科具体分类为准），并分析原因、给到更有利于柏霖乐学善学的选科建议谢谢！'
       },
       {
         key: 'major',
         title: '适合专业评估',
-        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家...'
+        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家，请基于我所提供的柏霖同学基础信息，以及我所提供的《喜欢与天赋》框架，对柏霖同学的特质给出您的专业评估，判断柏霖同学哪些维度喜欢明显/不明显，哪些维度天赋明显/不明显，并列出有科学研究依据的判断理由，可以深度思考+联网搜索辅助判断，但请只搜索专业类网站、科研成果类论文作为输入信息，不采用AI生产的内容，避免以讹传讹；同时，请分析柏霖同学更适合选择的大学和专业、并请详细到专业的具体分类（请以2024年高考全国高校在招专业为分析基础），并分析原因、给到柏霖同学更有利于在热爱中可持续发展的专业选择建议'
       },
       {
         key: 'obstacle',
         title: '学习障碍分析',
-        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家...'
+        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家，请基于我所提供的柏霖同学基础信息，以及我所提供的《喜欢与天赋》框架，对柏霖同学的特质给出您的专业评估，判断柏霖同学哪些维度喜欢明显/不明显，哪些维度天赋明显/不明显，并列出有科学研究依据的判断理由，可以深度思考+联网搜索辅助判断，但请只搜索专业类网站、科研成果类论文作为输入信息，不采用AI生产的内容，避免以讹传讹；同时，请具体分析柏霖同学在高考冲刺阶段语数英史地政可能遭遇的具体学习障碍及其成因（请以2022、2023、2024年湖南省高考真题及所涉及的知识点为分析基础），并请给到柏霖同学善用喜欢与天赋化解学习障碍、快速提分的针对性解决方案'
       }
     ]
   },
@@ -434,55 +444,157 @@ const AGE_GROUP_ANALYSIS: AgeGroupAnalysis[] = [
       {
         key: 'career',
         title: '职业规划建议',
-        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家...'
+        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家，请结合孩子基础信息、问答集内容，请分析孩子更适合就业还是考研、并请详细分析就业方向及建议原因（如行业选择、职业选择、请参考国家最新职业分类），或考研后的发展规划及建议原因（如继续攻读博士，或其他选择），给到更有利于孩子开心奋斗的发展建议'
       },
       {
         key: 'employment',
         title: '就业建议',
-        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家...'
+        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家，请结合孩子基础信息、问答集内容，分析孩子更适合的企业（请参考各地企业对外公布的使命、愿景、价值观、长期战略、核心治理机制、关键里程碑、在招岗位胜任素质描述等信息），给出推荐原因，请挑选更有助于孩子与组织共赢发展的企业'
       },
       {
         key: 'postgraduate',
         title: '考研建议',
-        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家...'
+        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家，请结合孩子基础信息、问答集内容，分析孩子更适合的专业及导师（请参考全球各高校及科研机构研究生招考专业及相关信息），给出推荐原因，请给到更有助于孩子与导师共赢探索的可选项'
       },
       {
         key: 'relationship',
         title: '另一半画像',
-        prompt: '结合孩子行为与状态画像、问答集内容...'
+        prompt: '结合孩子行为与状态画像、问答集内容，请分析孩子心动女生画像，并提醒可能的矛盾、冲突、解决方法及建议原因，给到更有利于孩子幸福相爱的可落地建议'
       }
     ]
   }
 ];
 
-// 添加新的样式组件
-const AnalysisCard = styled(Card)`
+// 修改 ThemeTitle 样式，使其颜色更浅
+const ThemeTitle = styled.div`
+  background-color: #fafafa;  // 更浅的背景色
+  padding: 12px 16px;
+  border-radius: 6px;
   margin-bottom: 16px;
+  border-left: 4px solid #40a9ff;  // 更浅的边框色
   
-  .ant-card-head {
-    background: #fafafa;
-  }
-  
-  .ant-card-head-wrapper {
+  .title-text {
+    color: #1f1f1f;
+    font-size: 16px;
+    font-weight: 500;
+    margin: 0;
     display: flex;
+    justify-content: space-between;
     align-items: center;
   }
+`;
 
-  .ant-card-head-title {
+// 添加新的样式组件
+const SectionTitle = styled.div`
+  position: relative;
+  padding: 16px 24px;
+  background: #f6f8fa;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  border-left: 4px solid #1890ff;
+
+  .main-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f1f1f;
+    margin: 0;
     display: flex;
     align-items: center;
     gap: 8px;
   }
+
+  .subtitle {
+    font-size: 14px;
+    color: #666;
+    margin-top: 8px;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -12px;
+    left: 24px;
+    width: 40px;
+    height: 3px;
+    background: #1890ff;
+    border-radius: 2px;
+  }
+`;
+
+// 添加 AnalysisCard 样式组件
+const AnalysisCard = styled(Card)`
+  margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  background: #fafafa;
+  
+  .ant-card-head {
+    background: transparent;
+    border-bottom: none;
+    padding: 0;
+  }
+  
+  .ant-card-head-title {
+    padding: 0;
+  }
   
   .analysis-content {
-    padding: 16px 0;
+    padding: 16px;
+    background: #fff;
+    border-radius: 4px;
   }
 
   .ai-button {
-    margin-left: 8px;
-    padding: 0;
+    padding: 4px 12px;
+    background: #e6f7ff;
+    border-radius: 4px;
+    color: #1890ff;
+    
+    &:hover {
+      background: #bae7ff;
+    }
+    
+    &:disabled {
+      background: #f5f5f5;
+      color: #d9d9d9;
+    }
   }
 `;
+
+// 添加 ChatModal 样式组件
+const ChatModal = styled(Modal)`
+  .ant-modal-content {
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    
+    .ant-modal-body {
+      flex: 1;
+      padding: 0;
+      overflow: hidden;
+    }
+  }
+
+  .ant-modal-wrap {
+    display: flex;
+    justify-content: center;  // 水平居中
+    align-items: center;      // 垂直居中
+  }
+  
+  &.ant-modal {
+    top: 0;
+    padding-bottom: 0;
+    max-width: 90vw;         // 设置最大宽度
+    margin: 0 auto;          // 水平居中
+  }
+`;
+
+// 修改 ChatPage 的类型定义
+interface ChatPageProps {
+  sessionId: string;
+  isModal: boolean;
+  initialPrompt: string;
+  onStreamingChange?: (streaming: boolean) => void;
+}
 
 const ReportPage: React.FC = () => {
   const navigate = useNavigate();
@@ -869,6 +981,177 @@ const ReportPage: React.FC = () => {
     }));
   };
 
+  // 添加新的状态
+  const [chatModalVisible, setChatModalVisible] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string>('');
+
+  // 添加新的状态来存储当前prompt
+  const [currentPrompt, setCurrentPrompt] = useState('');
+
+  // 添加新的状态来跟踪SSE传输状态
+  const [isStreaming, setIsStreaming] = useState(false);
+
+  // 添加新的状态来存储聊天内容
+  const [chatSessions, setChatSessions] = useState<Record<string, string>>({});
+
+  // 添加类型定义
+  interface Message {
+    id: number;
+    content: string;
+    role: 'user' | 'assistant';
+    createdAt: string;
+  }
+
+  // 添加所有状态
+  const [analysisMessages, setAnalysisMessages] = useState<Record<string, Message[]>>({});
+
+  // 修改消息展示组件
+  const MessageDisplay: React.FC<{ messages: Message[] }> = ({ messages }) => (
+    <div style={{ 
+      padding: '16px',
+      maxHeight: '400px', // 设置最大高度
+      overflowY: 'auto', // 添加垂直滚动条
+      scrollBehavior: 'smooth' // 平滑滚动
+    }}>
+      {messages.map((message, index) => (
+        <div 
+          key={index}
+          style={{ 
+            marginBottom: '16px',
+            textAlign: message.role === 'user' ? 'right' : 'left'
+          }}
+        >
+          <div
+            style={{
+              display: 'inline-block',
+              maxWidth: '80%',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              backgroundColor: message.role === 'user' ? '#e6f7ff' : '#f5f5f5',
+              wordBreak: 'break-word', // 添加长文本换行
+              whiteSpace: 'pre-wrap', // 保留换行和空格
+            }}
+          >
+            {message.content}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  // 添加获取聊天记录的函数
+  const fetchAnalysisMessages = async (groupTitle: string, itemTitle: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const userStr = localStorage.getItem('user');
+      const user = JSON.parse(userStr!);
+      if (!token || !userStr) return;
+
+      const sessionName = `${groupTitle}-${itemTitle}`;
+      const existingSession = await axios.get(
+        getApiUrl(`/chat/sessions/findByTitle?title=${encodeURIComponent(sessionName)}&userId=${user.id}`),
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      if (existingSession.data) {
+        const messages = await axios.get(
+          getApiUrl(`/chat/sessions/${existingSession.data.id}/messages`),
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+        
+        setAnalysisMessages(prev => ({
+          ...prev,
+          [sessionName]: messages.data
+        }));
+      }
+    } catch (error) {
+      console.error('获取分析消息失败:', error);
+    }
+  };
+
+  // 修改创建session的函数
+  const createAnalysisSession = async (groupTitle: string, itemTitle: string, prompt: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const userStr = localStorage.getItem('user');
+      const user = JSON.parse(userStr!);
+      if (!token || !userStr) {
+        message.error('请先登录');
+        return;
+      }
+
+      const sessionName = `${groupTitle}-${itemTitle}`;
+      
+      // 先查询是否存在相同名称的session
+      const existingSession = await axios.get(
+        getApiUrl(`/chat/sessions/findByTitle?title=${encodeURIComponent(sessionName)}&userId=${user.id}`),
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      let sessionId;
+      let shouldSetPrompt = true;
+
+      if (existingSession.data) {
+        sessionId = existingSession.data.id;
+        
+        // 获取消息记录
+        const messages = await axios.get(
+          getApiUrl(`/chat/sessions/${existingSession.data.id}/messages`),
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+        
+        // 只有当没有消息记录时才设置初始prompt
+        shouldSetPrompt = messages.data.length === 0;
+      } else {
+        // 如果不存在则创建新的session
+        const response = await axios.post(
+          getApiUrl('/chat/sessions'), 
+          {
+            title: sessionName,
+            userId: user.id,
+            systemPrompt: prompt
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+        sessionId = response.data?.id;
+      }
+
+      if (sessionId) {
+        setCurrentSessionId(sessionId);
+        setCurrentPrompt(shouldSetPrompt ? prompt : '');
+        setChatModalVisible(true);
+      }
+    } catch (error) {
+      console.error('创建分析会话失败:', error);
+      message.error('创建分析会话失败');
+    }
+  };
+
+  // 添加关闭确认函数
+  const handleCloseModal = () => {
+    Modal.confirm({
+      title: '确认关闭',
+      content: '确定要关闭当前分析吗？',
+      okText: '确定',
+      cancelText: '取消',
+      onOk: () => {
+        setChatModalVisible(false);
+        setCurrentPrompt('');
+      }
+    });
+  };
+
+  // 修改年龄段个性化分析的渲染部分
   return (
     <StyledLayout>
       <PrintableContent ref={componentRef}>
@@ -885,7 +1168,13 @@ const ReportPage: React.FC = () => {
 
             <ReportTitle level={2}>学生综合能力评估报告</ReportTitle>
 
-            <ReportCard title="喜欢与天赋分布">
+            <ReportCard 
+              title={
+                <SectionTitle>
+                  <div className="main-title">喜欢与天赋分布</div>
+                </SectionTitle>
+              }
+            >
               <Row gutter={24}>
                 <Col span={24}>
                   <Tabs
@@ -1220,7 +1509,18 @@ const ReportPage: React.FC = () => {
               </Row>
             </ReportCard>
 
-            <ReportCard title="性格特征双刃剑分析">
+            <ReportCard 
+              title={
+                <SectionTitle>
+                  <div className="main-title">
+                    性格特征双刃剑分析
+                    <Tooltip title="这些特征是基于您的喜好和天赋组合分析得出的，了解这些特征有助于扬长避短，更好地发展。">
+                      <InfoCircleOutlined style={{ color: '#1890ff' }} />
+                    </Tooltip>
+                  </div>
+                </SectionTitle>
+              }
+            >
               <Alert
                 type="info"
                 message="关于双刃剑特征"
@@ -1304,7 +1604,13 @@ const ReportPage: React.FC = () => {
               </Spin>
             </ReportCard>
 
-            <ReportCard title="课堂表现分析">
+            <ReportCard 
+              title={
+                <SectionTitle>
+                  <div className="main-title">课堂表现分析</div>
+                </SectionTitle>
+              }
+            >
               <Row gutter={24}>
                 {Object.entries(CLASSROOM_PERFORMANCE_ELEMENTS).map(([dimension, config]) => {
                   const dimensionElements = elementAnalysis.filter(item => 
@@ -1363,7 +1669,14 @@ const ReportPage: React.FC = () => {
               </Row>
             </ReportCard>
 
-            <ReportCard title="年龄段个性化分析">
+            <ReportCard 
+              title={
+                <SectionTitle>
+                  <div className="main-title">年龄段个性化分析</div>
+                  <div className="subtitle">根据年龄特点提供个性化分析和建议</div>
+                </SectionTitle>
+              }
+            >
               <Tabs
                 type="card"
                 items={AGE_GROUP_ANALYSIS.map(group => ({
@@ -1378,28 +1691,42 @@ const ReportPage: React.FC = () => {
                       />
                       {group.items.map(item => {
                         const itemKey = `${group.key}-${item.key}`;
+                        const sessionName = `${group.title}-${item.title}`;
+                        const messages = analysisMessages[sessionName] || [];
+
+                        useEffect(() => {
+                          fetchAnalysisMessages(group.title, item.title);
+                        }, [group.title, item.title]);
+                        
                         return (
                           <AnalysisCard
                             key={item.key}
                             title={
-                              <Space>
-                                {item.title}
-                                <Button
-                                  type="link"
-                                  className="ai-button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    message.info('正在分析中...');
-                                    handleExpand(itemKey);
-                                  }}
-                                >
-                                  AI分析
-                                </Button>
-                              </Space>
+                              <ThemeTitle>
+                                <div className="title-text">
+                                  {item.title}
+                                  <Button
+                                    type="link"
+                                    className="ai-button"
+                                    disabled={isStreaming}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      createAnalysisSession(group.title, item.title, item.prompt);
+                                    }}
+                                  >
+                                    AI分析
+                                    {isStreaming && <Spin size="small" style={{ marginLeft: '8px' }} />}
+                                  </Button>
+                                </div>
+                              </ThemeTitle>
                             }
                           >
-                            <div className="analysis-content" style={{ display: expandedItems[itemKey] ? 'block' : 'none' }}>
-                              <Empty description="暂无分析结果" />
+                            <div className="analysis-content">
+                              {messages.length > 0 ? (
+                                <MessageDisplay messages={messages} />
+                              ) : (
+                                <Empty description="暂无分析结果" />
+                              )}
                             </div>
                           </AnalysisCard>
                         );
@@ -1444,6 +1771,31 @@ const ReportPage: React.FC = () => {
       </div>
 
       {renderModal()}
+
+      {/* 修改Chat Modal */}
+      <ChatModal
+        title="AI分析"
+        open={chatModalVisible}
+        onCancel={handleCloseModal}
+        maskClosable={false}
+        keyboard={false}
+        width="80%"
+        footer={null}
+        destroyOnClose
+        closeIcon={
+          <Button 
+            type="text" 
+            icon={<CloseOutlined />}
+          />
+        }
+      >
+        <ChatPage 
+          sessionId={currentSessionId} 
+          isModal={true}
+          initialPrompt={currentPrompt}
+          onStreamingChange={setIsStreaming}
+        />
+      </ChatModal>
     </StyledLayout>
   );
 }

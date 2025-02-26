@@ -11,7 +11,7 @@ const { Text } = Typography;
 const { Sider } = Layout;
 
 const StyledLayout = styled(Layout)`
-  height: 100vh;
+  height: 100%;
   background: #fff;
   display: flex;
 `;
@@ -21,8 +21,7 @@ const StyledSider = styled(Sider)`
   border-right: 1px solid #e8e8e8;
   padding: 20px 0;
   flex-shrink: 0;
-  position: fixed;
-  height: 100vh;
+  height: 100%;
   z-index: 1;
 `;
 
@@ -49,7 +48,7 @@ const ChatList = styled(List)`
 `;
 
 const ChatContainer = styled(Layout)`
-  margin-left: 300px;
+  margin-left: 0;
   margin-right: 20px;
   background: #fff;
   display: flex;
@@ -245,7 +244,18 @@ interface Chat {
   timestamp: Date;
 }
 
-const ChatPage: React.FC = () => {
+// 修改props接口
+interface ChatPageProps {
+  sessionId?: string;
+  isModal?: boolean;
+  initialPrompt?: string; // 添加initialPrompt属性
+}
+
+const ChatPage: React.FC<ChatPageProps> = ({ 
+  sessionId, 
+  isModal = false,
+  initialPrompt = '' // 设置默认值
+}) => {
   const messageListRef = React.useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [chats, setChats] = useState<Chat[]>([]);
@@ -350,8 +360,13 @@ const ChatPage: React.FC = () => {
   }, [messages]);
 
   useEffect(() => {
-    fetchChats();
-  }, []);
+    // 如果传入了sessionId，则直接使用
+    if (sessionId) {
+      setActiveChat(sessionId);
+    } else {
+      fetchChats();
+    }
+  }, [sessionId]);
 
   useEffect(() => {
     if (activeChat) {
@@ -369,6 +384,13 @@ const ChatPage: React.FC = () => {
 
     requestAnimationFrame(scrollToBottom);
   }, [messages]);
+
+  // 修改useEffect，在组件挂载时设置初始prompt
+  useEffect(() => {
+    if (initialPrompt) {
+      setInputValue(initialPrompt);
+    }
+  }, [initialPrompt]);
 
   const getUserId = () => {
     const userStr = localStorage.getItem('user');
@@ -724,103 +746,105 @@ const ChatPage: React.FC = () => {
 
   return (
     <StyledLayout>
-      <StyledSider width={300}>
-        <div style={{ padding: '0 20px', marginBottom: 20 }}>
-          <Button 
-            icon={<HomeOutlined />} 
-            onClick={() => navigate('/home')}
-            style={{ marginBottom: '12px' }}
-            block
-          >
-            返回主页
-          </Button>
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />} 
-            onClick={createNewChat}
-            block
-          >
-            新建对话
-          </Button>
-        </div>
-        <ChatList
-          dataSource={chats}
-          renderItem={(chat:any) => (
-            <List.Item
-              className={chat.id === activeChat ? 'active' : ''}
-              onClick={() => setActiveChat(chat.id)}
+      {!isModal && (  // 在Modal中不显示返回主页按钮
+        <StyledSider width={300}>
+          <div style={{ padding: '0 20px', marginBottom: 20 }}>
+            <Button 
+              icon={<HomeOutlined />} 
+              onClick={() => navigate('/home')}
+              style={{ marginBottom: '12px' }}
+              block
             >
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                  <Space>
-                    <MessageOutlined />
-                    <Text strong>{chat.title}</Text>
-                  </Space>
-                  <Space size="small">
-                    <EditOutlined 
-                      style={{ fontSize: '12px', color: '#666' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setNewChatTitle(chat.title);
-                        setEditingChatId(chat.id);
-                        setIsModalVisible(true);
-                      }} 
-                    />
-                    <DeleteOutlined 
-                      style={{ fontSize: '12px', color: 'rgba(255, 77, 79, 0.6)' }}
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        Modal.confirm({
-                          title: '确认删除',
-                          content: '确定要删除这个会话吗？此操作不可恢复。',
-                          okText: '确定',
-                          cancelText: '取消',
-                          okType: 'danger',
-                          async onOk() {
-                            try {
-                              const token = localStorage.getItem('token');
-                              if (!token) {
-                                message.error('请先登录');
-                                navigate('/login');
-                                return;
-                              }
-
-                              await axios.delete(getApiUrl(`/chat/sessions/${chat.id}`), {
-                                headers: {
-                                  Authorization: `Bearer ${token}`
+              返回主页
+            </Button>
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />} 
+              onClick={createNewChat}
+              block
+            >
+              新建对话
+            </Button>
+          </div>
+          <ChatList
+            dataSource={chats}
+            renderItem={(chat:any) => (
+              <List.Item
+                className={chat.id === activeChat ? 'active' : ''}
+                onClick={() => setActiveChat(chat.id)}
+              >
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                    <Space>
+                      <MessageOutlined />
+                      <Text strong>{chat.title}</Text>
+                    </Space>
+                    <Space size="small">
+                      <EditOutlined 
+                        style={{ fontSize: '12px', color: '#666' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setNewChatTitle(chat.title);
+                          setEditingChatId(chat.id);
+                          setIsModalVisible(true);
+                        }} 
+                      />
+                      <DeleteOutlined 
+                        style={{ fontSize: '12px', color: 'rgba(255, 77, 79, 0.6)' }}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          Modal.confirm({
+                            title: '确认删除',
+                            content: '确定要删除这个会话吗？此操作不可恢复。',
+                            okText: '确定',
+                            cancelText: '取消',
+                            okType: 'danger',
+                            async onOk() {
+                              try {
+                                const token = localStorage.getItem('token');
+                                if (!token) {
+                                  message.error('请先登录');
+                                  navigate('/login');
+                                  return;
                                 }
-                              });
-                              setChats(prev => prev.filter(c => c.id !== chat.id));
-                              if (activeChat === chat.id) {
-                                setActiveChat('');
-                                setMessages([]);
-                              }
-                              message.success('删除成功');
-                            } catch (error) {
-                              console.error('删除对话失败:', error);
-                              if (axios.isAxiosError(error) && error.response?.status === 401) {
-                                message.error('登录已过期，请重新登录');
-                                navigate('/login');
-                              } else {
-                                message.error('删除失败');
+
+                                await axios.delete(getApiUrl(`/chat/sessions/${chat.id}`), {
+                                  headers: {
+                                    Authorization: `Bearer ${token}`
+                                  }
+                                });
+                                setChats(prev => prev.filter(c => c.id !== chat.id));
+                                if (activeChat === chat.id) {
+                                  setActiveChat('');
+                                  setMessages([]);
+                                }
+                                message.success('删除成功');
+                              } catch (error) {
+                                console.error('删除对话失败:', error);
+                                if (axios.isAxiosError(error) && error.response?.status === 401) {
+                                  message.error('登录已过期，请重新登录');
+                                  navigate('/login');
+                                } else {
+                                  message.error('删除失败');
+                                }
                               }
                             }
-                          }
-                        });
-                      }} 
-                    />
-                  </Space>
-                </div>
-                <Text type="secondary" style={{ fontSize: '12px' }}>
-                  {chat.lastMessage}
-                </Text>
-              </Space>
-            </List.Item>
-          )}
-        />
-      </StyledSider>
+                          });
+                        }} 
+                      />
+                    </Space>
+                  </div>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    {chat.lastMessage}
+                  </Text>
+                </Space>
+              </List.Item>
+            )}
+          />
+        </StyledSider>
+      )}
       
-      <ChatContainer>
+      <ChatContainer style={{ marginLeft: 0 }}>
         {MessageListMemo}
         
         <InputContainer>

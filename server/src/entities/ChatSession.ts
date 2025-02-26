@@ -24,6 +24,9 @@ export class ChatSession {
     @Column({ nullable: true })
     shareCode: string;
 
+    @Column({ name: 'can_delete', nullable: true, default: false })
+    canDelete: boolean;
+
     @OneToMany(() => ChatMessage, message => message.session)
     messages: ChatMessage[];
 } 

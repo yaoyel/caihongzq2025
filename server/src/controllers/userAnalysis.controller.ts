@@ -37,7 +37,7 @@ export class UserAnalysisController {
     async getUserAnalysisPrompt(@Param('userId') userId: number) {
         try {
             
-            const prompt = this.userAnalysisService.formatAnalysisToPrompt(userId);
+            const prompt = await this.userAnalysisService.formatAnalysisToPrompt(userId);
             return {
                 success: true,
                 data: prompt

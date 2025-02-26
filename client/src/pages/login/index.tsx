@@ -527,7 +527,7 @@ const LoginPage: React.FC = () => {
             <GrowthStages>
               <Title level={2} style={{ marginBottom: 32, color: '#1890ff' }}>
                 🌱 五道杠成长体系
-              </Title>
+            </Title>
               
               {[
                 {
@@ -611,7 +611,7 @@ const LoginPage: React.FC = () => {
                           </StageSubItem>
                         ))}
                       </div>
-                    </div>
+                </div>
                   </StageContent>
                 </StageCard>
               ))}
