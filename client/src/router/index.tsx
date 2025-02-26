@@ -1,15 +1,16 @@
 import { createBrowserRouter } from 'react-router-dom';
-import LoginPage from '../pages/login';
+import LoginPage from '../pages/login/index';
 import HomePage from '../pages/index';
 import ChatPage from '../pages/chat';
 import QAAssessment from '../pages/assessment/qa';
 import TeenQAAssessment from '../pages/assessment/qa-teen';
 import AdultQAAssessment from '../pages/assessment/qa-adult';
 import ScaleAssessment from '../pages/assessment/scale';
+import ReportPage from '../pages/report';
 
 const router = createBrowserRouter([
   {
-    path: '/',
+    path: '/login',
     element: <LoginPage />
   },
   {
@@ -19,6 +20,10 @@ const router = createBrowserRouter([
   {
     path: '/chat',
     element: <ChatPage />
+  },
+  {
+    path: '/report',
+    element: <ReportPage />
   },
   {
     path: '/assessment/qa',

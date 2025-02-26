@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Typography, Button, Card, Row, Col, Statistic, Carousel, Layout, Menu, Badge, Tag } from 'antd';
-import { ArrowRightOutlined, ClockCircleOutlined, FormOutlined, QuestionCircleOutlined, HeartOutlined, UserOutlined, MessageOutlined } from '@ant-design/icons';
+import { ArrowRightOutlined, ClockCircleOutlined, FormOutlined, QuestionCircleOutlined, HeartOutlined, UserOutlined, MessageOutlined, FileTextOutlined } from '@ant-design/icons';
 import styled from '@emotion/styled';
 import { useNavigate } from 'react-router-dom';
 
@@ -56,7 +56,7 @@ const StyledSider = styled(Sider)`
 
 const ConsultationTag = styled(Tag)`
   position: absolute;
-  bottom: 20px;
+  bottom: 60px;
   left: 50%;
   transform: translateX(-50%);
   padding: 8px 16px;
@@ -68,6 +68,10 @@ const ConsultationTag = styled(Tag)`
   &:hover {
     background: #f0f0f0;
   }
+`;
+
+const ReportTag = styled(ConsultationTag)`
+  bottom: 110px;
 `;
 
 const HomePage: React.FC = () => {
@@ -95,29 +99,41 @@ const HomePage: React.FC = () => {
       label: '喜欢与天赋量表测评',
       icon: <FormOutlined />,
       description: '112道专业量表题目',
-      accuracy: 60
+      accuracy: '全部'
     },
     {
       key: 'qa',
       label: '喜欢与天赋问答',
       icon: <QuestionCircleOutlined />,
       description: '36道深度问答题目',
-      accuracy: 70
+      accuracy: '4-8岁'
     },
     {
       key: 'seed',
       label: '热爱种子问答',
       icon: <HeartOutlined />,
       description: '36道热爱探索题目',
-      accuracy: 80
+      accuracy: '9-15岁'
     },
     {
       key: 'self',
       label: '不一样的自己',
       icon: <UserOutlined />,
       description: '48道自我认知题目',
-      accuracy: 85,
-      adultOnly: true
+      accuracy: '15岁+',
+      adultOnly: false
+    },
+    {
+      key: 'report',
+      label: '查看报告',
+      icon: <FileTextOutlined />,
+      description: '查看量表及问答报告'
+    },
+    {
+      key: 'chat',
+      label: '问题咨询',
+      icon: <MessageOutlined />,
+      description: '与AI对话'
     }
   ];
 
@@ -153,6 +169,10 @@ const HomePage: React.FC = () => {
               navigate('/assessment/qa-teen');
             } else if (key === 'self') {
               navigate('/assessment/qa-adult');
+            } else if (key === 'report') {
+              navigate('/report');
+            } else if (key === 'chat') {
+              navigate('/chat');
             }
           }}
         >
@@ -164,16 +184,13 @@ const HomePage: React.FC = () => {
                 </div>
                 <div style={{ fontSize: '12px', color: '#666' }}>{method.description}</div>
                 {method.adultOnly && <div style={{ marginTop: '4px' }}><Badge color="blue" text="成人专属" /></div>}
-                <div style={{ fontSize: '12px', color: '#52c41a' }}>
-                  准确度：{method.accuracy}%
-                </div>
+                {method.accuracy && <div style={{ fontSize: '12px', color: '#52c41a' }}>
+                  使用人群：{method.accuracy}
+                </div>}
               </div>
             </Menu.Item>
           ))}
         </StyledMenu>
-        <ConsultationTag color="blue" icon={<MessageOutlined />} onClick={() => navigate('/chat')}>
-          问题咨询
-        </ConsultationTag>
       </StyledSider>
       
       <Content>
