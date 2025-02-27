@@ -54,7 +54,8 @@ const ChatContainer = styled(Layout)`
   display: flex;
   flex-direction: column;
   padding: 0;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: #fff;
 `;
 
@@ -63,6 +64,25 @@ const MessageList = styled(List<Message>)`
   padding: 0 24px;
   background: #fff;
   overflow-y: auto;
+  height: calc(100vh - 200px);
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+    background-color: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #d9d9d9;
+    border-radius: 3px;
+    
+    &:hover {
+      background-color: #bfbfbf;
+    }
+  }
+
+  &::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
   
   .ant-list-item {
     margin-bottom: 24px;
@@ -163,7 +183,7 @@ const LoadingDots = styled.div`
 `;
 
 // 2. 修改消息气泡组件中的加载显示
-const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
+const MessageBubble: React.FC<{ message: Message }> = React.memo(({ message }) => {
   return (
     <StyledMessageBubble isUser={message.isUser}>
       <div className="markdown-content">
@@ -175,7 +195,10 @@ const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
       </div>
     </StyledMessageBubble>
   );
-};
+}, (prevProps, nextProps) => {
+  // 只有当消息内容发生变化时才重新渲染
+  return prevProps.message.content === nextProps.message.content;
+});
 
 const InputContainer = styled.div`
   padding: 16px;
@@ -183,49 +206,8 @@ const InputContainer = styled.div`
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
-  background: #fff;
-  
-  .ant-input-textarea {
-    flex: 1;
-    textarea {
-      padding: 10px 14px;
-      font-size: 13px;
-      min-height: 90px;
-      max-height: 200px;
-      border: 1px solid #e8e8e8;
-      border-radius: 6px;
-      resize: none;
-      transition: all 0.3s ease;
-      will-change: border-color;
-      
-      &:hover {
-        border-color: #40a9ff;
-      }
-      
-      &:focus {
-        border-color: #1890ff;
-        box-shadow: 0 0 0 2px rgba(24,144,255,0.1);
-      }
-    }
-  }
-  
-  .send-button {
-    height: auto;
-    padding: 10px 14px;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    border-radius: 6px;
-    
-    .anticon {
-      font-size: 14px;
-    }
-  }
+  border-top: 1px solid #f0f0f0;
+  flex-shrink: 0;
 `;
 
 interface Chat {
@@ -266,6 +248,9 @@ const ChatPage: React.FC<ChatPageProps> = ({
   const [activeChat, setActiveChat] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // 使用 ref 存储最后一条消息的 DOM 元素引用
+  const lastMessageRef = React.useRef<HTMLDivElement>(null);
+
   const scrollToBottom = useCallback(() => {
     if (messageListRef.current) {
       const element = messageListRef.current;
@@ -291,24 +276,18 @@ const ChatPage: React.FC<ChatPageProps> = ({
         console.log('SSE连接已建立');
       };
 
-      // 使用防抖进行消息更新
       let updateTimeout: NodeJS.Timeout;
 
       eventSource.addEventListener('message-update', (event) => {
         try {
-          if (!event.data) {
-            console.log('收到空消息');
-            return;
-          }
+          if (!event.data) return;
 
           let data;
           try {
             const parsedData = JSON.parse(event.data);
-            if (typeof parsedData === 'string' && parsedData.startsWith('data: ')) {
-              data = JSON.parse(parsedData.slice(6));
-            } else {
-              data = parsedData;
-            }
+            data = typeof parsedData === 'string' && parsedData.startsWith('data: ') 
+              ? JSON.parse(parsedData.slice(6)) 
+              : parsedData;
           } catch (e) {
             console.error('JSON解析失败:', e);
             return;
@@ -318,24 +297,22 @@ const ChatPage: React.FC<ChatPageProps> = ({
           clearTimeout(updateTimeout);
           updateTimeout = setTimeout(() => {
             setMessages(prevMessages => {
-              const newMessages = [...prevMessages];
-              const lastMessage = newMessages[newMessages.length - 1];
+              const lastMessage = prevMessages[prevMessages.length - 1];
               
-              if (lastMessage && !lastMessage.isUser) {
-                // 只在内容真正变化时才更新
-                if (lastMessage.content !== data.content) {
-                  lastMessage.content = data.content;
-                  // 使用 RAF 优化滚动
-                  requestAnimationFrame(scrollToBottom);
-                }
-                if (data.content) {
-                  setIsLoading(false);
-                }
+              if (lastMessage && !lastMessage.isUser && lastMessage.content !== data.content) {
+                // 创建新的消息数组，但只更新最后一条消息
+                return [
+                  ...prevMessages.slice(0, -1),
+                  { ...lastMessage, content: data.content }
+                ];
               }
-              
-              return newMessages;
+              return prevMessages;
             });
-          }, 50); // 50ms 的防抖延迟
+
+            if (data.content) {
+              setIsLoading(false);
+            }
+          }, 50);
 
         } catch (error) {
           console.error('处理消息更新失败:', error);
@@ -355,7 +332,7 @@ const ChatPage: React.FC<ChatPageProps> = ({
       console.log('关闭SSE连接');
       eventSource?.close();
     };
-  }, [scrollToBottom]);
+  }, []);
 
   useEffect(() => {
     console.log('消息列表已更新:', messages);
@@ -679,12 +656,14 @@ const ChatPage: React.FC<ChatPageProps> = ({
     };
   };
 
+  // 优化 MessageList 渲染
   const MessageListMemo = useMemo(() => (
     <MessageList
       ref={messageListRef}
       dataSource={messages}
-      renderItem={(item: Message) => (
+      renderItem={(item: Message, index: number) => (
         <List.Item 
+          ref={index === messages.length - 1 ? lastMessageRef : null}
           style={{ 
             justifyContent: item.isUser ? 'flex-end' : 'flex-start',
             display: 'flex',

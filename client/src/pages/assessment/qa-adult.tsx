@@ -416,7 +416,7 @@ const AdultQAAssessment: React.FC = () => {
         </Button>
 
         <Title level={2} style={{ textAlign: 'center', marginBottom: 40 }}>
-          成人天赋问答测评（14岁以上）
+          不一样的自己问答测评（14岁以上）
         </Title>
 
         <Steps

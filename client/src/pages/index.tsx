@@ -111,7 +111,7 @@ const HomePage: React.FC = () => {
       label: '不一样的自己',
       icon: <UserOutlined />,
       description: '48道自我认知题目',
-      accuracy: '15岁+',
+      accuracy: '14岁+',
       adultOnly: false
     },
     {

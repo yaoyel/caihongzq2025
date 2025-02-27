@@ -368,7 +368,7 @@ const AGE_GROUP_ANALYSIS: AgeGroupAnalysis[] = [
   {
     key: 'kindergarten',
     title: '幼儿园及小学初年级',
-    prompt: '完成喜欢与天赋量表，双刃剑深度确认，4-8岁的36问以后，结果非常准确',
+    prompt: '完成喜欢与天赋量表，双刃剑深度确认，4-8岁的36问以后，结果最准确',
     items: [
       {
         key: 'anxiety',
@@ -395,7 +395,7 @@ const AGE_GROUP_ANALYSIS: AgeGroupAnalysis[] = [
   {
     key: 'primary',
     title: '小学高年级及初中',
-    prompt: '完成喜欢与天赋量表，双刃剑深度确认，9-14岁的36问以后，结果非常准确',
+    prompt: '完成喜欢与天赋量表，双刃剑深度确认，9-14岁的36问以后最准确',
     items: [
       {
         key: 'interest',
@@ -417,7 +417,7 @@ const AGE_GROUP_ANALYSIS: AgeGroupAnalysis[] = [
   {
     key: 'highSchool',
     title: '高中',
-    prompt: '完成喜欢与天赋量表，双刃剑深度确认，15+岁的36问和48问，结果非常准确',
+    prompt: '完成喜欢与天赋量表，双刃剑深度确认，15+岁的36问和48问，结果最准确',
     items: [
       {
         key: 'subject',
@@ -439,7 +439,7 @@ const AGE_GROUP_ANALYSIS: AgeGroupAnalysis[] = [
   {
     key: 'university',
     title: '大学',
-    prompt: '完成喜欢与天赋量表，双刃剑深度确认，15+岁的36问和48问，结果非常准确',
+    prompt: '完成喜欢与天赋量表，双刃剑深度确认，15+岁的36问和48问最准确',
     items: [
       {
         key: 'career',
