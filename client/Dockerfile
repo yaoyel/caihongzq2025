@@ -1,4 +1,4 @@
-FROM node:16-alpine as builder
+FROM node:22-alpine as builder
 
 WORKDIR /app
 
@@ -14,15 +14,14 @@ COPY . .
 # 构建项目
 RUN npm run build
 
-# 运行阶段
-FROM nginx:alpine
+# 使用轻量级镜像存储构建产物
+FROM alpine:latest
 
-# 复制构建产物到 nginx 目录
-COPY --from=builder /app/dist /usr/share/nginx/html
+WORKDIR /app
 
-# 复制 nginx 配置
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# 复制构建产物
+COPY --from=builder /app/dist /app/dist
+ 
 
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"] 
+# 使用简单命令保持容器运行
+CMD ["tail", "-f", "/dev/null"]

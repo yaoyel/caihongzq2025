@@ -1,4 +1,4 @@
-FROM node:16-alpine as builder
+FROM node:22-alpine as builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ COPY . .
 RUN npm run build
 
 # 运行阶段
-FROM node:16-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
@@ -27,4 +27,4 @@ COPY .env ./
 
 EXPOSE 3000
 
-CMD ["node", "dist/src/index.js"] 
+CMD ["node", "dist/index.js"] 
