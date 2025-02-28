@@ -25,7 +25,7 @@ export class Element {
   @JoinColumn({ name: 'corresponding_element_id'})
   correspondingElement: Element;
 
-  @Column({ name: 'double_edged_id' })
+  @Column({ name: 'double_edged_id', nullable: true })
   doubleEdgedId: number;  
 
   @OneToOne(() => DoubleEdgedInfo)

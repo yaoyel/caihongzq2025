@@ -9,7 +9,7 @@ export type DoubleEdgedType =
   | 'common_outcome'
   | 'normal_state';
 
-@Entity('double_edgeds_scales')
+@Entity('double_edged_scales')
 export class DoubleEdgedScale {
   @PrimaryGeneratedColumn()
   id: number;

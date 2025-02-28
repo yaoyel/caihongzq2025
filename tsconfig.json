@@ -3,5 +3,10 @@
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         // ... 其他配置
-    }
+        "outDir": "./dist",
+    },
+    "include": [
+        "src/**/*",
+        "scripts/**/*"
+    ]
 } 
