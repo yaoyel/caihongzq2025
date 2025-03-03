@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // 在浏览器环境中使用 window._env_ 或 import.meta.env 或直接使用 REACT_APP_ 变量
-const API_HOST = window.location.hostname === 'localhost' ? 'http://caihongzq.com:8088' : 'http://caihongzq.com:8088';
+const API_HOST = window.location.hostname === 'localhost' ? 'http://caihongzq.com:3000' : 'http://caihongzq.com:3000';
 
 export const config = {
   apiHost: API_HOST,
