@@ -15,10 +15,10 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://52.131.243.151:3000',
+        target: 'localhost:3000',
         changeOrigin: true,
       },
     },
-    allowedHosts: ['localhost', '52.131.243.151'],
+    // allowedHosts: ['localhost', '52.131.243.151'],
   },
 }) 

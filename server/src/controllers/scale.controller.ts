@@ -101,12 +101,7 @@ export class ScaleController {
                 };
             }
         } catch (error) {
-            console.error('Error submitting answer:', error);
-            return {
-                success: false,
-                message: '保存答案失败',
-                error: error instanceof Error ? error.message : String(error)
-            };
+           throw new Error('保存答案失败'); 
         }
     }
 

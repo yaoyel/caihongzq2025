@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Layout, Typography, Button, Input, List, Avatar, Space, message, Modal } from 'antd';
 import { SendOutlined, PlusOutlined, MessageOutlined, HomeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import styled from '@emotion/styled';
@@ -251,56 +251,144 @@ const ChatPage: React.FC<ChatPageProps> = ({
   // 使用 ref 存储最后一条消息的 DOM 元素引用
   const lastMessageRef = React.useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = useCallback(() => {
-    if (messageListRef.current) {
-      const element = messageListRef.current;
-      const isScrolledToBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + 100;
-      
-      if (isScrolledToBottom) {
-        element.scrollTop = element.scrollHeight;
-      }
+  // 将 eventSource 提升为组件级变量，使用 useRef 而不是 useState
+  // 这样可以避免重新渲染时的问题
+  const eventSourceRef = useRef<EventSource | null>(null);
+  
+  // 定义关闭 EventSource 的函数
+  const closeEventSource = useCallback(() => {
+    if (eventSourceRef.current) {
+      console.log('关闭SSE连接');
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
     }
   }, []);
+  
+  // 设置 EventSource 的函数
+  const setupEventSource = useCallback(() => {
+    // 先关闭现有连接
+    closeEventSource();
+    
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    // 如果没有活动会话，不建立连接
+    if (!activeChat) {
+      console.log('没有活动会话，不建立SSE连接');
+      return;
+    }
+    
+    console.log(`建立SSE连接，会话ID: ${activeChat}`);
+    const url = `${getApiUrl('/chat/stream')}?token=${encodeURIComponent(token)}&sessionId=${activeChat}`;
+    const newEventSource = new EventSource(url);
+    eventSourceRef.current = newEventSource;
+    
+    newEventSource.onopen = () => {
+      console.log('SSE连接已建立');
+    };
+    
+    let updateTimeout: NodeJS.Timeout;
+    
+    // 监听连接成功事件
+    newEventSource.addEventListener('connected', (event) => {
+      console.log('收到连接成功事件:', event.data);
+    });
+    
+    // 监听消息更新事件
+    newEventSource.addEventListener('message-update', (event) => {
+      try {
+        if (!event.data) return;
 
-  useEffect(() => {
-    let eventSource: EventSource | null = null;
-
-    const setupEventSource = () => {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      console.log('建立SSE连接...');
-      eventSource = new EventSource(`${getApiUrl('/chat/stream')}?token=${encodeURIComponent(token)}`);
-
-      eventSource.onopen = () => {
-        console.log('SSE连接已建立');
-      };
-
-      let updateTimeout: NodeJS.Timeout;
-
-      eventSource.addEventListener('message-update', (event) => {
+        let data;
         try {
-          if (!event.data) return;
-
-          let data;
-          try {
-            const parsedData = JSON.parse(event.data);
-            data = typeof parsedData === 'string' && parsedData.startsWith('data: ') 
-              ? JSON.parse(parsedData.slice(6)) 
-              : parsedData;
-          } catch (e) {
-            console.error('JSON解析失败:', e);
-            return;
+          // 修复 JSON 解析逻辑
+          const rawData = event.data;
+          if (typeof rawData === 'string' && rawData.startsWith('data: ')) {
+            // 如果数据以 'data: ' 开头，去掉这个前缀
+            data = JSON.parse(rawData.slice(6));
+          } else {
+            // 否则直接解析
+            data = JSON.parse(rawData);
           }
+          console.log('成功解析的数据:', data);
+        } catch (e) {
+          console.error('JSON解析失败:', e, '原始数据:', event.data);
+          return;
+        }
 
-          // 使用防抖处理更新
+        console.log('收到消息更新:', data);
+
+        // 使用防抖处理更新
+        clearTimeout(updateTimeout);
+        updateTimeout = setTimeout(() => {
+          setMessages(prevMessages => {
+            const lastMessage = prevMessages[prevMessages.length - 1];
+            
+            if (lastMessage && !lastMessage.isUser && lastMessage.content !== data.content) {
+              console.log('更新消息内容:', data.content);
+              // 创建新的消息数组，但只更新最后一条消息
+              return [
+                ...prevMessages.slice(0, -1),
+                { ...lastMessage, content: data.content }
+              ];
+            }
+            return prevMessages;
+          });
+
+          // 检查是否包含错误信息，如果有则停止加载状态
+          if (data.content && (
+              data.content.includes('抱歉，处理您的请求时出现错误') || 
+              data.content.includes('请求超时') || 
+              data.content.includes('长时间未收到响应')
+          )) {
+            console.log('检测到错误或超时消息，停止加载状态:', data.content);
+            setIsLoading(false);
+          } else if (data.content) {
+            // 正常内容更新完成
+            setIsLoading(false);
+          }
+        }, 50);
+
+      } catch (error) {
+        console.error('处理消息更新失败:', error);
+        setIsLoading(false);
+      }
+    });
+
+    // 添加通用消息事件监听器
+    newEventSource.onmessage = (event) => {
+      console.log('收到通用消息事件:', event.data);
+      try {
+        if (!event.data) return;
+        
+        let data;
+        try {
+          // 修复 JSON 解析逻辑
+          const rawData = event.data;
+          if (typeof rawData === 'string' && rawData.startsWith('data: ')) {
+            // 如果数据以 'data: ' 开头，去掉这个前缀
+            data = JSON.parse(rawData.slice(6));
+          } else {
+            // 否则直接解析
+            data = JSON.parse(rawData);
+          }
+          console.log('成功解析的通用消息:', data);
+        } catch (e) {
+          console.error('通用消息JSON解析失败:', e, '原始数据:', event.data);
+          return;
+        }
+        
+        // 如果包含messageId和content字段，则视为消息更新
+        if (data.messageId && data.content !== undefined) {
+          console.log('通用事件中检测到消息更新:', data);
+          
+          // 使用与message-update事件相同的处理逻辑
           clearTimeout(updateTimeout);
           updateTimeout = setTimeout(() => {
             setMessages(prevMessages => {
               const lastMessage = prevMessages[prevMessages.length - 1];
               
               if (lastMessage && !lastMessage.isUser && lastMessage.content !== data.content) {
-                // 创建新的消息数组，但只更新最后一条消息
                 return [
                   ...prevMessages.slice(0, -1),
                   { ...lastMessage, content: data.content }
@@ -308,31 +396,45 @@ const ChatPage: React.FC<ChatPageProps> = ({
               }
               return prevMessages;
             });
-
-            if (data.content) {
+            
+            // 检查是否包含错误信息
+            if (data.content && (
+              data.content.includes('抱歉，处理您的请求时出现错误') || 
+              data.content.includes('请求超时') || 
+              data.content.includes('长时间未收到响应')
+            )) {
+              console.log('通用事件中检测到错误或超时:', data.content);
+              setIsLoading(false);
+            } else if (data.content) {
               setIsLoading(false);
             }
           }, 50);
-
-        } catch (error) {
-          console.error('处理消息更新失败:', error);
-          setIsLoading(false);
         }
-      });
+      } catch (error) {
+        console.error('处理通用消息事件失败:', error);
+        setIsLoading(false);
+      }
+    };
 
-      eventSource.onerror = (error) => {
-        console.error('SSE连接错误:', error);
-        eventSource?.close();
+    newEventSource.onerror = (error) => {
+      console.error('SSE连接错误:', error);
+      closeEventSource();
+      
+      // 如果仍有活动会话，尝试重新连接
+      if (activeChat) {
         setTimeout(setupEventSource, 3000);
-      };
+      }
     };
-
-    setupEventSource();
-    return () => {
-      console.log('关闭SSE连接');
-      eventSource?.close();
-    };
-  }, []);
+  }, [activeChat, closeEventSource]);
+  
+  // 初始化和清理 EventSource
+  useEffect(() => {
+    if (activeChat) {
+      setupEventSource();
+    }
+    
+    return closeEventSource;
+  }, [activeChat, setupEventSource, closeEventSource]);
 
   useEffect(() => {
     console.log('消息列表已更新:', messages);
@@ -467,6 +569,27 @@ const ChatPage: React.FC<ChatPageProps> = ({
     setInputValue('');
     setIsLoading(true);
 
+    // 添加前端超时保护
+    const frontendTimeoutId = setTimeout(() => {
+      if (isLoading) {
+        console.log('前端超时保护触发');
+        setIsLoading(false);
+        setMessages(prev => {
+          const lastMessage = prev[prev.length - 1];
+          if (lastMessage && !lastMessage.isUser) {
+            return [
+              ...prev.slice(0, -1),
+              { 
+                ...lastMessage, 
+                content: lastMessage.content || '抱歉，响应超时。请稍后再试。' 
+              }
+            ];
+          }
+          return prev;
+        });
+      }
+    }, 60000); // 60秒前端超时保护
+
     // 1. 立即添加用户消息到界面
     const userMessage: Message = {
         id: Date.now(), // 临时ID
@@ -520,6 +643,7 @@ const ChatPage: React.FC<ChatPageProps> = ({
         // 4. 移除失败的消息
         setMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
         setIsLoading(false);
+        clearTimeout(frontendTimeoutId); // 清理超时保护
     }
   };
 
@@ -730,6 +854,14 @@ const ChatPage: React.FC<ChatPageProps> = ({
       )}
     />
   ), [messages]);
+
+  // 添加滚动到底部的函数
+  const scrollToBottom = useCallback(() => {
+    if (messageListRef.current) {
+      const element = messageListRef.current;
+      element.scrollTop = element.scrollHeight;
+    }
+  }, []);
 
   return (
     <StyledLayout>

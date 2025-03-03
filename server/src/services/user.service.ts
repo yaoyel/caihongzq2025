@@ -17,6 +17,20 @@ export class UserService {
     }
 
     async findOne(id: number) {
-        return this.userRepository.findOne({ where: { id } });
+        try {
+            console.log(`尝试查找用户，id: ${id}`);
+            const user = await this.userRepository.findOne({ where: { id } });
+            
+            if (!user) {
+                console.log(`未找到用户，id: ${id}`);
+                return null;
+            }
+            
+            console.log(`成功找到用户: ${JSON.stringify(user)}`);
+            return user;
+        } catch (error) {
+            console.error(`查找用户失败，id: ${id}`, error);
+            throw error;
+        }
     }
 } 

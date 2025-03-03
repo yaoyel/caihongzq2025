@@ -32,6 +32,15 @@ npm run migration:run
 git pull  # 拉取最新代码
 docker-compose up -d --build  # 重新构建并启动
 
+# 只重新构建并重启 client 和 server
+docker-compose up --build -d client server
+
+# 或者只重新构建 client
+docker-compose up --build -d client
+
+# 或者只重新构建 server
+docker-compose up --build -d server
+
 # 查看各服务日志
 docker-compose logs -f client  # 前端日志
 docker-compose logs -f server  # 后端日志

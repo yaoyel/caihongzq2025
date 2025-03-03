@@ -70,13 +70,23 @@ export class ChatController {
 
     @Delete('/sessions/:id')
     @OpenAPI({ summary: '删除聊天会话' })
-    async deleteSession(@Param('id') id: number) {
-        await this.chatService.deleteSession(id);
-        return { success: true };
+    async deleteSession(@Param('id') id: number, @Res() ctx: Context) {
+        try {
+            await this.chatService.deleteSession(id);
+            return { success: true, message: '会话删除成功' };
+        } catch (error) {
+            console.error('删除会话失败:', error);
+            ctx.status = 500;
+            return { 
+                success: false, 
+                message: '删除会话失败', 
+                error: error instanceof Error ? error.message : '未知错误' 
+            };
+        }
     }
 
     @Get('/stream') 
-    async stream(@Res() ctx: Context, @QueryParam('token') token: string) {
+    async stream(@Res() ctx: Context, @QueryParam('token') token: string, @QueryParam('sessionId') sessionId: string) {
         // 添加token验证
         if (!token || !jwt.verify(token, process.env.JWT_SECRET!)) {
             ctx.status = 401;
@@ -93,18 +103,26 @@ export class ChatController {
         ctx.status = 200;
         ctx.flushHeaders();
 
-        const listener = (data: any) => {
-            // 修改：添加事件类型和确保正确的SSE格式
-            ctx.res.write(`event: message-update\ndata: ${JSON.stringify(data)}\n\n`);
+        // 创建一个通用的消息处理函数
+        const messageHandler = (data: any) => {
+            console.log('准备发送SSE事件:', data);
+            // 不要再次将数据包装在 JSON 中，因为它已经是 JSON 字符串
+            ctx.res.write(`event: message-update\n${data}\n\n`);
         };
 
-        this.chatService.eventEmitter.on('message-update', listener);
+        // 监听特定会话的事件
+        const eventName = sessionId ? `message-update-${sessionId}` : 'message-update';
+        console.log(`监听事件: ${eventName}`);
+        
+        this.chatService.eventEmitter.on(eventName, messageHandler);
 
         // 发送初始连接成功消息
         ctx.res.write('event: connected\ndata: {"status":"connected"}\n\n');
         
         ctx.req.on('close', () => {
-            this.chatService.eventEmitter.off('message-update', listener);
+            // 移除监听器
+            this.chatService.eventEmitter.off(eventName, messageHandler);
+            console.log(`已移除事件监听器: ${eventName}`);
             ctx.res.end();
         });
 
@@ -116,10 +134,8 @@ export class ChatController {
     @Delete('/messages/:id')
     async deleteMessage(@Param('id') id: number) {
         try {
-            
             await this.chatService.deleteMessage(id);
-            
-           return { message: '消息删除成功' };
+            return { message: '消息删除成功' };
         } catch (error) {
             return { error: '删除消息失败' }; 
         }

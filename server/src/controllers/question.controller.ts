@@ -41,7 +41,11 @@ export class QuestionController {
         @Param('id') questionId: number,
         @Body() data: { userId: number; content: string; submittedBy: string }
     ) {
-        return await this.questionService.submitAnswer(questionId, data);
+        try {
+            return await this.questionService.submitAnswer(questionId, data);
+        } catch (error) {
+            throw new Error('提交答案失败');
+        }
     }
 
     @Put('/answers/:id')
@@ -50,6 +54,10 @@ export class QuestionController {
         @Param('id') id: number,
         @Body() data: { content: string }
     ) {
-        return await this.questionService.updateAnswer(id, data.content);
+        try {
+            return await this.questionService.updateAnswer(id, data.content);
+        } catch (error) {
+            throw new Error('更新答案失败');
+        }
     }
 } 

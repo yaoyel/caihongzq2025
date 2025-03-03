@@ -18,8 +18,8 @@ import { ScaleController } from './controllers/scale.controller';
 import { UserController } from './controllers/user.controller';
 import { ChatController } from './controllers/chat.controller';
 import { ReportController } from './controllers/report.controller';
-import { ErrorHandlerMiddleware } from './middlewares/error-handler.middleware';
-import { RequestLoggerMiddleware } from './middlewares/request-logger.middleware';  
+import { errorHandlerMiddleware } from './middlewares/error-handler.middleware';
+import { requestLoggerMiddleware } from './middlewares/request-logger.middleware';  
 import { jwtMiddleware } from './middlewares/jwt.middleware';
 import { DoubleEdgedInfoController } from './controllers/doubleEdgedInfo.controller';
 import { DoubleEdgedScaleController } from './controllers/doubleEdgedScale.controller';
@@ -48,20 +48,15 @@ async function bootstrap() {
             ctx.throw(422, '请求体解析失败');
           }
         }));
-        app.use(koaLogger());
-        // app.use(jwtMiddleware)
-
-        // 5. 注册请求日志中间件
-        const requestLogger = Container.get(RequestLoggerMiddleware);
-        app.use(requestLogger.use.bind(requestLogger));
-
-        // 6. 注册错误处理中间件
-        const errorHandler = Container.get(ErrorHandlerMiddleware);
-        app.use(errorHandler.use.bind(errorHandler));
-
+        app.use(jwtMiddleware);
+        app.use(koaLogger()); 
+ 
+        // 6. 注册错误处理中间件  
+        app.use(requestLoggerMiddleware);
+        app.use(errorHandlerMiddleware);
         // 6. 注入微信路由
         app.use(wechatRouter.routes());
-        app.use(jwtMiddleware);
+    
         app.use(wechatRouter.allowedMethods());
 
         // 7. 配置路由控制器
