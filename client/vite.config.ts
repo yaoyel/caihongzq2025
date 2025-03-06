@@ -15,7 +15,7 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'localhost:3000',
+        target: 'http://caihongzq.com:3000',
         changeOrigin: true,
       },
     },

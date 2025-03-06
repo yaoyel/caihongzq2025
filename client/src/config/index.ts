@@ -1,15 +1,34 @@
 import axios from 'axios';
 
-// 在浏览器环境中使用 window._env_ 或 import.meta.env 或直接使用 REACT_APP_ 变量
-const API_HOST = window.location.hostname === 'localhost' ? 'http://caihongzq.com:3000' : 'http://caihongzq.com:3000';
+// 添加这个类型声明来解决 import.meta.env 的类型错误
+declare global {
+  interface ImportMeta {
+    env: Record<string, any>;
+  }
+}
+
+// 从环境变量中获取API主机地址
+const getApiHost = () => {
+  // 优先使用环境变量
+  if (import.meta.env && import.meta.env.API_HOST) {
+    return import.meta.env.API_HOST;
+  }
+  
+  // 如果没有环境变量，则根据当前域名判断
+  return window.location.hostname === 'localhost' 
+    ? 'http://caihongzq.com:3000' 
+    : 'http://caihongzq.com:3000';
+};
 
 export const config = {
-  apiHost: API_HOST,
+  apiHost: getApiHost(),
   apiPrefix: '/api'
 };
 
 export const getApiUrl = (path: string) => {
-  return `${config.apiHost}${config.apiPrefix}${path}`;
+  // 确保path以/开头
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${config.apiHost}${config.apiPrefix}${normalizedPath}`;
 };
 
 export const api = {

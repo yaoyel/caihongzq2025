@@ -14,6 +14,9 @@ COPY . .
 # 构建项目
 RUN npm run build
 
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+
 # 使用轻量级镜像存储构建产物
 FROM alpine:latest
 
