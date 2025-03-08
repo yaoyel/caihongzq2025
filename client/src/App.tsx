@@ -9,7 +9,7 @@ import ReportPage from './pages/report';
 import TeenQAAssessment from './pages/assessment/qa-teen';
 import ChatPage from './pages/chat';
 import AdultQAAssessment from './pages/assessment/qa-adult';
-
+import UserProfile from './users/UserProfile';
 const App: React.FC = () => {
   return (
     <Routes>
@@ -22,8 +22,9 @@ const App: React.FC = () => {
       <Route path="/assessment/qa-teen" element={<TeenQAAssessment />} />
       <Route path="/chat" element={<ChatPage />} />
       <Route path="/assessment/qa-adult" element={<AdultQAAssessment />} />
+      <Route path="/profile" element={<UserProfile />} />
     </Routes>
   );
 };
 
-export default App; 
+export default App;

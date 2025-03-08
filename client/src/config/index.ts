@@ -1,22 +1,16 @@
 import axios from 'axios';
 
-// 添加这个类型声明来解决 import.meta.env 的类型错误
-declare global {
-  interface ImportMeta {
-    env: Record<string, any>;
-  }
-}
 
 // 从环境变量中获取API主机地址
 const getApiHost = () => {
   // 优先使用环境变量
-  if (import.meta.env && import.meta.env.API_HOST) {
-    return import.meta.env.API_HOST;
+  if (import.meta.env && import.meta.env.VITE_API_HOST) {
+    return import.meta.env.VITE_API_HOST;
   }
   
   // 如果没有环境变量，则根据当前域名判断
   return window.location.hostname === 'localhost' 
-    ? 'http://caihongzq.com:3000' 
+    ? 'http://localhost:3000' 
     : 'http://caihongzq.com:3000';
 };
 
@@ -61,4 +55,4 @@ export const checkUserAuth = () => {
         .catch(error => {
             console.error('获取用户信息失败:', error);
         });
-}; 
+};

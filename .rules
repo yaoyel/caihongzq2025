@@ -1,151 +1,181 @@
-# 服务器端开发规范
+# 天赋测评系统开发规范
 
-## 技术栈
-- 基础框架：KOA2 + TypeScript
+## 一、项目架构
+
+### 1. 技术栈
+#### 1.1 前端技术栈
+- 核心框架：React + TypeScript
+- 构建工具：Vite
+- 路由管理：React Router
+- 状态管理：React Context + Hooks
+- UI框架：Tailwind CSS
+- 样式解决方案：styled-components/emotion
+- HTTP客户端：Axios
+- 测试框架：@testing-library/react
+
+#### 1.2 后端技术栈
+- 基础框架：Koa2 + TypeScript
 - 路由控制：routing-controllers
 - 依赖注入：TypeDI
 - ORM工具：TypeORM
+- 数据库：PostgreSQL
 - 参数校验：class-validator
 - 日志系统：Pino
 - 认证中间件：koa-jwt
 - API文档：Swagger/OpenAPI + routing-controllers-openapi
 - 环境配置：dotenv
-- 测试工具:supertest
-- 数据库:postgres
+- 测试工具：Jest + supertest
 
-## 项目结构
-- client/src/pages: 页面组件目录
-- client/src/components: 通用组件目录
-- client/src/utils: 工具函数目录
-- client/src/data: 静态数据目录
-- server/src/routes: API路由目录
-- server/src/entity: 数据实体目录
-- server/src/utils: 工具函数目录
-- server/src/controllers: 控制器目录
+### 2. 目录结构
+#### 2.1 前端目录结构
+```
+client/
+├── src/
+│   ├── components/     # 通用组件
+│   ├── pages/         # 页面组件
+│   ├── contexts/      # Context相关
+│   ├── store/         # 状态管理
+│   ├── router/        # 路由配置
+│   ├── utils/         # 工具函数
+│   ├── types/         # 类型定义
+│   ├── config/        # 配置文件
+│   └── data/          # 静态数据
+```
 
-2. 文件命名
-- 组件文件: PascalCase (如 LoginPage.tsx)
-- 工具文件: camelCase (如 helper.ts)
-- 样式文件: 与组件同名 (如 LoginPage.styles.ts)
-- 路由文件: kebab-case (如 wechat.ts)
+#### 2.2 后端目录结构
+```
+server/
+├── src/
+│   ├── controllers/   # 控制器
+│   ├── services/      # 业务逻辑
+│   ├── entities/      # 数据实体
+│   ├── repositories/  # 数据仓库
+│   ├── middlewares/   # 中间件
+│   ├── routes/        # 路由定义
+│   ├── config/        # 配置文件
+│   ├── utils/         # 工具函数
+│   └── tests/         # 测试文件
+```
 
-// 二、编码规范
-1. TypeScript 规范
-- 必须定义接口或类型
-- 避免使用 any 类型
-- 使用 const 声明不变变量
-- 使用 interface 定义对象类型
-- 使用 enum 定义常量枚举
+## 二、编码规范
 
-2. React 规范
-- 使用函数组件和 Hooks
-- Props 必须定义类型
-- 状态管理使用 useState/useContext
-- 副作用处理使用 useEffect
-- 事件处理函数命名为 handle*
+### 1. 通用规范
+- 使用TypeScript进行开发，严格执行类型检查
+- 使用ESLint + Prettier进行代码格式化
+- 遵循DRY原则，避免代码重复
+- 保持代码简洁，单个函数不超过50行
+- 使用有意义的变量和函数命名
 
-3. 样式规范
-- 使用 styled-components 或 emotion
-- 组件样式文件单独管理
-- 避免内联样式
-- 遵循 BEM 命名规范
-- 使用主题变量
+### 2. 命名规范
+#### 2.1 文件命名
+- 组件文件：PascalCase (如：UserProfile.tsx)
+- 工具文件：camelCase (如：dateHelper.ts)
+- 样式文件：与组件同名 (如：UserProfile.styles.ts)
+- 路由文件：kebab-case (如：user-routes.ts)
+- 测试文件：与被测文件同名 (如：UserProfile.test.tsx)
 
-4. API 规范
-- RESTful 风格设计
-- 请求响应必须定义类型
-- 统一错误处理
-- 使用 axios 实例
-- 环境变量配置
+#### 2.2 变量命名
+- 常量：UPPER_SNAKE_CASE
+- 变量：camelCase
+- 类名：PascalCase
+- 接口名：PascalCase，以I开头
+- 类型名：PascalCase，以T开头
+- 枚举名：PascalCase
 
-// 三、性能优化规则
-1. 前端优化
-- 组件懒加载
-- 图片资源优化
-- 路由按需加载
-- 避免不必要的重渲染
-- 使用 useMemo/useCallback
+### 3. 前端规范
+#### 3.1 React开发规范
+- 使用函数组件和Hooks
+- Props必须定义类型接口
+- 使用memo优化渲染性能
+- 合理使用useMemo和useCallback
+- 遵循React组件生命周期最佳实践
 
-2. 后端优化
-- 数据库索引优化
-- 缓存机制
-- 并发控制
-- 错误日志记录
-- 安全性处理
+#### 3.2 状态管理
+- 优先使用React Context和Hooks
+- 按功能模块划分Context
+- 避免过度使用全局状态
+- 合理使用useReducer处理复杂状态
 
-// 四、测试规范
-1. 单元测试
-- 组件测试使用 @testing-library/react
-- API 测试使用 Jest
-- 保持测试覆盖率
-- 模拟数据与实际分离
-- 异步测试处理
+### 4. 后端规范
+#### 4.1 API设计
+- 遵循RESTful设计规范
+- 使用复数名词表示资源
+- 版本控制：在URL中使用v1、v2等
+- 统一响应格式：
+```typescript
+interface ApiResponse<T> {
+  code: number;
+  data: T;
+  message: string;
+}
+```
 
-2. 集成测试
-- E2E 测试流程
-- 用户行为模拟
-- 错误场景测试
-- 性能测试
-- 安全测试
+#### 4.2 数据库操作
+- 使用TypeORM装饰器定义实体
+- 建立合适的索引优化查询
+- 使用事务保证数据一致性
+- 编写数据库迁移脚本
 
-// 五、文档规范
-1. 代码注释
-- 组件必须包含功能说明
-- 复杂逻辑必须注释
-- API 接口必须注释
-- 类型定义必须注释
-- 工具函数必须注释
+## 三、测试规范
 
-2. README 文档
-- 项目说明
-- 环境要求
-- 安装步骤
-- 开发指南
-- 部署说明
+### 1. 单元测试
+- 使用Jest作为测试框架
+- 组件测试使用@testing-library/react
+- 保持测试覆盖率在80%以上
+- 遵循AAA模式：Arrange-Act-Assert
+- 使用mock隔离外部依赖
 
-// 六、Git 规范
-1. 分支管理
-- main: 主分支
-- develop: 开发分支
-- feature/*: 功能分支
-- bugfix/*: 修复分支
-- release/*: 发布分支
+### 2. 集成测试
+- 使用supertest测试API接口
+- 使用独立的测试数据库
+- 测试完整的业务流程
+- 验证数据一致性
 
-2. 提交规范
+## 四、Git工作流
+
+### 1. 分支管理
+- main：主分支，用于生产环境
+- develop：开发分支
+- feature/*：功能分支
+- bugfix/*：修复分支
+- release/*：发布分支
+
+### 2. 提交规范
 - feat: 新功能
 - fix: 修复bug
 - docs: 文档更新
-- style: 代码格式
+- style: 代码格式调整
 - refactor: 重构
-- test: 测试
-- chore: 构建过程或辅助工具的变动
+- test: 测试相关
+- chore: 构建/工具相关
 
-// 七、安全规范
-1. 前端安全
-- XSS 防护
-- CSRF 防护
-- 敏感信息加密
-- 输入验证
+## 五、安全规范
+
+### 1. 前端安全
+- 实施XSS防护
+- 实施CSRF防护
+- 敏感信息加密传输
+- 输入数据验证
 - 权限控制
 
-2. 后端安全
-- 数据加密
-- 接口认证
-- SQL注入防护
-- 日志脱敏
-- 服务器安全
+### 2. 后端安全
+- 使用JWT进行身份认证
+- 实施SQL注入防护
+- 日志脱敏处理
+- 数据加密存储
+- 限制请求频率
 
-// 八、部署规范
-1. 环境配置
-- 开发环境
-- 测试环境
-- 生产环境
-- 环境变量管理
-- 配置文件管理
+## 六、部署规范
 
-2. CI/CD
-- 自动化构建
+### 1. 环境配置
+- 使用.env管理环境变量
+- 区分开发/测试/生产环境
+- 使用Docker容器化部署
+- 配置Nginx反向代理
+
+### 2. CI/CD
+- 使用GitHub Actions自动化构建
 - 自动化测试
 - 自动化部署
-- 监控告警
-- 回滚机制 
+- 错误监控和告警
+- 支持快速回滚
