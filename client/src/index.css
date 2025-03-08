@@ -1,6 +1,11 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+
+:root {
+  --transition-speed: 0.3s;
+}
+
 @keyframes dot-flashing {
   0% {
     content: '.';
@@ -31,8 +36,81 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #f0f2f5;
+  color: #262626;
 }
 
 #root {
   min-height: 100vh;
+}
+
+/* 添加一些通用的动画效果 */
+.fade-enter {
+  opacity: 0;
+}
+
+.fade-enter-active {
+  opacity: 1;
+  transition: opacity var(--transition-speed);
+}
+
+.fade-exit {
+  opacity: 1;
+}
+
+.fade-exit-active {
+  opacity: 0;
+  transition: opacity var(--transition-speed);
+}
+
+/* 美化滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* 添加一些通用的工具类 */
+.card-shadow {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: box-shadow var(--transition-speed);
+}
+
+.card-shadow:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.hover-scale {
+  transition: transform var(--transition-speed);
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* 添加一些响应式布局的工具类 */
+.responsive-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+@media (max-width: 768px) {
+  .responsive-container {
+    padding: 0 12px;
+  }
 }
