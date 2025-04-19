@@ -1,0 +1,36 @@
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Scale } from './Scale';
+
+@Entity('scale_options')
+export class ScaleOption {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ name: 'scale_id' })
+  scaleId: number;
+
+  @Column({ name: 'option_name', length: 100 })
+  optionName: string;
+
+  @Column({ name: 'option_value' })
+  optionValue: number;
+
+  @Column({ name: 'display_order', nullable: true })
+  displayOrder: number;
+
+  @Column({ name: 'additional_info', type: 'text', nullable: true })
+  additionalInfo: string;
+
+  @Column({ name: 'is_default', default: false })
+  isDefault: boolean;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  @ManyToOne(() => Scale, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'scale_id' })
+  scale: Scale;
+}

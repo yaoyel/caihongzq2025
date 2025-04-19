@@ -58,5 +58,5 @@ pnpm-lock.yaml
 .gitignore
 README.md
 LICENSE
-*.md
+# *.md
 !README.md 
