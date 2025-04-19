@@ -8,13 +8,143 @@ const { Title, Paragraph } = Typography;
 const { Sider, Content } = Layout;
 
 const StyledHero = styled.div`
-  background: linear-gradient(135deg, #FFD700 0%, #32CD32 100%);
-  padding: 60px 0;
+  background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+  padding: 100px 0;
   text-align: center;
   color: white;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 10% 20%, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 20%),
+      radial-gradient(circle at 90% 80%, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 20%);
+    pointer-events: none;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      url('/icons/paint-brush.svg'),
+      url('/icons/music-note.svg'),
+      url('/icons/math.svg'),
+      url('/icons/sports.svg'),
+      url('/icons/science.svg'),
+      url('/icons/book.svg');
+    background-repeat: no-repeat;
+    background-position: 
+      5% 20%,
+      15% 80%,
+      85% 15%,
+      95% 75%,
+      75% 85%,
+      25% 10%;
+    background-size: 
+      60px 60px,
+      50px 50px,
+      55px 55px,
+      45px 45px,
+      50px 50px,
+      40px 40px;
+    opacity: 0.15;
+    animation: float 6s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+  }
+
+  h1 {
+    font-size: 56px !important;
+    font-weight: bold !important;
+    margin-bottom: 24px !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(45deg, #FFFFFF 30%, #E0E0E0 70%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: titleShine 3s ease-in-out infinite;
+  }
+
+  @keyframes titleShine {
+    0% { background-position: 200% center; }
+    100% { background-position: -200% center; }
+  }
+
+  .subtitle {
+    font-size: 26px !important;
+    margin-bottom: 50px !important;
+    opacity: 0.95;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    font-weight: 300;
+  }
+
+  .hero-decoration {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    opacity: 0.1;
+    background-image: 
+      radial-gradient(circle at 20% 20%, #FFF 0%, transparent 1%),
+      radial-gradient(circle at 80% 80%, #FFF 0%, transparent 1%);
+    background-size: 50px 50px;
+    animation: sparkle 4s ease-in-out infinite;
+  }
+
+  @keyframes sparkle {
+    0% { opacity: 0.1; }
+    50% { opacity: 0.15; }
+    100% { opacity: 0.1; }
+  }
 `;
 
 const PulseButton = styled(Button)`
+  height: 56px !important;
+  padding: 0 48px !important;
+  font-size: 20px !important;
+  border-radius: 28px !important;
+  background: white !important;
+  color: #4CAF50 !important;
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important;
+  position: relative;
+  z-index: 1;
+  
+  &:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2) !important;
+    background: #F8F8F8 !important;
+  }
+  
+  &:active {
+    transform: translateY(0) !important;
+  }
+  
+  .anticon {
+    font-size: 22px !important;
+    margin-left: 8px !important;
+  }
+  
   animation: pulse 2s infinite;
   @keyframes pulse {
     0% { transform: scale(1); }
@@ -222,17 +352,18 @@ const HomePage: React.FC = () => {
       
       <Content>
         <StyledHero>
+          <div className="hero-decoration"></div>
           <Title level={1}>发现孩子的天赋密码</Title>
-          <Paragraph style={{ fontSize: '18px', color: 'white' }}>
+          <Paragraph className="subtitle">
             科学测评，让教育投资更有方向
           </Paragraph>
           <PulseButton 
             type="primary" 
             size="large" 
-            icon={<ArrowRightOutlined />}
             onClick={handleStartAssessment}
           >
             立即开启测评
+            <ArrowRightOutlined />
           </PulseButton>
         </StyledHero>
 
