@@ -13,6 +13,7 @@ import { config } from 'dotenv';
 import { DoubleEdgedInfo } from './entities/DoubleEdgedInfo';
 import { DoubleEdgedScale } from './entities/DoubleEdgedScale';
 import { DoubleEdgedAnswer } from './entities/DoubleEdgedAnswer';
+import { ScaleOption } from './entities/ScaleOption';
 
 // 加载环境变量
 config();
@@ -43,7 +44,8 @@ export const AppDataSource = new DataSource({
         ChatMessage,
         DoubleEdgedInfo,
         DoubleEdgedScale,
-        DoubleEdgedAnswer
+        DoubleEdgedAnswer,
+        ScaleOption
     ],
     migrations: [
       //  __dirname + '/migrations/*.ts'  // 使用绝对路径

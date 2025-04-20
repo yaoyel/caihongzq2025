@@ -217,9 +217,16 @@ const HomePage: React.FC = () => {
   const methods = [
     {
       key: 'scale',
-      label: '喜欢与天赋量表测评',
+      label: '喜欢与天赋量表测评1',
       icon: <FormOutlined />,
       description: '112道专业量表题目',
+      accuracy: '全部'
+    },
+    {
+      key: 'scale168',
+      label: '喜欢与天赋量表测评2',
+      icon: <FormOutlined />,
+      description: '168道专业量表题目',
       accuracy: '全部'
     },
     {
@@ -320,6 +327,8 @@ const HomePage: React.FC = () => {
             setSelectedMethod(key as string);
             if (key === 'scale') {
               navigate('/assessment/scale');
+            } else if (key === 'scale168') {
+              navigate('/assessment/scale168');
             } else if (key === 'qa') {
               navigate('/assessment/qa');
             } else if (key === 'seed') {

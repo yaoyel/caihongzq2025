@@ -10,6 +10,7 @@ import TeenQAAssessment from './pages/assessment/qa-teen';
 import ChatPage from './pages/chat';
 import AdultQAAssessment from './pages/assessment/qa-adult'; 
 import UserProfile from './users/UserProfile'; 
+import Scale168Assessment from './pages/assessment/scale-168';
 const App: React.FC = () => {
   return (
     <Routes>
@@ -17,6 +18,7 @@ const App: React.FC = () => {
       <Route path="/home" element={<HomePage />} />
       <Route path="/assessment" element={<AssessmentPage />} />
       <Route path="/assessment/scale" element={<ScaleAssessment />} />
+      <Route path="/assessment/scale168" element={<Scale168Assessment />} />
       <Route path="/assessment/qa" element={<QAAssessment />} />
       <Route path="/report" element={<ReportPage />} />
       <Route path="/assessment/qa-teen" element={<TeenQAAssessment />} />
