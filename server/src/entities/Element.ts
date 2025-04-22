@@ -31,4 +31,10 @@ export class Element {
   @OneToOne(() => DoubleEdgedInfo)
   @JoinColumn({ name: 'double_edged_id' })
   doubleEdgedInfo: DoubleEdgedInfo;
+
+  @Column({ name: 'owned_natural_state' })
+  ownedNaturalState: string;
+
+  @Column({ name: 'unowned_natural_state' })
+  unownedNaturalState: string;
 }

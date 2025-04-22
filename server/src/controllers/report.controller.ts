@@ -25,4 +25,10 @@ export class ReportController {
     async getElementAnalysis(@Param('userId') userId: number) { 
         return await this.reportService.getElementAnalysis(userId);
     }
+
+    @Get('/element-analysis168/:userId')
+    @OpenAPI({ summary: '获取用户168元素分析详情' })
+    async getElementAnalysis168(@Param('userId') userId: number) { 
+        return await this.reportService.getElementAnalysis168(userId);
+    }
 }

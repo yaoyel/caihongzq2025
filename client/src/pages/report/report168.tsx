@@ -14,7 +14,6 @@ import ChatPage from '../chat';
 // 子组件
 const { Title, Paragraph, Text } = Typography;
 const { Panel } = Collapse;
-const { TabPane } = Tabs;
 
 const StyledLayout = styled(Layout)`
   padding: 24px 48px;
@@ -41,7 +40,7 @@ const ReportCard = styled(Card)`
 
 const ReportTitle = styled(Title)`
   text-align: center;
-  margin-bottom: 24px !important;
+  margin-bottom: 48px !important;
   
   &::after {
     content: '';
@@ -50,21 +49,6 @@ const ReportTitle = styled(Title)`
     height: 3px;
     background: #1890ff;
     margin: 16px auto 0;
-  }
-`;
-
-// 添加Tab样式
-const StyledTabs = styled(Tabs)`
-  .ant-tabs-nav {
-    margin-bottom: 24px;
-  }
-  
-  .ant-tabs-tab {
-    font-size: 16px;
-  }
-  
-  .ant-tabs-tab-active {
-    font-weight: 500;
   }
 `;
 
@@ -83,14 +67,6 @@ const PrintableContent = styled.div`
       break-inside: avoid;
     }
   }
-`;
-
-// 添加头部容器样式
-const HeaderContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
 `;
 
 // 添加课堂表现与元素ID的映射
@@ -612,11 +588,10 @@ const ChatModal = styled(Modal)`
   }
 `;
 
-const ReportPage: React.FC = () => {
+const Report168Page: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const componentRef = useRef<HTMLDivElement>(null);
-  const [activeTab, setActiveTab] = useState('168'); // 默认显示168题报告
   
   // 添加维度排序函数
   const sortByDimension = (a: any, b: any) => {
@@ -717,18 +692,13 @@ const ReportPage: React.FC = () => {
         return;
       }
 
-      // 根据当前选中的Tab获取不同的API路径
-      const elementApiPath = activeTab === '168' 
-        ? `/report/element-analysis168/${userId}`
-        : `/report/element-analysis/${userId}`;
-
       const [scaleResponse, elementResponse] = await Promise.all([
         axios.get(getApiUrl(`/scales/answers/user/${userId}/summary`), {
           headers: {
             Authorization: `Bearer ${token}`
           }
         }),
-        axios.get(getApiUrl(elementApiPath), {
+        axios.get(getApiUrl(`/report/element-analysis/${userId}`), {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -757,12 +727,11 @@ const ReportPage: React.FC = () => {
         message.error('获取数据失败');
       }
     }
-  }, [dispatch, navigate, activeTab]);
+  }, [dispatch, navigate]);
 
-  // 每当activeTab变化时，重新获取数据
   useEffect(() => {
     fetchData();
-  }, [fetchData, activeTab]);
+  }, [fetchData]);
 
   const handleExportPDF = () => {
     const element = componentRef.current;
@@ -770,7 +739,7 @@ const ReportPage: React.FC = () => {
 
     const opt = {
       margin: 1,
-      filename: `学生综合能力评估报告-${activeTab}题.pdf`,
+      filename: '学生综合能力评估报告.pdf',
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -1160,48 +1129,23 @@ const ReportPage: React.FC = () => {
     });
   };
 
-  // 添加Tab切换处理函数
-  const handleTabChange = (key: string) => {
-    setActiveTab(key);
-  };
-
   // 修改年龄段个性化分析的渲染部分
   return (
     <StyledLayout>
-      <HeaderContainer>
-        <Button 
-          type="primary" 
-          icon={<HomeOutlined />} 
-          onClick={() => navigate('/home')}
-        >
-          返回主页
-        </Button>
-        
-        <ReportTitle level={2}>学生综合能力评估报告</ReportTitle>
-        
-        <Button 
-          type="primary" 
-          icon={<DownloadOutlined />} 
-          onClick={handleExportPDF}
-        >
-          导出PDF
-        </Button>
-      </HeaderContainer>
-      
-      <StyledTabs 
-        defaultActiveKey="168" 
-        onChange={handleTabChange}
-        type="card"
-        size="large"
-        centered
-      >
-        <Tabs.TabPane tab="168题报告" key="168" />
-        <Tabs.TabPane tab="112题报告" key="112" />
-      </StyledTabs>
-      
       <PrintableContent ref={componentRef}>
         <Row>
           <Col span={24}>
+            <Space style={{ marginBottom: 24 }}>
+              <Button icon={<HomeOutlined />} onClick={() => navigate('/home')}>
+                返回主页
+              </Button>
+              <Button icon={<DownloadOutlined />} onClick={handleExportPDF}>
+                导出PDF
+              </Button>
+            </Space>
+
+            <ReportTitle level={2}>学生综合能力评估报告</ReportTitle>
+
             <ReportCard 
               title={
                 <SectionTitle>
@@ -1546,7 +1490,12 @@ const ReportPage: React.FC = () => {
             <ReportCard 
               title={
                 <SectionTitle>
-                  <div className="main-title">性格特征双刃剑分析</div>
+                  <div className="main-title">
+                    性格特征双刃剑分析
+                    <Tooltip title="这些特征是基于您的喜好和天赋组合分析得出的，了解这些特征有助于扬长避短，更好地发展。">
+                      <InfoCircleOutlined style={{ color: '#1890ff' }} />
+                    </Tooltip>
+                  </div>
                 </SectionTitle>
               }
             >
@@ -1828,4 +1777,4 @@ const ReportPage: React.FC = () => {
   );
 }
 
-export default ReportPage;
+export default Report168Page;

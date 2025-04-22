@@ -19,11 +19,18 @@ export class ChatService {
         this.messageRepository = AppDataSource.getRepository(ChatMessage);
         this.userAnalysisService = new UserAnalysisService();
         
-        // 初始化 OpenAI 客户端
+        // 初始化 OpenAI  火山引擎
+       // this.openai = new OpenAI({
+       //     apiKey: "9f5ec5f8-1eb1-4c8f-b106-e648c9bc4241",
+       //     baseURL: "https://ark.cn-beijing.volces.com/api/v3"
+       // });
+
+        // 初始化 OpenAI  Deepseek官网
         this.openai = new OpenAI({
-            apiKey: "9f5ec5f8-1eb1-4c8f-b106-e648c9bc4241",
-            baseURL: "https://ark.cn-beijing.volces.com/api/v3"
+            apiKey: "sk-3dda0942e09c4945aba010492dd9e34f",
+            baseURL: "https://api.deepseek.com/v1"
         });
+
 
         this.eventEmitter = new EventEmitter();
         // 设置最大监听器数量，避免内存泄漏警告
@@ -221,7 +228,7 @@ export class ChatService {
                 }
             }
             
-            const userAnalysis = await this.userAnalysisService.getUserAnalysis(userId);
+            const userAnalysis = await this.userAnalysisService.getUserAnalysis168(userId);
             const userContentFormatted = `基于用户信息回答:${userContent},用户信息: ${JSON.stringify(userAnalysis, null, 2)}`;
             console.log('userContentFormatted', userContentFormatted);
             
@@ -280,14 +287,14 @@ export class ChatService {
                     try {
                         // 创建流式请求
                         const stream = await this.openai.chat.completions.create({
-                            model: 'deepseek-r1-250120',
+                            model: 'deepseek-reasoner',
                             messages: [
                                 { role: 'system', content: "作为一名脑神经科学专家、心理学家、儿童发展专家、教育专家，请基于用户基础信息，给出个性化/针对性问题解决方案，说人话，不要使用AI语言，用户信息里面的ID等字段信息不要显示给用户，显示对应的具体内容。" },
                                 ...messageHistory,
                                 { role: 'user', content: userContentFormatted }
                             ],
                             stream: true,
-                            temperature: 0.6,
+                            temperature: 0.3,
                             max_tokens: 8192
                         }, {
                             signal: controller.signal

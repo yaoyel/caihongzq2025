@@ -5,6 +5,7 @@ import { Element } from '../entities/Element';
 import { ScaleAnswer } from '../entities/ScaleAnswer';
 import { DoubleEdgedAnswer } from '../entities/DoubleEdgedAnswer';
 import { Scale } from '../entities/Scale';
+import { ScaleOption } from '../entities/ScaleOption';
 import { DoubleEdgedInfo } from '../entities/DoubleEdgedInfo';
 import { Question } from '../entities/Question';
 import { DoubleEdgedScale, DoubleEdgedType } from '../entities/DoubleEdgedScale';
@@ -23,11 +24,13 @@ interface ElementWithScales {
   name: string;
   type: 'like' | 'talent';
   dimension: string;
-  status: string;
+  ownedNaturalState: string;
+  unownedNaturalState: string;
+  attribute?: string;
   scales: {
+    id: number;
     content: string;
-    direction: 'positive' | 'negative';
-    score?: string;
+    score: string;
   }[];
 }
 
@@ -100,8 +103,8 @@ export class UserAnalysisService {
         'sa.score as scale_score'
       ])
       .from(Element, 'e')
-      .leftJoin(Scale, 's', 's.element_id = e.id')
-      .leftJoin(ScaleAnswer, 'sa', 'sa.scale_id = s.id AND sa.user_id = :userId', { userId })
+      .leftJoin(Scale, 's', 's.element_id = e.id AND s.direction != \'168\'')
+      .leftJoin(ScaleAnswer, 'sa', 'sa.scale_id = s.id  AND sa.user_id = :userId', { userId })
       .orderBy('e.id')
       .getRawMany();
 
@@ -222,22 +225,236 @@ export class UserAnalysisService {
     };
   }
 
+  async getUserAnalysis168(userId: number): Promise<UserAnalysis> {
+    // 1. 获取所有元素信息（包含量表和分数）
+    const elementsRaw = await AppDataSource
+      .createQueryBuilder()
+      .select([
+        'e.id as id',
+        'e.name as name',
+        'e.type as type',
+        'e.dimension as dimension',
+        'e.owned_natural_state as owned_natural_state', 
+        'e.unowned_natural_state as unowned_natural_state',
+        's.id as scale_id',
+        's.content as scale_content', 
+        'sa.score as scale_score'
+      ])
+      .from(Element, 'e')
+      .leftJoin(Scale, 's', 's.element_id = e.id AND s.direction = \'168\'')
+      .leftJoin(ScaleAnswer, 'sa', 'sa.scale_id = s.id AND sa.user_id = :userId', { userId })
+      .orderBy('e.id')
+      .getRawMany();
+
+    // 2. 获取所有用户的scale答案
+    const userAnswers = await AppDataSource
+      .createQueryBuilder()
+      .select([
+        'sa.scale_id as scaleId',
+        'sa.score as score'
+      ])
+      .from(ScaleAnswer, 'sa')
+      .where('sa.user_id = :userId', { userId })
+      .getRawMany();
+
+    // 3. 获取所有scale的options信息
+    const scaleOptions = await AppDataSource
+      .createQueryBuilder()
+      .select('so')
+      .from(ScaleOption, 'so')
+      .orderBy('so.displayOrder')
+      .getMany();
+
+    // 4. 获取每个element的总得分
+    const elementScores = await AppDataSource
+      .createQueryBuilder()
+      .select([
+        's.element_id as elementId',
+        'SUM(sa.score) as totalScore',
+        'COUNT(sa.id) as count',
+        's.direction as direction'
+      ])
+      .from(Scale, 's')
+      .innerJoin(ScaleAnswer, 'sa', 'sa.scale_id = s.id AND s.direction=\'168\' AND sa.user_id = :userId', { userId })
+      .groupBy('s.element_id, s.direction')
+      .getRawMany();
+
+    console.log(`元素得分: ${JSON.stringify(elementScores)}`); 
+    
+    // 处理元素数据，按元素ID分组
+    const elements = elementsRaw.reduce((acc, curr) => {
+      const element = acc.find((e: any) => e.id === curr.id);
+      
+      // 如果有score，找到对应的ScaleOption，否则显示"未填写"
+      let scoreContent = "未填写";
+      if (curr.scale_score !== null && curr.scale_score !== undefined) {
+        const option = scaleOptions.find(
+          opt => opt.scaleId === curr.scale_id && opt.optionValue === curr.scale_score
+        );
+        if (option) {
+          scoreContent = option.optionName;
+        }
+      }
+      
+      // 获取该元素的总得分并判断属性
+      const elementScore = elementScores.find(score => score.elementid === curr.id);
+      let attribute = '未知';
+      if (elementScore) {
+        const totalScore =  elementScore.totalscore ;
+        // 根据得分范围判断
+        if (totalScore >= 4 && totalScore <= 6) {
+          attribute = curr.type === 'like' ? '天生喜欢明显' : '先天禀赋明显';
+        } else if (totalScore >= -3 && totalScore <= 3) {
+          attribute = curr.type === 'like' ? '天生喜欢待发现' : '先天禀赋待发现';
+        } else if (totalScore >= -6 && totalScore <= -4) {
+          attribute = curr.type === 'like' ? '天生喜欢不明显' : '先天禀赋不明显';
+        }
+      }
+      
+      if (!element) {
+        acc.push({
+          id: curr.id,
+          name: curr.name,
+          type: curr.type,
+          dimension: curr.dimension,
+          ownedNaturalState: curr.owned_natural_state,
+          unownedNaturalState: curr.unowned_natural_state,
+          attribute: attribute,
+          scales: curr.scale_content ? [{
+            id: curr.scale_id,
+            content: curr.scale_content,
+            answer: scoreContent
+          }] : []
+        });
+      } else if (curr.scale_content) {
+        element.scales.push({
+          id: curr.scale_id,
+          content: curr.scale_content,
+          answer: scoreContent
+        });
+      }
+      return acc;
+    }, [] as ElementWithScales[]);
+
+    // 3. 获取双刃剑元素 - 基于scale答案总和在4-6分
+    // 先获取所有可能的双刃剑元素信息
+    const doubleEdgedInfos = await AppDataSource
+      .createQueryBuilder()
+      .select([
+        'dei.id as id',
+        'dei.like_element_id as likeElementId',
+        'dei.talent_element_id as talentElementId',
+        'dei.name as name',
+        'dei.demonstrate as demonstrate',
+        'dei.affect as affect'
+      ])
+      .from(DoubleEdgedInfo, 'dei')
+      .getRawMany();
+
+    console.log(`########################################################################`);
+    console.log(`获取到的168用户scale得分: ${JSON.stringify(elementScores)}`);
+    console.log(`双刃剑元素信息: ${JSON.stringify(doubleEdgedInfos)}`);
+
+    // 筛选符合条件的双刃剑元素
+    const doubleEdgedElements = doubleEdgedInfos.filter(dei => {
+      // 获取喜欢元素的总分
+      const likeElementScore = elementScores.find(score => score.elementid === dei.likeelementid);
+      // 获取天赋元素的总分
+      const talentElementScore = elementScores.find(score => score.elementid === dei.talentelementid);
+      
+      console.log(`检查双刃剑: ${dei.name}`);
+      console.log(`- 喜欢元素ID ${dei.likeelementid}, 得分: ${likeElementScore ? JSON.stringify(likeElementScore) : '无'}`);
+      console.log(`- 天赋元素ID ${dei.talentelementid}, 得分: ${talentElementScore ? JSON.stringify(talentElementScore) : '无'}`);
+      
+      // 如果任一元素没有得分数据，返回false
+      if (!likeElementScore || !talentElementScore) {
+        console.log(`- 结果: 缺少得分数据，不符合条件`);
+        return false;
+      }
+      
+      // 计算 总分 
+      const likeTotalScore =  likeElementScore.totalscore;
+      const talenTotalScore =  talentElementScore.totalscore ;
+       
+       
+      const result = (likeTotalScore >= 4 && likeTotalScore <= 6) && 
+                    (talenTotalScore >= 4 && talenTotalScore <= 6);
+      
+      console.log(`- 判定结果: ${result ? '符合条件' : '不符合条件'}`);  
+      return result;
+    }).map(dei => ({
+      likeElementId: dei.likeelementid,
+      talentElementId: dei.talentelementid,
+      name: dei.name,
+      demonstrate: dei.demonstrate,
+      affect: dei.affect
+    }));
+
+    // 4. 获取用户的问答记录
+    const questionAnswers = await AppDataSource
+      .createQueryBuilder()
+      .select([
+        'q.content as question',
+        'qa.content as answer'
+      ])
+      .from(QuestionAnswer, 'qa')
+      .innerJoin(Question, 'q', 'q.id = qa.question_id')
+      .where('qa.user_id = :userId', { userId })
+      .getRawMany();
+
+    // 5. 获取用户的双刃剑量表答案
+    const doubleEdgedAnswers = await AppDataSource
+      .createQueryBuilder()
+      .select([
+        'des.content as scaleContent',
+        'des.type as type',
+        'dea.score as score',
+        'dei.name as name',
+        'dei.demonstrate as demonstrate',
+        'dei.affect as affect'
+      ])
+      .from(DoubleEdgedAnswer, 'dea')
+      .innerJoin(DoubleEdgedScale, 'des', 'des.id = dea.scale_id')
+      .innerJoin(DoubleEdgedInfo, 'dei', 'dei.id = des.double_edged_id')
+      .where('dea.user_id = :userId', { userId })
+      .getRawMany();
+
+    return {
+      elements,
+      doubleEdgedElements,
+      questionAnswers,
+      doubleEdgedAnswers: doubleEdgedAnswers.map(dea => {
+        const { topic, scoreText } = this.getTopicAndScoreText(dea.type as DoubleEdgedType, dea.score);
+        return {
+          scaleContent: dea.scaleContent,
+          score: dea.score,
+          type: dea.type,
+          topic,
+          scoreText,
+          name: dea.name,
+          demonstrate: dea.demonstrate,
+          affect: dea.affect
+        };
+      })
+    };
+  }
+
   // 修改格式化提示词方法
   async formatAnalysisToPrompt(userId: number): Promise<{
     likeDefinition: string;
     talentDefinition: string;
     doubleEdgedDefinition: string;
-    userInfo: UserAnalysis;
+    myLikeAndTalent: UserAnalysis;
   }> {
-    const analysis = await this.getUserAnalysis(userId);
+    const analysis = await this.getUserAnalysis168(userId);
     const likeDefinition='喜欢：热爱的种子，自发选择的方向，自觉投入的状态，与天赋相结合，能开心/自然而然做出更好的结果。';
     const talentDefinition='天赋：记忆中的闪光点，无师自通的规律发现，不学就会的行为走向，与喜欢相结合，能开心/自然而然的做出好结果。';
     const doubleEdgedDefinition='双刃剑：喜欢和天赋的结合，能开心/自然而然做出更好的结果。但也蕴含着反向的能量，需要平衡。';
-    const userInfo =  analysis 
+    const myLikeAndTalent =  analysis 
     return  {
         likeDefinition,
         talentDefinition,
         doubleEdgedDefinition,
-        userInfo    
+        myLikeAndTalent    
     } }
 } 

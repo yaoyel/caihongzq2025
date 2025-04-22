@@ -151,13 +151,7 @@ const Scale168Assessment: React.FC = () => {
     }
   }, [currentCategory, currentDimension, allQuestions]);
 
-  // 添加调试信息，输出答案和问题
-  useEffect(() => {
-    if (allQuestions.length > 0 && Object.keys(answers).length > 0) {
-      console.log('当前所有问题:', allQuestions);
-      console.log('当前所有答案:', answers);
-    }
-  }, [allQuestions, answers]);
+ 
 
   // 获取单个量表详情
   const fetchScaleById = async (id: number) => {
@@ -244,8 +238,7 @@ const Scale168Assessment: React.FC = () => {
       });
       
       // 直接使用返回数据中的scales和options
-      const scales = response.data.data;
-      console.log('获取到的问题数据:', scales);
+      const scales = response.data.data; 
       
       // 不再需要遍历获取选项，因为options已经包含在每个scale中
       setAllQuestions(scales);
@@ -353,7 +346,9 @@ const Scale168Assessment: React.FC = () => {
   // 辅助函数：根据返回的值找到匹配的选项ID
   const findMatchingOptionId = (question: Scale, value: any): number | null => {
     if (!question.options || question.options.length === 0) {
-      return null;
+      // 对于没有动态选项的题目，直接返回value
+      console.log(`问题 ${question.id} 没有动态选项，直接使用value: ${value}`);
+      return Number(value);
     }
 
     // 如果value本身就是option的ID，直接返回
@@ -364,14 +359,68 @@ const Scale168Assessment: React.FC = () => {
     }
 
     // 如果value是optionValue，查找对应的ID
-    const optionByValue = question.options.find(opt => opt.optionValue === value);
+    const optionByValue = question.options.find(opt => opt.optionValue === Number(value));
     if (optionByValue) {
       console.log(`通过optionValue ${value} 找到了选项ID ${optionByValue.id}`);
       return optionByValue.id;
     }
 
-    console.log(`无法为问题 ${question.id} 和值 ${value} 找到匹配的选项`);
-    return null;
+    console.log(`无法为问题 ${question.id} 和值 ${value} 找到匹配的选项，返回原值`);
+    return Number(value);  // 返回原始值而不是null，确保数据一致性
+  };
+
+  // 辅助函数：根据分数值找到最匹配的选项ID
+  const findMatchingOptionIdByScore = (question: Scale, score: number): number | null => {
+    if (!question.options || question.options.length === 0) {
+      // 对于没有动态选项的题目，使用默认逻辑
+      return score; // 直接返回分数作为ID
+    }
+    
+    // 根据optionValue查找
+    const optionByValue = question.options.find(opt => opt.optionValue === score);
+    if (optionByValue) { 
+      return optionByValue.id;
+    }
+    
+    // 如果找不到精确匹配，寻找最接近的选项
+    // 对选项按分数排序
+    const sortedOptions = [...question.options].sort((a, b) => a.optionValue - b.optionValue);
+    
+    // 如果分数小于最小选项分数，返回第一个选项
+    if (score <= sortedOptions[0].optionValue) { 
+      return sortedOptions[0].id;
+    }
+    
+    // 如果分数大于最大选项分数，返回最后一个选项
+    if (score >= sortedOptions[sortedOptions.length - 1].optionValue) {
+         return sortedOptions[sortedOptions.length - 1].id;
+    }
+    
+    // 在中间寻找最接近的选项
+    for (let i = 0; i < sortedOptions.length - 1; i++) {
+      const current = sortedOptions[i];
+      const next = sortedOptions[i + 1];
+      
+      // 如果恰好等于某个选项的分数
+      if (score === current.optionValue) {
+        return current.id;
+      }
+      
+      // 如果分数在两个选项之间，选择更接近的
+      if (score > current.optionValue && score < next.optionValue) {
+        const diffCurrent = Math.abs(score - current.optionValue);
+        const diffNext = Math.abs(score - next.optionValue);
+        
+        if (diffCurrent <= diffNext) {
+             return current.id;
+        } else {
+                 return next.id;
+        }
+      }
+    }
+    
+    // 如果无法匹配，返回原始分数
+     return score;
   };
 
   // 获取用户的168方向量表答案
@@ -418,7 +467,17 @@ const Scale168Assessment: React.FC = () => {
           // 找到对应的问题
           const matchedQuestion = allQuestions.find(q => q.id === scaleId);
           if (matchedQuestion) {
-            // 尝试找到匹配的选项ID
+            // 如果是分数值，使用新方法根据分数找最匹配的选项ID
+            if (answer.score !== undefined && matchedQuestion.options && matchedQuestion.options.length > 0) {
+              const matchedOptionId = findMatchingOptionIdByScore(matchedQuestion, Number(answer.score));
+              if (matchedOptionId !== null) {
+                savedAnswersMap[scaleId] = matchedOptionId;
+               
+                continue; // 已处理，跳过下面的逻辑
+              }
+            }
+            
+            // 常规方法：尝试找到匹配的选项ID
             const matchedOptionId = findMatchingOptionId(matchedQuestion, optionValue);
             if (matchedOptionId !== null) {
               savedAnswersMap[scaleId] = matchedOptionId;
@@ -432,9 +491,7 @@ const Scale168Assessment: React.FC = () => {
           }
         }
       }
-      
-      console.log('转换后的答案映射:', savedAnswersMap); // 调试日志
-      
+       
       setAnswers(prev => ({...prev, ...savedAnswersMap}));
       return answers;
     } catch (error) {

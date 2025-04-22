@@ -4,16 +4,24 @@ import { Scale } from '../entities/Scale';
 import { ScaleOption } from '../entities/ScaleOption';
 import { ScaleAnswer } from '../entities/ScaleAnswer';
 import { AppDataSource } from '../data-source';
+import { ReportService } from './report.service';
+import { Element168Analysis } from '../interfaces/report.interface';
+import { ReportRepository } from '../repositories/report.repository';
+
 @Service()
 export class Scale168Service {
   private scaleRepository: Repository<Scale>;
   private scaleAnswerRepository: Repository<ScaleAnswer>;
   private scaleOptionRepository: Repository<ScaleOption>;
+  private reportService: ReportService;
+  private reportRepository: ReportRepository;
   
   constructor() {   
     this.scaleRepository = AppDataSource.getRepository(Scale);
     this.scaleAnswerRepository = AppDataSource.getRepository(ScaleAnswer);
     this.scaleOptionRepository = AppDataSource.getRepository(ScaleOption);
+    this.reportRepository = new ReportRepository();
+    this.reportService = new ReportService(this.reportRepository);
   }
 
   /**
