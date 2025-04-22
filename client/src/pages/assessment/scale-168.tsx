@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Steps, Card, Radio, Progress, Space, Button, Divider, Menu, message, Row, Col, Tooltip } from 'antd';
+import { Layout, Typography, Steps, Card, Radio, Progress, Space, Button, Divider, Menu, message, Row, Tooltip } from 'antd';
 import type { MenuItemProps } from 'antd';
 import styled from '@emotion/styled';
 import { HomeOutlined, CheckCircleOutlined, LoadingOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
@@ -128,8 +128,7 @@ const Scale168Assessment: React.FC = () => {
   const [questions, setQuestions] = useState<Scale[]>([]);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
-  const questionsPerPage = 3; // 每页显示3个问题
-  const [scaleOptions, setScaleOptions] = useState<Record<number, ScaleOption[]>>({});
+  const questionsPerPage = 3; // 每页显示3个问题 
   const [savingStatus, setSavingStatus] = useState<Record<number, 'saving' | 'saved' | 'error'>>({});
 
   useEffect(() => {
@@ -152,74 +151,6 @@ const Scale168Assessment: React.FC = () => {
   }, [currentCategory, currentDimension, allQuestions]);
 
  
-
-  // 获取单个量表详情
-  const fetchScaleById = async (id: number) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        message.error('请先登录');
-        navigate('/login');
-        return null;
-      }
-
-      const response = await axios.get(getApiUrl(`/scale168/${id}`), {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      return response.data.data;
-    } catch (error) {
-      console.error(`获取量表详情失败(ID: ${id}):`, error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        message.error('登录已过期，请重新登录');
-        navigate('/login');
-      } else {
-        message.error(`获取量表详情失败(ID: ${id})`);
-      }
-      return null;
-    }
-  };
-
-  // 获取量表及其选项
-  const fetchScaleWithOptions = async (id: number) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        message.error('请先登录');
-        navigate('/login');
-        return null;
-      }
-
-      const response = await axios.get(getApiUrl(`/scale168/${id}/options`), {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      
-      // 返回数据包含scale和options两个字段
-      const result = response.data.data;
-      
-      // 更新选项缓存
-      if (result && result.options) {
-        setScaleOptions(prev => ({
-          ...prev,
-          [id]: result.options
-        }));
-      }
-      
-      return result;
-    } catch (error) {
-      console.error(`获取量表选项失败(ID: ${id}):`, error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        message.error('登录已过期，请重新登录');
-        navigate('/login');
-      } else {
-        message.error(`获取量表选项失败(ID: ${id})`);
-      }
-      return null;
-    }
-  };
 
   const fetchAllQuestions = async () => {
     try {
@@ -274,74 +205,6 @@ const Scale168Assessment: React.FC = () => {
     return user.id;
   };
 
-  // 获取用户的所有量表答案
-  const fetchSavedAnswers = async () => {
-    const userId = getUserId();
-    if (!userId) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        message.error('请先登录');
-        navigate('/login');
-        return;
-      }
-
-      const response = await axios.get(getApiUrl(`/scale168/answers/me`), {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      
-      // 使用API返回的答案数据
-      const answers = response.data.data;
-      console.log('获取的所有答案数据:', answers); // 调试日志
-      
-      // 创建scaleId -> optionId/value的映射
-      const savedAnswersMap: Record<number, number> = {};
-      
-      // 遍历答案，尝试找到匹配的选项
-      for (const answer of answers) {
-        const { scaleId } = answer;
-        let optionValue = null;
-        
-        // 尝试从不同字段获取选项值
-        if (answer.optionId !== undefined) optionValue = answer.optionId;
-        else if (answer.option_id !== undefined) optionValue = answer.option_id;
-        else if (answer.score !== undefined) optionValue = answer.score;
-        
-        if (optionValue !== null) {
-          // 找到对应的问题
-          const matchedQuestion = allQuestions.find(q => q.id === scaleId);
-          if (matchedQuestion) {
-            // 尝试找到匹配的选项ID
-            const matchedOptionId = findMatchingOptionId(matchedQuestion, optionValue);
-            if (matchedOptionId !== null) {
-              savedAnswersMap[scaleId] = matchedOptionId;
-            } else {
-              // 如果找不到匹配的选项ID，直接使用原始值
-              savedAnswersMap[scaleId] = optionValue;
-            }
-          } else {
-            // 如果找不到匹配的问题，直接使用原始值
-            savedAnswersMap[scaleId] = optionValue;
-          }
-        }
-      }
-      
-      console.log('转换后的所有答案映射:', savedAnswersMap); // 调试日志
-      
-      setAnswers(prev => ({...prev, ...savedAnswersMap}));
-    } catch (error) {
-      console.error('获取已保存答案失败:', error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        message.error('登录已过期，请重新登录');
-        navigate('/login');
-      } else {
-        message.error('获取已保存答案失败');
-      }
-    }
-  };
 
   // 辅助函数：根据返回的值找到匹配的选项ID
   const findMatchingOptionId = (question: Scale, value: any): number | null => {
@@ -557,60 +420,6 @@ const Scale168Assessment: React.FC = () => {
       } else {
         // 如果保存失败，告知用户
         message.error('答案保存失败，请稍后重试');
-      }
-    }
-  };
-
-  // 更新答案的方法
-  const updateAnswer = async (answerId: number, optionId: number) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        message.error('请先登录');
-        navigate('/login');
-        return;
-      }
-
-      await axios.put(getApiUrl(`/scale168/answers/${answerId}`), {
-        optionId
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-    } catch (error) {
-      console.error('更新答案失败:', error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        message.error('登录已过期，请重新登录');
-        navigate('/login');
-      } else {
-        message.error('更新答案失败');
-      }
-    }
-  };
-
-  // 删除答案的方法
-  const deleteAnswer = async (scaleId: number) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        message.error('请先登录');
-        navigate('/login');
-        return;
-      }
-
-      await axios.delete(getApiUrl(`/scale168/answers/${scaleId}`), {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-    } catch (error) {
-      console.error('删除答案失败:', error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        message.error('登录已过期，请重新登录');
-        navigate('/login');
-      } else {
-        message.error('删除答案失败');
       }
     }
   };

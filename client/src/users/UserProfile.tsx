@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Card, Space, Typography, message, Modal } from 'antd';
+import { Form, Input, Button, Card, Typography, message, Modal } from 'antd';
 import styled from '@emotion/styled';
 
 const { Title } = Typography;
@@ -22,7 +22,7 @@ const UserProfile: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [familyName, setFamilyName] = useState('');
 
-  const handleUserSubmit = async (values: UserInfo) => {
+  const handleUserSubmit = async () => {
     try {
       // TODO: 调用API保存用户信息
       message.success('用户信息保存成功');

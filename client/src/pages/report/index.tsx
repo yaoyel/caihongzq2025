@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Layout, Typography, Card, Row, Col, Collapse, Tabs, List, Button, message, Space, Alert, Tag, Tooltip, Spin, Empty, Modal, Divider, Radio } from 'antd';
 import styled from '@emotion/styled';
-import { HomeOutlined, DownloadOutlined, QuestionCircleOutlined, BulbOutlined, ExclamationCircleOutlined, CloseOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { HomeOutlined, DownloadOutlined, QuestionCircleOutlined, BulbOutlined, ExclamationCircleOutlined, CloseOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import html2pdf from 'html2pdf.js';
 import axios from 'axios';
@@ -13,8 +13,7 @@ import ChatPage from '../chat';
 
 // 子组件
 const { Title, Paragraph, Text } = Typography;
-const { Panel } = Collapse;
-const { TabPane } = Tabs;
+const { Panel } = Collapse; 
 
 const StyledLayout = styled(Layout)`
   padding: 24px 48px;
