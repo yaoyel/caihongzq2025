@@ -7,7 +7,7 @@ mkdir -p {client,server,nginx,postgres-data,logs}
 
 
 # 1. 克隆项目（如果是从Git仓库）
-git clone <repository-url> .
+git clone https://github.com/yaoyel/caihongzq2025.git .
 
 # 2. 创建环境配置文件
 cp server/.env.example server/.env
