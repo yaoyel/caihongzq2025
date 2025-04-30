@@ -29,7 +29,7 @@ export class Scale168Service {
    * @returns 量表题目列表
    */
   async getAllScales(): Promise<Scale[]> {
-    return this.scaleRepository.find({where: { direction: '168' }, relations: ['options']});
+    return this.scaleRepository.find({where: { direction: '168' }, relations: ['options'], order: { id: 'ASC' }});
   }
 
   /**

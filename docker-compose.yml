@@ -53,7 +53,7 @@ services:
     container_name: rbridge-nginx
     restart: always
     ports:
-      - "8088:80"
+      - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf  
       - client-dist:/usr/share/nginx/html  

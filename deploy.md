@@ -52,8 +52,8 @@ docker-compose restart server  # 重启后端
 docker-compose restart client  # 重启前端
 
 # 数据库备份
-docker exec rbridge-db pg_dump -U postgres rbridge > backup_$(date +%Y%m%d).sql
-
+# docker exec rbridge-db pg_dump -U postgres rbridge > backup_$(date +%Y%m%d).sql
+  docker exec rbridge-db pg_dump -U postgres caihongzq-8088 > backup_$(date +%Y%m%d).sql
 # 数据库恢复
 cat backup_20240101.sql | docker exec -i rbridge-db psql -U postgres rbridge
 
@@ -72,7 +72,9 @@ docker exec -it rbridge-client sh
 docker network inspect app-network
 
 # 检查数据库连接
-docker exec -it rbridge-db psql -U postgres -d rbridge
+# docker exec -it rbridge-db psql -U postgres -d rbridge
+docker exec -it rbridge-db psql -U postgres -d caihongzq-8088
+
 
 
 
