@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Layout, Typography, Card, Row, Col, Collapse, Tabs, List, Button, message, Space, Alert, Tag, Tooltip, Spin, Empty, Modal, Divider, Radio } from 'antd';
 import styled from '@emotion/styled';

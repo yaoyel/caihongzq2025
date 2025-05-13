@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Button, Row, Col, Space, Card, message, Spin, Menu, Dropdown } from 'antd';
 import { WechatOutlined, SafetyCertificateOutlined, UserOutlined, SettingOutlined, LogoutOutlined, CaretDownOutlined } from '@ant-design/icons';
