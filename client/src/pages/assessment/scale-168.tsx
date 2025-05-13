@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Steps, Card, Radio, Progress, Space, Button, Divider, Menu, message, Row, Tooltip } from 'antd';
 import type { MenuItemProps } from 'antd';
 import styled from '@emotion/styled';
-import { HomeOutlined, CheckCircleOutlined, LoadingOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { HomeOutlined, CheckCircleOutlined, LoadingOutlined, CheckOutlined, CloseOutlined, MenuOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { getApiUrl } from '../../config';
@@ -19,6 +19,67 @@ const StyledContent = styled(Content)`
   padding: 24px;
   max-width: 1000px;
   margin: 0 auto;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    max-width: 100%;
+  }
+`;
+
+const StyledSider = styled(Sider)<{ collapsed?: boolean }>`
+  background: #fff;
+  padding: 24px 0;
+  height: 100vh;
+  position: fixed;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-right: 1px solid #f0f0f0;
+  z-index: 1000;
+
+  @media (max-width: 768px) {
+    position: fixed;
+    left: ${props => props.collapsed ? '-300px' : '0'};
+    transition: left 0.3s ease;
+  }
+`;
+
+const StyledMainLayout = styled(Layout)<{ collapsed?: boolean }>`
+  margin-left: 300px;
+  transition: margin-left 0.3s ease;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+  }
+`;
+
+const ToggleButton = styled(Button)<{ $collapsed: boolean }>`
+  position: fixed;
+  left: 16px;
+  top: 16px;
+  z-index: 1001;
+  display: none;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: #1890ff;
+  padding: 0 12px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 24px;
+  justify-content: center;
+  align-items: center;
+  transition: background 0.2s, color 0.2s;
+
+  &:hover {
+    background: #f0f5ff;
+    color: #40a9ff;
+  }
+
+  @media (max-width: 768px) {
+    display: flex;
+    flex-direction: ${props => (props.$collapsed ? 'row' : 'column')};
+    gap: 4px;
+  }
 `;
 
 const StyledCard = styled(Card)`
@@ -119,6 +180,49 @@ interface Scale {
   options?: ScaleOption[]; // 添加options可选字段
 }
 
+const HomeButton = styled(Button)`
+  margin-bottom: 20px;
+  display: block;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const ResponsiveSteps = styled(Steps)`
+  @media (max-width: 768px) {
+    flex-direction: row !important;
+    display: flex !important;
+    .ant-steps-item {
+      flex: 1 1 0;
+      min-width: 0;
+      max-width: 100%;
+      padding: 0 2px;
+    }
+    .ant-steps-item-tail {
+      display: none !important;
+    }
+    .ant-steps-item-content {
+      display: none;
+    }
+    .ant-steps-item-title {
+      font-size: 12px;
+      white-space: nowrap;
+      text-align: center;
+      padding: 0;
+    }
+    .ant-steps-item-icon {
+      margin: 0 auto;
+    }
+  }
+`;
+
+const SiderContentWrapper = styled('div')`
+  @media (max-width: 768px) {
+    margin-top: 78px;
+  }
+`;
+
 const Scale168Assessment: React.FC = () => {
   const navigate = useNavigate();
   const [currentCategory, setCurrentCategory] = useState<string>(categories[0].type);
@@ -128,8 +232,19 @@ const Scale168Assessment: React.FC = () => {
   const [questions, setQuestions] = useState<Scale[]>([]);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
-  const questionsPerPage = 3; // 每页显示3个问题 
+  const [collapsed, setCollapsed] = useState(window.innerWidth <= 768);
+  const questionsPerPage = 3;
   const [savingStatus, setSavingStatus] = useState<Record<number, 'saving' | 'saved' | 'error'>>({});
+
+  // 添加窗口大小变化监听
+  useEffect(() => {
+    const handleResize = () => {
+      setCollapsed(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     // 先加载问题
@@ -149,8 +264,6 @@ const Scale168Assessment: React.FC = () => {
       filterQuestionsByCategoryAndDimension();
     }
   }, [currentCategory, currentDimension, allQuestions]);
-
- 
 
   const fetchAllQuestions = async () => {
     try {
@@ -204,7 +317,6 @@ const Scale168Assessment: React.FC = () => {
     const user = JSON.parse(userStr);
     return user.id;
   };
-
 
   // 辅助函数：根据返回的值找到匹配的选项ID
   const findMatchingOptionId = (question: Scale, value: any): number | null => {
@@ -603,111 +715,120 @@ const Scale168Assessment: React.FC = () => {
 
   return (
     <StyledLayout>
-      <Sider 
-        width={300} 
-        style={{ 
-          background: '#fff', 
-          padding: '24px 0', 
-          height: '100vh', 
-          position: 'fixed', 
-          overflowY: 'auto', 
-          overflowX: 'hidden',
-          borderRight: '1px solid #f0f0f0'
-        }}
+      <ToggleButton $collapsed={collapsed} onClick={() => setCollapsed(!collapsed)}>
+        <MenuOutlined style={{ fontSize: 28 }} />
+        <span style={{
+          fontSize: 12,
+          lineHeight: 1,
+          textAlign: 'center',
+          marginLeft: collapsed ? 8 : 0,
+          marginTop: collapsed ? 0 : 4,
+          color: '#333',
+          whiteSpace: 'nowrap'
+        }}>
+          {collapsed ? '' : '收起'}
+        </span>
+      </ToggleButton>
+      <StyledSider 
+        width={300}
+        collapsed={collapsed}
+        collapsible={false}
+        trigger={null}
       >
-        <div style={{ padding: '0 24px', marginBottom: 16 }}>
-          <Progress
-            percent={Math.round(progress)}
-            format={percent => `总进度 ${percent}%`}
-          />
-          {hasUnfinishedQuestions && (
-            <Button
-              type="primary"
-              block
-              onClick={handleContinue}
-              style={{ marginTop: 16 }}
-            >
-              继续答题
-            </Button>
-          )}
-        </div>
-        <Menu
-          mode="inline"
-          selectedKeys={[`${currentCategory}-${currentDimension}`]}
-          defaultOpenKeys={[categories[0].type, categories[1].type]}
-          style={{ borderRight: 'none' }}
-        >
-          {categories.map((category) => {
-            const categoryProgress = getCategoryProgress(category.type);
-            
-            return (
-              <StyledSubMenu
-                key={category.type}
-                title={
-                  <div>
-                    <div>{category.title}</div>
-                    <Progress
-                      percent={categoryProgress.percent}
-                      size="small"
-                      format={() => `${categoryProgress.completed}/${categoryProgress.total}`}
-                      strokeColor={category.color}
-                    />
-                  </div>
-                }
+        <SiderContentWrapper>
+          <div style={{ padding: '0 24px', marginBottom: 16 }}>
+            <Progress
+              percent={Math.round(progress)}
+              format={percent => `总进度 ${percent}%`}
+            />
+            {hasUnfinishedQuestions && (
+              <Button
+                type="primary"
+                block
+                onClick={handleContinue}
+                style={{ marginTop: 16 }}
               >
-                {dimensions.map((dimension) => {
-                  const dimensionProgress = getDimensionProgress(category.type, dimension);
-                  const dimensionQuestions = getQuestionsForCategoryAndDimension(category.type, dimension);
-                  const allDimensionAnswered = dimensionQuestions.every(q => answers[q.id]);
-                  
-                  return (
-                    <StyledMenuItem
-                      key={`${category.type}-${dimension}`}
-                      onClick={() => {
-                        setCurrentCategory(category.type);
-                        setCurrentDimension(dimension);
-                        setCurrentPage(0);
-                      }}
-                      icon={allDimensionAnswered ? <CheckCircleOutlined style={{ color: '#52c41a' }} /> : null}
-                    >
-                      <Space direction="vertical" style={{ width: '100%' }}>
-                        <Text strong>{dimension}</Text>
-                        <Progress
-                          percent={dimensionProgress.percent}
-                          size="small"
-                          format={() => `${dimensionProgress.completed}/${dimensionProgress.total}`}
-                          strokeColor={category.color}
-                        />
-                      </Space>
-                    </StyledMenuItem>
-                  );
-                })}
-              </StyledSubMenu>
-            );
-          })}
-        </Menu>
-      </Sider>
-      <Layout style={{ marginLeft: 300 }}>
+                继续答题
+              </Button>
+            )}
+          </div>
+          <Menu
+            mode="inline"
+            selectedKeys={[`${currentCategory}-${currentDimension}`]}
+            defaultOpenKeys={collapsed ? [] : [categories[0].type, categories[1].type]}
+            style={{ borderRight: 'none' }}
+          >
+            {categories.map((category) => {
+              const categoryProgress = getCategoryProgress(category.type);
+              
+              return (
+                <StyledSubMenu
+                  key={category.type}
+                  title={
+                    <div>
+                      <div>{category.title}</div>
+                      <Progress
+                        percent={categoryProgress.percent}
+                        size="small"
+                        format={() => `${categoryProgress.completed}/${categoryProgress.total}`}
+                        strokeColor={category.color}
+                      />
+                    </div>
+                  }
+                >
+                  {dimensions.map((dimension) => {
+                    const dimensionProgress = getDimensionProgress(category.type, dimension);
+                    const dimensionQuestions = getQuestionsForCategoryAndDimension(category.type, dimension);
+                    const allDimensionAnswered = dimensionQuestions.every(q => answers[q.id]);
+                    
+                    return (
+                      <StyledMenuItem
+                        key={`${category.type}-${dimension}`}
+                        onClick={() => {
+                          setCurrentCategory(category.type);
+                          setCurrentDimension(dimension);
+                          setCurrentPage(0);
+                        }}
+                        icon={allDimensionAnswered ? <CheckCircleOutlined style={{ color: '#52c41a' }} /> : null}
+                      >
+                        <Space direction="vertical" style={{ width: '100%' }}>
+                          <Text strong>{dimension}</Text>
+                          <Progress
+                            percent={dimensionProgress.percent}
+                            size="small"
+                            format={() => `${dimensionProgress.completed}/${dimensionProgress.total}`}
+                            strokeColor={category.color}
+                          />
+                        </Space>
+                      </StyledMenuItem>
+                    );
+                  })}
+                </StyledSubMenu>
+              );
+            })}
+          </Menu>
+        </SiderContentWrapper>
+      </StyledSider>
+      <StyledMainLayout collapsed={collapsed}>
         <StyledContent>
-          <Button 
+          <HomeButton 
             icon={<HomeOutlined />} 
             onClick={() => navigate('/home')}
-            style={{ marginBottom: '20px' }}
           >
             返回主页
-          </Button>
+          </HomeButton>
 
           <Title level={2} style={{ textAlign: 'center', marginBottom: 40 }}>
             168天赋测评
           </Title>
 
-          <Steps
+          <ResponsiveSteps
             current={dimensions.indexOf(currentDimension)}
             items={dimensions.map(dimension => ({
               title: dimension,
               style: { whiteSpace: 'normal', height: 'auto', padding: '8px 0' }
             }))}
-            style={{ marginBottom: 40 }}
+            style={{ marginBottom: window.innerWidth <= 768 ? 0 : 40 }}
             progressDot
           />
 
@@ -809,7 +930,7 @@ const Scale168Assessment: React.FC = () => {
             </Row>
           </StyledCard>
         </StyledContent>
-      </Layout>
+      </StyledMainLayout>
     </StyledLayout>
   );
 };

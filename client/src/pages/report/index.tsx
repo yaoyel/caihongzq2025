@@ -18,6 +18,10 @@ const { Panel } = Collapse;
 const StyledLayout = styled(Layout)`
   padding: 24px 48px;
   background: #fff;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
 `;
 
 const ReportCard = styled(Card)`
@@ -36,11 +40,18 @@ const ReportCard = styled(Card)`
   .ant-card-body {
     padding-top: 0;
   }
+
+  @media (max-width: 768px) {
+    .ant-card-body {
+      padding: 5px;
+    }
+  }
 `;
 
 const ReportTitle = styled(Title)`
   text-align: center;
   margin-bottom: 24px !important;
+  white-space: nowrap;
   
   &::after {
     content: '';
@@ -49,6 +60,11 @@ const ReportTitle = styled(Title)`
     height: 3px;
     background: #1890ff;
     margin: 16px auto 0;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 20px !important;
+    margin: 0 !important;
   }
 `;
 
@@ -64,6 +80,10 @@ const StyledTabs = styled(Tabs)`
   
   .ant-tabs-tab-active {
     font-weight: 500;
+  }
+
+  @media (max-width: 768px) {
+    display: none;
   }
 `;
 
@@ -90,6 +110,24 @@ const HeaderContainer = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+`;
+
+const HomeButton = styled(Button)`
+  @media (max-width: 768px) {
+    display: none !important;
+  }
+`;
+
+const ExportButton = styled(Button)`
+  @media (max-width: 768px) {
+    width: 100%;
+  }
 `;
 
 // 添加课堂表现与元素ID的映射
@@ -262,6 +300,15 @@ const ElementsGrid = styled.div`
         padding: 4px 8px;
         border-radius: 4px;
       }
+    }
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    
+    .element-card {
+      padding: 8px;
     }
   }
 `;
@@ -611,11 +658,49 @@ const ChatModal = styled(Modal)`
   }
 `;
 
+const ResponsiveList = styled(List)`
+  @media (max-width: 768px) {
+    .ant-list-item {
+      padding: 8px 0;
+    }
+  }
+`;
+
+const ResponsiveCard = styled(Card)`
+  @media (max-width: 768px) {
+    margin-bottom: 16px !important;
+    .ant-card-head {
+      font-size: 16px;
+      padding: 8px 12px;
+    }
+    .ant-card-body {
+      padding: 5px;
+    }
+  }
+`;
+
+const ResponsiveCol = styled(Col)`
+  @media (max-width: 768px) {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+`;
+
+interface ElementAnalysisItem {
+  dimension: string;
+  category: string;
+  like_element: string;
+  talent_element: string;
+  like_status: string;
+  talent_status: string;
+}
+
 const ReportPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const componentRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState('168'); // 默认显示168题报告
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   
   // 添加维度排序函数
   const sortByDimension = (a: any, b: any) => {
@@ -1164,27 +1249,75 @@ const ReportPage: React.FC = () => {
     setActiveTab(key);
   };
 
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // 修改所有List组件的grid属性
+  const gridConfig = {
+    gutter: 16,
+    column: windowWidth <= 768 ? 1 : 4
+  };
+
+  // 修改所有Col组件的span属性
+  const colSpan = windowWidth <= 768 ? 24 : 8;
+
+  const renderItem = (item: unknown) => {
+    const data = item as ElementAnalysisItem;
+    return (
+      <List.Item>
+        <ResponsiveCard title={data.dimension} size="small">
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <div>
+              <Text type="secondary">喜欢：</Text>
+              <Tooltip title={data.like_status}>
+                <Tag color={data.category.includes('有喜欢') ? 'green' : 'default'}>
+                  {data.like_element}
+                  {data.category.includes('有喜欢') ? ' ✓' : ' ✗'}
+                </Tag>
+              </Tooltip>
+            </div>
+            <div>
+              <Text type="secondary">天赋：</Text>
+              <Tooltip title={data.talent_status}>
+                <Tag color={data.category.includes('有天赋') ? 'blue' : 'default'}>
+                  {data.talent_element}
+                  {data.category.includes('有天赋') ? ' ✓' : ' ✗'}
+                </Tag>
+              </Tooltip>
+            </div>
+          </Space>
+        </ResponsiveCard>
+      </List.Item>
+    );
+  };
+
   // 修改年龄段个性化分析的渲染部分
   return (
     <StyledLayout>
       <HeaderContainer>
-        <Button 
+        <HomeButton 
           type="primary" 
           icon={<HomeOutlined />} 
           onClick={() => navigate('/home')}
         >
           返回主页
-        </Button>
+        </HomeButton>
         
         <ReportTitle level={2}>学生综合能力评估报告</ReportTitle>
         
-        <Button 
+        <ExportButton 
           type="primary" 
           icon={<DownloadOutlined />} 
           onClick={handleExportPDF}
         >
           导出PDF
-        </Button>
+        </ExportButton>
       </HeaderContainer>
       
       <StyledTabs 
@@ -1229,38 +1362,13 @@ const ReportPage: React.FC = () => {
                               } 
                               key="1"
                             >
-                              <List
-                                grid={{ gutter: 16, column: 4 }}
+                              <ResponsiveList
+                                grid={gridConfig}
                                 dataSource={elementAnalysis
                                   .filter(item => item.category === '有喜欢有天赋')
                                   .sort(sortByDimension)
                                 }
-                                renderItem={item => (
-                                  <List.Item>
-                                    <Card title={item.dimension} size="small">
-                                      <Space direction="vertical" style={{ width: '100%' }}>
-                                        <div>
-                                          <Text type="secondary">喜欢：</Text>
-                                          <Tooltip title={item.like_status}>
-                                            <Tag color={item.category.includes('有喜欢') ? 'green' : 'default'}>
-                                              {item.like_element}
-                                              {item.category.includes('有喜欢') ? ' ✓' : ' ✗'}
-                                            </Tag>
-                                          </Tooltip>
-                                        </div>
-                                        <div>
-                                          <Text type="secondary">天赋：</Text>
-                                          <Tooltip title={item.talent_status}>
-                                            <Tag color={item.category.includes('有天赋') ? 'blue' : 'default'}>
-                                              {item.talent_element}
-                                              {item.category.includes('有天赋') ? ' ✓' : ' ✗'}
-                                            </Tag>
-                                          </Tooltip>
-                                        </div>
-                                      </Space>
-                                    </Card>
-                                  </List.Item>
-                                )}
+                                renderItem={renderItem}
                               />
                             </Panel>
                             <Panel 
@@ -1274,35 +1382,10 @@ const ReportPage: React.FC = () => {
                               } 
                               key="2"
                             >
-                              <List
-                                grid={{ gutter: 16, column: 4 }}
+                              <ResponsiveList
+                                grid={gridConfig}
                                 dataSource={elementAnalysis.filter(item => item.category === '有喜欢没天赋').sort(sortByDimension)}
-                                renderItem={item => (
-                                  <List.Item>
-                                    <Card title={item.dimension} size="small">
-                                      <Space direction="vertical" style={{ width: '100%' }}>
-                                        <div>
-                                          <Text type="secondary">喜欢：</Text>
-                                          <Tooltip title={item.like_status}>
-                                            <Tag color={item.category.includes('有喜欢') ? 'green' : 'default'}>
-                                              {item.like_element}
-                                              {item.category.includes('有喜欢') ? ' ✓' : ' ✗'}
-                                            </Tag>
-                                          </Tooltip>
-                                        </div>
-                                        <div>
-                                          <Text type="secondary">天赋：</Text>
-                                          <Tooltip title={item.talent_status}>
-                                            <Tag color={item.category.includes('有天赋') ? 'blue' : 'default'}>
-                                              {item.talent_element}
-                                              {item.category.includes('有天赋') ? ' ✓' : ' ✗'}
-                                            </Tag>
-                                          </Tooltip>
-                                        </div>
-                                      </Space>
-                                    </Card>
-                                  </List.Item>
-                                )}
+                                renderItem={renderItem}
                               />
                             </Panel>
                             <Panel 
@@ -1316,35 +1399,10 @@ const ReportPage: React.FC = () => {
                               } 
                               key="3"
                             >
-                              <List
-                                grid={{ gutter: 16, column: 4 }}
+                              <ResponsiveList
+                                grid={gridConfig}
                                 dataSource={elementAnalysis.filter(item => item.category === '有天赋没喜欢').sort(sortByDimension)}
-                                renderItem={item => (
-                                  <List.Item>
-                                    <Card title={item.dimension} size="small">
-                                      <Space direction="vertical" style={{ width: '100%' }}>
-                                        <div>
-                                          <Text type="secondary">喜欢：</Text>
-                                          <Tooltip title={item.like_status}>
-                                            <Tag color={item.category.includes('有喜欢') ? 'green' : 'default'}>
-                                              {item.like_element}
-                                              {item.category.includes('有喜欢') ? ' ✓' : ' ✗'}
-                                            </Tag>
-                                          </Tooltip>
-                                        </div>
-                                        <div>
-                                          <Text type="secondary">天赋：</Text>
-                                          <Tooltip title={item.talent_status}>
-                                            <Tag color={item.category.includes('有天赋') ? 'blue' : 'default'}>
-                                              {item.talent_element}
-                                              {item.category.includes('有天赋') ? ' ✓' : ' ✗'}
-                                            </Tag>
-                                          </Tooltip>
-                                        </div>
-                                      </Space>
-                                    </Card>
-                                  </List.Item>
-                                )}
+                                renderItem={renderItem}
                               />
                             </Panel>
                             <Panel 
@@ -1358,70 +1416,17 @@ const ReportPage: React.FC = () => {
                               } 
                               key="4"
                             >
-                              <List
-                                grid={{ gutter: 16, column: 4 }}
+                              <ResponsiveList
+                                grid={gridConfig}
                                 dataSource={elementAnalysis.filter(item => item.category === '没喜欢没天赋').sort(sortByDimension)}
-                                renderItem={item => (
-                                  <List.Item>
-                                    <Card title={item.dimension} size="small">
-                                      <Space direction="vertical" style={{ width: '100%' }}>
-                                        <div>
-                                          <Text type="secondary">喜欢：</Text>
-                                          <Tooltip title={item.like_status}>
-                                            <Tag color={item.category.includes('有喜欢') ? 'green' : 'default'}>
-                                              {item.like_element}
-                                              {item.category.includes('有喜欢') ? ' ✓' : ' ✗'}
-                                            </Tag>
-                                          </Tooltip>
-                                        </div>
-                                        <div>
-                                          <Text type="secondary">天赋：</Text>
-                                          <Tooltip title={item.talent_status}>
-                                            <Tag color={item.category.includes('有天赋') ? 'blue' : 'default'}>
-                                              {item.talent_element}
-                                              {item.category.includes('有天赋') ? ' ✓' : ' ✗'}
-                                            </Tag>
-                                          </Tooltip>
-                                        </div>
-                                      </Space>
-                                    </Card>
-                                  </List.Item>
-                                )}
+                                renderItem={renderItem}
                               />
                             </Panel>
                             <Panel header="待确认" key="5">
-                              <List
-                                grid={{ gutter: 16, column: 4 }}
+                              <ResponsiveList
+                                grid={gridConfig}
                                 dataSource={elementAnalysis.filter(item => item.category === '待确认').sort(sortByDimension)}
-                                renderItem={item => (
-                                  <List.Item>
-                                    <Card title={item.dimension} size="small">
-                                      <Space direction="vertical" style={{ width: '100%' }}>
-                                        <Space>
-                                          <Tag color="warning">待确认</Tag>
-                                        </Space>
-                                        <div>
-                                          <Text type="secondary">喜欢：</Text>
-                                          <Tooltip title={item.like_status}>
-                                            <Tag color={item.category.includes('有喜欢') ? 'green' : 'default'}>
-                                              {item.like_element}
-                                              {item.category.includes('有喜欢') ? ' ✓' : ' ✗'}
-                                            </Tag>
-                                          </Tooltip>
-                                        </div>
-                                        <div>
-                                          <Text type="secondary">天赋：</Text>
-                                          <Tooltip title={item.talent_status}>
-                                            <Tag color={item.category.includes('有天赋') ? 'blue' : 'default'}>
-                                              {item.talent_element}
-                                              {item.category.includes('有天赋') ? ' ✓' : ' ✗'}
-                                            </Tag>
-                                          </Tooltip>
-                                        </div>
-                                      </Space>
-                                    </Card>
-                                  </List.Item>
-                                )}
+                                renderItem={renderItem}
                               />
                             </Panel>
                           </Collapse>
@@ -1437,35 +1442,10 @@ const ReportPage: React.FC = () => {
                                 header={dimension}
                                 key={dimension}
                               >
-                                <List
-                                  grid={{ gutter: 16, column: 4 }}
+                                <ResponsiveList
+                                  grid={gridConfig}
                                   dataSource={elementAnalysis.filter(item => item.dimension === dimension)}
-                                  renderItem={item => (
-                                    <List.Item>
-                                      <Card title={item.category} size="small">
-                                        <Space direction="vertical" style={{ width: '100%' }}>
-                                          <div>
-                                            <Text type="secondary">喜欢：</Text>
-                                            <Tooltip title={item.like_status}>
-                                              <Tag color={item.category.includes('有喜欢') ? 'green' : 'default'}>
-                                                {item.like_element}
-                                                {item.category.includes('有喜欢') ? ' ✓' : ' ✗'}
-                                              </Tag>
-                                            </Tooltip>
-                                          </div>
-                                          <div>
-                                            <Text type="secondary">天赋：</Text>
-                                            <Tooltip title={item.talent_status}>
-                                              <Tag color={item.category.includes('有天赋') ? 'blue' : 'default'}>
-                                                {item.talent_element}
-                                                {item.category.includes('有天赋') ? ' ✓' : ' ✗'}
-                                              </Tag>
-                                            </Tooltip>
-                                          </div>
-                                        </Space>
-                                      </Card>
-                                    </List.Item>
-                                  )}
+                                  renderItem={item => { const data = item as ElementAnalysisItem; return renderItem(data); }}
                                 />
                               </Panel>
                             ))}
@@ -1482,26 +1462,10 @@ const ReportPage: React.FC = () => {
                                 key: 'like',
                                 label: '喜欢',
                                 children: (
-                                  <List
-                                    grid={{ gutter: 16, column: 4 }}
+                                  <ResponsiveList
+                                    grid={gridConfig}
                                     dataSource={[...elementAnalysis].sort(sortByDimension)}
-                                    renderItem={item => (
-                                      <List.Item>
-                                        <Card title={item.dimension} size="small">
-                                          <Space direction="vertical" style={{ width: '100%' }}>
-                                            <div>
-                                              <Text type="secondary">喜欢：</Text>
-                                              <Tooltip title={item.like_status}>
-                                                <Tag color={item.category.includes('有喜欢') ? 'green' : 'default'}>
-                                                  {item.like_element}
-                                                  {item.category.includes('有喜欢') ? ' ✓' : ' ✗'}
-                                                </Tag>
-                                              </Tooltip>
-                                            </div>
-                                          </Space>
-                                        </Card>
-                                      </List.Item>
-                                    )}
+                                    renderItem={item => { const data = item as ElementAnalysisItem; return renderItem(data); }}
                                   />
                                 )
                               },
@@ -1509,26 +1473,10 @@ const ReportPage: React.FC = () => {
                                 key: 'talent',
                                 label: '天赋',
                                 children: (
-                                  <List
-                                    grid={{ gutter: 16, column: 4 }}
+                                  <ResponsiveList
+                                    grid={gridConfig}
                                     dataSource={[...elementAnalysis].sort(sortByDimension)}
-                                    renderItem={item => (
-                                      <List.Item>
-                                        <Card title={item.dimension} size="small">
-                                          <Space direction="vertical" style={{ width: '100%' }}>
-                                            <div>
-                                              <Text type="secondary">天赋：</Text>
-                                              <Tooltip title={item.talent_status}>
-                                                <Tag color={item.category.includes('有天赋') ? 'blue' : 'default'}>
-                                                  {item.talent_element}
-                                                  {item.category.includes('有天赋') ? ' ✓' : ' ✗'}
-                                                </Tag>
-                                              </Tooltip>
-                                            </div>
-                                          </Space>
-                                        </Card>
-                                      </List.Item>
-                                    )}
+                                    renderItem={item => { const data = item as ElementAnalysisItem; return renderItem(data); }}
                                   />
                                 )
                               }
@@ -1647,8 +1595,8 @@ const ReportPage: React.FC = () => {
                   );
 
                   return (
-                    <Col span={8} key={dimension}>
-                      <Card 
+                    <ResponsiveCol span={colSpan} key={dimension}>
+                      <ResponsiveCard 
                         title={config.title} 
                         bordered={false}
                       >
@@ -1690,8 +1638,8 @@ const ReportPage: React.FC = () => {
                             </Space>
                           </div>
                         </Space>
-                      </Card>
-                    </Col>
+                      </ResponsiveCard>
+                    </ResponsiveCol>
                   );
                 })}
               </Row>

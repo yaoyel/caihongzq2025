@@ -261,6 +261,56 @@ const talentScenes = [
   '什么事上孩子总能带领小朋友一起玩？'
 ];
 
+const LoginContainer = styled.div`
+  @media (max-width: 768px) {
+    .ant-card {
+      width: 100%;
+      margin: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .ant-card-body {
+      padding: 16px;
+    }
+
+    .login-form {
+      display: none;
+    }
+
+    .qr-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      background: #fff;
+    }
+
+    .qr-box {
+      width: 280px;
+      height: 280px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: 20px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .qr-tip {
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+      margin-top: 16px;
+    }
+  }
+`;
+
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [showNotice, setShowNotice] = useState(true);
@@ -444,6 +494,14 @@ const LoginPage: React.FC = () => {
       }
     };
 
+    // localStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsIm5pY2tuYW1lIjoiIiwiYXZhdGFyVXJsIjoiIiwiaWF0IjoxNzQ3MTAyNDM4LCJleHAiOjE3NDk2OTQ0Mzh9.g8PyXTiujrJQFKMBeeTK937LdsAglFkbsiPMRsO539A');
+    // localStorage.setItem('user', JSON.stringify({
+    //   id: 6,
+    //   username: '',
+    //   nickname: '',
+    //   avatarUrl: '',
+    //   role: 'parent'
+    // }));
     checkLocalAuth();
   }, [navigate]);
 
@@ -455,265 +513,271 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <StyledLayout>
-      <NavBar>
-        <Logo>
-          <img 
-            src={new URL('/rainbow-watercolor.png', import.meta.url).href}
-            alt="彩虹" 
-            style={{ 
-              width: '40px',
-              height: '40px',
-              marginRight: '12px',
-              objectFit: 'contain',
-              filter: 'brightness(1.05)',
-            }} 
-          />
-          发现孩子喜欢与天赋
-        </Logo>
-        {userInfo && localStorage.getItem('token') && (
-          <UserInfo>
-            <Dropdown overlay={userMenu} placement="bottomRight">
-              <Space>
-                <UserAvatar size="large">
-                  {userInfo.nickname?.[0] || userInfo.username?.[0] || 'U'}
-                </UserAvatar>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <Text strong style={{ fontSize: '16px', lineHeight: '1.2' }}>
-                    {userInfo.nickname || userInfo.username}
-                  </Text>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    {userInfo.role === 'parent' ? '家长' : '用户'}
-                  </Text>
-                </div>
-                <CaretDownOutlined style={{ color: '#666' }} />
-              </Space>
-            </Dropdown>
-          </UserInfo>
-        )}
-      </NavBar>
+    <LoginContainer>
+      <Card className="login-card">
+        <div className="login-form">
+          <Row gutter={48} align="top">
+            <Col span={12}>
+              <GrowthStages>
+                <Title level={2} style={{ marginBottom: 32, color: '#1890ff' }}>
+                  🌱 五道杠成长体系
+                </Title>
+                
+                {[
+                  {
+                    stage: '第一阶段',
+                    title: '自我觉察（自然探索）',
+                    timing: '自然而然时',
+                    target: '发现喜欢与天赋',
+                    abilities: [
+                      '发展自信与自驱',
+                      '基础情绪能力：感知兴趣带来的愉悦感',
+                      '原始动力：无压力状态下的主动尝试'
+                    ]
+                  },
+                  {
+                    stage: '第二阶段',
+                    title: '自我认知（选择培养）',
+                    timing: '需要付出努力时',
+                    target: '在喜欢的方向中培养自主选择能力，在天赋方向中寻找天赋长项',
+                    abilities: [
+                      '发展自强与自律',
+                      '决策能力：基于兴趣的优先级判断',
+                      '延迟满足：为天赋发展承受短期压力'
+                    ]
+                  },
+                  {
+                    stage: '第三阶段',
+                    title: '自我突破（能力锻造）',
+                    timing: '需要克服困难时',
+                    target: '在自主选择的方向上自愿坚持，在天赋长项中培养独立思考的能力',
+                    abilities: [
+                      '发展韧性（抗压 + 坚持）与思辨',
+                      '抗压性：将困难转化为具体可执行步骤',
+                      '逻辑验证：用天赋能力反向推导问题本质'
+                    ]
+                  },
+                  {
+                    stage: '第四阶段',
+                    title: '自我蜕变（创新实践）',
+                    timing: '需要战胜挑战时',
+                    target: '在自愿坚持的方向上自我完善，独立思考后自主创新',
+                    abilities: [
+                      '发展系统化（整合 + 创新）与预见性',
+                      '模式重构：将前两阶段积累的经验模块化',
+                      '风险预判：基于天赋特质的创新可行性评估'
+                    ]
+                  },
+                  {
+                    stage: '第五阶段',
+                    title: '自我超越（认知升级）',
+                    timing: '需要面对挫折时',
+                    target: '将自我完善发展成自我发现，自主创新后发现规律',
+                    abilities: [
+                      '发展元认知（规律洞察 + 自我迭代）',
+                      '认知升维：建立跨领域的能力迁移框架',
+                      '动态校准：用失败数据优化天赋应用模型'
+                    ]
+                  }
+                ].map((phase, index) => (
+                  <StageCard key={index}>
+                    <StageTitle>
+                      <SafetyCertificateOutlined />
+                      {phase.stage}：{phase.title}
+                    </StageTitle>
+                    <StageContent>
+                      <StageItem>
+                        <Text strong>🕒 时机：</Text>
+                        {phase.timing}
+                      </StageItem>
+                      
+                      <StageItem>
+                        <Text strong>🎯 核心目标：</Text>
+                        {phase.target}
+                      </StageItem>
 
-      <MainContent>
-        <Row gutter={48} align="top">
-          <Col span={12}>
-            <GrowthStages>
-              <Title level={2} style={{ marginBottom: 32, color: '#1890ff' }}>
-                🌱 五道杠成长体系
-            </Title>
-              
-              {[
-                {
-                  stage: '第一阶段',
-                  title: '自我觉察（自然探索）',
-                  timing: '自然而然时',
-                  target: '发现喜欢与天赋',
-                  abilities: [
-                    '发展自信与自驱',
-                    '基础情绪能力：感知兴趣带来的愉悦感',
-                    '原始动力：无压力状态下的主动尝试'
-                  ]
-                },
-                {
-                  stage: '第二阶段',
-                  title: '自我认知（选择培养）',
-                  timing: '需要付出努力时',
-                  target: '在喜欢的方向中培养自主选择能力，在天赋方向中寻找天赋长项',
-                  abilities: [
-                    '发展自强与自律',
-                    '决策能力：基于兴趣的优先级判断',
-                    '延迟满足：为天赋发展承受短期压力'
-                  ]
-                },
-                {
-                  stage: '第三阶段',
-                  title: '自我突破（能力锻造）',
-                  timing: '需要克服困难时',
-                  target: '在自主选择的方向上自愿坚持，在天赋长项中培养独立思考的能力',
-                  abilities: [
-                    '发展韧性（抗压 + 坚持）与思辨',
-                    '抗压性：将困难转化为具体可执行步骤',
-                    '逻辑验证：用天赋能力反向推导问题本质'
-                  ]
-                },
-                {
-                  stage: '第四阶段',
-                  title: '自我蜕变（创新实践）',
-                  timing: '需要战胜挑战时',
-                  target: '在自愿坚持的方向上自我完善，独立思考后自主创新',
-                  abilities: [
-                    '发展系统化（整合 + 创新）与预见性',
-                    '模式重构：将前两阶段积累的经验模块化',
-                    '风险预判：基于天赋特质的创新可行性评估'
-                  ]
-                },
-                {
-                  stage: '第五阶段',
-                  title: '自我超越（认知升级）',
-                  timing: '需要面对挫折时',
-                  target: '将自我完善发展成自我发现，自主创新后发现规律',
-                  abilities: [
-                    '发展元认知（规律洞察 + 自我迭代）',
-                    '认知升维：建立跨领域的能力迁移框架',
-                    '动态校准：用失败数据优化天赋应用模型'
-                  ]
-                }
-              ].map((phase, index) => (
-                <StageCard key={index}>
-                  <StageTitle>
-                    <SafetyCertificateOutlined />
-                    {phase.stage}：{phase.title}
-                  </StageTitle>
-                  <StageContent>
-                    <StageItem>
-                      <Text strong>🕒 时机：</Text>
-                      {phase.timing}
-                    </StageItem>
-                    
-                    <StageItem>
-                      <Text strong>🎯 核心目标：</Text>
-                      {phase.target}
-                    </StageItem>
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <Text strong>🚀 能力提升：</Text>
+                        <div style={{ marginTop: 8 }}>
+                          {phase.abilities.map((ability, subIndex) => (
+                            <StageSubItem key={subIndex}>
+                              {subIndex === 0 ? <strong>{ability}</strong> : ability}
+                            </StageSubItem>
+                          ))}
+                        </div>
+                    </div>
+                    </StageContent>
+                  </StageCard>
+                ))}
+              </GrowthStages>
+            </Col>
 
-                    <div style={{ gridColumn: '1 / -1' }}>
-                      <Text strong>🚀 能力提升：</Text>
-                      <div style={{ marginTop: 8 }}>
-                        {phase.abilities.map((ability, subIndex) => (
-                          <StageSubItem key={subIndex}>
-                            {subIndex === 0 ? <strong>{ability}</strong> : ability}
-                          </StageSubItem>
-                        ))}
-                      </div>
-                </div>
-                  </StageContent>
-                </StageCard>
-              ))}
-            </GrowthStages>
-          </Col>
-
-          <Col span={12} style={{ 
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            marginTop: '100px',
-          }}>
-            <Space direction="vertical" size="large" align="center">
-              {error ? (
-                <div style={{ textAlign: 'center' }}>
-                  <Text type="danger">{error}</Text>
-                  <br />
-                  <Button 
-                    type="primary" 
-                    onClick={() => getLoginQrCode()}
-                    style={{ marginTop: '16px' }}
-                  >
-                    重试
-                  </Button>
-                </div>
-              ) : qrUrl ? (
-                <>
-                  <div style={{ 
-                    width: 280, 
-                    height: 280, 
-                    border: '1px solid #eee',
-                    borderRadius: 8,
-                    padding: 20,
-                    background: '#fff',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    {loading ? (
-                      <div style={{ textAlign: 'center' }}>
-                        <Spin size="large" />
-                        <br />
-                        <Text type="secondary" style={{ marginTop: '16px' }}>
-                          加载中...
-                        </Text>
-                      </div>
-                    ) : (
-                      <img 
-                        src={qrUrl} 
-                        alt="微信扫码登录" 
-                        style={{ 
-                          maxWidth: '100%', 
-                          maxHeight: '100%', 
-                          objectFit: 'contain' 
-                        }} 
-                        onError={() => {
-                          setError('二维码加载失败');
-                          setQrUrl('');
-                        }}
-                      />
-                    )}
+            <Col span={12} style={{ 
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              marginTop: '100px',
+            }}>
+              <Space direction="vertical" size="large" align="center">
+                {error ? (
+                  <div style={{ textAlign: 'center' }}>
+                    <Text type="danger">{error}</Text>
+                    <br />
+                    <Button 
+                      type="primary" 
+                      onClick={() => getLoginQrCode()}
+                      style={{ marginTop: '16px' }}
+                    >
+                      重试
+                    </Button>
                   </div>
-                  <Text type="secondary">请使用微信扫码登录</Text>
-                </>
-              ) : (
-                <WechatButton 
-                  type="primary" 
-                  icon={<WechatOutlined />} 
-                  onClick={handleWechatLogin}
-                  loading={loading}
-                  disabled={loading}
-                >
-                  {loading ? '获取中...' : '获取登录二维码'}
-                </WechatButton>
-              )}
-              
-              
-              <div style={{ width: '100%', marginTop: 40 }}>
-                <Row gutter={[24, 24]}>
-                  <Col span={24}>
-                    <Card
-                      title={
-                        <div style={{ color: '#1890ff' }}>
-                          ❤️ 爱的互动指南（16条）
+                ) : qrUrl ? (
+                  <>
+                    <div className="qr-box">
+                      {loading ? (
+                        <div style={{ textAlign: 'center' }}>
+                          <Spin size="large" />
+                          <br />
+                          <Text type="secondary" style={{ marginTop: '16px' }}>
+                            加载中...
+                          </Text>
                         </div>
-                      }
-                      bordered={false}
-                    >
-                      <div style={{ paddingRight: '8px' }}>
-                        {loveInteractions.map((item, index) => (
-                          <InteractionItem key={`love-${index}`}>
-                            <Text>▫️ {item}</Text>
-                          </InteractionItem>
-                        ))}
-                      </div>
-                    </Card>
-                  </Col>
+                      ) : (
+                        <img 
+                          src={qrUrl} 
+                          alt="微信扫码登录" 
+                          style={{ 
+                            maxWidth: '100%', 
+                            maxHeight: '100%', 
+                            objectFit: 'contain' 
+                          }} 
+                          onError={() => {
+                            setError('二维码加载失败');
+                            setQrUrl('');
+                          }}
+                        />
+                      )}
+                    </div>
+                    <div className="qr-tip">
+                      <Text type="secondary">请长按二维码，使用微信扫描登录测评系统</Text>
+                    </div>
+                  </>
+                ) : (
+                  <WechatButton 
+                    type="primary" 
+                    icon={<WechatOutlined />} 
+                    onClick={handleWechatLogin}
+                    loading={loading}
+                    disabled={loading}
+                  >
+                    {loading ? '获取中...' : '获取登录二维码'}
+                  </WechatButton>
+                )}
+                
+                
+                <div style={{ width: '100%', marginTop: 40 }}>
+                  <Row gutter={[24, 24]}>
+                    <Col span={24}>
+                      <Card
+                        title={
+                          <div style={{ color: '#1890ff' }}>
+                            ❤️ 爱的互动指南（16条）
+                          </div>
+                        }
+                        bordered={false}
+                      >
+                        <div style={{ paddingRight: '8px' }}>
+                          {loveInteractions.map((item, index) => (
+                            <InteractionItem key={`love-${index}`}>
+                              <Text>▫️ {item}</Text>
+                            </InteractionItem>
+                          ))}
+                        </div>
+                      </Card>
+                    </Col>
 
-                  <Col span={24}>
-                    <Card
-                      title={
-                        <div style={{ color: '#1890ff' }}>
-                          🔍 天赋发现场景（36个）
-                        </div>
-                      }
-                      bordered={false}
-                    >
-                      <ScrollContainer>
-                        {talentScenes.map((item, index) => (
-                          <InteractionItem key={`scene-${index}`}>
-                            <Text strong>{index + 1}.</Text> {item}
-                          </InteractionItem>
-                        ))}
-                      </ScrollContainer>
-                    </Card>
-                  </Col>
-                </Row>
+                    <Col span={24}>
+                      <Card
+                        title={
+                          <div style={{ color: '#1890ff' }}>
+                            🔍 天赋发现场景（36个）
+                          </div>
+                        }
+                        bordered={false}
+                      >
+                        <ScrollContainer>
+                          {talentScenes.map((item, index) => (
+                            <InteractionItem key={`scene-${index}`}>
+                              <Text strong>{index + 1}.</Text> {item}
+                            </InteractionItem>
+                          ))}
+                        </ScrollContainer>
+                      </Card>
+                    </Col>
+                  </Row>
+                </div>
+              </Space>
+            </Col>
+          </Row>
+        </div>
+        <div className="qr-container">
+          {error ? (
+            <div style={{ textAlign: 'center' }}>
+              <Text type="danger">{error}</Text>
+              <br />
+              <Button 
+                type="primary" 
+                onClick={() => getLoginQrCode()}
+                style={{ marginTop: '16px' }}
+              >
+                重试
+              </Button>
+            </div>
+          ) : qrUrl ? (
+            <>
+              <div className="qr-box">
+                {loading ? (
+                  <div style={{ textAlign: 'center' }}>
+                    <Spin size="large" />
+                    <br />
+                    <Text type="secondary" style={{ marginTop: '16px' }}>
+                      加载中...
+                    </Text>
+                  </div>
+                ) : (
+                  <img 
+                    src={qrUrl} 
+                    alt="微信扫码登录" 
+                    style={{ 
+                      maxWidth: '100%', 
+                      maxHeight: '100%', 
+                      objectFit: 'contain' 
+                    }} 
+                    onError={() => {
+                      setError('二维码加载失败');
+                      setQrUrl('');
+                    }}
+                  />
+                )}
               </div>
-            </Space>
-          </Col>
-        </Row>
-      </MainContent>
-
-      {showNotice && (
-        <RealTimeNotice onClick={() => setShowNotice(false)}>
-          上海张妈妈刚发现孩子的运动天赋
-        </RealTimeNotice>
-      )}
-    </StyledLayout>
+              <div className="qr-tip">
+                <Text type="secondary">请长按二维码，使用微信扫描登录测评系统</Text>
+              </div>
+            </>
+          ) : (
+            <WechatButton 
+              type="primary" 
+              icon={<WechatOutlined />} 
+              onClick={handleWechatLogin}
+              loading={loading}
+              disabled={loading}
+            >
+              {loading ? '获取中...' : '获取登录二维码'}
+            </WechatButton>
+          )}
+        </div>
+      </Card>
+    </LoginContainer>
   );
 };
 

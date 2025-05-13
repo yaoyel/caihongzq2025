@@ -588,6 +588,88 @@ const ChatModal = styled(Modal)`
   }
 `;
 
+const ResponsiveCard = styled(Card)`
+  @media (max-width: 768px) {
+    margin-bottom: 16px !important;
+    .ant-card-head {
+      font-size: 16px;
+      padding: 8px 12px;
+    }
+    .ant-card-body {
+      padding: 12px;
+    }
+  }
+`;
+
+const ResponsiveSpace = styled(Space)`
+  @media (max-width: 768px) {
+    flex-direction: column !important;
+    width: 100%;
+    > * {
+      width: 100%;
+    }
+  }
+`;
+
+const ResponsiveTabs = styled(Tabs)`
+  @media (max-width: 768px) {
+    .ant-tabs-nav-list {
+      flex-wrap: wrap;
+    }
+    .ant-tabs-tab {
+      font-size: 14px;
+      padding: 4px 8px;
+    }
+  }
+`;
+
+const ResponsiveList = styled(List)`
+  @media (max-width: 768px) {
+    .ant-list-item {
+      padding: 8px 0;
+    }
+  }
+`;
+
+const ResponsiveRow = styled(Row)`
+  @media (max-width: 768px) {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+`;
+
+const ResponsiveCol = styled(Col)`
+  @media (max-width: 768px) {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+`;
+
+const HomeButton = styled(Button)`
+  @media (max-width: 768px) {
+    display: none !important;
+  }
+`;
+
+const ExportButton = styled(Button)`
+  @media (max-width: 768px) {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+  }
+`;
+
+const ResponsiveReportTitle = styled(ReportTitle)`
+  @media (max-width: 768px) {
+    font-size: 18px !important;
+    margin-bottom: 16px !important;
+    width: 100%;
+    min-width: 0;
+    word-break: break-all;
+    white-space: normal;
+  }
+`;
+
 const Report168Page: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -1133,29 +1215,29 @@ const Report168Page: React.FC = () => {
   return (
     <StyledLayout>
       <PrintableContent ref={componentRef}>
-        <Row>
-          <Col span={24}>
-            <Space style={{ marginBottom: 24 }}>
-              <Button icon={<HomeOutlined />} onClick={() => navigate('/home')}>
+        <ResponsiveRow>
+          <ResponsiveCol span={24}>
+            <ResponsiveSpace style={{ marginBottom: 16 }}>
+              <HomeButton icon={<HomeOutlined />} onClick={() => navigate('/home')}>
                 返回主页
-              </Button>
-              <Button icon={<DownloadOutlined />} onClick={handleExportPDF}>
+              </HomeButton>
+              <ExportButton icon={<DownloadOutlined />} onClick={handleExportPDF}>
                 导出PDF
-              </Button>
-            </Space>
+              </ExportButton>
+            </ResponsiveSpace>
 
-            <ReportTitle level={2}>学生综合能力评估报告</ReportTitle>
+            <ResponsiveReportTitle level={2}>学生综合能力评估报告</ResponsiveReportTitle>
 
-            <ReportCard 
+            <ResponsiveCard 
               title={
                 <SectionTitle>
                   <div className="main-title">喜欢与天赋分布</div>
                 </SectionTitle>
               }
             >
-              <Row gutter={24}>
-                <Col span={24}>
-                  <Tabs
+              <ResponsiveRow gutter={24}>
+                <ResponsiveCol span={24}>
+                  <ResponsiveTabs
                     defaultActiveKey="result"
                     items={[
                       {
@@ -1165,25 +1247,25 @@ const Report168Page: React.FC = () => {
                           <Collapse defaultActiveKey={[]}>
                             <Panel 
                               header={
-                                <Space>
+                                <ResponsiveSpace>
                                   <Text strong>有喜欢有天赋</Text>
                                   <Tooltip title={CATEGORY_TIPS['有喜欢有天赋']} overlayStyle={{ maxWidth: '500px' }}>
                                     <QuestionCircleOutlined />
                                   </Tooltip>
-                                </Space>
+                                </ResponsiveSpace>
                               } 
                               key="1"
                             >
-                              <List
-                                grid={{ gutter: 16, column: 4 }}
+                              <ResponsiveList
+                                grid={{ gutter: 8, column: window.innerWidth <= 768 ? 1 : 4 }}
                                 dataSource={elementAnalysis
                                   .filter(item => item.category === '有喜欢有天赋')
                                   .sort(sortByDimension)
                                 }
                                 renderItem={item => (
                                   <List.Item>
-                                    <Card title={item.dimension} size="small">
-                                      <Space direction="vertical" style={{ width: '100%' }}>
+                                    <ResponsiveCard title={item.dimension} size="small">
+                                      <ResponsiveSpace direction="vertical" style={{ width: '100%' }}>
                                         <div>
                                           <Text type="secondary">喜欢：</Text>
                                           <Tooltip title={item.like_status}>
@@ -1202,30 +1284,30 @@ const Report168Page: React.FC = () => {
                                             </Tag>
                                           </Tooltip>
                                         </div>
-                                      </Space>
-                                    </Card>
+                                      </ResponsiveSpace>
+                                    </ResponsiveCard>
                                   </List.Item>
                                 )}
                               />
                             </Panel>
                             <Panel 
                               header={
-                                <Space>
+                                <ResponsiveSpace>
                                   <Text strong>有喜欢没天赋</Text>
                                   <Tooltip title={CATEGORY_TIPS['有喜欢没天赋']} overlayStyle={{ maxWidth: '500px' }}>
                                     <QuestionCircleOutlined />
                                   </Tooltip>
-                                </Space>
+                                </ResponsiveSpace>
                               } 
                               key="2"
                             >
-                              <List
-                                grid={{ gutter: 16, column: 4 }}
+                              <ResponsiveList
+                                grid={{ gutter: 8, column: window.innerWidth <= 768 ? 1 : 4 }}
                                 dataSource={elementAnalysis.filter(item => item.category === '有喜欢没天赋').sort(sortByDimension)}
                                 renderItem={item => (
                                   <List.Item>
-                                    <Card title={item.dimension} size="small">
-                                      <Space direction="vertical" style={{ width: '100%' }}>
+                                    <ResponsiveCard title={item.dimension} size="small">
+                                      <ResponsiveSpace direction="vertical" style={{ width: '100%' }}>
                                         <div>
                                           <Text type="secondary">喜欢：</Text>
                                           <Tooltip title={item.like_status}>
@@ -1244,30 +1326,30 @@ const Report168Page: React.FC = () => {
                                             </Tag>
                                           </Tooltip>
                                         </div>
-                                      </Space>
-                                    </Card>
+                                      </ResponsiveSpace>
+                                    </ResponsiveCard>
                                   </List.Item>
                                 )}
                               />
                             </Panel>
                             <Panel 
                               header={
-                                <Space>
+                                <ResponsiveSpace>
                                   <Text strong>有天赋没喜欢</Text>
                                   <Tooltip title={CATEGORY_TIPS['有天赋没喜欢']} overlayStyle={{ maxWidth: '500px' }}>
                                     <QuestionCircleOutlined />
                                   </Tooltip>
-                                </Space>
+                                </ResponsiveSpace>
                               } 
                               key="3"
                             >
-                              <List
-                                grid={{ gutter: 16, column: 4 }}
+                              <ResponsiveList
+                                grid={{ gutter: 8, column: window.innerWidth <= 768 ? 1 : 4 }}
                                 dataSource={elementAnalysis.filter(item => item.category === '有天赋没喜欢').sort(sortByDimension)}
                                 renderItem={item => (
                                   <List.Item>
-                                    <Card title={item.dimension} size="small">
-                                      <Space direction="vertical" style={{ width: '100%' }}>
+                                    <ResponsiveCard title={item.dimension} size="small">
+                                      <ResponsiveSpace direction="vertical" style={{ width: '100%' }}>
                                         <div>
                                           <Text type="secondary">喜欢：</Text>
                                           <Tooltip title={item.like_status}>
@@ -1286,30 +1368,30 @@ const Report168Page: React.FC = () => {
                                             </Tag>
                                           </Tooltip>
                                         </div>
-                                      </Space>
-                                    </Card>
+                                      </ResponsiveSpace>
+                                    </ResponsiveCard>
                                   </List.Item>
                                 )}
                               />
                             </Panel>
                             <Panel 
                               header={
-                                <Space>
+                                <ResponsiveSpace>
                                   <Text strong>没喜欢没天赋</Text>
                                   <Tooltip title={CATEGORY_TIPS['没喜欢没天赋']} overlayStyle={{ maxWidth: '500px' }}>
                                     <QuestionCircleOutlined />
                                   </Tooltip>
-                                </Space>
+                                </ResponsiveSpace>
                               } 
                               key="4"
                             >
-                              <List
-                                grid={{ gutter: 16, column: 4 }}
+                              <ResponsiveList
+                                grid={{ gutter: 8, column: window.innerWidth <= 768 ? 1 : 4 }}
                                 dataSource={elementAnalysis.filter(item => item.category === '没喜欢没天赋').sort(sortByDimension)}
                                 renderItem={item => (
                                   <List.Item>
-                                    <Card title={item.dimension} size="small">
-                                      <Space direction="vertical" style={{ width: '100%' }}>
+                                    <ResponsiveCard title={item.dimension} size="small">
+                                      <ResponsiveSpace direction="vertical" style={{ width: '100%' }}>
                                         <div>
                                           <Text type="secondary">喜欢：</Text>
                                           <Tooltip title={item.like_status}>
@@ -1328,20 +1410,20 @@ const Report168Page: React.FC = () => {
                                             </Tag>
                                           </Tooltip>
                                         </div>
-                                      </Space>
-                                    </Card>
+                                      </ResponsiveSpace>
+                                    </ResponsiveCard>
                                   </List.Item>
                                 )}
                               />
                             </Panel>
                             <Panel header="待确认" key="5">
-                              <List
-                                grid={{ gutter: 16, column: 4 }}
+                              <ResponsiveList
+                                grid={{ gutter: 8, column: window.innerWidth <= 768 ? 1 : 4 }}
                                 dataSource={elementAnalysis.filter(item => item.category === '待确认').sort(sortByDimension)}
                                 renderItem={item => (
                                   <List.Item>
-                                    <Card title={item.dimension} size="small">
-                                      <Space direction="vertical" style={{ width: '100%' }}>
+                                    <ResponsiveCard title={item.dimension} size="small">
+                                      <ResponsiveSpace>
                                         <Space>
                                           <Tag color="warning">待确认</Tag>
                                         </Space>
@@ -1363,8 +1445,8 @@ const Report168Page: React.FC = () => {
                                             </Tag>
                                           </Tooltip>
                                         </div>
-                                      </Space>
-                                    </Card>
+                                      </ResponsiveSpace>
+                                    </ResponsiveCard>
                                   </List.Item>
                                 )}
                               />
@@ -1382,13 +1464,13 @@ const Report168Page: React.FC = () => {
                                 header={dimension}
                                 key={dimension}
                               >
-                                <List
-                                  grid={{ gutter: 16, column: 4 }}
+                                <ResponsiveList
+                                  grid={{ gutter: 8, column: window.innerWidth <= 768 ? 1 : 4 }}
                                   dataSource={elementAnalysis.filter(item => item.dimension === dimension)}
                                   renderItem={item => (
                                     <List.Item>
-                                      <Card title={item.category} size="small">
-                                        <Space direction="vertical" style={{ width: '100%' }}>
+                                      <ResponsiveCard title={item.category} size="small">
+                                        <ResponsiveSpace direction="vertical" style={{ width: '100%' }}>
                                           <div>
                                             <Text type="secondary">喜欢：</Text>
                                             <Tooltip title={item.like_status}>
@@ -1407,8 +1489,8 @@ const Report168Page: React.FC = () => {
                                               </Tag>
                                             </Tooltip>
                                           </div>
-                                        </Space>
-                                      </Card>
+                                        </ResponsiveSpace>
+                                      </ResponsiveCard>
                                     </List.Item>
                                   )}
                                 />
@@ -1421,19 +1503,19 @@ const Report168Page: React.FC = () => {
                         key: 'type',
                         label: '按类型分组',
                         children: (
-                          <Tabs
+                          <ResponsiveTabs
                             items={[
                               {
                                 key: 'like',
                                 label: '喜欢',
                                 children: (
-                                  <List
-                                    grid={{ gutter: 16, column: 4 }}
+                                  <ResponsiveList
+                                    grid={{ gutter: 8, column: window.innerWidth <= 768 ? 1 : 4 }}
                                     dataSource={[...elementAnalysis].sort(sortByDimension)}
                                     renderItem={item => (
                                       <List.Item>
-                                        <Card title={item.dimension} size="small">
-                                          <Space direction="vertical" style={{ width: '100%' }}>
+                                        <ResponsiveCard title={item.dimension} size="small">
+                                          <ResponsiveSpace direction="vertical" style={{ width: '100%' }}>
                                             <div>
                                               <Text type="secondary">喜欢：</Text>
                                               <Tooltip title={item.like_status}>
@@ -1443,8 +1525,8 @@ const Report168Page: React.FC = () => {
                                                 </Tag>
                                               </Tooltip>
                                             </div>
-                                          </Space>
-                                        </Card>
+                                          </ResponsiveSpace>
+                                        </ResponsiveCard>
                                       </List.Item>
                                     )}
                                   />
@@ -1454,13 +1536,13 @@ const Report168Page: React.FC = () => {
                                 key: 'talent',
                                 label: '天赋',
                                 children: (
-                                  <List
-                                    grid={{ gutter: 16, column: 4 }}
+                                  <ResponsiveList
+                                    grid={{ gutter: 8, column: window.innerWidth <= 768 ? 1 : 4 }}
                                     dataSource={[...elementAnalysis].sort(sortByDimension)}
                                     renderItem={item => (
                                       <List.Item>
-                                        <Card title={item.dimension} size="small">
-                                          <Space direction="vertical" style={{ width: '100%' }}>
+                                        <ResponsiveCard title={item.dimension} size="small">
+                                          <ResponsiveSpace direction="vertical" style={{ width: '100%' }}>
                                             <div>
                                               <Text type="secondary">天赋：</Text>
                                               <Tooltip title={item.talent_status}>
@@ -1470,8 +1552,8 @@ const Report168Page: React.FC = () => {
                                                 </Tag>
                                               </Tooltip>
                                             </div>
-                                          </Space>
-                                        </Card>
+                                          </ResponsiveSpace>
+                                        </ResponsiveCard>
                                       </List.Item>
                                     )}
                                   />
@@ -1483,11 +1565,11 @@ const Report168Page: React.FC = () => {
                       }
                     ]}
                   />
-                </Col>
-              </Row>
-            </ReportCard>
+                </ResponsiveCol>
+              </ResponsiveRow>
+            </ResponsiveCard>
 
-            <ReportCard 
+            <ResponsiveCard 
               title={
                 <SectionTitle>
                   <div className="main-title">
@@ -1580,16 +1662,16 @@ const Report168Page: React.FC = () => {
                   <Empty description="暂无相关的双刃剑特征数据" />
                 )}
               </Spin>
-            </ReportCard>
+            </ResponsiveCard>
 
-            <ReportCard 
+            <ResponsiveCard 
               title={
                 <SectionTitle>
                   <div className="main-title">课堂表现分析</div>
                 </SectionTitle>
               }
             >
-              <Row gutter={24}>
+              <ResponsiveRow gutter={24}>
                 {Object.entries(CLASSROOM_PERFORMANCE_ELEMENTS).map(([dimension, config]) => {
                   const dimensionElements = elementAnalysis.filter(item => 
                     item.dimension === dimension && 
@@ -1597,15 +1679,15 @@ const Report168Page: React.FC = () => {
                   );
 
                   return (
-                    <Col span={8} key={dimension}>
-                      <Card 
+                    <ResponsiveCol span={8} key={dimension}>
+                      <ResponsiveCard 
                         title={config.title} 
                         bordered={false}
                       >
-                        <Space direction="vertical" style={{ width: '100%' }}>
+                        <ResponsiveSpace direction="vertical" style={{ width: '100%' }}>
                           <div>
                             <Text type="secondary">喜欢：</Text>
-                            <Space wrap>
+                            <ResponsiveSpace wrap>
                               {dimensionElements
                                 .filter(element => element.like_status)
                                 .map(element => (
@@ -1619,11 +1701,11 @@ const Report168Page: React.FC = () => {
                                     </Tag>
                                   </Tooltip>
                                 ))}
-                            </Space>
+                            </ResponsiveSpace>
                           </div>
                           <div>
                             <Text type="secondary">天赋：</Text>
-                            <Space wrap>
+                            <ResponsiveSpace wrap>
                               {dimensionElements
                                 .filter(element => element.talent_status)
                                 .map(element => (
@@ -1637,17 +1719,17 @@ const Report168Page: React.FC = () => {
                                     </Tag>
                                   </Tooltip>
                                 ))}
-                            </Space>
+                            </ResponsiveSpace>
                           </div>
-                        </Space>
-                      </Card>
-                    </Col>
+                        </ResponsiveSpace>
+                      </ResponsiveCard>
+                    </ResponsiveCol>
                   );
                 })}
-              </Row>
-            </ReportCard>
+              </ResponsiveRow>
+            </ResponsiveCard>
 
-            <ReportCard 
+            <ResponsiveCard 
               title={
                 <SectionTitle>
                   <div className="main-title">年龄段个性化分析</div>
@@ -1655,7 +1737,7 @@ const Report168Page: React.FC = () => {
                 </SectionTitle>
               }
             >
-              <Tabs
+              <ResponsiveTabs
                 type="card"
                 items={AGE_GROUP_ANALYSIS.map(group => ({
                   key: group.key,
@@ -1712,9 +1794,9 @@ const Report168Page: React.FC = () => {
                   )
                 }))}
               />
-            </ReportCard>
+            </ResponsiveCard>
 
-            <ReportCard title="发展建议总结" className="page-break">
+            <ResponsiveCard title="发展建议总结" className="page-break">
               <Paragraph>
                 根据以上分析，我们建议：
                 <ul>
@@ -1723,28 +1805,28 @@ const Report168Page: React.FC = () => {
                   <li>平衡个人发展，建立健康的学习心态</li>
                 </ul>
               </Paragraph>
-            </ReportCard>
+            </ResponsiveCard>
 
-            <Card className="no-print">
+            <ResponsiveCard className="no-print">
               <Text type="secondary">
                 注：本报告基于学生问答和行为数据分析生成，仅供参考。建议结合专业教师意见和实际情况使用。
               </Text>
-            </Card>
-          </Col>
-        </Row>
+            </ResponsiveCard>
+          </ResponsiveCol>
+        </ResponsiveRow>
       </PrintableContent>
 
       <div style={{ marginTop: '40px' }} className="no-print">
-        <Row justify="center">
-          <Space size="large">
+        <ResponsiveRow justify="center">
+          <ResponsiveSpace size="large">
             <Button type="primary" size="large">
               咨询专家解读
             </Button>
             <Button size="large">
               分享报告
             </Button>
-          </Space>
-        </Row>
+          </ResponsiveSpace>
+        </ResponsiveRow>
       </div>
 
       {renderModal()}
