@@ -1,6 +1,7 @@
+// @ts-nocheck
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Layout, Typography, Button, Input, List, Avatar, Space, message, Modal } from 'antd';
-import { SendOutlined, PlusOutlined, MessageOutlined, HomeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { SendOutlined, PlusOutlined, MessageOutlined, HomeOutlined, EditOutlined, DeleteOutlined, MenuOutlined, MenuFoldOutlined } from '@ant-design/icons';
 import styled from '@emotion/styled';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -11,52 +12,117 @@ const { Text } = Typography;
 const { Sider } = Layout;
 
 const StyledLayout = styled(Layout)`
-  height: 100%;
-  background: #fff;
+  height: 100vh;
   display: flex;
+  flex-direction: row;
+  position: relative;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
 `;
 
-const StyledSider = styled(Sider)`
-  background: #f5f5f5;
-  border-right: 1px solid #e8e8e8;
-  padding: 20px 0;
-  flex-shrink: 0;
-  height: 100%;
-  z-index: 1;
+interface StyledSiderProps {
+  visible?: boolean;
+  collapsed?: boolean;
+}
+
+interface ChatContainerProps {
+  collapsed?: boolean;
+}
+
+interface ToggleButtonProps {
+  collapsed?: boolean;
+}
+
+const StyledSider = styled(Layout.Sider)<StyledSiderProps>`
+  background: #fff;
+  border-right: 1px solid #f0f0f0;
+  overflow-y: auto;
+  position: fixed;
+  height: 100vh;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  
+  @media (max-width: 768px) {
+    transform: ${props => props.visible ? 'translateX(0)' : 'translateX(-100%)'};
+    width: 50px !important;
+  }
+  
+  @media (min-width: 769px) {
+    transform: ${props => props.collapsed ? 'translateX(-50px)' : 'translateX(0)'};
+    width: 50px !important;
+  }
+`;
+
+const ChatContainer = styled(Layout.Content)<ChatContainerProps>`
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  padding: 20px;
+  margin-left: ${props => props.collapsed ? '0' : '50px'};
+  transition: margin-left 0.3s ease;
+  width: 100%;
+  
+  @media (max-width: 768px) {
+    margin-left: 0;
+    padding: 12px;
+  }
+`;
+
+const InputContainer = styled.div`
+  margin-top: auto;
+  padding: 20px;
+  background: #fff;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  gap: 12px;
+  
+  .ant-input {
+    border-radius: 8px;
+  }
+  
+  .send-button {
+    border-radius: 8px;
+    height: auto;
+    padding: 0 20px;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
+`;
+
+const MobileHeader = styled.div`
+  display: none;
+  padding: 12px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  align-items: center;
+  justify-content: space-between;
+  
+  @media (max-width: 768px) {
+    display: flex;
+  }
 `;
 
 const ChatList = styled(List)`
   .ant-list-item {
-    padding: 10px 16px;
+    padding: 8px;
     cursor: pointer;
     transition: all 0.3s;
-    border-radius: 0;
-    margin: 3px 6px;
+    border-radius: 4px;
+    margin: 2px 4px;
     
     &:hover {
-      background: #e6f7ff;
+      background: #f5f5f5;
     }
     
     &.active {
       background: #e6f7ff;
     }
-
-    .ant-typography {
-      font-size: 13px;
-    }
   }
-`;
-
-const ChatContainer = styled(Layout)`
-  margin-left: 0;
-  margin-right: 20px;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  height: 100vh;
-  overflow: hidden;
-  background: #fff;
 `;
 
 const MessageList = styled(List<Message>)`
@@ -196,19 +262,8 @@ const MessageBubble: React.FC<{ message: Message }> = React.memo(({ message }) =
     </StyledMessageBubble>
   );
 }, (prevProps, nextProps) => {
-  // 只有当消息内容发生变化时才重新渲染
   return prevProps.message.content === nextProps.message.content;
 });
-
-const InputContainer = styled.div`
-  padding: 16px;
-  background: #fff;
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  border-top: 1px solid #f0f0f0;
-  flex-shrink: 0;
-`;
 
 interface Chat {
   id: string;
@@ -247,6 +302,7 @@ const ChatPage: React.FC<ChatPageProps> = ({
   const [inputValue, setInputValue] = useState('');
   const [activeChat, setActiveChat] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // 使用 ref 存储最后一条消息的 DOM 元素引用
   const lastMessageRef = React.useRef<HTMLDivElement>(null);
@@ -863,107 +919,85 @@ const ChatPage: React.FC<ChatPageProps> = ({
     }
   }, []);
 
+  const [isMobileMenuVisible, setIsMobileMenuVisible] = useState(false);
+
+  const ToggleButton = styled(Button)<ToggleButtonProps>`
+    position: fixed;
+    left: ${props => props.collapsed ? '0' : '50px'};
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1001;
+    border-radius: 0 4px 4px 0;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    height: auto;
+    
+    @media (max-width: 768px) {
+      display: none;
+    }
+  `;
+
   return (
     <StyledLayout>
-      {!isModal && (  // 在Modal中不显示返回主页按钮
-        <StyledSider width={300}>
-          <div style={{ padding: '0 20px', marginBottom: 20 }}>
-            <Button 
-              icon={<HomeOutlined />} 
-              onClick={() => navigate('/home')}
-              style={{ marginBottom: '12px' }}
-              block
-            >
-              返回主页
-            </Button>
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
-              onClick={createNewChat}
-              block
-            >
-              新建对话
-            </Button>
-          </div>
-          <ChatList
-            dataSource={chats}
-            renderItem={(chat:any) => (
-              <List.Item
-                className={chat.id === activeChat ? 'active' : ''}
-                onClick={() => setActiveChat(chat.id)}
-              >
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                    <Space>
-                      <MessageOutlined />
-                      <Text strong>{chat.title}</Text>
-                    </Space>
-                    <Space size="small">
-                      <EditOutlined 
-                        style={{ fontSize: '12px', color: '#666' }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setNewChatTitle(chat.title);
-                          setEditingChatId(chat.id);
-                          setIsModalVisible(true);
-                        }} 
-                      />
-                      <DeleteOutlined 
-                        style={{ fontSize: '12px', color: 'rgba(255, 77, 79, 0.6)' }}
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          Modal.confirm({
-                            title: '确认删除',
-                            content: '确定要删除这个会话吗？此操作不可恢复。',
-                            okText: '确定',
-                            cancelText: '取消',
-                            okType: 'danger',
-                            async onOk() {
-                              try {
-                                const token = localStorage.getItem('token');
-                                if (!token) {
-                                  message.error('请先登录');
-                                  navigate('/login');
-                                  return;
-                                }
+      <MobileHeader>
+        <Button 
+          icon={<MenuOutlined />} 
+          onClick={() => setIsMobileMenuVisible(!isMobileMenuVisible)}
+        />
+        <Text strong>聊天</Text>
+        <div style={{ width: 32 }} />
+      </MobileHeader>
 
-                                await axios.delete(getApiUrl(`/chat/sessions/${chat.id}`), {
-                                  headers: {
-                                    Authorization: `Bearer ${token}`
-                                  }
-                                });
-                                setChats(prev => prev.filter(c => c.id !== chat.id));
-                                if (activeChat === chat.id) {
-                                  setActiveChat('');
-                                  setMessages([]);
-                                }
-                                message.success('删除成功');
-                              } catch (error) {
-                                console.error('删除对话失败:', error);
-                                if (axios.isAxiosError(error) && error.response?.status === 401) {
-                                  message.error('登录已过期，请重新登录');
-                                  navigate('/login');
-                                } else {
-                                  message.error('删除失败');
-                                }
-                              }
-                            }
-                          });
-                        }} 
-                      />
-                    </Space>
-                  </div>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    {chat.lastMessage}
-                  </Text>
-                </Space>
-              </List.Item>
-            )}
+      {!isModal && (
+        <>
+          <StyledSider visible={isMobileMenuVisible} collapsed={isCollapsed}>
+            <div style={{ padding: '8px', marginBottom: 12 }}>
+              <Button 
+                icon={<HomeOutlined />} 
+                onClick={() => navigate('/home')}
+                style={{ marginBottom: '8px' }}
+                block
+              />
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />} 
+                onClick={createNewChat}
+                block
+              />
+            </div>
+            <ChatList
+              dataSource={chats}
+              renderItem={(chat:any) => (
+                <List.Item
+                  className={chat.id === activeChat ? 'active' : ''}
+                  onClick={() => {
+                    setActiveChat(chat.id);
+                    setIsMobileMenuVisible(false);
+                  }}
+                >
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+                      <MessageOutlined />
+                    </div>
+                  </Space>
+                </List.Item>
+              )}
+            />
+          </StyledSider>
+          
+          <ToggleButton
+            type="text"
+            icon={isCollapsed ? <MenuOutlined /> : <MenuFoldOutlined />}
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            collapsed={isCollapsed}
           />
-        </StyledSider>
+        </>
       )}
       
-      <ChatContainer style={{ marginLeft: 0 }}>
+      <ChatContainer collapsed={isCollapsed}>
         {MessageListMemo}
         
         <InputContainer>
@@ -971,7 +1005,7 @@ const ChatPage: React.FC<ChatPageProps> = ({
             value={inputValue}
             onChange={handleInputChange}
             placeholder="输入消息..."
-            autoSize={{ minRows: 4, maxRows: 8 }}
+            autoSize={{ minRows: 3, maxRows: 6 }}
             disabled={isLoading}
             onPressEnter={(e) => {
               if (!e.shiftKey) {

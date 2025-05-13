@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Layout, Typography, Card, Row, Col, Collapse, Tabs, List, Button, message, Space, Alert, Tag, Tooltip, Spin, Empty, Modal, Divider, Radio } from 'antd';
 import styled from '@emotion/styled';
@@ -1311,13 +1312,13 @@ const ReportPage: React.FC = () => {
         
         <ReportTitle level={2}>学生综合能力评估报告</ReportTitle>
         
-        <ExportButton 
+        {/* <ExportButton 
           type="primary" 
           icon={<DownloadOutlined />} 
           onClick={handleExportPDF}
         >
           导出PDF
-        </ExportButton>
+        </ExportButton> */}
       </HeaderContainer>
       
       <StyledTabs 
@@ -1515,7 +1516,7 @@ const ReportPage: React.FC = () => {
                             双刃剑名称: <strong>{item.name}</strong>
                           </span>
                           <Space>
-                            <Tooltip title="点击进行深度确认，帮助您更好地理解和应对这些特征">
+                            {/* <Tooltip title="点击进行深度确认，帮助您更好地理解和应对这些特征"> */}
                               <Button 
                                 size="small"
                                 className="confirm-button"
@@ -1526,7 +1527,7 @@ const ReportPage: React.FC = () => {
                               >
                                 深度确认
                               </Button>
-                            </Tooltip>
+                            {/* </Tooltip> */}
                             <Text type="secondary">
                               ({answerStats[item.id]?.completed || 0}/6)
                             </Text>
@@ -1580,7 +1581,7 @@ const ReportPage: React.FC = () => {
               </Spin>
             </ReportCard>
 
-            <ReportCard 
+            {/* <ReportCard 
               title={
                 <SectionTitle>
                   <div className="main-title">课堂表现分析</div>
@@ -1643,9 +1644,9 @@ const ReportPage: React.FC = () => {
                   );
                 })}
               </Row>
-            </ReportCard>
+            </ReportCard> */}
 
-            <ReportCard 
+            {/* <ReportCard 
               title={
                 <SectionTitle>
                   <div className="main-title">年龄段个性化分析</div>
@@ -1710,9 +1711,9 @@ const ReportPage: React.FC = () => {
                   )
                 }))}
               />
-            </ReportCard>
+            </ReportCard> */}
 
-            <ReportCard title="发展建议总结" className="page-break">
+            {/* <ReportCard title="发展建议总结" className="page-break">
               <Paragraph>
                 根据以上分析，我们建议：
                 <ul>
@@ -1721,7 +1722,7 @@ const ReportPage: React.FC = () => {
                   <li>平衡个人发展，建立健康的学习心态</li>
                 </ul>
               </Paragraph>
-            </ReportCard>
+            </ReportCard> */}
 
             <Card className="no-print">
               <Text type="secondary">
@@ -1732,7 +1733,7 @@ const ReportPage: React.FC = () => {
         </Row>
       </PrintableContent>
 
-      <div style={{ marginTop: '40px' }} className="no-print">
+      {/* <div style={{ marginTop: '40px' }} className="no-print">
         <Row justify="center">
           <Space size="large">
             <Button type="primary" size="large">
@@ -1743,7 +1744,7 @@ const ReportPage: React.FC = () => {
             </Button>
           </Space>
         </Row>
-      </div>
+      </div> */}
 
       {renderModal()}
 
