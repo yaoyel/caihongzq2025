@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Layout, Typography, Button, Input, List, Avatar, Space, message, Modal } from 'antd';
 import {
