@@ -163,8 +163,8 @@ type Dimension = '看' | '听' | '说' | '记' | '想' | '做' | '运动';
 
 // 定义类别
 const categories = [
-  { title: '天生喜欢', type: 'like', color: '#52c41a' },
-  { title: '先天禀赋', type: 'talent', color: '#1890ff' }
+  { title: '喜欢', type: 'like', color: '#52c41a' },
+  { title: '天赋', type: 'talent', color: '#1890ff' }
 ];
 
 // 定义维度
@@ -567,17 +567,20 @@ const Scale168Assessment: React.FC = () => {
     if (currentPage < maxPage) {
       // 还有下一页问题
       setCurrentPage(currentPage + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       // 当前维度的问题已答完，找下一个维度
       const currentDimensionIndex = dimensions.indexOf(currentDimension);
       if (currentDimensionIndex < dimensions.length - 1) {
         // 还有下一个维度
         setCurrentDimension(dimensions[currentDimensionIndex + 1]);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         // 当前类别的所有维度都答完了，检查是否还有下一个类别
         if (currentCategory === categories[0].type) {
           setCurrentCategory(categories[1].type);
           setCurrentDimension('看'); // 重置为第一个维度
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
           // 所有问题都已完成
           handleComplete();
@@ -590,6 +593,9 @@ const Scale168Assessment: React.FC = () => {
     if (currentPage > 0) {
       // 还有上一页问题
       setCurrentPage(currentPage - 1);
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
     } else {
       // 当前维度的第一页，找上一个维度的最后一页
       const currentDimensionIndex = dimensions.indexOf(currentDimension);
@@ -603,6 +609,10 @@ const Scale168Assessment: React.FC = () => {
         );
         const maxPage = Math.ceil(prevDimensionQuestions.length / questionsPerPage) - 1;
         setCurrentPage(Math.max(0, maxPage));
+        // 添加延时确保状态更新后再滚动
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 100);
       } else {
         // 当前类别的第一个维度，检查是否有上一个类别
         if (currentCategory === categories[1].type) {
@@ -614,6 +624,10 @@ const Scale168Assessment: React.FC = () => {
           );
           const maxPage = Math.ceil(prevCategoryQuestions.length / questionsPerPage) - 1;
           setCurrentPage(Math.max(0, maxPage));
+          // 添加延时确保状态更新后再滚动
+          setTimeout(() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }, 100);
         }
       }
     }
@@ -819,7 +833,7 @@ const Scale168Assessment: React.FC = () => {
           </HomeButton>
 
           <Title level={2} style={{ textAlign: 'center', marginBottom: 40 }}>
-            168天赋测评
+          喜欢与天赋自评
           </Title>
 
           <ResponsiveSteps

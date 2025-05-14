@@ -165,28 +165,28 @@ const CLASSROOM_PERFORMANCE_ELEMENTS = {
 
 // 添加提示内容配置
 const CATEGORY_TIPS = {
-  '有喜欢有天赋': (
+  '喜欢与天赋兼具': (
     <div>
       <p>• 爸爸妈妈共识后放手，让孩子享受自我成就的快乐。当喜欢与天赋相结合，孩子会开心且自然而然做出好结果。</p>
       <p>• 爸爸妈妈夸赞孩子取得的好结果。</p>
       <p>• 要注意喜欢和天赋兼具点的双刃剑。</p>
     </div>
   ),
-  '没喜欢没天赋': (
+  '喜欢与天赋均不明显': (
     <div>
       <p>• 爸爸妈妈懂得创新，让孩子体验克服困难、战胜挑战的快乐。</p>
       <p>• 爸爸妈妈夸赞孩子付出的努力。</p>
       <p>• 即便老师或家长耐心陪伴，孩子也可能很不情愿磨炼。此时，老师或家长可借助孩子喜欢与天赋兼具的点，为孩子创新发展方法。当孩子体验到逐渐做出好结果的乐趣，会慢慢提升付出意愿，不断积累克服困难、战胜挑战的能力与信心，坚持做出一定结果。</p>
     </div>
   ),
-  '有天赋没喜欢': (
+  '喜欢不明显/天赋明显': (
     <div>
       <p>• 爸爸妈妈精准鼓励，让孩子体验释放潜能的快乐。</p>
       <p>• 在喜欢不明显的维度，孩子不会自愿付出与投入。老师或家长在耐心陪伴时，要不断鼓励孩子发现天赋、体验天赋释放所带来的乐趣，这样孩子会慢慢提升付出意愿，持续做出好结果。</p>
       <p>• 爸爸妈妈夸赞孩子展现天赋的行为。</p>
     </div>
   ),
-  '有喜欢没天赋': (
+  '喜欢明显/天赋不明显': (
     <div>
       <p>• 爸爸妈妈在包容中等待，让孩子享受自我成长的快乐。</p>
       <p>• 爸爸妈妈要夸赞孩子的进步。</p>
@@ -898,9 +898,9 @@ const ReportPage: React.FC = () => {
           return;
         }
 
-        // 获取有喜欢有天赋的元素
+        // 获取喜欢与天赋兼具的元素
         const likeAndTalentElements = elementAnalysis.filter(item => 
-          item.category === '有喜欢有天赋'
+          item.category === '喜欢与天赋兼具'
         );
 
         // 获取所有双刃剑数据
@@ -908,7 +908,7 @@ const ReportPage: React.FC = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        // 过滤出与有喜欢有天赋元素相关的双刃剑数据
+        // 过滤出与喜欢与天赋兼具元素相关的双刃剑数据
         const filteredData = response.data.filter((item: DoubleEdgedInfo) => 
           likeAndTalentElements.some((element: any) => 
             element.double_edged_id && element.double_edged_id === item.id
@@ -1310,7 +1310,7 @@ const ReportPage: React.FC = () => {
           返回主页
         </HomeButton>
         
-        <ReportTitle level={2}>学生综合能力评估报告</ReportTitle>
+        <ReportTitle level={2}>喜欢与天赋评估报告</ReportTitle>
         
         {/* <ExportButton 
           type="primary" 
@@ -1338,7 +1338,7 @@ const ReportPage: React.FC = () => {
             <ReportCard 
               title={
                 <SectionTitle>
-                  <div className="main-title">喜欢与天赋分布</div>
+                  <div className="main-title">喜欢与天赋状态</div>
                 </SectionTitle>
               }
             >
@@ -1355,8 +1355,8 @@ const ReportPage: React.FC = () => {
                             <Panel 
                               header={
                                 <Space>
-                                  <Text strong>有喜欢有天赋</Text>
-                                  <Tooltip title={CATEGORY_TIPS['有喜欢有天赋']} overlayStyle={{ maxWidth: '500px' }}>
+                                  <Text strong>喜欢与天赋兼具</Text>
+                                  <Tooltip title={CATEGORY_TIPS['喜欢与天赋兼具']} overlayStyle={{ maxWidth: '500px' }}>
                                     <QuestionCircleOutlined />
                                   </Tooltip>
                                 </Space>
@@ -1366,7 +1366,7 @@ const ReportPage: React.FC = () => {
                               <ResponsiveList
                                 grid={gridConfig}
                                 dataSource={elementAnalysis
-                                  .filter(item => item.category === '有喜欢有天赋')
+                                  .filter(item => item.category === '喜欢与天赋兼具')
                                   .sort(sortByDimension)
                                 }
                                 renderItem={renderItem}
@@ -1375,8 +1375,8 @@ const ReportPage: React.FC = () => {
                             <Panel 
                               header={
                                 <Space>
-                                  <Text strong>有喜欢没天赋</Text>
-                                  <Tooltip title={CATEGORY_TIPS['有喜欢没天赋']} overlayStyle={{ maxWidth: '500px' }}>
+                                  <Text strong>喜欢明显/天赋不明显</Text>
+                                  <Tooltip title={CATEGORY_TIPS['喜欢明显/天赋不明显']} overlayStyle={{ maxWidth: '500px' }}>
                                     <QuestionCircleOutlined />
                                   </Tooltip>
                                 </Space>
@@ -1385,15 +1385,15 @@ const ReportPage: React.FC = () => {
                             >
                               <ResponsiveList
                                 grid={gridConfig}
-                                dataSource={elementAnalysis.filter(item => item.category === '有喜欢没天赋').sort(sortByDimension)}
+                                dataSource={elementAnalysis.filter(item => item.category === '喜欢明显/天赋不明显').sort(sortByDimension)}
                                 renderItem={renderItem}
                               />
                             </Panel>
                             <Panel 
                               header={
                                 <Space>
-                                  <Text strong>有天赋没喜欢</Text>
-                                  <Tooltip title={CATEGORY_TIPS['有天赋没喜欢']} overlayStyle={{ maxWidth: '500px' }}>
+                                  <Text strong>喜欢不明显/天赋明显</Text>
+                                  <Tooltip title={CATEGORY_TIPS['喜欢不明显/天赋明显']} overlayStyle={{ maxWidth: '500px' }}>
                                     <QuestionCircleOutlined />
                                   </Tooltip>
                                 </Space>
@@ -1402,15 +1402,15 @@ const ReportPage: React.FC = () => {
                             >
                               <ResponsiveList
                                 grid={gridConfig}
-                                dataSource={elementAnalysis.filter(item => item.category === '有天赋没喜欢').sort(sortByDimension)}
+                                dataSource={elementAnalysis.filter(item => item.category === '喜欢不明显/天赋明显').sort(sortByDimension)}
                                 renderItem={renderItem}
                               />
                             </Panel>
                             <Panel 
                               header={
                                 <Space>
-                                  <Text strong>没喜欢没天赋</Text>
-                                  <Tooltip title={CATEGORY_TIPS['没喜欢没天赋']} overlayStyle={{ maxWidth: '500px' }}>
+                                  <Text strong>喜欢与天赋均不明显</Text>
+                                  <Tooltip title={CATEGORY_TIPS['喜欢与天赋均不明显']} overlayStyle={{ maxWidth: '500px' }}>
                                     <QuestionCircleOutlined />
                                   </Tooltip>
                                 </Space>
@@ -1419,7 +1419,7 @@ const ReportPage: React.FC = () => {
                             >
                               <ResponsiveList
                                 grid={gridConfig}
-                                dataSource={elementAnalysis.filter(item => item.category === '没喜欢没天赋').sort(sortByDimension)}
+                                dataSource={elementAnalysis.filter(item => item.category === '喜欢与天赋均不明显').sort(sortByDimension)}
                                 renderItem={renderItem}
                               />
                             </Panel>
@@ -1726,7 +1726,7 @@ const ReportPage: React.FC = () => {
 
             <Card className="no-print">
               <Text type="secondary">
-                注：本报告基于学生问答和行为数据分析生成，仅供参考。建议结合专业教师意见和实际情况使用。
+              注：本报告基于您的自评生成，仅供参考。
               </Text>
             </Card>
           </Col>

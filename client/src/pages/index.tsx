@@ -196,7 +196,7 @@ const HomePage: React.FC = () => {
     {
       key: 'scale168',
       icon: <FormOutlined />,
-      label: '喜欢与天赋量表测评',
+      label: '喜欢与天赋自评',
       onClick: () => navigate('/assessment/scale168')
     },
     {
@@ -208,7 +208,7 @@ const HomePage: React.FC = () => {
     {
       key: 'chat',
       icon: <MessageOutlined />,
-      label: '问题咨询/AI对话',
+      label: '问题咨询（AI对话）',
       onClick: () => navigate('/chat')
     }
   ];
@@ -216,7 +216,7 @@ const HomePage: React.FC = () => {
   return (
     <StyledLayout>
       <StyledContent>
-        <PageTitle level={1}>天赋测评首页</PageTitle>
+        <PageTitle level={1}>发现喜欢与天赋</PageTitle>
         <MenuContainer>
           {menuItems.map(item => (
             <MenuButton
