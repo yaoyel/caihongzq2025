@@ -1,8 +1,35 @@
 // @ts-nocheck
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { Layout, Typography, Card, Row, Col, Collapse, Tabs, List, Button, message, Space, Alert, Tag, Tooltip, Spin, Empty, Modal, Divider, Radio } from 'antd';
+import {
+  Layout,
+  Typography,
+  Card,
+  Row,
+  Col,
+  Collapse,
+  Tabs,
+  List,
+  Button,
+  message,
+  Space,
+  Alert,
+  Tag,
+  Tooltip,
+  Spin,
+  Empty,
+  Modal,
+  Divider,
+  Radio,
+} from 'antd';
 import styled from '@emotion/styled';
-import { HomeOutlined, DownloadOutlined, QuestionCircleOutlined, BulbOutlined, ExclamationCircleOutlined, CloseOutlined } from '@ant-design/icons';
+import {
+  HomeOutlined,
+  DownloadOutlined,
+  QuestionCircleOutlined,
+  BulbOutlined,
+  ExclamationCircleOutlined,
+  CloseOutlined,
+} from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import html2pdf from 'html2pdf.js';
 import axios from 'axios';
@@ -14,7 +41,7 @@ import ChatPage from '../chat';
 
 // 子组件
 const { Title, Paragraph, Text } = Typography;
-const { Panel } = Collapse; 
+const { Panel } = Collapse;
 
 const StyledLayout = styled(Layout)`
   padding: 24px 48px;
@@ -27,8 +54,8 @@ const StyledLayout = styled(Layout)`
 
 const ReportCard = styled(Card)`
   margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
   .ant-card-head {
     border-bottom: none;
     padding: 0;
@@ -49,23 +76,61 @@ const ReportCard = styled(Card)`
   }
 `;
 
+const HeaderContainer = styled.div`
+  position: relative;
+  width: 100%;
+  height: 48px;
+  margin-bottom: 24px;
+`;
+const HomeButton2 = styled(Button)`
+  margin-bottom: 20px;
+  display: block;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+`;
+const StyledBackButton = styled(HomeButton2)`
+  position: absolute;
+  left: 0;
+  top: 40%;
+  transform: translateY(-50%);
+  margin: 0;
+  height: 36px;
+  font-size: 14px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  @media (max-width: 768px) {
+    height: 32px;
+    font-size: 13px;
+    padding: 0 10px;
+  }
+`;
+
 const ReportTitle = styled(Title)`
-  text-align: center;
-  margin-bottom: 24px !important;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0 !important;
   white-space: nowrap;
-  
+  font-size: 20px !important;
+  z-index: 2;
+
   &::after {
     content: '';
     display: block;
-    width: 60px;
-    height: 3px;
+    width: 40px;
+    height: 2px;
     background: #1890ff;
-    margin: 16px auto 0;
+    margin: 10px auto 0;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 480px) {
     font-size: 20px !important;
-    margin: 0 !important;
+    width: max-content;
   }
 `;
 
@@ -74,11 +139,11 @@ const StyledTabs = styled(Tabs)`
   .ant-tabs-nav {
     margin-bottom: 24px;
   }
-  
+
   .ant-tabs-tab {
     font-size: 16px;
   }
-  
+
   .ant-tabs-tab-active {
     font-weight: 500;
   }
@@ -94,34 +159,42 @@ const PrintableContent = styled.div`
     .no-print {
       display: none;
     }
-    
+
     .page-break {
       page-break-after: always;
     }
-    
+
     .ant-card {
       break-inside: avoid;
     }
   }
 `;
 
-// 添加头部容器样式
-const HeaderContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-  }
-`;
-
 const HomeButton = styled(Button)`
+  background: #1890ff;
+  border: none;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 18px;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.2);
+  transition: all 0.3s ease;
+  font-size: 14px;
+  white-space: nowrap;
+
+  &:hover {
+    background: #40a9ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+  }
+
+  .anticon {
+    margin-right: 4px;
+    font-size: 14px;
+  }
+
   @media (max-width: 768px) {
-    display: none !important;
+    width: 100%;
+    margin-bottom: 8px;
   }
 `;
 
@@ -133,66 +206,78 @@ const ExportButton = styled(Button)`
 
 // 添加课堂表现与元素ID的映射
 const CLASSROOM_PERFORMANCE_ELEMENTS = {
-  '看': {
+  看: {
     title: '看黑板板书（看）',
-    elementIds: [4, 30, 32]
+    elementIds: [4, 30, 32],
   },
-  '听': {
+  听: {
     title: '听老师讲课（听）',
-    elementIds: [5, 34, 36]
+    elementIds: [5, 34, 36],
   },
-  '说': {
+  说: {
     title: '积极回答问题（说）',
-    elementIds: [10, 38]
+    elementIds: [10, 38],
   },
-  '记': {
+  记: {
     title: '记忆老师授课内容（记）',
-    elementIds: [15, 43]
+    elementIds: [15, 43],
   },
-  '想': {
+  想: {
     title: '跟随老师提问思考（想）',
-    elementIds: [19, 46, 47]
+    elementIds: [19, 46, 47],
   },
-  '做': {
+  做: {
     title: '完成作业（做）',
-    elementIds: [21, 22, 51]
+    elementIds: [21, 22, 51],
   },
-  '运动': {
+  运动: {
     title: '上好体育课（运动）',
-    elementIds: [25, 26, 27, 28, 53, 54, 55, 56]
-  }
+    elementIds: [25, 26, 27, 28, 53, 54, 55, 56],
+  },
 };
 
 // 添加提示内容配置
 const CATEGORY_TIPS = {
-  '喜欢与天赋兼具': (
+  有喜欢有天赋: (
     <div>
-      <p>• 爸爸妈妈共识后放手，让孩子享受自我成就的快乐。当喜欢与天赋相结合，孩子会开心且自然而然做出好结果。</p>
+      <p>
+        •
+        爸爸妈妈共识后放手，让孩子享受自我成就的快乐。当喜欢与天赋相结合，孩子会开心且自然而然做出好结果。
+      </p>
       <p>• 爸爸妈妈夸赞孩子取得的好结果。</p>
       <p>• 要注意喜欢和天赋兼具点的双刃剑。</p>
     </div>
   ),
-  '喜欢与天赋均不明显': (
+  没喜欢没天赋: (
     <div>
       <p>• 爸爸妈妈懂得创新，让孩子体验克服困难、战胜挑战的快乐。</p>
       <p>• 爸爸妈妈夸赞孩子付出的努力。</p>
-      <p>• 即便老师或家长耐心陪伴，孩子也可能很不情愿磨炼。此时，老师或家长可借助孩子喜欢与天赋兼具的点，为孩子创新发展方法。当孩子体验到逐渐做出好结果的乐趣，会慢慢提升付出意愿，不断积累克服困难、战胜挑战的能力与信心，坚持做出一定结果。</p>
+      <p>
+        •
+        即便老师或家长耐心陪伴，孩子也可能很不情愿磨炼。此时，老师或家长可借助孩子喜欢与天赋兼具的点，为孩子创新发展方法。当孩子体验到逐渐做出好结果的乐趣，会慢慢提升付出意愿，不断积累克服困难、战胜挑战的能力与信心，坚持做出一定结果。
+      </p>
     </div>
   ),
-  '喜欢不明显/天赋明显': (
+  有天赋没喜欢: (
     <div>
       <p>• 爸爸妈妈精准鼓励，让孩子体验释放潜能的快乐。</p>
-      <p>• 在喜欢不明显的维度，孩子不会自愿付出与投入。老师或家长在耐心陪伴时，要不断鼓励孩子发现天赋、体验天赋释放所带来的乐趣，这样孩子会慢慢提升付出意愿，持续做出好结果。</p>
+      <p>
+        •
+        在喜欢不明显的维度，孩子不会自愿付出与投入。老师或家长在耐心陪伴时，要不断鼓励孩子发现天赋、体验天赋释放所带来的乐趣，这样孩子会慢慢提升付出意愿，持续做出好结果。
+      </p>
       <p>• 爸爸妈妈夸赞孩子展现天赋的行为。</p>
     </div>
   ),
-  '喜欢明显/天赋不明显': (
+  有喜欢没天赋: (
     <div>
       <p>• 爸爸妈妈在包容中等待，让孩子享受自我成长的快乐。</p>
       <p>• 爸爸妈妈要夸赞孩子的进步。</p>
-      <p>• 在喜欢的方向上，哪怕欠缺天赋，孩子也会主动、经常投入，自觉自愿磨炼，慢慢地，也能逐渐做出好结果。</p>
+      <p>
+        •
+        在喜欢的方向上，哪怕欠缺天赋，孩子也会主动、经常投入，自觉自愿磨炼，慢慢地，也能逐渐做出好结果。
+      </p>
     </div>
-  )
+  ),
 };
 
 // 修改 DoubleEdgedInfo 接口定义
@@ -220,7 +305,13 @@ interface DoubleEdgedScale {
   id: number;
   dimension: string;
   content: string;
-  type: 'inner_state' | 'associate_with_people' | 'tackle_issues' | 'face_choices' | 'common_outcome' | 'normal_state';
+  type:
+    | 'inner_state'
+    | 'associate_with_people'
+    | 'tackle_issues'
+    | 'face_choices'
+    | 'common_outcome'
+    | 'normal_state';
 }
 
 // 修改样式组件
@@ -229,19 +320,19 @@ const StyledPanel = styled(Panel)`
     display: flex;
     align-items: center;
   }
-  
+
   .header-content {
     display: flex;
     align-items: center;
     gap: 16px;
   }
-  
+
   .confirm-button {
     font-size: 12px;
     background: #fff7e6;
     border-color: #ffd591;
     color: #fa8c16;
-    
+
     &:hover {
       background: #fff1d4;
       border-color: #ffc069;
@@ -281,20 +372,20 @@ const ElementsGrid = styled.div`
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-top: 16px;
-  
+
   .element-card {
     padding: 16px;
-    
+
     .element-title {
       color: #8c8c8c;
       margin-bottom: 8px;
     }
-    
+
     .element-content {
       display: inline-flex;
       flex-direction: column;
       gap: 8px;
-      
+
       .text-content {
         display: inline-block;
         background: #f5f5f5;
@@ -307,7 +398,7 @@ const ElementsGrid = styled.div`
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
     gap: 8px;
-    
+
     .element-card {
       padding: 8px;
     }
@@ -327,9 +418,9 @@ const QuestionCard = styled(Card)`
   margin: 16px 0;
   border-radius: 8px;
   transition: all 0.3s;
-  
+
   &:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
 
   .ant-radio-group {
@@ -344,37 +435,37 @@ interface TopicConfig {
 }
 
 const TYPE_CONFIGS: Record<string, TopicConfig> = {
-  'inner_state': {
+  inner_state: {
     topic: '您经常感受到下述哪种内在状态',
     options: [
       { label: '总是', value: 1 },
       { label: '经常', value: 2 },
       { label: '很少', value: 3 },
       { label: '从未', value: 4 },
-      { label: '没注意', value: 5 }
-    ]
+      { label: '没注意', value: 5 },
+    ],
   },
-  'associate_with_people': {
+  associate_with_people: {
     topic: '与人相处时，您经常感受到下述哪种内在状态？',
     options: [
       { label: '总是', value: 1 },
       { label: '经常', value: 2 },
       { label: '很少', value: 3 },
       { label: '从未', value: 4 },
-      { label: '没注意', value: 5 }
-    ]
+      { label: '没注意', value: 5 },
+    ],
   },
-  'tackle_issues': {
+  tackle_issues: {
     topic: '处理事情时，您经常感受到下述哪种内在状态？',
     options: [
       { label: '总是', value: 1 },
       { label: '经常', value: 2 },
       { label: '很少', value: 3 },
       { label: '从未', value: 4 },
-      { label: '没注意', value: 5 }
-    ]
+      { label: '没注意', value: 5 },
+    ],
   },
-  'face_choices': {
+  face_choices: {
     topic: '面对取舍时，您经常感受到下述哪种内在状态？',
     options: [
       { label: '总是', value: 1 },
@@ -383,10 +474,10 @@ const TYPE_CONFIGS: Record<string, TopicConfig> = {
       { label: '从未', value: 4 },
       { label: '没注意', value: 5 },
       { label: '"但"前符合，"但"后不符', value: 6 },
-      { label: '从前经常，现在很少', value: 7 }
-    ]
+      { label: '从前经常，现在很少', value: 7 },
+    ],
   },
-  'common_outcome': {
+  common_outcome: {
     topic: '请感受一下，自己通常结果处于下述哪种状态？',
     options: [
       { label: '总是', value: 1 },
@@ -395,10 +486,10 @@ const TYPE_CONFIGS: Record<string, TopicConfig> = {
       { label: '从未', value: 4 },
       { label: '没注意', value: 5 },
       { label: '"但"前符合，"但"后不符', value: 6 },
-      { label: '从前经常，现在很少', value: 7 }
-    ]
+      { label: '从前经常，现在很少', value: 7 },
+    ],
   },
-  'normal_state': {
+  normal_state: {
     topic: '请感受一下，自己通常处于下述哪种状态？',
     options: [
       { label: '总是', value: 1 },
@@ -407,9 +498,9 @@ const TYPE_CONFIGS: Record<string, TopicConfig> = {
       { label: '从未', value: 4 },
       { label: '没注意', value: 5 },
       { label: '"但"前符合，"但"后不符', value: 6 },
-      { label: '从前经常，现在很少', value: 7 }
-    ]
-  }
+      { label: '从前经常，现在很少', value: 7 },
+    ],
+  },
 };
 
 // 添加新的样式组件
@@ -425,11 +516,11 @@ const TopicText = styled(Text)`
 interface AgeGroupAnalysis {
   key: string;
   title: string;
-  prompt: string;  // 存储提示词但不显示
+  prompt: string; // 存储提示词但不显示
   items: Array<{
     key: string;
     title: string;
-    prompt: string;  // 存储提示词但不显示
+    prompt: string; // 存储提示词但不显示
     content?: React.ReactNode;
   }>;
 }
@@ -444,24 +535,28 @@ const AGE_GROUP_ANALYSIS: AgeGroupAnalysis[] = [
       {
         key: 'anxiety',
         title: '焦虑点分析',
-        prompt: '请基于孩子基础信息，深入分析孩子幼儿园阶段可能遭遇的问题及其成因（问题包含但不限于"安全感不足、到点不睡觉、分离焦虑、厌园、打人、便秘、不好好吃饭、不爱运动、哭闹、不自信等）"，并请结合附件所述赵巍同学特质，给出个性化/针对性问题解决方案，谢谢！'
+        prompt:
+          '请基于孩子基础信息，深入分析孩子幼儿园阶段可能遭遇的问题及其成因（问题包含但不限于"安全感不足、到点不睡觉、分离焦虑、厌园、打人、便秘、不好好吃饭、不爱运动、哭闹、不自信等）"，并请结合附件所述赵巍同学特质，给出个性化/针对性问题解决方案，谢谢！',
       },
       {
         key: 'interest',
         title: '兴趣班选择指导',
-        prompt: '请基于孩子基础信息，结合科研成果深入分析孩子在幼儿园阶段可能最适合选择什么兴趣班发展喜欢与天赋（包括但不限于舞蹈、篮球、钢琴、绘画……等），并请结合孩子基础信息，提供适合他的兴趣班学习方式、喜欢的老师类型，……请注意不要把前面对孩子基因、脑神经、激素等方面的推测直接作为结论引用，以确保分析更科学严谨可信……谢谢！'
+        prompt:
+          '请基于孩子基础信息，结合科研成果深入分析孩子在幼儿园阶段可能最适合选择什么兴趣班发展喜欢与天赋（包括但不限于舞蹈、篮球、钢琴、绘画……等），并请结合孩子基础信息，提供适合他的兴趣班学习方式、喜欢的老师类型，……请注意不要把前面对孩子基因、脑神经、激素等方面的推测直接作为结论引用，以确保分析更科学严谨可信……谢谢！',
       },
       {
         key: 'learning',
         title: '学习/课堂行为分析',
-        prompt: '请基于孩子基础信息，科学严谨的深入分析赵巍同学小学阶段可能遭遇的问题及其成因（问题包含但不限于"做作业拖拉、学习各种偷懒、爱玩游戏、厌学、上课走神、不爱说话、兴趣班没兴趣、记不住古诗和英文单词等、数学题总不会、写作文没思路等），并请并请结合赵巍同学特质，给到适合的针对性解决方案，谢谢！'
+        prompt:
+          '请基于孩子基础信息，科学严谨的深入分析赵巍同学小学阶段可能遭遇的问题及其成因（问题包含但不限于"做作业拖拉、学习各种偷懒、爱玩游戏、厌学、上课走神、不爱说话、兴趣班没兴趣、记不住古诗和英文单词等、数学题总不会、写作文没思路等），并请并请结合赵巍同学特质，给到适合的针对性解决方案，谢谢！',
       },
       {
         key: 'obstacle',
         title: '学习障碍分析',
-        prompt: '请基于孩子基础信息，科学严谨的深入分析小学阶段语文、数学、英语可能遭遇的学习障碍及其成因（请以人教版最新小学内容为分析基础），并请给到孩子善用喜欢与天赋化解学习障碍的乐学善学针对性解决方案，谢谢！'
-      }
-    ]
+        prompt:
+          '请基于孩子基础信息，科学严谨的深入分析小学阶段语文、数学、英语可能遭遇的学习障碍及其成因（请以人教版最新小学内容为分析基础），并请给到孩子善用喜欢与天赋化解学习障碍的乐学善学针对性解决方案，谢谢！',
+      },
+    ],
   },
   {
     key: 'primary',
@@ -471,19 +566,22 @@ const AGE_GROUP_ANALYSIS: AgeGroupAnalysis[] = [
       {
         key: 'interest',
         title: '兴趣/热爱方向分析',
-        prompt: '请基于孩子基础信息，科学严谨的分析孩子在小学高年级/初中阶段可能的"热爱的种子"（包括但不限于社团组建、班委工作、学生会工作、编程、舞蹈、篮球、钢琴、绘画……等），并请提醒家长适合孩子的发展方式、可能遇到的困难、可能存在的"热爱的双刃剑"，更有助于孩子自驱自信的自我发展的陪伴方法。'
+        prompt:
+          '请基于孩子基础信息，科学严谨的分析孩子在小学高年级/初中阶段可能的"热爱的种子"（包括但不限于社团组建、班委工作、学生会工作、编程、舞蹈、篮球、钢琴、绘画……等），并请提醒家长适合孩子的发展方式、可能遇到的困难、可能存在的"热爱的双刃剑"，更有助于孩子自驱自信的自我发展的陪伴方法。',
       },
       {
         key: 'obstacle',
         title: '学习障碍分析',
-        prompt: '基于孩子基础信息，请细致分析孩子在初中阶段语文、数学、英语、物理、化学、生物、政治、地理、历史可能遭遇的学习障碍及其成因（请以人教版最新初中内容为分析基础），并请给到孩子善用喜欢与天赋化解学习障碍的针对性解决方案。'
+        prompt:
+          '基于孩子基础信息，请细致分析孩子在初中阶段语文、数学、英语、物理、化学、生物、政治、地理、历史可能遭遇的学习障碍及其成因（请以人教版最新初中内容为分析基础），并请给到孩子善用喜欢与天赋化解学习障碍的针对性解决方案。',
       },
       {
         key: 'puberty',
         title: '青春期问题分析',
-        prompt: '基于孩子基础信息，请深入分析孩子在青春期可能的叛逆行为表现、家长和老师要注意的最容易激发孩子反感的行为、以及更有助于孩子身心健康发展的陪伴要点'
-      }
-    ]
+        prompt:
+          '基于孩子基础信息，请深入分析孩子在青春期可能的叛逆行为表现、家长和老师要注意的最容易激发孩子反感的行为、以及更有助于孩子身心健康发展的陪伴要点',
+      },
+    ],
   },
   {
     key: 'highSchool',
@@ -493,19 +591,22 @@ const AGE_GROUP_ANALYSIS: AgeGroupAnalysis[] = [
       {
         key: 'subject',
         title: '文理选科分析',
-        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家，请基于我所提供的柏霖同学基础信息，以及我所提供的《喜欢与天赋》框架，对柏霖同学的特质给出您的专业评估，判断柏霖同学哪些维度喜欢明显/不明显，哪些维度天赋明显/不明显，并列出有科学研究依据的判断理由，可以深度思考+联网搜索辅助判断，但请只搜索专业类网站、科研成果类论文作为输入信息，不采用AI生产的内容，避免以讹传讹；同时，请基于柏霖同学特质分析他更适合文科还是理科、并请详细到文理科中的具体组合（如语数英+史地政、语数英+物化生等、请以国家最新文理分科具体分类为准），并分析原因、给到更有利于柏霖乐学善学的选科建议谢谢！'
+        prompt:
+          '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家，请基于我所提供的柏霖同学基础信息，以及我所提供的《喜欢与天赋》框架，对柏霖同学的特质给出您的专业评估，判断柏霖同学哪些维度喜欢明显/不明显，哪些维度天赋明显/不明显，并列出有科学研究依据的判断理由，可以深度思考+联网搜索辅助判断，但请只搜索专业类网站、科研成果类论文作为输入信息，不采用AI生产的内容，避免以讹传讹；同时，请基于柏霖同学特质分析他更适合文科还是理科、并请详细到文理科中的具体组合（如语数英+史地政、语数英+物化生等、请以国家最新文理分科具体分类为准），并分析原因、给到更有利于柏霖乐学善学的选科建议谢谢！',
       },
       {
         key: 'major',
         title: '适合专业评估',
-        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家，请基于我所提供的柏霖同学基础信息，以及我所提供的《喜欢与天赋》框架，对柏霖同学的特质给出您的专业评估，判断柏霖同学哪些维度喜欢明显/不明显，哪些维度天赋明显/不明显，并列出有科学研究依据的判断理由，可以深度思考+联网搜索辅助判断，但请只搜索专业类网站、科研成果类论文作为输入信息，不采用AI生产的内容，避免以讹传讹；同时，请分析柏霖同学更适合选择的大学和专业、并请详细到专业的具体分类（请以2024年高考全国高校在招专业为分析基础），并分析原因、给到柏霖同学更有利于在热爱中可持续发展的专业选择建议'
+        prompt:
+          '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家，请基于我所提供的柏霖同学基础信息，以及我所提供的《喜欢与天赋》框架，对柏霖同学的特质给出您的专业评估，判断柏霖同学哪些维度喜欢明显/不明显，哪些维度天赋明显/不明显，并列出有科学研究依据的判断理由，可以深度思考+联网搜索辅助判断，但请只搜索专业类网站、科研成果类论文作为输入信息，不采用AI生产的内容，避免以讹传讹；同时，请分析柏霖同学更适合选择的大学和专业、并请详细到专业的具体分类（请以2024年高考全国高校在招专业为分析基础），并分析原因、给到柏霖同学更有利于在热爱中可持续发展的专业选择建议',
       },
       {
         key: 'obstacle',
         title: '学习障碍分析',
-        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家，请基于我所提供的柏霖同学基础信息，以及我所提供的《喜欢与天赋》框架，对柏霖同学的特质给出您的专业评估，判断柏霖同学哪些维度喜欢明显/不明显，哪些维度天赋明显/不明显，并列出有科学研究依据的判断理由，可以深度思考+联网搜索辅助判断，但请只搜索专业类网站、科研成果类论文作为输入信息，不采用AI生产的内容，避免以讹传讹；同时，请具体分析柏霖同学在高考冲刺阶段语数英史地政可能遭遇的具体学习障碍及其成因（请以2022、2023、2024年湖南省高考真题及所涉及的知识点为分析基础），并请给到柏霖同学善用喜欢与天赋化解学习障碍、快速提分的针对性解决方案'
-      }
-    ]
+        prompt:
+          '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家，请基于我所提供的柏霖同学基础信息，以及我所提供的《喜欢与天赋》框架，对柏霖同学的特质给出您的专业评估，判断柏霖同学哪些维度喜欢明显/不明显，哪些维度天赋明显/不明显，并列出有科学研究依据的判断理由，可以深度思考+联网搜索辅助判断，但请只搜索专业类网站、科研成果类论文作为输入信息，不采用AI生产的内容，避免以讹传讹；同时，请具体分析柏霖同学在高考冲刺阶段语数英史地政可能遭遇的具体学习障碍及其成因（请以2022、2023、2024年湖南省高考真题及所涉及的知识点为分析基础），并请给到柏霖同学善用喜欢与天赋化解学习障碍、快速提分的针对性解决方案',
+      },
+    ],
   },
   {
     key: 'university',
@@ -515,35 +616,39 @@ const AGE_GROUP_ANALYSIS: AgeGroupAnalysis[] = [
       {
         key: 'career',
         title: '职业规划建议',
-        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家，请结合孩子基础信息、问答集内容，请分析孩子更适合就业还是考研、并请详细分析就业方向及建议原因（如行业选择、职业选择、请参考国家最新职业分类），或考研后的发展规划及建议原因（如继续攻读博士，或其他选择），给到更有利于孩子开心奋斗的发展建议'
+        prompt:
+          '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家，请结合孩子基础信息、问答集内容，请分析孩子更适合就业还是考研、并请详细分析就业方向及建议原因（如行业选择、职业选择、请参考国家最新职业分类），或考研后的发展规划及建议原因（如继续攻读博士，或其他选择），给到更有利于孩子开心奋斗的发展建议',
       },
       {
         key: 'employment',
         title: '就业建议',
-        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家，请结合孩子基础信息、问答集内容，分析孩子更适合的企业（请参考各地企业对外公布的使命、愿景、价值观、长期战略、核心治理机制、关键里程碑、在招岗位胜任素质描述等信息），给出推荐原因，请挑选更有助于孩子与组织共赢发展的企业'
+        prompt:
+          '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家，请结合孩子基础信息、问答集内容，分析孩子更适合的企业（请参考各地企业对外公布的使命、愿景、价值观、长期战略、核心治理机制、关键里程碑、在招岗位胜任素质描述等信息），给出推荐原因，请挑选更有助于孩子与组织共赢发展的企业',
       },
       {
         key: 'postgraduate',
         title: '考研建议',
-        prompt: '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家，请结合孩子基础信息、问答集内容，分析孩子更适合的专业及导师（请参考全球各高校及科研机构研究生招考专业及相关信息），给出推荐原因，请给到更有助于孩子与导师共赢探索的可选项'
+        prompt:
+          '作为一名脑神经科学专家、基因科学家、心理学家、HR专家、职涯规划专家、教育家，请结合孩子基础信息、问答集内容，分析孩子更适合的专业及导师（请参考全球各高校及科研机构研究生招考专业及相关信息），给出推荐原因，请给到更有助于孩子与导师共赢探索的可选项',
       },
       {
         key: 'relationship',
         title: '另一半画像',
-        prompt: '结合孩子行为与状态画像、问答集内容，请分析孩子心动女生画像，并提醒可能的矛盾、冲突、解决方法及建议原因，给到更有利于孩子幸福相爱的可落地建议'
-      }
-    ]
-  }
+        prompt:
+          '结合孩子行为与状态画像、问答集内容，请分析孩子心动女生画像，并提醒可能的矛盾、冲突、解决方法及建议原因，给到更有利于孩子幸福相爱的可落地建议',
+      },
+    ],
+  },
 ];
 
 // 修改 ThemeTitle 样式，使其颜色更浅
 const ThemeTitle = styled.div`
-  background-color: #fafafa;  // 更浅的背景色
+  background-color: #fafafa; // 更浅的背景色
   padding: 12px 16px;
   border-radius: 6px;
   margin-bottom: 16px;
-  border-left: 4px solid #40a9ff;  // 更浅的边框色
-  
+  border-left: 4px solid #40a9ff; // 更浅的边框色
+
   .title-text {
     color: #1f1f1f;
     font-size: 16px;
@@ -595,19 +700,19 @@ const SectionTitle = styled.div`
 // 添加 AnalysisCard 样式组件
 const AnalysisCard = styled(Card)`
   margin-bottom: 16px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   background: #fafafa;
-  
+
   .ant-card-head {
     background: transparent;
     border-bottom: none;
     padding: 0;
   }
-  
+
   .ant-card-head-title {
     padding: 0;
   }
-  
+
   .analysis-content {
     padding: 16px;
     background: #fff;
@@ -619,11 +724,11 @@ const AnalysisCard = styled(Card)`
     background: #e6f7ff;
     border-radius: 4px;
     color: #1890ff;
-    
+
     &:hover {
       background: #bae7ff;
     }
-    
+
     &:disabled {
       background: #f5f5f5;
       color: #d9d9d9;
@@ -637,7 +742,7 @@ const ChatModal = styled(Modal)`
     height: 90vh;
     display: flex;
     flex-direction: column;
-    
+
     .ant-modal-body {
       flex: 1;
       padding: 0;
@@ -647,15 +752,15 @@ const ChatModal = styled(Modal)`
 
   .ant-modal-wrap {
     display: flex;
-    justify-content: center;  // 水平居中
-    align-items: center;      // 垂直居中
+    justify-content: center; // 水平居中
+    align-items: center; // 垂直居中
   }
-  
+
   &.ant-modal {
     top: 0;
     padding-bottom: 0;
-    max-width: 90vw;         // 设置最大宽度
-    margin: 0 auto;          // 水平居中
+    max-width: 90vw; // 设置最大宽度
+    margin: 0 auto; // 水平居中
   }
 `;
 
@@ -702,7 +807,7 @@ const ReportPage: React.FC = () => {
   const componentRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState('168'); // 默认显示168题报告
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  
+
   // 添加维度排序函数
   const sortByDimension = (a: any, b: any) => {
     const dimensionOrder = ['看', '听', '说', '记', '想', '做', '运动'];
@@ -716,7 +821,7 @@ const ReportPage: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       const userStr = localStorage.getItem('user');
-      
+
       if (!token || !userStr) {
         message.error('请先登录');
         return;
@@ -727,9 +832,11 @@ const ReportPage: React.FC = () => {
 
       // 修改 API 请求格式
       const answersResponse = await axios.get(
-        getApiUrl(`/double-edged-answers/findByDoubleEdgedIdAndUserId?doubleEdgedId=${doubleEdgedId}&userId=${user.id}`),
+        getApiUrl(
+          `/double-edged-answers/findByDoubleEdgedIdAndUserId?doubleEdgedId=${doubleEdgedId}&userId=${user.id}`
+        ),
         {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
@@ -737,7 +844,7 @@ const ReportPage: React.FC = () => {
       const scaleResponse = await axios.get(
         getApiUrl(`/double-edged-scale/double-edged/${doubleEdgedId}`),
         {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
@@ -746,10 +853,13 @@ const ReportPage: React.FC = () => {
 
       // 如果有已存在的答案，设置到状态中
       if (answersResponse.data && answersResponse.data.length > 0) {
-        const existingAnswers = answersResponse.data.reduce((acc: Record<number, number>, answer: any) => {
-          acc[answer.scaleId] = answer.score;
-          return acc;
-        }, {});
+        const existingAnswers = answersResponse.data.reduce(
+          (acc: Record<number, number>, answer: any) => {
+            acc[answer.scaleId] = answer.score;
+            return acc;
+          },
+          {}
+        );
         setScaleAnswers(existingAnswers);
       } else {
         // 如果没有答案，清空之前的答案
@@ -772,9 +882,9 @@ const ReportPage: React.FC = () => {
   };
 
   const handleAnswer = (scaleId: number, value: number) => {
-    setScaleAnswers(prev => ({
+    setScaleAnswers((prev) => ({
       ...prev,
-      [scaleId]: value
+      [scaleId]: value,
     }));
   };
 
@@ -803,21 +913,22 @@ const ReportPage: React.FC = () => {
       }
 
       // 根据当前选中的Tab获取不同的API路径
-      const elementApiPath = activeTab === '168' 
-        ? `/report/element-analysis168/${userId}`
-        : `/report/element-analysis/${userId}`;
+      const elementApiPath =
+        activeTab === '168'
+          ? `/report/element-analysis168/${userId}`
+          : `/report/element-analysis/${userId}`;
 
       const [scaleResponse, elementResponse] = await Promise.all([
         axios.get(getApiUrl(`/scales/answers/user/${userId}/summary`), {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         }),
         axios.get(getApiUrl(elementApiPath), {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
-        })
+            Authorization: `Bearer ${token}`,
+          },
+        }),
       ]);
 
       const answers = scaleResponse.data;
@@ -832,7 +943,6 @@ const ReportPage: React.FC = () => {
       });
 
       dispatch(setElementAnalysis(elementResponse.data));
-
     } catch (error) {
       console.error('获取数据失败:', error);
       if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -858,7 +968,7 @@ const ReportPage: React.FC = () => {
       filename: `学生综合能力评估报告-${activeTab}题.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     };
 
     html2pdf().set(opt).from(element).save();
@@ -898,20 +1008,20 @@ const ReportPage: React.FC = () => {
           return;
         }
 
-        // 获取喜欢与天赋兼具的元素
-        const likeAndTalentElements = elementAnalysis.filter(item => 
-          item.category === '喜欢与天赋兼具'
+        // 获取有喜欢有天赋的元素
+        const likeAndTalentElements = elementAnalysis.filter(
+          (item) => item.category === '有喜欢有天赋'
         );
 
         // 获取所有双刃剑数据
         const response = await axios.get(getApiUrl('/double-edged-info/all'), {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
 
-        // 过滤出与喜欢与天赋兼具元素相关的双刃剑数据
-        const filteredData = response.data.filter((item: DoubleEdgedInfo) => 
-          likeAndTalentElements.some((element: any) => 
-            element.double_edged_id && element.double_edged_id === item.id
+        // 过滤出与有喜欢有天赋元素相关的双刃剑数据
+        const filteredData = response.data.filter((item: DoubleEdgedInfo) =>
+          likeAndTalentElements.some(
+            (element: any) => element.double_edged_id && element.double_edged_id === item.id
           )
         );
 
@@ -951,14 +1061,14 @@ const ReportPage: React.FC = () => {
         userId,
         scaleId: parseInt(scaleId),
         score,
-        doubleEdgedId: currentDoubleEdgedId
+        doubleEdgedId: currentDoubleEdgedId,
       }));
 
       await axios.post(
         getApiUrl('/double-edged-scale/answers'),
         { answers },
         {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
@@ -981,21 +1091,13 @@ const ReportPage: React.FC = () => {
         <Button key="cancel" onClick={() => setModalVisible(false)}>
           取消
         </Button>,
-        <Button
-          key="submit"
-          type="primary"
-          onClick={handleSubmit}
-        >
+        <Button key="submit" type="primary" onClick={handleSubmit}>
           确认提交
-        </Button>
+        </Button>,
       ]}
     >
-      <Alert
-        type="info"
-        message="请根据实际情况选择最符合的选项"
-        style={{ marginBottom: 24 }}
-      />
-      
+      <Alert type="info" message="请根据实际情况选择最符合的选项" style={{ marginBottom: 24 }} />
+
       {scaleData.map((scale) => {
         const config = TYPE_CONFIGS[scale.type];
         return (
@@ -1009,7 +1111,7 @@ const ReportPage: React.FC = () => {
                 value={scaleAnswers[scale.id]}
               >
                 <Space direction="vertical" style={{ width: '100%' }}>
-                  {config.options.map(option => (
+                  {config.options.map((option) => (
                     <Radio key={option.value} value={option.value}>
                       {option.label}
                     </Radio>
@@ -1024,14 +1126,16 @@ const ReportPage: React.FC = () => {
   );
 
   // 添加新的状态
-  const [answerStats, setAnswerStats] = useState<Record<number, { completed: number, total: number }>>({});
+  const [answerStats, setAnswerStats] = useState<
+    Record<number, { completed: number; total: number }>
+  >({});
 
   // 添加获取答题统计的函数
   const fetchAnswerStats = async () => {
     try {
       const token = localStorage.getItem('token');
       const userStr = localStorage.getItem('user');
-      
+
       if (!token || !userStr) {
         message.error('请先登录');
         return;
@@ -1041,18 +1145,21 @@ const ReportPage: React.FC = () => {
       const response = await axios.get(
         getApiUrl(`/double-edged-answers/findByUserId?userId=${user.id}`),
         {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
       // 统计每个双刃剑的答题情况
-      const stats = response.data.reduce((acc: Record<number, { completed: number, total: number }>, answer: any) => {
-        if (!acc[answer.doubleEdgedId]) {
-          acc[answer.doubleEdgedId] = { completed: 0, total: 6 };
-        }
-        acc[answer.doubleEdgedId].completed += 1;
-        return acc;
-      }, {});
+      const stats = response.data.reduce(
+        (acc: Record<number, { completed: number; total: number }>, answer: any) => {
+          if (!acc[answer.doubleEdgedId]) {
+            acc[answer.doubleEdgedId] = { completed: 0, total: 6 };
+          }
+          acc[answer.doubleEdgedId].completed += 1;
+          return acc;
+        },
+        {}
+      );
 
       setAnswerStats(stats);
     } catch (error) {
@@ -1101,18 +1208,20 @@ const ReportPage: React.FC = () => {
 
   // 修改消息展示组件
   const MessageDisplay: React.FC<{ messages: Message[] }> = ({ messages }) => (
-    <div style={{ 
-      padding: '16px',
-      maxHeight: '400px', // 设置最大高度
-      overflowY: 'auto', // 添加垂直滚动条
-      scrollBehavior: 'smooth' // 平滑滚动
-    }}>
+    <div
+      style={{
+        padding: '16px',
+        maxHeight: '400px', // 设置最大高度
+        overflowY: 'auto', // 添加垂直滚动条
+        scrollBehavior: 'smooth', // 平滑滚动
+      }}
+    >
       {messages.map((message, index) => (
-        <div 
+        <div
           key={index}
-          style={{ 
+          style={{
             marginBottom: '16px',
-            textAlign: message.role === 'user' ? 'right' : 'left'
+            textAlign: message.role === 'user' ? 'right' : 'left',
           }}
         >
           <div
@@ -1143,9 +1252,11 @@ const ReportPage: React.FC = () => {
 
       const sessionName = `${groupTitle}-${itemTitle}`;
       const existingSession = await axios.get(
-        getApiUrl(`/chat/sessions/findByTitle?title=${encodeURIComponent(sessionName)}&userId=${user.id}`),
+        getApiUrl(
+          `/chat/sessions/findByTitle?title=${encodeURIComponent(sessionName)}&userId=${user.id}`
+        ),
         {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
@@ -1153,13 +1264,13 @@ const ReportPage: React.FC = () => {
         const messages = await axios.get(
           getApiUrl(`/chat/sessions/${existingSession.data.id}/messages`),
           {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` },
           }
         );
-        
-        setAnalysisMessages(prev => ({
+
+        setAnalysisMessages((prev) => ({
           ...prev,
-          [sessionName]: messages.data
+          [sessionName]: messages.data,
         }));
       }
     } catch (error) {
@@ -1179,12 +1290,14 @@ const ReportPage: React.FC = () => {
       }
 
       const sessionName = `${groupTitle}-${itemTitle}`;
-      
+
       // 先查询是否存在相同名称的session
       const existingSession = await axios.get(
-        getApiUrl(`/chat/sessions/findByTitle?title=${encodeURIComponent(sessionName)}&userId=${user.id}`),
+        getApiUrl(
+          `/chat/sessions/findByTitle?title=${encodeURIComponent(sessionName)}&userId=${user.id}`
+        ),
         {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
@@ -1193,28 +1306,28 @@ const ReportPage: React.FC = () => {
 
       if (existingSession.data) {
         sessionId = existingSession.data.id;
-        
+
         // 获取消息记录
         const messages = await axios.get(
           getApiUrl(`/chat/sessions/${existingSession.data.id}/messages`),
           {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` },
           }
         );
-        
+
         // 只有当没有消息记录时才设置初始prompt
         shouldSetPrompt = messages.data.length === 0;
       } else {
         // 如果不存在则创建新的session
         const response = await axios.post(
-          getApiUrl('/chat/sessions'), 
+          getApiUrl('/chat/sessions'),
           {
             title: sessionName,
             userId: user.id,
-            systemPrompt: prompt
+            systemPrompt: prompt,
           },
           {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` },
           }
         );
         sessionId = response.data?.id;
@@ -1241,7 +1354,7 @@ const ReportPage: React.FC = () => {
       onOk: () => {
         setChatModalVisible(false);
         setCurrentPrompt('');
-      }
+      },
     });
   };
 
@@ -1262,7 +1375,7 @@ const ReportPage: React.FC = () => {
   // 修改所有List组件的grid属性
   const gridConfig = {
     gutter: 16,
-    column: windowWidth <= 768 ? 1 : 4
+    column: windowWidth <= 768 ? 1 : 4,
   };
 
   // 修改所有Col组件的span属性
@@ -1302,27 +1415,16 @@ const ReportPage: React.FC = () => {
   return (
     <StyledLayout>
       <HeaderContainer>
-        <HomeButton 
-          type="primary" 
-          icon={<HomeOutlined />} 
+        <StyledBackButton
+          icon={<HomeOutlined />}
           onClick={() => navigate('/home')}
-        >
-          返回主页
-        </HomeButton>
-        
+        ></StyledBackButton>
+
         <ReportTitle level={2}>喜欢与天赋评估报告</ReportTitle>
-        
-        {/* <ExportButton 
-          type="primary" 
-          icon={<DownloadOutlined />} 
-          onClick={handleExportPDF}
-        >
-          导出PDF
-        </ExportButton> */}
       </HeaderContainer>
-      
-      <StyledTabs 
-        defaultActiveKey="168" 
+
+      <StyledTabs
+        defaultActiveKey="168"
         onChange={handleTabChange}
         type="card"
         size="large"
@@ -1331,11 +1433,11 @@ const ReportPage: React.FC = () => {
         <Tabs.TabPane tab="168题报告" key="168" />
         <Tabs.TabPane tab="112题报告" key="112" />
       </StyledTabs>
-      
+
       <PrintableContent ref={componentRef}>
         <Row>
           <Col span={24}>
-            <ReportCard 
+            <ReportCard
               title={
                 <SectionTitle>
                   <div className="main-title">喜欢与天赋状态</div>
@@ -1352,106 +1454,127 @@ const ReportPage: React.FC = () => {
                         label: '按结果分组',
                         children: (
                           <Collapse defaultActiveKey={[]}>
-                            <Panel 
+                            <Panel
                               header={
                                 <Space>
                                   <Text strong>喜欢与天赋兼具</Text>
-                                  <Tooltip title={CATEGORY_TIPS['喜欢与天赋兼具']} overlayStyle={{ maxWidth: '500px' }}>
+                                  <Tooltip
+                                    title={CATEGORY_TIPS['有喜欢有天赋']}
+                                    overlayStyle={{ maxWidth: '500px' }}
+                                  >
                                     <QuestionCircleOutlined />
                                   </Tooltip>
                                 </Space>
-                              } 
+                              }
                               key="1"
                             >
                               <ResponsiveList
                                 grid={gridConfig}
                                 dataSource={elementAnalysis
-                                  .filter(item => item.category === '喜欢与天赋兼具')
-                                  .sort(sortByDimension)
-                                }
+                                  .filter((item) => item.category === '有喜欢有天赋')
+                                  .sort(sortByDimension)}
                                 renderItem={renderItem}
                               />
                             </Panel>
-                            <Panel 
+                            <Panel
                               header={
                                 <Space>
                                   <Text strong>喜欢明显/天赋不明显</Text>
-                                  <Tooltip title={CATEGORY_TIPS['喜欢明显/天赋不明显']} overlayStyle={{ maxWidth: '500px' }}>
+                                  <Tooltip
+                                    title={CATEGORY_TIPS['有喜欢没天赋']}
+                                    overlayStyle={{ maxWidth: '500px' }}
+                                  >
                                     <QuestionCircleOutlined />
                                   </Tooltip>
                                 </Space>
-                              } 
+                              }
                               key="2"
                             >
                               <ResponsiveList
                                 grid={gridConfig}
-                                dataSource={elementAnalysis.filter(item => item.category === '喜欢明显/天赋不明显').sort(sortByDimension)}
+                                dataSource={elementAnalysis
+                                  .filter((item) => item.category === '有喜欢没天赋')
+                                  .sort(sortByDimension)}
                                 renderItem={renderItem}
                               />
                             </Panel>
-                            <Panel 
+                            <Panel
                               header={
                                 <Space>
                                   <Text strong>喜欢不明显/天赋明显</Text>
-                                  <Tooltip title={CATEGORY_TIPS['喜欢不明显/天赋明显']} overlayStyle={{ maxWidth: '500px' }}>
+                                  <Tooltip
+                                    title={CATEGORY_TIPS['有天赋没喜欢']}
+                                    overlayStyle={{ maxWidth: '500px' }}
+                                  >
                                     <QuestionCircleOutlined />
                                   </Tooltip>
                                 </Space>
-                              } 
+                              }
                               key="3"
                             >
                               <ResponsiveList
                                 grid={gridConfig}
-                                dataSource={elementAnalysis.filter(item => item.category === '喜欢不明显/天赋明显').sort(sortByDimension)}
+                                dataSource={elementAnalysis
+                                  .filter((item) => item.category === '有天赋没喜欢')
+                                  .sort(sortByDimension)}
                                 renderItem={renderItem}
                               />
                             </Panel>
-                            <Panel 
+                            <Panel
                               header={
                                 <Space>
                                   <Text strong>喜欢与天赋均不明显</Text>
-                                  <Tooltip title={CATEGORY_TIPS['喜欢与天赋均不明显']} overlayStyle={{ maxWidth: '500px' }}>
+                                  <Tooltip
+                                    title={CATEGORY_TIPS['没喜欢没天赋']}
+                                    overlayStyle={{ maxWidth: '500px' }}
+                                  >
                                     <QuestionCircleOutlined />
                                   </Tooltip>
                                 </Space>
-                              } 
+                              }
                               key="4"
                             >
                               <ResponsiveList
                                 grid={gridConfig}
-                                dataSource={elementAnalysis.filter(item => item.category === '喜欢与天赋均不明显').sort(sortByDimension)}
+                                dataSource={elementAnalysis
+                                  .filter((item) => item.category === '没喜欢没天赋')
+                                  .sort(sortByDimension)}
                                 renderItem={renderItem}
                               />
                             </Panel>
                             <Panel header="待确认" key="5">
                               <ResponsiveList
                                 grid={gridConfig}
-                                dataSource={elementAnalysis.filter(item => item.category === '待确认').sort(sortByDimension)}
+                                dataSource={elementAnalysis
+                                  .filter((item) => item.category === '待确认')
+                                  .sort(sortByDimension)}
                                 renderItem={renderItem}
                               />
                             </Panel>
                           </Collapse>
-                        )
+                        ),
                       },
                       {
                         key: 'dimension',
                         label: '按维度分组',
                         children: (
                           <Collapse defaultActiveKey={[]}>
-                            {['看', '听', '说', '记', '想', '做', '运动'].map(dimension => (
-                              <Panel 
-                                header={dimension}
-                                key={dimension}
-                              >
+                            {['看', '听', '说', '记', '想', '做', '运动'].map((dimension) => (
+                              <Panel header={dimension} key={dimension}>
                                 <ResponsiveList
                                   grid={gridConfig}
-                                  dataSource={elementAnalysis.filter(item => item.dimension === dimension)}
-                                  renderItem={item => { const data = item as ElementAnalysisItem; return renderItem(data); }}
+                                  dataSource={elementAnalysis.filter(
+                                    (item) => item.dimension === dimension
+                                  )}
+                                  renderItem={(item) => {
+                                    const data = item as ElementAnalysisItem;
+                                    return renderItem(data);
+                                  }}
                                 />
                               </Panel>
                             ))}
                           </Collapse>
-                        )
+                        ),
                       },
                       {
                         key: 'type',
@@ -1466,9 +1589,12 @@ const ReportPage: React.FC = () => {
                                   <ResponsiveList
                                     grid={gridConfig}
                                     dataSource={[...elementAnalysis].sort(sortByDimension)}
-                                    renderItem={item => { const data = item as ElementAnalysisItem; return renderItem(data); }}
+                                    renderItem={(item) => {
+                                      const data = item as ElementAnalysisItem;
+                                      return renderItem(data);
+                                    }}
                                   />
-                                )
+                                ),
                               },
                               {
                                 key: 'talent',
@@ -1477,21 +1603,24 @@ const ReportPage: React.FC = () => {
                                   <ResponsiveList
                                     grid={gridConfig}
                                     dataSource={[...elementAnalysis].sort(sortByDimension)}
-                                    renderItem={item => { const data = item as ElementAnalysisItem; return renderItem(data); }}
+                                    renderItem={(item) => {
+                                      const data = item as ElementAnalysisItem;
+                                      return renderItem(data);
+                                    }}
                                   />
-                                )
-                              }
+                                ),
+                              },
                             ]}
                           />
-                        )
-                      }
+                        ),
+                      },
                     ]}
                   />
                 </Col>
               </Row>
             </ReportCard>
 
-            <ReportCard 
+            <ReportCard
               title={
                 <SectionTitle>
                   <div className="main-title">性格特征双刃剑分析</div>
@@ -1504,7 +1633,7 @@ const ReportPage: React.FC = () => {
                 description="这些特征是基于您的喜好和天赋组合分析得出的，了解这些特征有助于扬长避短，更好地发展。"
                 style={{ marginBottom: 24 }}
               />
-              
+
               <Spin spinning={loading}>
                 <Collapse defaultActiveKey={[]}>
                   {doubleEdgedData.map((item) => (
@@ -1517,20 +1646,18 @@ const ReportPage: React.FC = () => {
                           </span>
                           <Space>
                             {/* <Tooltip title="点击进行深度确认，帮助您更好地理解和应对这些特征"> */}
-                              <Button 
-                                size="small"
-                                className="confirm-button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleConfirm(item.id);
-                                }}
-                              >
-                                深度确认
-                              </Button>
+                            <Button
+                              size="small"
+                              className="confirm-button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleConfirm(item.id);
+                              }}
+                            >
+                              深度确认
+                            </Button>
                             {/* </Tooltip> */}
-                            <Text type="secondary">
-                              ({answerStats[item.id]?.completed || 0}/6)
-                            </Text>
+                            <Text type="secondary">({answerStats[item.id]?.completed || 0}/6)</Text>
                           </Space>
                         </div>
                       }
@@ -1540,9 +1667,7 @@ const ReportPage: React.FC = () => {
                           <BulbOutlined style={{ color: '#1890ff' }} />
                           <Text strong>表现特征</Text>
                         </div>
-                        <div className="content">
-                          {item.demonstrate}
-                        </div>
+                        <div className="content">{item.demonstrate}</div>
                       </ContentBox>
 
                       <ContentBox>
@@ -1550,9 +1675,7 @@ const ReportPage: React.FC = () => {
                           <ExclamationCircleOutlined style={{ color: '#faad14' }} />
                           <Text strong>影响分析</Text>
                         </div>
-                        <div className="content">
-                          {item.affect}
-                        </div>
+                        <div className="content">{item.affect}</div>
                       </ContentBox>
 
                       <ElementsGrid>
@@ -1574,7 +1697,7 @@ const ReportPage: React.FC = () => {
                     </StyledPanel>
                   ))}
                 </Collapse>
-                
+
                 {!loading && doubleEdgedData.length === 0 && (
                   <Empty description="暂无相关的双刃剑特征数据" />
                 )}
@@ -1725,9 +1848,7 @@ const ReportPage: React.FC = () => {
             </ReportCard> */}
 
             <Card className="no-print">
-              <Text type="secondary">
-              注：本报告基于您的自评生成，仅供参考。
-              </Text>
+              <Text type="secondary">注：本报告基于您的自评生成，仅供参考。</Text>
             </Card>
           </Col>
         </Row>
@@ -1758,15 +1879,10 @@ const ReportPage: React.FC = () => {
         width="80%"
         footer={null}
         destroyOnClose
-        closeIcon={
-          <Button 
-            type="text" 
-            icon={<CloseOutlined />}
-          />
-        }
+        closeIcon={<Button type="text" icon={<CloseOutlined />} />}
       >
-        <ChatPage 
-          sessionId={currentSessionId} 
+        <ChatPage
+          sessionId={currentSessionId}
           isModal={true}
           initialPrompt={currentPrompt}
           onStreamingChange={setIsStreaming}
@@ -1774,6 +1890,6 @@ const ReportPage: React.FC = () => {
       </ChatModal>
     </StyledLayout>
   );
-}
+};
 
 export default ReportPage;

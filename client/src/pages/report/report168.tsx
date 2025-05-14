@@ -648,7 +648,8 @@ const ResponsiveCol = styled(Col)`
 
 const HomeButton = styled(Button)`
   @media (max-width: 768px) {
-    display: none !important;
+    width: 100%;
+    margin-bottom: 8px;
   }
 `;
 
