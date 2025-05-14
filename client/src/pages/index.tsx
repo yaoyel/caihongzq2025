@@ -1,6 +1,6 @@
 import React from 'react';
 import { Typography, Button, Layout } from 'antd';
-import { FormOutlined, FileTextOutlined, MessageOutlined } from '@ant-design/icons';
+import { FormOutlined, FileTextOutlined } from '@ant-design/icons';
 import styled from '@emotion/styled';
 import { useNavigate } from 'react-router-dom';
 
@@ -205,12 +205,12 @@ const HomePage: React.FC = () => {
       label: '查看报告',
       onClick: () => navigate('/report')
     },
-    {
-      key: 'chat',
-      icon: <MessageOutlined />,
-      label: '问题咨询（AI对话）',
-      onClick: () => navigate('/chat')
-    }
+    // {
+    //   key: 'chat',
+    //   icon: <MessageOutlined />,
+    //   label: '问题咨询（AI对话）',
+    //   onClick: () => navigate('/chat')
+    // }
   ];
 
   return (
