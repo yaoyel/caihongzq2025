@@ -1,4 +1,4 @@
-import { JsonController, Post, Body, Get, Param, Authorized, Ctx, NotFoundError } from 'routing-controllers';
+import { JsonController, Post, Body, Get, Param, Authorized, Ctx, NotFoundError, Put } from 'routing-controllers';
 import { OpenAPI } from 'routing-controllers-openapi';
 import { Service } from 'typedi';
 import { UserService } from '../services/user.service';
@@ -47,6 +47,46 @@ export class UserController {
             console.error('获取用户信息失败:', error);
             return { code: 500, message: `获取用户信息失败: ${error instanceof Error ? error.message : '未知错误'}` };
         }
-    } 
+    }
+
+    @Put('/updateNickname/:id')
+    @OpenAPI({ summary: '更新用户昵称' })
+    async updateNickname(
+        @Param('id') id: number, 
+        @Body() updateData: { nickname: string }
+    ) {
+        try {
+            console.log(`尝试更新用户昵称，id: ${id}, nickname: ${updateData.nickname}`);
+            
+            // 验证昵称不能为空
+            if (!updateData.nickname || updateData.nickname.trim() === '') {
+                return { code: 400, message: '昵称不能为空' };
+            }
+
+            // 验证昵称长度
+            if (updateData.nickname.length > 50) {
+                return { code: 400, message: '昵称长度不能超过50个字符' };
+            }
+
+            const updatedUser = await this.userService.updateNickname(id, updateData.nickname.trim());
+            
+            if (!updatedUser) {
+                return { code: 404, message: '用户不存在' };
+            }
+            
+            console.log('成功更新用户昵称:', updatedUser);
+            return { 
+                code: 200, 
+                message: '昵称更新成功', 
+                data: updatedUser 
+            };
+        } catch (error) {
+            console.error('更新用户昵称失败:', error);
+            return { 
+                code: 500, 
+                message: `更新用户昵称失败: ${error instanceof Error ? error.message : '未知错误'}` 
+            };
+        }
+    }
   
 }

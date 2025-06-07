@@ -234,8 +234,8 @@ router.all('/callback', async (ctx: Context) => {
             console.log('更新现有用户');
           }
           
-          user.nickname = userInfo.data.nickname;
-          user.avatarUrl = userInfo.data.headimgurl;
+          // user.nickname = userInfo.data.nickname;
+          // user.avatarUrl = userInfo.data.headimgurl;
           await userRepository.save(user);
 
           console.log('用户信息已保存:', user);
