@@ -13,6 +13,8 @@ import {
   message,
   Row,
   Tooltip,
+  Modal,
+  Input,
 } from 'antd';
 import type { MenuItemProps } from 'antd';
 import styled from '@emotion/styled';
@@ -23,10 +25,12 @@ import {
   CheckOutlined,
   CloseOutlined,
   MenuOutlined,
+  EditOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { getApiUrl } from '../../config';
+import { getApiUrl, updateUserNickname } from '../../config';
 
 const { Title, Text } = Typography;
 const { Content, Sider } = Layout;
@@ -292,6 +296,28 @@ const StyledHomeButton = styled(HomeButton)`
   }
 `;
 
+const StyledNicknameButton = styled(Button)`
+  position: absolute;
+  right: 60px;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  height: 36px;
+  width: 36px;
+  font-size: 14px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  @media (max-width: 768px) {
+    height: 32px;
+    width: 32px;
+    font-size: 13px;
+    right: 50px;
+  }
+`;
+
 const Scale168Assessment: React.FC = () => {
   const navigate = useNavigate();
   const [currentCategory, setCurrentCategory] = useState<string>(categories[0].type);
@@ -306,6 +332,8 @@ const Scale168Assessment: React.FC = () => {
   const [savingStatus, setSavingStatus] = useState<Record<number, 'saving' | 'saved' | 'error'>>(
     {}
   );
+  const [isNicknameModalVisible, setIsNicknameModalVisible] = useState(false);
+  const [newNickname, setNewNickname] = useState('');
 
   // 添加窗口大小变化监听
   useEffect(() => {
@@ -786,6 +814,44 @@ const Scale168Assessment: React.FC = () => {
     return category ? category.color : '#1890ff';
   };
 
+  // 添加修改昵称的处理函数
+  const handleUpdateNickname = async () => {
+    if (!newNickname.trim()) {
+      message.error('昵称不能为空');
+      return;
+    }
+
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        message.error('请先登录');
+        navigate('/login');
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+      const response = await updateUserNickname(user.id, newNickname);
+
+      if (response.success) {
+        message.success('昵称修改成功');
+        setIsNicknameModalVisible(false);
+        
+        // 更新本地存储的用户信息
+        user.nickname = newNickname;
+        localStorage.setItem('user', JSON.stringify(user));
+      } else {
+        message.error(response.message || '修改昵称失败');
+      }
+    } catch (error) {
+      console.error('修改昵称失败:', error);
+      if (error instanceof Error) {
+        message.error(error.message);
+      } else {
+        message.error('修改昵称失败，请稍后重试');
+      }
+    }
+  };
+
   if (loading || allQuestions.length === 0) return null;
 
   const totalAnswered = Object.keys(answers).length;
@@ -911,11 +977,21 @@ const Scale168Assessment: React.FC = () => {
         <StyledContent>
           <TitleRow>
             <AbsoluteTitle level={2}>喜欢与天赋自评</AbsoluteTitle>
+            <StyledNicknameButton
+              icon={<EditOutlined />}
+              onClick={() => {
+                const userStr = localStorage.getItem('user');
+                if (userStr) {
+                  const user = JSON.parse(userStr);
+                  setNewNickname(user.nickname || '');
+                }
+                setIsNicknameModalVisible(true);
+              }}
+            />
             <StyledHomeButton
               icon={<HomeOutlined />}
               onClick={() => navigate('/home')}
-            >
-            </StyledHomeButton>
+            />
           </TitleRow>
           <ResponsiveSteps
             current={dimensions.indexOf(currentDimension)}
@@ -1043,6 +1119,23 @@ const Scale168Assessment: React.FC = () => {
           </StyledCard>
         </StyledContent>
       </StyledMainLayout>
+
+      <Modal
+        title="修改昵称"
+        open={isNicknameModalVisible}
+        onOk={handleUpdateNickname}
+        onCancel={() => setIsNicknameModalVisible(false)}
+        okText="确认"
+        cancelText="取消"
+      >
+        <Input
+          placeholder="请输入新的昵称"
+          value={newNickname}
+          onChange={(e) => setNewNickname(e.target.value)}
+          maxLength={20}
+          showCount
+        />
+      </Modal>
     </StyledLayout>
   );
 };
