@@ -33,4 +33,35 @@ export class UserService {
             throw error;
         }
     }
+
+    /**
+     * 更新用户昵称
+     * @param id 用户ID
+     * @param nickname 新昵称
+     * @returns 更新后的用户信息
+     */
+    async updateNickname(id: number, nickname: string) {
+        try {
+            console.log(`尝试更新用户昵称，id: ${id}, nickname: ${nickname}`);
+            
+            // 检查用户是否存在
+            const existingUser = await this.userRepository.findOne({ where: { id } });
+            if (!existingUser) {
+                console.log(`用户不存在，id: ${id}`);
+                return null;
+            }
+
+            // 更新用户昵称
+            await this.userRepository.update(id, { nickname });
+            
+            // 返回更新后的用户信息
+            const updatedUser = await this.userRepository.findOne({ where: { id } });
+            console.log(`成功更新用户昵称: ${JSON.stringify(updatedUser)}`);
+            
+            return updatedUser;
+        } catch (error) {
+            console.error(`更新用户昵称失败，id: ${id}`, error);
+            throw error;
+        }
+    }
 } 
