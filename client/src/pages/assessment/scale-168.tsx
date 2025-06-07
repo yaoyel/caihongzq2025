@@ -903,7 +903,11 @@ const Scale168Assessment: React.FC = () => {
           </Menu>
         </SiderContentWrapper>
       </StyledSider>
-      <StyledMainLayout collapsed={collapsed} onClick={() => setCollapsed(!collapsed)}>
+      <StyledMainLayout collapsed={collapsed} onClick={() => {
+        if (!collapsed) {
+          setCollapsed(!collapsed)
+        }
+      }}>
         <StyledContent>
           <TitleRow>
             <AbsoluteTitle level={2}>喜欢与天赋自评</AbsoluteTitle>
