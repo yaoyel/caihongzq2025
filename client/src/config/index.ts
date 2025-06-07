@@ -31,6 +31,7 @@ export const api = {
     scales: '/scales',
     questions: '/questions',
     users: '/users',
+    updateNickname: (userId: string) => `/users/updateNickname/${userId}`,
   }
 };
 
@@ -55,4 +56,42 @@ export const checkUserAuth = () => {
         .catch(error => {
             console.error('获取用户信息失败:', error);
         });
+};
+
+// 修改用户昵称的接口类型定义
+interface UpdateNicknameRequest {
+    nickname: string;
+}
+
+interface UpdateNicknameResponse {
+    success: boolean;
+    message: string;
+    data?: {
+        nickname: string;
+    };
+}
+
+/**
+ * 修改用户昵称
+ * @param userId 用户ID
+ * @param nickname 新昵称
+ * @returns Promise<UpdateNicknameResponse>
+ */
+export const updateUserNickname = async (
+    userId: string,
+    nickname: string
+): Promise<UpdateNicknameResponse> => {
+    try {
+        const response = await axios.put<UpdateNicknameResponse>(
+            getApiUrl(api.endpoints.updateNickname(userId)),
+            { nickname },
+            { headers: getAuthHeaders() }
+        );
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            throw new Error(error.response?.data?.message || '修改昵称失败');
+        }
+        throw error;
+    }
 };
