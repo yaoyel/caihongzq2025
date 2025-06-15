@@ -2,17 +2,40 @@ import { SchoolDetail } from "../entities/SchoolDetail";
 import { SchoolViewModel } from "./base.school.view.model";
 
 /**
- * 专业详情视图模型
+ * 专业详情基础视图模型
+ * 包含专业的基本信息字段
  */
-export class MajorDetailViewModel {
+export class BaseMajorDetailViewModel {
+  /** 专业代码 */
   code: string;
+  
+  /** 教育层次 */
   educationLevel: string | null;
+  
+  /** 学习年限 */
   studyPeriod: string | null;
+  
+  /** 授予学位 */
   awardedDegree: string | null;
+  
+  /** 专业简介 */
   majorBrief: string | null;
+  
+  /** 学习内容 */
   studyContent: string | null;
+  
+  /** 学长说 */
   seniorTalk: string | null;
+  
+  /** 职业发展 */
   careerDevelopment: string | null;
+}
+
+/**
+ * 专业详情视图模型
+ * 继承基础视图模型，添加关联信息
+ */
+export class MajorDetailViewModel extends BaseMajorDetailViewModel {
   major: {
     name: string;
     code: string;
@@ -51,7 +74,9 @@ export class MajorDetailViewModel {
 
 export function toMajorDetailViewModel(data: any): MajorDetailViewModel | undefined {
   if (!data || !data.major) return undefined;
-  return {
+  
+  // 创建基础视图模型部分
+  const baseViewModel: BaseMajorDetailViewModel = {
     code: data.code,
     educationLevel: data.educationLevel,
     studyPeriod: data.studyPeriod,
@@ -60,6 +85,11 @@ export function toMajorDetailViewModel(data: any): MajorDetailViewModel | undefi
     studyContent: data.studyContent,
     seniorTalk: data.seniorTalk,
     careerDevelopment: data.careerDevelopment,
+  };
+
+  // 创建完整视图模型
+  return {
+    ...baseViewModel,
     major: {
       name: data.major.name,
       code: data.major.code,

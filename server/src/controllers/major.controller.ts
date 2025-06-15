@@ -1,6 +1,6 @@
 import { Controller, Get, Param, JsonController } from 'routing-controllers'; 
 import { MajorRedisService } from '../services/major.redis.service';
-import { MajorDetailViewModel, toMajorDetailViewModel } from '../view-models/major.view.model';
+import { MajorDetailViewModel, toMajorDetailViewModel, BaseMajorDetailViewModel } from '../view-models/major.view.model';
 import { Service } from 'typedi';
 import { ScaleService } from '../services/scale.service';
 import { MajorScoreService } from '../services/major.service';
@@ -17,6 +17,46 @@ export class MajorController {
     private readonly userScaleService: ScaleService,
     private readonly majorScoreService: MajorScoreService,
   ) {}
+
+  /**
+   * 获取专业简略信息
+   * @param code 专业代码
+   * @returns 专业简略信息视图模型
+   */
+  @Get('/:code/brief')
+  async getMajorBrief(@Param('code') code: string): Promise<BaseMajorDetailViewModel | {}> {
+    try {
+      // 参数验证
+      if (!code) {
+        throw new Error('专业代码不能为空');
+      }
+
+      // 从Redis服务获取原始数据
+      const rawData = await this.majorRedisService.getMajorDetail(code);
+      
+      // 如果没有找到数据
+      if (!rawData) {
+        return {};
+      }
+
+      // 提取基础信息
+      const briefInfo: BaseMajorDetailViewModel = {
+        code: rawData.code,
+        educationLevel: rawData.educationLevel,
+        studyPeriod: rawData.studyPeriod,
+        awardedDegree: rawData.awardedDegree,
+        majorBrief: rawData.majorBrief,
+        studyContent: rawData.studyContent,
+        seniorTalk: rawData.seniorTalk,
+        careerDevelopment: rawData.careerDevelopment,
+      };
+
+      return briefInfo;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '未知错误';
+      throw new Error(`获取专业简略信息失败: ${message}`);
+    }
+  }
 
   /**
    * 获取专业详细信息

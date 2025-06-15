@@ -57,6 +57,47 @@ docker-compose restart client  # 重启前端
 # 数据库恢复
 cat backup_20240101.sql | docker exec -i rbridge-db psql -U postgres rbridge
 
+# Redis 备份
+# 1. 确保数据写入磁盘（使用 SAVE 命令会阻塞，生产环境建议使用 BGSAVE）
+docker exec rbridge-redis redis-cli BGSAVE
+# 等待后台保存完成
+sleep 5
+# 检查保存是否完成
+docker exec rbridge-redis redis-cli info persistence | grep rdb_bgsave_in_progress
+
+# 2. 备份 RDB 和 AOF 文件（如果启用了 AOF）
+# 备份 RDB 文件
+docker cp rbridge-redis:/data/dump.rdb ./redis-backup_$(date +%Y%m%d).rdb
+# 备份 AOF 文件（如果启用了 AOF）
+docker cp rbridge-redis:/data/appendonly.aof ./redis-backup_$(date +%Y%m%d).aof
+
+# Redis 恢复
+# 1. 停止 Redis 容器
+docker-compose stop redis
+
+# 2. 清理目标目录并恢复备份
+# 注意：确保目录存在且有正确的权限
+mkdir -p ./redis-data
+# 设置适当的权限（根据你的 Redis 容器用户设置）
+chmod 777 ./redis-data
+# 复制备份文件
+cp redis-backup_20240101.rdb ./redis-data/dump.rdb
+# 如果使用 AOF，也要复制 AOF 文件
+cp redis-backup_20240101.aof ./redis-data/appendonly.aof 2>/dev/null || true
+
+# 3. 设置正确的文件权限
+chmod 644 ./redis-data/dump.rdb
+chmod 644 ./redis-data/appendonly.aof 2>/dev/null || true
+
+# 4. 重启 Redis 容器
+docker-compose start redis
+
+# 5. 验证数据恢复情况
+# 检查 Redis 是否正常启动
+docker-compose ps redis
+# 检查 Redis 数据加载状态
+docker exec rbridge-redis redis-cli info keyspace
+
 # 检查容器状态
 docker ps -a
 

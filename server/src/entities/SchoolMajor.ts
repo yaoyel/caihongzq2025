@@ -34,21 +34,23 @@ export class SchoolMajor {
    * 学校ID，关联School表的id字段
    */
   @Column({ 
-    type: 'int', 
+    type: 'varchar',
+    length: 50,
     name: 'school_code',
     comment: '学校ID，关联学校表的主键' 
   })
-  schoolCode: number;
+  schoolCode: string;
 
   /**
    * 专业详情ID，关联MajorDetail表的id字段
    */
   @Column({ 
-    type: 'int', 
+    type: 'varchar',
+    length: 50,
     name: 'major_code',
     comment: '专业详情ID，关联专业详情表的主键', 
   })
-  majorCode: number;
+  majorCode: string;
 
   @Column({ 
     type: 'varchar', 
@@ -173,7 +175,7 @@ export class SchoolMajor {
   })
   @JoinColumn({ 
     name: 'major_code',
-    referencedColumnName: 'id'
+    referencedColumnName: 'code'
   })
   majorDetail: MajorDetail;
 
@@ -187,7 +189,7 @@ export class SchoolMajor {
   })
   @JoinColumn({ 
     name: 'school_code',
-    referencedColumnName: 'id'
+    referencedColumnName: 'code'
   })
   school: School;
 
