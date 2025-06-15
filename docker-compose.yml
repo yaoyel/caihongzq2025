@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   client:
     build: 
@@ -28,8 +26,11 @@ services:
       - DB_PASSWORD=${POSTGRES_PASSWORD}
       - DB_NAME=${POSTGRES_DB}
       - JWT_SECRET=${JWT_SECRET}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     depends_on:
       - db
+      - redis
     networks:
       - app-network
     ports:
@@ -47,6 +48,22 @@ services:
       - ./postgres-data:/var/lib/postgresql/data
     networks:
       - app-network
+    ports:
+      - "15432:5432"
+
+  redis:
+    image: redis:alpine
+    container_name: rbridge-redis
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - ./redis-data:/data
+    ports:
+      - "6379:6379"  
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
 
   nginx:
     image: nginx:alpine
@@ -70,3 +87,4 @@ networks:
 volumes:
   postgres-data:
   client-dist:
+  redis-data: 

@@ -1,0 +1,4210 @@
+{
+    "result": [
+        {
+            "id": "606192efc0049bb1926bb7d7",
+            "name": "农林牧渔大类",
+            "code": "21",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 4,
+            "majors": [
+                {
+                    "id": "6061930cc0049bb1926bb7d8",
+                    "name": "农业类",
+                    "code": "2101",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "606192efc0049bb1926bb7d7",
+                    "childCount": 8,
+                    "majors": [
+                        {
+                            "id": "6061972ec0049bb1926bb7d9",
+                            "name": "现代种业技术",
+                            "code": "210101",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061930cc0049bb1926bb7d8",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619777c0049bb1926bb7da",
+                            "name": "作物生产与品质改良",
+                            "code": "210102",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061930cc0049bb1926bb7d8",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619781c0049bb1926bb7db",
+                            "name": "智慧农业技术",
+                            "code": "210103",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061930cc0049bb1926bb7d8",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619789c0049bb1926bb7dc",
+                            "name": "设施园艺",
+                            "code": "210104",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061930cc0049bb1926bb7d8",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061978fc0049bb1926bb7dd",
+                            "name": "现代农业经营与管理",
+                            "code": "210105",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061930cc0049bb1926bb7d8",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "66626f68f72eab99590aa8ef",
+                            "name": "智能化农业装备技术",
+                            "code": "210106",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061930cc0049bb1926bb7d8",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "66626f76f72eab99590aa8f3",
+                            "name": "现代植保技术",
+                            "code": "210107",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061930cc0049bb1926bb7d8",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "67690212bd5b387fa3b6ed29",
+                            "name": "茶叶生产与应用技术",
+                            "code": "210108",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061930cc0049bb1926bb7d8",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061979bc0049bb1926bb7de",
+                    "name": "林业类",
+                    "code": "2102",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "606192efc0049bb1926bb7d7",
+                    "childCount": 5,
+                    "majors": [
+                        {
+                            "id": "606197a4c0049bb1926bb7df",
+                            "name": "智慧林业技术",
+                            "code": "210201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061979bc0049bb1926bb7de",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "606197a9c0049bb1926bb7e0",
+                            "name": "园林工程",
+                            "code": "210202",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061979bc0049bb1926bb7de",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "606197aec0049bb1926bb7e1",
+                            "name": "木业产品智能制造",
+                            "code": "210203",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061979bc0049bb1926bb7de",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "67690220bd5b387fa3b6ed2a",
+                            "name": "林草保护工程",
+                            "code": "210204",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061979bc0049bb1926bb7de",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6769022fbd5b387fa3b6ed2b",
+                            "name": "林业碳汇工程",
+                            "code": "210205",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061979bc0049bb1926bb7de",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "606197c4c0049bb1926bb7e2",
+                    "name": "畜牧业类",
+                    "code": "2103",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "606192efc0049bb1926bb7d7",
+                    "childCount": 4,
+                    "majors": [
+                        {
+                            "id": "60619c8c662861c4cd3b6e76",
+                            "name": "动物医学",
+                            "code": "210301",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "606197c4c0049bb1926bb7e2",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619ca3662861c4cd3b6e77",
+                            "name": "动物药学",
+                            "code": "210302",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "606197c4c0049bb1926bb7e2",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619a08c0049bb1926bb7e3",
+                            "name": "宠物医疗",
+                            "code": "210303",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "606197c4c0049bb1926bb7e2",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619a20c0049bb1926bb7e4",
+                            "name": "现代畜牧",
+                            "code": "210304",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "606197c4c0049bb1926bb7e2",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619a2fc0049bb1926bb7e5",
+                    "name": "渔业类",
+                    "code": "2104",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "606192efc0049bb1926bb7d7",
+                    "childCount": 2,
+                    "majors": [
+                        {
+                            "id": "60619a4cc0049bb1926bb7e6",
+                            "name": "现代水产养殖技术",
+                            "code": "210401",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619a2fc0049bb1926bb7e5",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "67690241bd5b387fa3b6ed2c",
+                            "name": "远洋渔业",
+                            "code": "210402",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619a2fc0049bb1926bb7e5",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "60619a79c0049bb1926bb7e7",
+            "name": "资源环境与安全大类",
+            "code": "22",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 8,
+            "majors": [
+                {
+                    "id": "60619a8cc0049bb1926bb7e8",
+                    "name": "资源勘查类",
+                    "code": "2201",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619a79c0049bb1926bb7e7",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "60619aaec0049bb1926bb7e9",
+                            "name": "资源勘查工程技术",
+                            "code": "220101",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619a8cc0049bb1926bb7e8",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619cb6662861c4cd3b6e78",
+                    "name": "地质类",
+                    "code": "2202",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619a79c0049bb1926bb7e7",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "60619cc2662861c4cd3b6e79",
+                            "name": "环境地质工程",
+                            "code": "220201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619cb6662861c4cd3b6e78",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619ad2c0049bb1926bb7ea",
+                    "name": "测绘地理信息类",
+                    "code": "2203",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619a79c0049bb1926bb7e7",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "60619adec0049bb1926bb7eb",
+                            "name": "导航工程技术",
+                            "code": "220301",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619ad2c0049bb1926bb7ea",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619ae5c0049bb1926bb7ec",
+                            "name": "测绘工程技术",
+                            "code": "220302",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619ad2c0049bb1926bb7ea",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619aebc0049bb1926bb7ed",
+                            "name": "地理信息技术",
+                            "code": "220303",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619ad2c0049bb1926bb7ea",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619af8c0049bb1926bb7ee",
+                    "name": "石油与天然气类",
+                    "code": "2204",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619a79c0049bb1926bb7e7",
+                    "childCount": 2,
+                    "majors": [
+                        {
+                            "id": "60619cec662861c4cd3b6e7a",
+                            "name": "油气储运工程",
+                            "code": "220401",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619af8c0049bb1926bb7ee",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619b09c0049bb1926bb7ef",
+                            "name": "石油工程技术",
+                            "code": "220402",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619af8c0049bb1926bb7ee",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619b19c0049bb1926bb7f0",
+                    "name": "煤炭类",
+                    "code": "2205",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619a79c0049bb1926bb7e7",
+                    "childCount": 2,
+                    "majors": [
+                        {
+                            "id": "60619b21c0049bb1926bb7f1",
+                            "name": "智能采矿技术",
+                            "code": "220501",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619b19c0049bb1926bb7f0",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619b26c0049bb1926bb7f2",
+                            "name": "煤炭清洁利用工程",
+                            "code": "220502",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619b19c0049bb1926bb7f0",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619b33c0049bb1926bb7f3",
+                    "name": "气象类",
+                    "code": "2207",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619a79c0049bb1926bb7e7",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "60619b42c0049bb1926bb7f4",
+                            "name": "智慧气象技术",
+                            "code": "220701",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619b33c0049bb1926bb7f3",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619b54c0049bb1926bb7f5",
+                    "name": "环境保护类",
+                    "code": "2208",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619a79c0049bb1926bb7e7",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "60619b61c0049bb1926bb7f6",
+                            "name": "生态环境工程技术",
+                            "code": "220801",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619b54c0049bb1926bb7f5",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "67690265bd5b387fa3b6ed2d",
+                            "name": "生态环境数智化监测技术",
+                            "code": "220802",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619b54c0049bb1926bb7f5",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "67690272bd5b387fa3b6ed2e",
+                            "name": "资源循环工程",
+                            "code": "220803",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619b54c0049bb1926bb7f5",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619b6ac0049bb1926bb7f7",
+                    "name": "安全类",
+                    "code": "2209",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619a79c0049bb1926bb7e7",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "60619b71c0049bb1926bb7f8",
+                            "name": "安全工程技术",
+                            "code": "220901",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619b6ac0049bb1926bb7f7",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619d03662861c4cd3b6e7b",
+                            "name": "应急管理",
+                            "code": "220902",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619b6ac0049bb1926bb7f7",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "66626fa0f72eab99590aa8fd",
+                            "name": "消防工程技术",
+                            "code": "220903",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619b6ac0049bb1926bb7f7",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "60619b93c0049bb1926bb7f9",
+            "name": "能源动力与材料大类",
+            "code": "23",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 7,
+            "majors": [
+                {
+                    "id": "60619ba4c0049bb1926bb7fa",
+                    "name": "电力技术类",
+                    "code": "2301",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619b93c0049bb1926bb7f9",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "60619bc2c0049bb1926bb7fb",
+                            "name": "电力工程及自动化",
+                            "code": "230101",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619ba4c0049bb1926bb7fa",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619bc9c0049bb1926bb7fc",
+                            "name": "智能电网工程技术",
+                            "code": "230102",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619ba4c0049bb1926bb7fa",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "67690281bd5b387fa3b6ed2f",
+                            "name": "智慧综合能源工程",
+                            "code": "230103",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619ba4c0049bb1926bb7fa",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619bd6c0049bb1926bb7fd",
+                    "name": "热能与发电工程类",
+                    "code": "2302",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619b93c0049bb1926bb7f9",
+                    "childCount": 2,
+                    "majors": [
+                        {
+                            "id": "60619be1c0049bb1926bb7fe",
+                            "name": "热能动力工程",
+                            "code": "230201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619bd6c0049bb1926bb7fd",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "67690290bd5b387fa3b6ed30",
+                            "name": "核工程与核技术应用",
+                            "code": "230202",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619bd6c0049bb1926bb7fd",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619bebc0049bb1926bb7ff",
+                    "name": "新能源发电工程类",
+                    "code": "2303",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619b93c0049bb1926bb7f9",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "60619bf5c0049bb1926bb800",
+                            "name": "新能源发电工程技术",
+                            "code": "230301",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619bebc0049bb1926bb7ff",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619bfdc0049bb1926bb801",
+                    "name": "黑色金属材料类",
+                    "code": "2304",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619b93c0049bb1926bb7f9",
+                    "childCount": 2,
+                    "majors": [
+                        {
+                            "id": "60619c05c0049bb1926bb802",
+                            "name": "钢铁智能冶金技术",
+                            "code": "230401",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619bfdc0049bb1926bb801",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "66626fc7f72eab99590aa904",
+                            "name": "钢铁智能轧制技术",
+                            "code": "230402",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619bfdc0049bb1926bb801",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619c14c0049bb1926bb803",
+                    "name": "有色金属材料类",
+                    "code": "2305",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619b93c0049bb1926bb7f9",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "60619c1ec0049bb1926bb804",
+                            "name": "材料化冶金应用技术",
+                            "code": "230501",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619c14c0049bb1926bb803",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619c24c0049bb1926bb805",
+                            "name": "金属智能成型技术",
+                            "code": "230502",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619c14c0049bb1926bb803",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619c2cc0049bb1926bb806",
+                            "name": "储能材料工程技术",
+                            "code": "230503",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619c14c0049bb1926bb803",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619c3cc0049bb1926bb807",
+                    "name": "非金属材料类",
+                    "code": "2306",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619b93c0049bb1926bb7f9",
+                    "childCount": 2,
+                    "majors": [
+                        {
+                            "id": "60619c49662861c4cd3b6e72",
+                            "name": "高分子材料工程技术",
+                            "code": "230601",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619c3cc0049bb1926bb807",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619c50662861c4cd3b6e73",
+                            "name": "新材料与应用技术",
+                            "code": "230602",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619c3cc0049bb1926bb807",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619c5e662861c4cd3b6e74",
+                    "name": "建筑材料类",
+                    "code": "2307",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619b93c0049bb1926bb7f9",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "60619c67662861c4cd3b6e75",
+                            "name": "建筑材料智能制造",
+                            "code": "230701",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619c5e662861c4cd3b6e74",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "60619d2f662861c4cd3b6e7c",
+            "name": "土木建筑大类",
+            "code": "24",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 7,
+            "majors": [
+                {
+                    "id": "60619d3f662861c4cd3b6e7d",
+                    "name": "建筑设计类",
+                    "code": "2401",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619d2f662861c4cd3b6e7c",
+                    "childCount": 5,
+                    "majors": [
+                        {
+                            "id": "60619d67662861c4cd3b6e7e",
+                            "name": "建筑设计",
+                            "code": "240101",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619d3f662861c4cd3b6e7d",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619d6c662861c4cd3b6e7f",
+                            "name": "建筑装饰工程",
+                            "code": "240102",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619d3f662861c4cd3b6e7d",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619d72662861c4cd3b6e80",
+                            "name": "古建筑工程",
+                            "code": "240103",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619d3f662861c4cd3b6e7d",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619d77662861c4cd3b6e81",
+                            "name": "园林景观工程",
+                            "code": "240104",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619d3f662861c4cd3b6e7d",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619d7d662861c4cd3b6e82",
+                            "name": "城市设计数字技术",
+                            "code": "240105",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619d3f662861c4cd3b6e7d",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619d87662861c4cd3b6e83",
+                    "name": "城乡规划与管理类",
+                    "code": "2402",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619d2f662861c4cd3b6e7c",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "60619d8f662861c4cd3b6e84",
+                            "name": "城乡规划",
+                            "code": "240201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619d87662861c4cd3b6e83",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619d9e662861c4cd3b6e85",
+                    "name": "土建施工类",
+                    "code": "2403",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619d2f662861c4cd3b6e7c",
+                    "childCount": 4,
+                    "majors": [
+                        {
+                            "id": "60619da8662861c4cd3b6e86",
+                            "name": "建筑工程",
+                            "code": "240301",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619d9e662861c4cd3b6e85",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619dad662861c4cd3b6e87",
+                            "name": "智能建造工程",
+                            "code": "240302",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619d9e662861c4cd3b6e85",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619db4662861c4cd3b6e88",
+                            "name": "城市地下工程",
+                            "code": "240303",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619d9e662861c4cd3b6e85",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619dba662861c4cd3b6e89",
+                            "name": "建筑智能检测与修复",
+                            "code": "240304",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619d9e662861c4cd3b6e85",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619dca662861c4cd3b6e8a",
+                    "name": "建筑设备类",
+                    "code": "2404",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619d2f662861c4cd3b6e7c",
+                    "childCount": 2,
+                    "majors": [
+                        {
+                            "id": "60619dd4662861c4cd3b6e8b",
+                            "name": "建筑环境与能源工程",
+                            "code": "240401",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619dca662861c4cd3b6e8a",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619ddb662861c4cd3b6e8c",
+                            "name": "建筑电气与智能化工程",
+                            "code": "240402",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619dca662861c4cd3b6e8a",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619de5662861c4cd3b6e8d",
+                    "name": "建设工程管理类",
+                    "code": "2405",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619d2f662861c4cd3b6e7c",
+                    "childCount": 2,
+                    "majors": [
+                        {
+                            "id": "60619dee662861c4cd3b6e8e",
+                            "name": "工程造价",
+                            "code": "240501",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619de5662861c4cd3b6e8d",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619df3662861c4cd3b6e8f",
+                            "name": "建设工程管理",
+                            "code": "240502",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619de5662861c4cd3b6e8d",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619dfb662861c4cd3b6e90",
+                    "name": "市政工程类",
+                    "code": "2406",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619d2f662861c4cd3b6e7c",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "60619e03662861c4cd3b6e91",
+                            "name": "市政工程",
+                            "code": "240601",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619dfb662861c4cd3b6e90",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619e0a662861c4cd3b6e92",
+                            "name": "城市设施智慧管理",
+                            "code": "240602",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619dfb662861c4cd3b6e90",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "66626fe5f72eab99590aa90b",
+                            "name": "给排水工程",
+                            "code": "240603",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619dfb662861c4cd3b6e90",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619e12662861c4cd3b6e93",
+                    "name": "房地产类",
+                    "code": "2407",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619d2f662861c4cd3b6e7c",
+                    "childCount": 2,
+                    "majors": [
+                        {
+                            "id": "60619e19662861c4cd3b6e94",
+                            "name": "房地产投资与策划",
+                            "code": "240701",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619e12662861c4cd3b6e93",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619e5b662861c4cd3b6e95",
+                            "name": "现代物业管理",
+                            "code": "240702",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619e12662861c4cd3b6e93",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "60619e7c662861c4cd3b6e96",
+            "name": "水利大类",
+            "code": "25",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 4,
+            "majors": [
+                {
+                    "id": "60619e87662861c4cd3b6e97",
+                    "name": "水文水资源类",
+                    "code": "2501",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619e7c662861c4cd3b6e96",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "60619e92662861c4cd3b6e98",
+                            "name": "水文与水资源工程技术",
+                            "code": "250101",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619e87662861c4cd3b6e97",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619eac662861c4cd3b6e99",
+                    "name": "水利工程与管理类",
+                    "code": "2502",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619e7c662861c4cd3b6e96",
+                    "childCount": 4,
+                    "majors": [
+                        {
+                            "id": "60619eb2662861c4cd3b6e9a",
+                            "name": "智慧水利工程",
+                            "code": "250201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619eac662861c4cd3b6e99",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619eba662861c4cd3b6e9b",
+                            "name": "农业水利工程",
+                            "code": "250202",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619eac662861c4cd3b6e99",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619ec5662861c4cd3b6e9c",
+                            "name": "水利水电工程",
+                            "code": "250203",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619eac662861c4cd3b6e99",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619ecc662861c4cd3b6e9d",
+                            "name": "治河与港航工程",
+                            "code": "250204",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619eac662861c4cd3b6e99",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619ed6662861c4cd3b6e9e",
+                    "name": "水利水电设备类",
+                    "code": "2503",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619e7c662861c4cd3b6e96",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "60619ee1662861c4cd3b6e9f",
+                            "name": "水利水电设备及自动化",
+                            "code": "250301",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619ed6662861c4cd3b6e9e",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619ef2662861c4cd3b6ea0",
+                    "name": "水土保持与水环境类",
+                    "code": "2504",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619e7c662861c4cd3b6e96",
+                    "childCount": 2,
+                    "majors": [
+                        {
+                            "id": "60619efb662861c4cd3b6ea1",
+                            "name": "生态水利工程",
+                            "code": "250401",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619ef2662861c4cd3b6ea0",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619f01662861c4cd3b6ea2",
+                            "name": "水环境工程",
+                            "code": "250402",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619ef2662861c4cd3b6ea0",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "60619f24662861c4cd3b6ea3",
+            "name": "装备制造大类",
+            "code": "26",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 7,
+            "majors": [
+                {
+                    "id": "60619f32662861c4cd3b6ea4",
+                    "name": "机械设计制造类",
+                    "code": "2601",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619f24662861c4cd3b6ea3",
+                    "childCount": 6,
+                    "majors": [
+                        {
+                            "id": "60619f41662861c4cd3b6ea5",
+                            "name": "机械设计制造及自动化",
+                            "code": "260101",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619f32662861c4cd3b6ea4",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619f48662861c4cd3b6ea6",
+                            "name": "智能制造工程技术",
+                            "code": "260102",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619f32662861c4cd3b6ea4",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619f4d662861c4cd3b6ea7",
+                            "name": "数控技术",
+                            "code": "260103",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619f32662861c4cd3b6ea4",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619f53662861c4cd3b6ea8",
+                            "name": "工业设计",
+                            "code": "260104",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619f32662861c4cd3b6ea4",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619f58662861c4cd3b6ea9",
+                            "name": "工业工程技术",
+                            "code": "260105",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619f32662861c4cd3b6ea4",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619f5d662861c4cd3b6eaa",
+                            "name": "材料成型及控制工程",
+                            "code": "260106",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619f32662861c4cd3b6ea4",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619f6c662861c4cd3b6eab",
+                    "name": "机电设备类",
+                    "code": "2602",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619f24662861c4cd3b6ea3",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "60619f77662861c4cd3b6eac",
+                            "name": "装备智能化技术",
+                            "code": "260201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619f6c662861c4cd3b6eab",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619f7d662861c4cd3b6ead",
+                            "name": "制冷与空调工程",
+                            "code": "260202",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619f6c662861c4cd3b6eab",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619f83662861c4cd3b6eae",
+                            "name": "电梯工程技术",
+                            "code": "260203",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619f6c662861c4cd3b6eab",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619f96662861c4cd3b6eaf",
+                    "name": "自动化类",
+                    "code": "2603",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619f24662861c4cd3b6ea3",
+                    "childCount": 7,
+                    "majors": [
+                        {
+                            "id": "60619f9e662861c4cd3b6eb0",
+                            "name": "机械电子工程技术",
+                            "code": "260301",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619f96662861c4cd3b6eaf",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619fa6662861c4cd3b6eb1",
+                            "name": "电气工程及自动化",
+                            "code": "260302",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619f96662861c4cd3b6eaf",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619fac662861c4cd3b6eb2",
+                            "name": "智能控制技术",
+                            "code": "260303",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619f96662861c4cd3b6eaf",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619fb1662861c4cd3b6eb3",
+                            "name": "机器人技术",
+                            "code": "260304",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619f96662861c4cd3b6eaf",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619fb6662861c4cd3b6eb4",
+                            "name": "自动化技术与应用",
+                            "code": "260305",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619f96662861c4cd3b6eaf",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619fbc662861c4cd3b6eb5",
+                            "name": "现代测控工程技术",
+                            "code": "260306",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619f96662861c4cd3b6eaf",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619fc1662861c4cd3b6eb6",
+                            "name": "工业互联网工程",
+                            "code": "260307",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619f96662861c4cd3b6eaf",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619fca662861c4cd3b6eb7",
+                    "name": "轨道装备类",
+                    "code": "2604",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619f24662861c4cd3b6ea3",
+                    "childCount": 2,
+                    "majors": [
+                        {
+                            "id": "60619fd1662861c4cd3b6eb8",
+                            "name": "轨道交通车辆工程技术",
+                            "code": "260401",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619fca662861c4cd3b6eb7",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619fd7662861c4cd3b6eb9",
+                            "name": "轨道交通智能控制装备技术",
+                            "code": "260402",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619fca662861c4cd3b6eb7",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619fdf662861c4cd3b6eba",
+                    "name": "船舶与海洋工程装备类",
+                    "code": "2605",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619f24662861c4cd3b6ea3",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "60619fe5662861c4cd3b6ebb",
+                            "name": "船舶智能制造技术",
+                            "code": "260501",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619fdf662861c4cd3b6eba",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619fea662861c4cd3b6ebc",
+                            "name": "船舶动力工程技术",
+                            "code": "260502",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619fdf662861c4cd3b6eba",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "60619ff0662861c4cd3b6ebd",
+                            "name": "船舶电气工程技术",
+                            "code": "260503",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619fdf662861c4cd3b6eba",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "60619ff9662861c4cd3b6ebe",
+                    "name": "航空装备类",
+                    "code": "2606",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619f24662861c4cd3b6ea3",
+                    "childCount": 6,
+                    "majors": [
+                        {
+                            "id": "6061a002662861c4cd3b6ebf",
+                            "name": "航空智能制造技术",
+                            "code": "260601",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619ff9662861c4cd3b6ebe",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a009662861c4cd3b6ec0",
+                            "name": "飞行器维修工程技术",
+                            "code": "260602",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619ff9662861c4cd3b6ebe",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a00f662861c4cd3b6ec1",
+                            "name": "航空动力装置维修技术",
+                            "code": "260603",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619ff9662861c4cd3b6ebe",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a014662861c4cd3b6ec2",
+                            "name": "无人机系统应用技术",
+                            "code": "260604",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619ff9662861c4cd3b6ebe",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "676902a0bd5b387fa3b6ed31",
+                            "name": "航空复合材料智造工程技术",
+                            "code": "260605",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619ff9662861c4cd3b6ebe",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "676902abbd5b387fa3b6ed32",
+                            "name": "电动飞行器应用技术",
+                            "code": "260606",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "60619ff9662861c4cd3b6ebe",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a01e662861c4cd3b6ec3",
+                    "name": "汽车制造类",
+                    "code": "2607",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "60619f24662861c4cd3b6ea3",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "6061a029662861c4cd3b6ec4",
+                            "name": "汽车工程技术",
+                            "code": "260701",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a01e662861c4cd3b6ec3",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a02e662861c4cd3b6ec5",
+                            "name": "新能源汽车工程技术",
+                            "code": "260702",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a01e662861c4cd3b6ec3",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a034662861c4cd3b6ec6",
+                            "name": "智能网联汽车工程技术",
+                            "code": "260703",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a01e662861c4cd3b6ec3",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "6061a060662861c4cd3b6ec7",
+            "name": "生物与化工大类",
+            "code": "27",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 2,
+            "majors": [
+                {
+                    "id": "6061a06b662861c4cd3b6ec8",
+                    "name": "生物技术类",
+                    "code": "2701",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a060662861c4cd3b6ec7",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "6061a07b662861c4cd3b6ec9",
+                            "name": "生物检验检测技术",
+                            "code": "270101",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a06b662861c4cd3b6ec8",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a081662861c4cd3b6eca",
+                            "name": "合成生物技术",
+                            "code": "270102",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a06b662861c4cd3b6ec8",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a086662861c4cd3b6ecb",
+                            "name": "农业生物技术",
+                            "code": "270103",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a06b662861c4cd3b6ec8",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a090662861c4cd3b6ecc",
+                    "name": "化工技术类",
+                    "code": "2702",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a060662861c4cd3b6ec7",
+                    "childCount": 4,
+                    "majors": [
+                        {
+                            "id": "6061a096662861c4cd3b6ecd",
+                            "name": "应用化工技术",
+                            "code": "270201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a090662861c4cd3b6ecc",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a09a662861c4cd3b6ece",
+                            "name": "化工智能制造工程技术",
+                            "code": "270202",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a090662861c4cd3b6ecc",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a0a0662861c4cd3b6ecf",
+                            "name": "现代精细化工技术",
+                            "code": "270203",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a090662861c4cd3b6ecc",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a0a5662861c4cd3b6ed0",
+                            "name": "现代分析测试技术",
+                            "code": "270204",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a090662861c4cd3b6ecc",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "6061a0b6662861c4cd3b6ed1",
+            "name": "轻工纺织大类",
+            "code": "28",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 4,
+            "majors": [
+                {
+                    "id": "6061a0c7662861c4cd3b6ed2",
+                    "name": "轻化工类",
+                    "code": "2801",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a0b6662861c4cd3b6ed1",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "6061a0d0662861c4cd3b6ed3",
+                            "name": "化妆品工程技术",
+                            "code": "280101",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a0c7662861c4cd3b6ed2",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a0d5662861c4cd3b6ed4",
+                            "name": "现代造纸工程技术",
+                            "code": "280102",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a0c7662861c4cd3b6ed2",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "66627009f72eab99590aa90f",
+                            "name": "珠宝首饰工程技术",
+                            "code": "280103",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a0c7662861c4cd3b6ed2",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a0dd662861c4cd3b6ed5",
+                    "name": "包装类",
+                    "code": "2802",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a0b6662861c4cd3b6ed1",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "6061a0e9662861c4cd3b6ed6",
+                            "name": "包装工程技术",
+                            "code": "280201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a0dd662861c4cd3b6ed5",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a0f1662861c4cd3b6ed7",
+                    "name": "印刷类",
+                    "code": "2803",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a0b6662861c4cd3b6ed1",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "6061a0f8662861c4cd3b6ed8",
+                            "name": "数字印刷工程",
+                            "code": "280301",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a0f1662861c4cd3b6ed7",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a101662861c4cd3b6ed9",
+                    "name": "纺织服装类",
+                    "code": "2804",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a0b6662861c4cd3b6ed1",
+                    "childCount": 4,
+                    "majors": [
+                        {
+                            "id": "6061a107662861c4cd3b6eda",
+                            "name": "现代纺织工程技术",
+                            "code": "280401",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a101662861c4cd3b6ed9",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a10d662861c4cd3b6edb",
+                            "name": "服装工程技术",
+                            "code": "280402",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a101662861c4cd3b6ed9",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "66627017f72eab99590aa913",
+                            "name": "数字化染整技术",
+                            "code": "280403",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a101662861c4cd3b6ed9",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "676902bdbd5b387fa3b6ed33",
+                            "name": "鞋类工程技术",
+                            "code": "280404",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a101662861c4cd3b6ed9",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "6061a124662861c4cd3b6edc",
+            "name": "食品药品与粮食大类",
+            "code": "29",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 3,
+            "majors": [
+                {
+                    "id": "6061a12e662861c4cd3b6edd",
+                    "name": "食品类",
+                    "code": "2901",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a124662861c4cd3b6edc",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "6061a13c662861c4cd3b6ede",
+                            "name": "食品工程技术",
+                            "code": "290101",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a12e662861c4cd3b6edd",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a141662861c4cd3b6edf",
+                            "name": "食品质量与安全",
+                            "code": "290102",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a12e662861c4cd3b6edd",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a146662861c4cd3b6ee0",
+                            "name": "食品营养与健康",
+                            "code": "290103",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a12e662861c4cd3b6edd",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a150662861c4cd3b6ee1",
+                    "name": "药品与医疗器械类",
+                    "code": "2902",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a124662861c4cd3b6edc",
+                    "childCount": 8,
+                    "majors": [
+                        {
+                            "id": "6061a157662861c4cd3b6ee2",
+                            "name": "制药工程技术",
+                            "code": "290201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a150662861c4cd3b6ee1",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a15c662861c4cd3b6ee3",
+                            "name": "药品质量管理",
+                            "code": "290202",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a150662861c4cd3b6ee1",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a161662861c4cd3b6ee4",
+                            "name": "医疗器械工程技术",
+                            "code": "290203",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a150662861c4cd3b6ee1",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a165662861c4cd3b6ee5",
+                            "name": "药事服务与管理",
+                            "code": "290204",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a150662861c4cd3b6ee1",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6662702bf72eab99590aa91d",
+                            "name": "药物分析",
+                            "code": "290205",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a150662861c4cd3b6ee1",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "66627041f72eab99590aa921",
+                            "name": "药物制剂",
+                            "code": "290206",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a150662861c4cd3b6ee1",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6662704ef72eab99590aa922",
+                            "name": "康复工程技术",
+                            "code": "290207",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a150662861c4cd3b6ee1",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "676902eebd5b387fa3b6ed34",
+                            "name": "生物制药技术",
+                            "code": "290208",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a150662861c4cd3b6ee1",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a172662861c4cd3b6ee6",
+                    "name": "粮食类",
+                    "code": "2903",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a124662861c4cd3b6edc",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "6061a178662861c4cd3b6ee7",
+                            "name": "现代粮食工程技术",
+                            "code": "290301",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a172662861c4cd3b6ee6",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "6061a18b662861c4cd3b6ee8",
+            "name": "交通运输大类",
+            "code": "30",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 6,
+            "majors": [
+                {
+                    "id": "6061a194662861c4cd3b6ee9",
+                    "name": "铁道运输类",
+                    "code": "3001",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a18b662861c4cd3b6ee8",
+                    "childCount": 7,
+                    "majors": [
+                        {
+                            "id": "6061a1a0662861c4cd3b6eea",
+                            "name": "高速铁路工程",
+                            "code": "300101",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a194662861c4cd3b6ee9",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a1a5662861c4cd3b6eeb",
+                            "name": "高速铁路动车组技术",
+                            "code": "300102",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a194662861c4cd3b6ee9",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a1a9662861c4cd3b6eec",
+                            "name": "高速铁路信号控制技术",
+                            "code": "300103",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a194662861c4cd3b6ee9",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a1ae662861c4cd3b6eed",
+                            "name": "铁道机车智能运用技术",
+                            "code": "300104",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a194662861c4cd3b6ee9",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a1b3662861c4cd3b6eee",
+                            "name": "高速铁路运营管理",
+                            "code": "300105",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a194662861c4cd3b6ee9",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "66627067f72eab99590aa926",
+                            "name": "高速铁路通信技术",
+                            "code": "300106",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a194662861c4cd3b6ee9",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "66627074f72eab99590aa92d",
+                            "name": "高速铁路智能供电技术",
+                            "code": "300107",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a194662861c4cd3b6ee9",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a1bb662861c4cd3b6eef",
+                    "name": "道路运输类",
+                    "code": "3002",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a18b662861c4cd3b6ee8",
+                    "childCount": 4,
+                    "majors": [
+                        {
+                            "id": "6061a1c3662861c4cd3b6ef0",
+                            "name": "道路与桥梁工程",
+                            "code": "300201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a1bb662861c4cd3b6eef",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a1c8662861c4cd3b6ef1",
+                            "name": "智能交通管理",
+                            "code": "300202",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a1bb662861c4cd3b6eef",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a1cf662861c4cd3b6ef2",
+                            "name": "汽车服务工程技术",
+                            "code": "300203",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a1bb662861c4cd3b6eef",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "666270a3f72eab99590aa937",
+                            "name": "道路工程智能检测",
+                            "code": "300204",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a1bb662861c4cd3b6eef",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a1d9662861c4cd3b6ef3",
+                    "name": "水上运输类",
+                    "code": "3003",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a18b662861c4cd3b6ee8",
+                    "childCount": 5,
+                    "majors": [
+                        {
+                            "id": "6061a1e2662861c4cd3b6ef4",
+                            "name": "航海技术",
+                            "code": "300301",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a1d9662861c4cd3b6ef3",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a1e7662861c4cd3b6ef5",
+                            "name": "港口智能工程技术",
+                            "code": "300302",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a1d9662861c4cd3b6ef3",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a1ed662861c4cd3b6ef6",
+                            "name": "轮机工程技术",
+                            "code": "300303",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a1d9662861c4cd3b6ef3",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a1f3662861c4cd3b6ef7",
+                            "name": "国际邮轮运营管理",
+                            "code": "300304",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a1d9662861c4cd3b6ef3",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a1f9662861c4cd3b6ef8",
+                            "name": "水路运输与海事管理",
+                            "code": "300305",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a1d9662861c4cd3b6ef3",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a205662861c4cd3b6ef9",
+                    "name": "航空运输类",
+                    "code": "3004",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a18b662861c4cd3b6ee8",
+                    "childCount": 4,
+                    "majors": [
+                        {
+                            "id": "6061a20c662861c4cd3b6efa",
+                            "name": "民航运输服务与管理",
+                            "code": "300401",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a205662861c4cd3b6ef9",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a212662861c4cd3b6efb",
+                            "name": "航空机电设备维修技术",
+                            "code": "300402",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a205662861c4cd3b6ef9",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a217662861c4cd3b6efc",
+                            "name": "智慧机场运行与管理",
+                            "code": "300403",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a205662861c4cd3b6ef9",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a21d662861c4cd3b6efd",
+                            "name": "通用航空航务技术",
+                            "code": "300404",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a205662861c4cd3b6ef9",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a239662861c4cd3b6efe",
+                    "name": "城市轨道交通类",
+                    "code": "3006",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a18b662861c4cd3b6ee8",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "6061a242662861c4cd3b6eff",
+                            "name": "城市轨道交通信号与控制技术",
+                            "code": "300601",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a239662861c4cd3b6efe",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a248662861c4cd3b6f00",
+                            "name": "城市轨道交通设备与控制技术",
+                            "code": "300602",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a239662861c4cd3b6efe",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a252662861c4cd3b6f01",
+                            "name": "城市轨道交通智能运营",
+                            "code": "300603",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a239662861c4cd3b6efe",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a25a662861c4cd3b6f02",
+                    "name": "邮政类",
+                    "code": "3007",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a18b662861c4cd3b6ee8",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "6061a262662861c4cd3b6f03",
+                            "name": "邮政快递管理",
+                            "code": "300701",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a25a662861c4cd3b6f02",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "6061a29f662861c4cd3b6f04",
+            "name": "电子与信息大类",
+            "code": "31",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 4,
+            "majors": [
+                {
+                    "id": "6061a2a9662861c4cd3b6f05",
+                    "name": "电子信息类",
+                    "code": "3101",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a29f662861c4cd3b6f04",
+                    "childCount": 5,
+                    "majors": [
+                        {
+                            "id": "6061a2bb662861c4cd3b6f06",
+                            "name": "电子信息工程技术",
+                            "code": "310101",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2a9662861c4cd3b6f05",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a2c1662861c4cd3b6f07",
+                            "name": "物联网工程技术",
+                            "code": "310102",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2a9662861c4cd3b6f05",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a2c7662861c4cd3b6f08",
+                            "name": "柔性电子技术",
+                            "code": "310103",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2a9662861c4cd3b6f05",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a2cc662861c4cd3b6f09",
+                            "name": "光电信息工程技术",
+                            "code": "310104",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2a9662861c4cd3b6f05",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "67690316bd5b387fa3b6ed35",
+                            "name": "智能体工程技术",
+                            "code": "310105",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2a9662861c4cd3b6f05",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a2d4662861c4cd3b6f0a",
+                    "name": "计算机类",
+                    "code": "3102",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a29f662861c4cd3b6f04",
+                    "childCount": 14,
+                    "majors": [
+                        {
+                            "id": "6061a2db662861c4cd3b6f0b",
+                            "name": "计算机应用工程",
+                            "code": "310201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2d4662861c4cd3b6f0a",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a2e1662861c4cd3b6f0c",
+                            "name": "网络工程技术",
+                            "code": "310202",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2d4662861c4cd3b6f0a",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a2e6662861c4cd3b6f0d",
+                            "name": "软件工程技术",
+                            "code": "310203",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2d4662861c4cd3b6f0a",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a2eb662861c4cd3b6f0e",
+                            "name": "数字媒体技术",
+                            "code": "310204",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2d4662861c4cd3b6f0a",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a2f0662861c4cd3b6f0f",
+                            "name": "大数据工程技术",
+                            "code": "310205",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2d4662861c4cd3b6f0a",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a2f5662861c4cd3b6f10",
+                            "name": "云计算技术",
+                            "code": "310206",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2d4662861c4cd3b6f0a",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a2fb662861c4cd3b6f11",
+                            "name": "信息安全与管理",
+                            "code": "310207",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2d4662861c4cd3b6f0a",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a301662861c4cd3b6f12",
+                            "name": "虚拟现实技术",
+                            "code": "310208",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2d4662861c4cd3b6f0a",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a306662861c4cd3b6f13",
+                            "name": "人工智能工程技术",
+                            "code": "310209",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2d4662861c4cd3b6f0a",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a30b662861c4cd3b6f14",
+                            "name": "嵌入式技术",
+                            "code": "310210",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2d4662861c4cd3b6f0a",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a310662861c4cd3b6f15",
+                            "name": "工业互联网技术",
+                            "code": "310211",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2d4662861c4cd3b6f0a",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a314662861c4cd3b6f16",
+                            "name": "区块链技术",
+                            "code": "310212",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2d4662861c4cd3b6f0a",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "67690332bd5b387fa3b6ed36",
+                            "name": "数据安全技术与管理",
+                            "code": "310213",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2d4662861c4cd3b6f0a",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "67690339bd5b387fa3b6ed37",
+                            "name": "密码工程技术",
+                            "code": "310214",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a2d4662861c4cd3b6f0a",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a325662861c4cd3b6f17",
+                    "name": "通信类",
+                    "code": "3103",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a29f662861c4cd3b6f04",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "6061a32b662861c4cd3b6f18",
+                            "name": "现代通信工程",
+                            "code": "310301",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a325662861c4cd3b6f17",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "666270b8f72eab99590aa938",
+                            "name": "通信软件工程",
+                            "code": "310302",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a325662861c4cd3b6f17",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "666270c9f72eab99590aa93c",
+                            "name": "卫星通信工程",
+                            "code": "310303",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a325662861c4cd3b6f17",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a332662861c4cd3b6f19",
+                    "name": "集成电路类",
+                    "code": "3104",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a29f662861c4cd3b6f04",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "6061a339662861c4cd3b6f1a",
+                            "name": "集成电路工程技术",
+                            "code": "310401",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a332662861c4cd3b6f19",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "6061a34f662861c4cd3b6f1b",
+            "name": "医药卫生大类",
+            "code": "32",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 8,
+            "majors": [
+                {
+                    "id": "6061a35d662861c4cd3b6f1c",
+                    "name": "护理类",
+                    "code": "3202",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a34f662861c4cd3b6f1b",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "6061a366662861c4cd3b6f1d",
+                            "name": "护理",
+                            "code": "320201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a35d662861c4cd3b6f1c",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a376662861c4cd3b6f1e",
+                    "name": "药学类",
+                    "code": "3203",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a34f662861c4cd3b6f1b",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "6061a37c662861c4cd3b6f1f",
+                            "name": "药学",
+                            "code": "320301",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a376662861c4cd3b6f1e",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a383662861c4cd3b6f20",
+                    "name": "中医药类",
+                    "code": "3204",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a34f662861c4cd3b6f1b",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "6061a38b662861c4cd3b6f21",
+                            "name": "中药制药",
+                            "code": "320401",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a383662861c4cd3b6f20",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "666270e5f72eab99590aa943",
+                            "name": "中药学",
+                            "code": "320402",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a383662861c4cd3b6f20",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "666270eef72eab99590aa944",
+                            "name": "中药材生产与加工",
+                            "code": "320403",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a383662861c4cd3b6f20",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a393662861c4cd3b6f22",
+                    "name": "医学技术类",
+                    "code": "3205",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a34f662861c4cd3b6f1b",
+                    "childCount": 6,
+                    "majors": [
+                        {
+                            "id": "6061a39b662861c4cd3b6f23",
+                            "name": "医学检验技术",
+                            "code": "320501",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a393662861c4cd3b6f22",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a39f662861c4cd3b6f24",
+                            "name": "医学影像技术",
+                            "code": "320502",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a393662861c4cd3b6f22",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a3a5662861c4cd3b6f25",
+                            "name": "医学生物技术",
+                            "code": "320503",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a393662861c4cd3b6f22",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a3ab662861c4cd3b6f26",
+                            "name": "口腔医学技术",
+                            "code": "320504",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a393662861c4cd3b6f22",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a3b0662861c4cd3b6f27",
+                            "name": "放射治疗技术",
+                            "code": "320505",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a393662861c4cd3b6f22",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a3b5662861c4cd3b6f28",
+                            "name": "呼吸治疗技术",
+                            "code": "320506",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a393662861c4cd3b6f22",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a3c3662861c4cd3b6f29",
+                    "name": "康复治疗类",
+                    "code": "3206",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a34f662861c4cd3b6f1b",
+                    "childCount": 4,
+                    "majors": [
+                        {
+                            "id": "6061a3cb662861c4cd3b6f2a",
+                            "name": "康复治疗",
+                            "code": "320601",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a3c3662861c4cd3b6f29",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a3d0662861c4cd3b6f2b",
+                            "name": "康复辅助器具技术",
+                            "code": "320602",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a3c3662861c4cd3b6f29",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a3d6662861c4cd3b6f2c",
+                            "name": "言语听觉治疗技术",
+                            "code": "320603",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a3c3662861c4cd3b6f29",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a3dc662861c4cd3b6f2d",
+                            "name": "儿童康复治疗",
+                            "code": "320604",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a3c3662861c4cd3b6f29",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a3e4662861c4cd3b6f2e",
+                    "name": "公共卫生与卫生管理类",
+                    "code": "3207",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a34f662861c4cd3b6f1b",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "6061a3ec662861c4cd3b6f2f",
+                            "name": "公共卫生管理",
+                            "code": "320701",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a3e4662861c4cd3b6f2e",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a3f1662861c4cd3b6f30",
+                            "name": "职业卫生工程技术",
+                            "code": "320702",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a3e4662861c4cd3b6f2e",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a3f6662861c4cd3b6f31",
+                            "name": "职业病危害检测评价技术",
+                            "code": "320703",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a3e4662861c4cd3b6f2e",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a401662861c4cd3b6f32",
+                    "name": "健康管理与促进类",
+                    "code": "3208",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a34f662861c4cd3b6f1b",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "6061a408662861c4cd3b6f33",
+                            "name": "健康管理",
+                            "code": "320801",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a401662861c4cd3b6f32",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a40d662861c4cd3b6f34",
+                            "name": "婴幼儿发展与健康管理",
+                            "code": "320802",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a401662861c4cd3b6f32",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a412662861c4cd3b6f35",
+                            "name": "医养照护与管理",
+                            "code": "320803",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a401662861c4cd3b6f32",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a419662861c4cd3b6f36",
+                    "name": "眼视光类",
+                    "code": "3209",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a34f662861c4cd3b6f1b",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "6061a41f662861c4cd3b6f37",
+                            "name": "眼视光技术",
+                            "code": "320901",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a419662861c4cd3b6f36",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "6061a439662861c4cd3b6f38",
+            "name": "财经商贸大类",
+            "code": "33",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 8,
+            "majors": [
+                {
+                    "id": "6061a443662861c4cd3b6f39",
+                    "name": "财政税务类",
+                    "code": "3301",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a439662861c4cd3b6f38",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "6061a451662861c4cd3b6f3a",
+                            "name": "财税大数据应用",
+                            "code": "330101",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a443662861c4cd3b6f39",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "66627105f72eab99590aa945",
+                            "name": "政府采购管理",
+                            "code": "330102",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a443662861c4cd3b6f39",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6662710ff72eab99590aa94c",
+                            "name": "资产评估与管理",
+                            "code": "330103",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a443662861c4cd3b6f39",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a459662861c4cd3b6f3b",
+                    "name": "金融类",
+                    "code": "3302",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a439662861c4cd3b6f38",
+                    "childCount": 4,
+                    "majors": [
+                        {
+                            "id": "6061a45e662861c4cd3b6f3c",
+                            "name": "金融管理",
+                            "code": "330201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a459662861c4cd3b6f3b",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a462662861c4cd3b6f3d",
+                            "name": "金融科技应用",
+                            "code": "330202",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a459662861c4cd3b6f3b",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a467662861c4cd3b6f3e",
+                            "name": "保险",
+                            "code": "330203",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a459662861c4cd3b6f3b",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a46d662861c4cd3b6f3f",
+                            "name": "信用管理",
+                            "code": "330204",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a459662861c4cd3b6f3b",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a476662861c4cd3b6f40",
+                    "name": "财务会计类",
+                    "code": "3303",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a439662861c4cd3b6f38",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "6061a47d662861c4cd3b6f41",
+                            "name": "大数据与财务管理",
+                            "code": "330301",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a476662861c4cd3b6f40",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a482662861c4cd3b6f42",
+                            "name": "大数据与会计",
+                            "code": "330302",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a476662861c4cd3b6f40",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a487662861c4cd3b6f43",
+                            "name": "大数据与审计",
+                            "code": "330303",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a476662861c4cd3b6f40",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6662713ff72eab99590aa959",
+                    "name": "统计类",
+                    "code": "3304",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a439662861c4cd3b6f38",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "66627157f72eab99590aa95d",
+                            "name": "统计与大数据分析",
+                            "code": "330401",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6662713ff72eab99590aa959",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a48f662861c4cd3b6f44",
+                    "name": "经济贸易类",
+                    "code": "3305",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a439662861c4cd3b6f38",
+                    "childCount": 2,
+                    "majors": [
+                        {
+                            "id": "6061a497662861c4cd3b6f45",
+                            "name": "国际经济与贸易",
+                            "code": "330501",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a48f662861c4cd3b6f44",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "66627165f72eab99590aa95e",
+                            "name": "国际商务",
+                            "code": "330502",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a48f662861c4cd3b6f44",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a4a0662861c4cd3b6f46",
+                    "name": "工商管理类",
+                    "code": "3306",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a439662861c4cd3b6f38",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "6061a4a6662861c4cd3b6f47",
+                            "name": "企业数字化管理",
+                            "code": "330601",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a4a0662861c4cd3b6f46",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a4ab662861c4cd3b6f48",
+                            "name": "市场营销",
+                            "code": "330602",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a4a0662861c4cd3b6f46",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "66627174f72eab99590aa965",
+                            "name": "品牌策划与运营",
+                            "code": "330603",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a4a0662861c4cd3b6f46",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a4c5662861c4cd3b6f49",
+                    "name": "电子商务类",
+                    "code": "3307",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a439662861c4cd3b6f38",
+                    "childCount": 4,
+                    "majors": [
+                        {
+                            "id": "6061a4cb662861c4cd3b6f4a",
+                            "name": "电子商务",
+                            "code": "330701",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a4c5662861c4cd3b6f49",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a4d2662861c4cd3b6f4b",
+                            "name": "跨境电子商务",
+                            "code": "330702",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a4c5662861c4cd3b6f49",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a4d7662861c4cd3b6f4c",
+                            "name": "全媒体电商运营",
+                            "code": "330703",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a4c5662861c4cd3b6f49",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "66627182f72eab99590aa972",
+                            "name": "商务数据分析与管理",
+                            "code": "330704",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a4c5662861c4cd3b6f49",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a4de662861c4cd3b6f4d",
+                    "name": "物流类",
+                    "code": "3308",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a439662861c4cd3b6f38",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "6061a4e4662861c4cd3b6f4e",
+                            "name": "物流工程技术",
+                            "code": "330801",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a4de662861c4cd3b6f4d",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a4ea662861c4cd3b6f4f",
+                            "name": "现代物流管理",
+                            "code": "330802",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a4de662861c4cd3b6f4d",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6662718ff72eab99590aa979",
+                            "name": "供应链管理",
+                            "code": "330803",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a4de662861c4cd3b6f4d",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "6061a4f9662861c4cd3b6f50",
+            "name": "旅游大类",
+            "code": "34",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 2,
+            "majors": [
+                {
+                    "id": "6061a501662861c4cd3b6f51",
+                    "name": "旅游类",
+                    "code": "3401",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a4f9662861c4cd3b6f50",
+                    "childCount": 5,
+                    "majors": [
+                        {
+                            "id": "6061a528662861c4cd3b6f52",
+                            "name": "旅游管理",
+                            "code": "340101",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a501662861c4cd3b6f51",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a52f662861c4cd3b6f53",
+                            "name": "酒店管理",
+                            "code": "340102",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a501662861c4cd3b6f51",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a535662861c4cd3b6f54",
+                            "name": "旅游规划与设计",
+                            "code": "340103",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a501662861c4cd3b6f51",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6662719cf72eab99590aa97d",
+                            "name": "研学旅行策划与管理",
+                            "code": "340104",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a501662861c4cd3b6f51",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6769034ebd5b387fa3b6ed38",
+                            "name": "会展策划与管理",
+                            "code": "340105",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a501662861c4cd3b6f51",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a53e662861c4cd3b6f55",
+                    "name": "餐饮类",
+                    "code": "3402",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a4f9662861c4cd3b6f50",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "6061a547662861c4cd3b6f56",
+                            "name": "烹饪与餐饮管理",
+                            "code": "340201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a53e662861c4cd3b6f55",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "6061a557662861c4cd3b6f57",
+            "name": "文化艺术大类",
+            "code": "35",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 3,
+            "majors": [
+                {
+                    "id": "6061a560662861c4cd3b6f58",
+                    "name": "艺术设计类",
+                    "code": "3501",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a557662861c4cd3b6f57",
+                    "childCount": 13,
+                    "majors": [
+                        {
+                            "id": "6061a56d662861c4cd3b6f59",
+                            "name": "工艺美术",
+                            "code": "350101",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a560662861c4cd3b6f58",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a586662861c4cd3b6f5a",
+                            "name": "视觉传达设计",
+                            "code": "350102",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a560662861c4cd3b6f58",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a58b662861c4cd3b6f5b",
+                            "name": "数字媒体艺术",
+                            "code": "350103",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a560662861c4cd3b6f58",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a590662861c4cd3b6f5c",
+                            "name": "产品设计",
+                            "code": "350104",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a560662861c4cd3b6f58",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a596662861c4cd3b6f5d",
+                            "name": "服装与服饰设计",
+                            "code": "350105",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a560662861c4cd3b6f58",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a59a662861c4cd3b6f5e",
+                            "name": "环境艺术设计",
+                            "code": "350106",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a560662861c4cd3b6f58",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a5a0662861c4cd3b6f5f",
+                            "name": "美术",
+                            "code": "350107",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a560662861c4cd3b6f58",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a5a5662861c4cd3b6f60",
+                            "name": "公共艺术设计",
+                            "code": "350108",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a560662861c4cd3b6f58",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a5ab662861c4cd3b6f61",
+                            "name": "游戏创意设计",
+                            "code": "350109",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a560662861c4cd3b6f58",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a5b2662861c4cd3b6f62",
+                            "name": "展示艺术设计",
+                            "code": "350110",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a560662861c4cd3b6f58",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a5b7662861c4cd3b6f63",
+                            "name": "数字影像设计",
+                            "code": "350111",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a560662861c4cd3b6f58",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a5bc662861c4cd3b6f64",
+                            "name": "时尚品设计",
+                            "code": "350112",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a560662861c4cd3b6f58",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "67690366bd5b387fa3b6ed39",
+                            "name": "陶瓷艺术设计",
+                            "code": "350113",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a560662861c4cd3b6f58",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a5c3662861c4cd3b6f65",
+                    "name": "表演艺术类",
+                    "code": "3502",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a557662861c4cd3b6f57",
+                    "childCount": 5,
+                    "majors": [
+                        {
+                            "id": "6061a5cc662861c4cd3b6f66",
+                            "name": "音乐表演",
+                            "code": "350201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a5c3662861c4cd3b6f65",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a5d2662861c4cd3b6f67",
+                            "name": "舞蹈表演与编导",
+                            "code": "350202",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a5c3662861c4cd3b6f65",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a5d9662861c4cd3b6f68",
+                            "name": "戏曲表演",
+                            "code": "350203",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a5c3662861c4cd3b6f65",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a5df662861c4cd3b6f69",
+                            "name": "舞台艺术设计",
+                            "code": "350204",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a5c3662861c4cd3b6f65",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "666271b3f72eab99590aa97e",
+                            "name": "戏剧影视表演",
+                            "code": "350205",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a5c3662861c4cd3b6f65",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a5e7662861c4cd3b6f6a",
+                    "name": "文化服务类",
+                    "code": "3504",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a557662861c4cd3b6f57",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "6061a5ef662861c4cd3b6f6b",
+                            "name": "文物修复与保护",
+                            "code": "350401",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a5e7662861c4cd3b6f6a",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "666271bff72eab99590aa982",
+                            "name": "公共文化管理",
+                            "code": "350402",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a5e7662861c4cd3b6f6a",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "666271caf72eab99590aa983",
+                            "name": "文化创意产业管理",
+                            "code": "350403",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a5e7662861c4cd3b6f6a",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "6061a5f9662861c4cd3b6f6c",
+            "name": "新闻传播大类",
+            "code": "36",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 2,
+            "majors": [
+                {
+                    "id": "6061a60b662861c4cd3b6f6d",
+                    "name": "新闻出版类",
+                    "code": "3601",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a5f9662861c4cd3b6f6c",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "6061a61a662861c4cd3b6f6e",
+                            "name": "网络与新媒体",
+                            "code": "360101",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a60b662861c4cd3b6f6d",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a620662861c4cd3b6f6f",
+                    "name": "广播影视类",
+                    "code": "3602",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a5f9662861c4cd3b6f6c",
+                    "childCount": 6,
+                    "majors": [
+                        {
+                            "id": "6061a627662861c4cd3b6f70",
+                            "name": "播音与主持",
+                            "code": "360201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a620662861c4cd3b6f6f",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a62d662861c4cd3b6f71",
+                            "name": "影视摄影与制作",
+                            "code": "360202",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a620662861c4cd3b6f6f",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a633662861c4cd3b6f72",
+                            "name": "数字广播电视技术",
+                            "code": "360203",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a620662861c4cd3b6f6f",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a638662861c4cd3b6f73",
+                            "name": "影视编导",
+                            "code": "360204",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a620662861c4cd3b6f6f",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a63d662861c4cd3b6f74",
+                            "name": "全媒体新闻采编与制作",
+                            "code": "360205",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a620662861c4cd3b6f6f",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a642662861c4cd3b6f75",
+                            "name": "数字动画",
+                            "code": "360206",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a620662861c4cd3b6f6f",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "6061a662662861c4cd3b6f76",
+            "name": "教育与体育大类",
+            "code": "37",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 3,
+            "majors": [
+                {
+                    "id": "6061a66c662861c4cd3b6f77",
+                    "name": "教育类",
+                    "code": "3701",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a662662861c4cd3b6f76",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "6061a67a662861c4cd3b6f78",
+                            "name": "学前教育",
+                            "code": "370101",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a66c662861c4cd3b6f77",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a680662861c4cd3b6f79",
+                    "name": "语言类",
+                    "code": "3702",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a662662861c4cd3b6f76",
+                    "childCount": 9,
+                    "majors": [
+                        {
+                            "id": "6061a686662861c4cd3b6f7a",
+                            "name": "应用英语",
+                            "code": "370201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a680662861c4cd3b6f79",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a68b662861c4cd3b6f7b",
+                            "name": "应用日语",
+                            "code": "370202",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a680662861c4cd3b6f79",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a690662861c4cd3b6f7c",
+                            "name": "应用韩语",
+                            "code": "370203",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a680662861c4cd3b6f79",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a695662861c4cd3b6f7d",
+                            "name": "应用俄语",
+                            "code": "370204",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a680662861c4cd3b6f79",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a69a662861c4cd3b6f7e",
+                            "name": "应用泰语",
+                            "code": "370205",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a680662861c4cd3b6f79",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a69f662861c4cd3b6f7f",
+                            "name": "应用外语",
+                            "code": "370206",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a680662861c4cd3b6f79",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a6a4662861c4cd3b6f80",
+                            "name": "应用西班牙语",
+                            "code": "370207",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a680662861c4cd3b6f79",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a6a9662861c4cd3b6f81",
+                            "name": "中文国际教育",
+                            "code": "370208",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a680662861c4cd3b6f79",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "666271def72eab99590aa987",
+                            "name": "应用法语",
+                            "code": "370209",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a680662861c4cd3b6f79",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a6b1662861c4cd3b6f82",
+                    "name": "体育类",
+                    "code": "3703",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a662662861c4cd3b6f76",
+                    "childCount": 4,
+                    "majors": [
+                        {
+                            "id": "6061a6b9662861c4cd3b6f83",
+                            "name": "社会体育指导与管理",
+                            "code": "370301",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a6b1662861c4cd3b6f82",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a6be662861c4cd3b6f84",
+                            "name": "休闲体育",
+                            "code": "370302",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a6b1662861c4cd3b6f82",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a6c4662861c4cd3b6f85",
+                            "name": "体能训练",
+                            "code": "370303",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a6b1662861c4cd3b6f82",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a6c9662861c4cd3b6f86",
+                            "name": "电子竞技技术与管理",
+                            "code": "370304",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a6b1662861c4cd3b6f82",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "6061a6e1662861c4cd3b6f87",
+            "name": "公安与司法大类",
+            "code": "38",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 6,
+            "majors": [
+                {
+                    "id": "6061a6e9662861c4cd3b6f88",
+                    "name": "公安技术类",
+                    "code": "3802",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a6e1662861c4cd3b6f87",
+                    "childCount": 2,
+                    "majors": [
+                        {
+                            "id": "6061a6f4662861c4cd3b6f89",
+                            "name": "刑事科学技术",
+                            "code": "380201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a6e9662861c4cd3b6f88",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a6fb662861c4cd3b6f8a",
+                            "name": "网络安全与执法",
+                            "code": "380202",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a6e9662861c4cd3b6f88",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a704662861c4cd3b6f8b",
+                    "name": "侦查类",
+                    "code": "3803",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a6e1662861c4cd3b6f87",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "6061a70c662861c4cd3b6f8c",
+                            "name": "刑事侦查",
+                            "code": "380301",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a704662861c4cd3b6f8b",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a714662861c4cd3b6f8d",
+                    "name": "法律实务类",
+                    "code": "3804",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a6e1662861c4cd3b6f87",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "6061a71c662861c4cd3b6f8e",
+                            "name": "法律",
+                            "code": "380401",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a714662861c4cd3b6f8d",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a742662861c4cd3b6f8f",
+                    "name": "法律执行类",
+                    "code": "3805",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a6e1662861c4cd3b6f87",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "6061a74d662861c4cd3b6f90",
+                            "name": "刑事矫正与管理",
+                            "code": "380501",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a742662861c4cd3b6f8f",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a754662861c4cd3b6f91",
+                            "name": "司法警务管理",
+                            "code": "380502",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a742662861c4cd3b6f8f",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a759662861c4cd3b6f92",
+                            "name": "综合行政执法",
+                            "code": "380503",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a742662861c4cd3b6f8f",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a764662861c4cd3b6f93",
+                    "name": "司法技术类",
+                    "code": "3806",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a6e1662861c4cd3b6f87",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "6061a76b662861c4cd3b6f94",
+                            "name": "智慧司法技术与应用",
+                            "code": "380601",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a764662861c4cd3b6f93",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a775662861c4cd3b6f95",
+                    "name": "安全防范类",
+                    "code": "3807",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a6e1662861c4cd3b6f87",
+                    "childCount": 2,
+                    "majors": [
+                        {
+                            "id": "6061a77e662861c4cd3b6f96",
+                            "name": "数字安防技术",
+                            "code": "380701",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a775662861c4cd3b6f95",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a783662861c4cd3b6f97",
+                            "name": "国际安保服务与管理",
+                            "code": "380702",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a775662861c4cd3b6f95",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "6061a79d662861c4cd3b6f98",
+            "name": "公共管理与服务大类",
+            "code": "39",
+            "eduLevel": "gao_ben",
+            "level": 1,
+            "parentId": "",
+            "childCount": 4,
+            "majors": [
+                {
+                    "id": "6061a7a5662861c4cd3b6f99",
+                    "name": "公共事业类",
+                    "code": "3901",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a79d662861c4cd3b6f98",
+                    "childCount": 4,
+                    "majors": [
+                        {
+                            "id": "6061a7c7662861c4cd3b6f9a",
+                            "name": "社会工作",
+                            "code": "390101",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a7a5662861c4cd3b6f99",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a7cd662861c4cd3b6f9b",
+                            "name": "党务工作",
+                            "code": "390102",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a7a5662861c4cd3b6f99",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a7d1662861c4cd3b6f9c",
+                            "name": "智慧社区管理",
+                            "code": "390103",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a7a5662861c4cd3b6f99",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "666271f0f72eab99590aa991",
+                            "name": "慈善管理",
+                            "code": "390104",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a7a5662861c4cd3b6f99",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a7d9662861c4cd3b6f9d",
+                    "name": "公共管理类",
+                    "code": "3902",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a79d662861c4cd3b6f98",
+                    "childCount": 6,
+                    "majors": [
+                        {
+                            "id": "6061a7e0662861c4cd3b6f9e",
+                            "name": "民政管理",
+                            "code": "390201",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a7d9662861c4cd3b6f9d",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a7e5662861c4cd3b6f9f",
+                            "name": "人力资源管理",
+                            "code": "390202",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a7d9662861c4cd3b6f9d",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a7ee662861c4cd3b6fa0",
+                            "name": "行政管理",
+                            "code": "390203",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a7d9662861c4cd3b6f9d",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a7f4662861c4cd3b6fa1",
+                            "name": "外事实务",
+                            "code": "390204",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a7d9662861c4cd3b6f9d",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "66627200f72eab99590aa995",
+                            "name": "婚姻服务与管理",
+                            "code": "390205",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a7d9662861c4cd3b6f9d",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6662727ef72eab99590aa9a8",
+                            "name": "标准化技术",
+                            "code": "390206",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a7d9662861c4cd3b6f9d",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "6061a807662861c4cd3b6fa2",
+                    "name": "公共服务类",
+                    "code": "3903",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a79d662861c4cd3b6f98",
+                    "childCount": 3,
+                    "majors": [
+                        {
+                            "id": "6061a80e662861c4cd3b6fa3",
+                            "name": "现代家政管理",
+                            "code": "390301",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a807662861c4cd3b6fa2",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "6061a813662861c4cd3b6fa4",
+                            "name": "智慧健康养老管理",
+                            "code": "390302",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a807662861c4cd3b6fa2",
+                            "childCount": 0,
+                            "majors": []
+                        },
+                        {
+                            "id": "66627293f72eab99590aa9ac",
+                            "name": "现代殡葬管理",
+                            "code": "390303",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "6061a807662861c4cd3b6fa2",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                },
+                {
+                    "id": "666272b6f72eab99590aa9b9",
+                    "name": "文秘类",
+                    "code": "3904",
+                    "eduLevel": "gao_ben",
+                    "level": 2,
+                    "parentId": "6061a79d662861c4cd3b6f98",
+                    "childCount": 1,
+                    "majors": [
+                        {
+                            "id": "666272c6f72eab99590aa9ba",
+                            "name": "现代文秘",
+                            "code": "390401",
+                            "eduLevel": "gao_ben",
+                            "level": 3,
+                            "parentId": "666272b6f72eab99590aa9b9",
+                            "childCount": 0,
+                            "majors": []
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "code": "",
+    "message": "",
+    "fullMessage": "",
+    "timestamp": "2025-06-09T14:48:28.2570375+08:00",
+    "isSuccess": true
+}

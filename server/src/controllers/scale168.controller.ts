@@ -1,6 +1,5 @@
-import { JsonController, Get, Post, Put, Body, Param, QueryParam, Delete, Req, Ctx } from 'routing-controllers';
-import { Scale168Service } from '../services/scale168.service'; 
-import { OpenAPI } from 'routing-controllers-openapi';
+import { JsonController, Get, Post, Put, Body, Param, QueryParam, Delete, Req, Ctx, NotFoundError, UnauthorizedError } from 'routing-controllers';
+import { Scale168Service } from '../services/scale168.service';  
 import { Service } from 'typedi';
 interface SubmitAnswerDto {
   scaleId: number;
@@ -30,11 +29,7 @@ export class Scale168Controller {
   @Get()
   async getAllScales() {
     const scales = await this.scale168Service.getAllScales();
-    return {
-      code: 200,
-      message: '获取量表题目成功',
-      data: scales,
-    };
+    return   scales;  
   }
 
   /**
@@ -46,16 +41,10 @@ export class Scale168Controller {
   async getScaleById(@Param('id') id: number) {
     const scale = await this.scale168Service.getScaleById(id);
     if (!scale) {
-      return {
-        code: 404,
-        message: '量表不存在',
-      };
+      throw new NotFoundError('量表不存在')
     }
-    return {
-      code: 200,
-      message: '获取量表题目成功',
-      data: scale,
-    };
+    return  scale;
+     
   }
 
   /**
@@ -66,15 +55,10 @@ export class Scale168Controller {
   async getScaleWithOptions(@Param('id') id: number) {
     const { scale, options } = await this.scale168Service.getScaleWithOptions(id);
     if (!scale) {
-      return {
-        code: 404,
-        message: '量表不存在',
-      };
+      throw new NotFoundError('量表不存在')
     }
     return {
-      code: 200,
-      message: '获取量表题目及选项成功',
-      data: { scale, options },
+        scale, options  
     };
   }
 
@@ -86,16 +70,11 @@ export class Scale168Controller {
   @Get('answers/me')
   async getUserAnswers(@Ctx() ctx: { state: { user?: { userId: number } } }) {
     if (!ctx?.state?.user?.userId) {
-      console.error('未获取到用户信息，ctx.state:', ctx.state);
-      return { code: 401, message: '未获取到用户信息' };
+      throw new UnauthorizedError('未获取到用户信息')
     }
     const userId = ctx!.state!.user!.userId;
-    const answers = await this.scale168Service.getUserAnswers(userId);
-    return {
-      code: 200,
-      message: '获取用户答案成功',
-      data: answers,
-    };
+    const answers = await this.scale168Service.getUserAnswers(userId); 
+    return   answers ;
   }
 
   /**
@@ -106,16 +85,11 @@ export class Scale168Controller {
   @Get('answers/168')
   async get168Answers(@Ctx() ctx: { state: { user?: { userId: number } } }, @QueryParam('scaleId') scaleId?: number) {
     if (!ctx?.state?.user?.userId) {
-      console.error('未获取到用户信息，ctx.state:', ctx.state);
-      return { code: 401, message: '未获取到用户信息' };
+      throw new UnauthorizedError('未获取到用户信息')
     }
     const userId = ctx!.state!.user!.userId;
     const answers = await this.scale168Service.get168Answers(userId, scaleId);
-    return {
-      code: 200,
-      message: '获取168量表答案成功',
-      data: answers,
-    };
+    return  answers; 
   }
 
   /**
@@ -128,8 +102,7 @@ export class Scale168Controller {
   async submitAnswer(@Ctx() ctx: { state: { user?: { userId: number } } }, @Body() body: SubmitAnswerDto) {
     try {
       if (!ctx?.state?.user?.userId) {
-        console.error('未获取到用户信息，ctx.state:', ctx.state);
-        return { code: 401, message: '未获取到用户信息' };
+        throw new UnauthorizedError('未获取到用户信息')
     }
       const userId = ctx!.state!.user!.userId;
       const answer = await this.scale168Service.submitAnswer(
@@ -137,16 +110,9 @@ export class Scale168Controller {
         body.scaleId,
         body.optionId
       );
-      return {
-        code: 201,
-        message: '提交答案成功',
-        data: answer,
-      };
+      return answer; 
     } catch (error: any) {
-      return {
-        code: 400,
-        message: error.message || '提交答案失败',
-      };
+      throw new Error(error.message || '提交答案失败') ;
     }
   }
 
@@ -166,16 +132,10 @@ export class Scale168Controller {
     try {
       // 通常应该先检查该答案是否属于当前用户
       const answer = await this.scale168Service.updateAnswer(answerId, body.optionId);
-      return {
-        code: 200,
-        message: '更新答案成功',
-        data: answer,
-      };
+      return  answer;
+      
     } catch (error: any) {
-      return {
-        code: 400,
-        message: error.message || '更新答案失败',
-      };
+      throw new Error(error.message || '提交答案失败') ;
     }
   }
 
@@ -189,15 +149,10 @@ export class Scale168Controller {
   async deleteAnswer(@Req() req: RequestWithUser, @Param('scaleId') scaleId: number) {
     const userId = req.user.id;
     const result = await this.scale168Service.deleteAnswer(userId, scaleId);
-    if (!result) {
-      return {
-        code: 404,
-        message: '答案不存在',
-      };
+    if (!result) {     
+      throw new NotFoundError('答案不存在') 
     }
-    return {
-      code: 200,
-      message: '删除答案成功',
-    };
+    return   result;
+    
   }
 }

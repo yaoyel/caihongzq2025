@@ -10,6 +10,7 @@ import { initializeDataSource } from './data-source';
 import { logger } from './config/logger';
 import wechatRouter from './routes/wechat';
 import { DataSource } from 'typeorm';
+import RedisModule from './redis/redis.module';
 
 // 导入所有控制器
 import { ElementController } from './controllers/element.controller';
@@ -20,12 +21,15 @@ import { ChatController } from './controllers/chat.controller';
 import { ReportController } from './controllers/report.controller';
 import { errorHandlerMiddleware } from './middlewares/error-handler.middleware';
 import { requestLoggerMiddleware } from './middlewares/request-logger.middleware';  
+import {  responseMiddleware } from './middlewares/reponse.middleware';
 import { jwtMiddleware } from './middlewares/jwt.middleware';
 import { DoubleEdgedInfoController } from './controllers/doubleEdgedInfo.controller';
 import { DoubleEdgedScaleController } from './controllers/doubleEdgedScale.controller';
 import { DoubleEdgedAnswerController } from './controllers/doubleEdgedAnswer.controller';
 import { UserAnalysisController } from './controllers/userAnalysis.controller';
 import { Scale168Controller } from './controllers/scale168.controller';
+import { MajorController } from './controllers/major.controller'
+import { SchoolController } from './controllers/school.controller'
 async function bootstrap() {
     try {
         // 1. 设置依赖注入容器
@@ -34,6 +38,9 @@ async function bootstrap() {
 
         // 2. 初始化数据库连接
         await initializeDataSource();
+
+        // 2.1 初始化 Redis 客户端，确保全局可用
+        RedisModule.getClient(); // 初始化 Redis 客户端
 
         // 3. 创建应用
         const app = new Koa();
@@ -55,6 +62,7 @@ async function bootstrap() {
         // 6. 注册错误处理中间件  
         app.use(requestLoggerMiddleware);
         app.use(errorHandlerMiddleware);
+        app.use(responseMiddleware);
         // 6. 注入微信路由
         app.use(wechatRouter.routes());
     
@@ -73,7 +81,9 @@ async function bootstrap() {
                 DoubleEdgedInfoController,
                 DoubleEdgedScaleController,
                 UserAnalysisController,
-                Scale168Controller
+                Scale168Controller,
+                MajorController,
+                SchoolController
             ],
             middlewares: [],
             routePrefix: '/api',

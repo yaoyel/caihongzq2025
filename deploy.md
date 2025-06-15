@@ -3,7 +3,7 @@ mkdir -p /opt/rbridge
 cd /opt/rbridge
 
 # 创建必要的子目录
-mkdir -p {client,server,nginx,postgres-data,logs}
+mkdir -p {client,server,nginx,postgres-data,redis-data,logs}
 
 
 # 1. 克隆项目（如果是从Git仓库）
@@ -76,6 +76,44 @@ docker network inspect app-network
 docker exec -it rbridge-db psql -U postgres -d caihongzq-8088
 
 
+# 更新部署
+
+## 重要说明
+> 由于 docker-compose.yml 中 client 服务使用了命名卷 client-dist:/app/dist，卷内容不会因镜像重建而自动更新。为确保前端构建产物每次部署都能同步，请在重新部署前手动删除 client-dist 卷。
+
+## 步骤
+
+1. 停止并移除所有容器
+   ```bash
+   docker-compose down
+   ```
+
+2. 删除 client-dist 卷（确保前端产物能被新镜像覆盖）
+   ```bash
+   docker volume rm rbridge-client-dist
+   ```
+
+3. 重新构建并启动服务
+   ```bash
+   docker-compose up -d --build
+   ```
+
+4. 查看服务状态
+   ```bash
+   docker-compose ps
+   ```
+
+5. 查看日志
+   ```bash
+   docker-compose logs -f
+   ```
+
+> 如果你不想每次都手动删除卷，也可以将 client 的挂载方式改为本地目录挂载（开发环境推荐），如：
+> ```yaml
+> volumes:
+>   - ./client/dist:/app/dist
+> ```
+> 这样每次本地构建后，产物会自动同步到容器。
 
 
 

@@ -21,13 +21,13 @@ export class ScaleOption {
   @Column({ name: 'additional_info', type: 'text', nullable: true })
   additionalInfo: string;
 
-  @Column({ name: 'is_default', default: false })
+  @Column({ name: 'is_default', default: false, select: false })
   isDefault: boolean;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', select: false })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', select: false })
   updatedAt: Date;
 
   @ManyToOne(() => Scale, { onDelete: 'CASCADE' })

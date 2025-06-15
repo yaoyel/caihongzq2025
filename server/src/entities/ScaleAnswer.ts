@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, JoinColumn, Index } from 'typeorm';
 import { Scale } from './Scale';
 import { User } from './User';
 
@@ -10,13 +10,14 @@ export class ScaleAnswer {
   @Column({ name: 'scale_id' })
   scaleId: number;
 
-  @Column({ name: 'user_id' })
+  @Index()
+  @Column({ name: 'user_id' }) 
   userId: number;
 
   @Column({ name: 'score' })
   score: number;
 
-  @CreateDateColumn({ name: 'submitted_at' })
+  @CreateDateColumn({ name: 'submitted_at', select: false })
   submittedAt: Date;
 
   @ManyToOne(() => Scale)

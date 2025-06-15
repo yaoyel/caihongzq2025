@@ -3,7 +3,7 @@ import { OpenAPI } from 'routing-controllers-openapi';
 import { Service } from 'typedi';
 import { ScaleService } from '../services/scale.service';
 import { AppDataSource } from '../data-source';
-import { ScaleAnswer } from '../entities/ScaleAnswer';
+import { ScaleAnswer } from '../entities/ScaleAnswer'; 
 
 @JsonController('/scales')
 @Service()
@@ -34,6 +34,34 @@ export class ScaleController {
         }
     }
     
+    @Get('/by-elements-with-answers')
+    @OpenAPI({ summary: '通过元素ID列表获取量表及用户答案' })
+    async getByElementsWithAnswers(
+        @QueryParam('elementIds') elementIds: string,
+        @QueryParam('userId') userId: number
+    ) {
+        if (!elementIds || elementIds.trim() === '' || !userId) {
+            return [];
+        }
+        try {
+            // 解析元素ID列表
+            const elementIdArray = elementIds
+                .trim()
+                .split(',')
+                .map(Number)
+                .filter(id => !isNaN(id) && id > 0);
+
+            if (elementIdArray.length === 0) {
+                return [];
+            }
+
+            // 使用ScaleService中的方法获取数据
+            return await this.scaleService.getScalesWithAnswers(userId, elementIdArray);
+        } catch (error) {
+            console.error('Error in getByElementsWithAnswers:', error);
+            return [];
+        }
+    }
     
     @Get()
     @OpenAPI({ summary: '获取量表列表' })
@@ -116,5 +144,4 @@ export class ScaleController {
     async getUserAnswersSummary(@Param('userId') userId: number) {
         return await this.scaleService.getUserAnswersSummary(userId);
     }
-   
 }

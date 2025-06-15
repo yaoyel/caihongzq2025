@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, Generated } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, Generated, OneToMany, ManyToOne } from 'typeorm';
 import { DoubleEdgedInfo } from './DoubleEdgedInfo';
+import { Scale } from './Scale';
 @Entity('elements')
 export class Element {
   @PrimaryGeneratedColumn()
@@ -28,7 +29,7 @@ export class Element {
   @Column({ name: 'double_edged_id', nullable: true })
   doubleEdgedId: number;  
 
-  @OneToOne(() => DoubleEdgedInfo)
+  @ManyToOne(() => DoubleEdgedInfo)
   @JoinColumn({ name: 'double_edged_id' })
   doubleEdgedInfo: DoubleEdgedInfo;
 
@@ -37,4 +38,7 @@ export class Element {
 
   @Column({ name: 'unowned_natural_state' })
   unownedNaturalState: string;
+
+  @OneToMany(() => Scale, scale => scale.element)
+  scales: Scale[];
 }
