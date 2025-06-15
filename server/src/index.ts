@@ -92,7 +92,7 @@ async function bootstrap() {
         });
 
         // 7. 启动服务器
-        const port = process.env.PORT || 80;
+        const port =   80;
         const server = app.listen(port, () => {
             logger.info(`Server running at http://localhost:${port}`);
         });

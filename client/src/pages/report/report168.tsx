@@ -716,10 +716,10 @@ const Report168Page: React.FC = () => {
       );
 
       // 设置量表数据
-      setScaleData(scaleResponse.data);
+      setScaleData(scaleResponse.data.data);
 
       // 如果有已存在的答案，设置到状态中
-      if (answersResponse.data && answersResponse.data.length > 0) {
+      if (answersResponse.data.data && answersResponse.data.data.length > 0) {
         const existingAnswers = answersResponse.data.reduce((acc: Record<number, number>, answer: any) => {
           acc[answer.scaleId] = answer.score;
           return acc;
@@ -789,7 +789,7 @@ const Report168Page: React.FC = () => {
         })
       ]);
 
-      const answers = scaleResponse.data;
+      const answers = scaleResponse.data.data;
       const scores: Record<string, { total: number; count: number }> = {};
       answers.forEach((answer: any) => {
         const { dimension, score } = answer;
@@ -800,7 +800,7 @@ const Report168Page: React.FC = () => {
         scores[dimension].count += 1;
       });
 
-      dispatch(setElementAnalysis(elementResponse.data));
+      dispatch(setElementAnalysis(elementResponse.data.data));
 
     } catch (error) {
       console.error('获取数据失败:', error);
@@ -877,7 +877,7 @@ const Report168Page: React.FC = () => {
         });
 
         // 过滤出与有喜欢有天赋元素相关的双刃剑数据
-        const filteredData = response.data.filter((item: DoubleEdgedInfo) => 
+        const filteredData = response.data.data.filter((item: DoubleEdgedInfo) => 
           likeAndTalentElements.some((element: any) => 
             element.double_edged_id && element.double_edged_id === item.id
           )

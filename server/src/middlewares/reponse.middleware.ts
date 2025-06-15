@@ -72,6 +72,12 @@ export async function responseMiddleware(ctx: Context, next: (err?: any) => Prom
       return;
     }
 
+    // 如果响应体是字符串类型，直接返回
+    if (typeof originalBody === 'string') {
+      ctx.body = originalBody;
+      return;
+    }
+
     // 构造统一响应格式
     const responseData: ResponseData = {
       code: statusCode,

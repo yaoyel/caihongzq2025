@@ -931,7 +931,7 @@ const ReportPage: React.FC = () => {
         }),
       ]);
 
-      const answers = scaleResponse.data;
+      const answers = scaleResponse.data.data;
       const scores: Record<string, { total: number; count: number }> = {};
       answers.forEach((answer: any) => {
         const { dimension, score } = answer;
@@ -942,7 +942,7 @@ const ReportPage: React.FC = () => {
         scores[dimension].count += 1;
       });
 
-      dispatch(setElementAnalysis(elementResponse.data));
+      dispatch(setElementAnalysis(elementResponse.data.data));
     } catch (error) {
       console.error('获取数据失败:', error);
       if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -1019,7 +1019,7 @@ const ReportPage: React.FC = () => {
         });
 
         // 过滤出与有喜欢有天赋元素相关的双刃剑数据
-        const filteredData = response.data.filter((item: DoubleEdgedInfo) =>
+        const filteredData = response.data.data.filter((item: DoubleEdgedInfo) =>
           likeAndTalentElements.some(
             (element: any) => element.double_edged_id && element.double_edged_id === item.id
           )

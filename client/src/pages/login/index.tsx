@@ -373,7 +373,8 @@ const LoginPage: React.FC = () => {
       }
 
       // 检查数据完整性
-      const { ticket, sceneStr, qrUrl, isTest } = response.data;
+      const { ticket, sceneStr, qrUrl, isTest } = response.data.data;
+    
       if ((!ticket || !sceneStr) && !isTest) {
         throw new Error('响应数据不完整');
       }
@@ -408,8 +409,8 @@ const LoginPage: React.FC = () => {
     const checkLogin = async () => {
       try {
         const response = await axios.get(`${getApiUrl(`/wechat/check-login?scene=${scene}`)}`);
-        const { success, user, token } = response.data;
-        
+        console.log(response);
+        const { success, user, token } = response.data.data; 
         if (success) {
           // 清除轮询定时器
           clearInterval(pollingTimer);

@@ -15,7 +15,7 @@ export class Scale {
   elementId: number;
   @Column({ name: 'type' })
   type: 'like' | 'talent';
-  @Column({ name: 'direction', select: false })
+  @Column({ name: 'direction' })
   direction: 'positive' | 'negative' | '168';
   @Column({ name: 'dimension' })
   dimension: '看' | '听' | '说' | '记' | '想' | '做' | '运动';
