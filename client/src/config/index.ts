@@ -33,6 +33,7 @@ export const api = {
     questions: '/questions',
     users: '/users',
     updateNickname: (userId: string) => `/users/updateNickname/${userId}`,
+    majorScores: (userId: string) => `/majors/userscores/${userId}`,
   }
 };
 
@@ -95,4 +96,40 @@ export const updateUserNickname = async (
         }
         throw error;
     }
+};
+
+// 专业分析分数接口类型定义
+interface MajorScore {
+  majorId: string;
+  majorName: string;
+  score: number;
+  rank: number;
+}
+
+interface MajorScoresResponse {
+  success: boolean;
+  message: string;
+  data: MajorScore[];
+}
+
+/**
+ * 获取用户专业分析分数排序列表
+ * @param userId 用户ID
+ * @returns Promise<MajorScoresResponse>
+ */
+export const getUserMajorScores = async (
+  userId: string
+): Promise<MajorScoresResponse> => {
+  try {
+    const response = await axios.get<MajorScoresResponse>(
+      getApiUrl(api.endpoints.majorScores(userId)),
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '获取专业分析分数失败');
+    }
+    throw error;
+  }
 };

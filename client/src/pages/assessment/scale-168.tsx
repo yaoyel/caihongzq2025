@@ -831,7 +831,7 @@ const Scale168Assessment: React.FC = () => {
       }
 
       const user = JSON.parse(userStr);
-      const response = await updateUserNickname(user.id, newNickname);
+      const response = await updateUserNickname(user.data.id, newNickname);
 
       if (response && response.code === 200) {
         message.success('昵称修改成功');
@@ -839,7 +839,7 @@ const Scale168Assessment: React.FC = () => {
 
         // 更新本地存储的用户信息
         user.nickname = newNickname;
-        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('user', JSON.stringify(user.data));
       } else {
         message.error(response.message || '修改昵称失败');
       }

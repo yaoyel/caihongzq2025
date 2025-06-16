@@ -496,14 +496,14 @@ const LoginPage: React.FC = () => {
       }
     };
 
-    // localStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsIm5pY2tuYW1lIjoiIiwiYXZhdGFyVXJsIjoiIiwiaWF0IjoxNzQ3MTAyNDM4LCJleHAiOjE3NDk2OTQ0Mzh9.g8PyXTiujrJQFKMBeeTK937LdsAglFkbsiPMRsO539A');
-    // localStorage.setItem('user', JSON.stringify({
-    //   id: 6,
-    //   username: '',
-    //   nickname: '',
-    //   avatarUrl: '',
-    //   role: 'parent'
-    // }));
+    localStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsIm5pY2tuYW1lIjoi5bqE5Lqu5LquIiwiYXZhdGFyVXJsIjoiIiwiaWF0IjoxNzUwMDMzMjY1LCJleHAiOjE3NTI2MjUyNjV9.xnIxZ6lrDQLk-cdyQlHSJ01b4m49Fd57YtwBXhCBvxg');
+    localStorage.setItem('user', JSON.stringify({
+      id: 6,
+      username: '',
+      nickname: '',
+      avatarUrl: '',
+      role: 'parent'
+    }));
     checkLocalAuth();
   }, [navigate]);
 
