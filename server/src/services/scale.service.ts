@@ -34,6 +34,7 @@ export class ScaleService {
             .leftJoinAndSelect('scale.options', 'options')
             .leftJoinAndSelect('scale.answers', 'answers', 'answers.userId = :userId', { userId })
             .where('scale.elementId IN (:...elementIds)', { elementIds })
+            .andWhere('scale.direction = :direction', { direction: '168' })
             .orderBy('scale.elementId', 'ASC')
             .addOrderBy('options.displayOrder', 'ASC')
             .getMany();

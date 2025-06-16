@@ -11,6 +11,7 @@ export interface MajorScore {
   majorName: string;
   eduLevel: string;
   score: number;
+  potentialScore: number; // 潜力值得分
 }
 
 /**
@@ -26,7 +27,7 @@ export class MajorScoreService {
   /**
    * 计算专业匹配得分
    * @param userId 用户ID
-   * @returns 专业得分列表
+   * @returns 专业得分列表，包含总分和潜力值得分
    */
   async calculateMajorScores(userId: string): Promise<MajorScore[]> {
     // 使用原生SQL查询提升性能
@@ -43,17 +44,25 @@ export class MajorScoreService {
         md.code as "majorCode",
         m.name as "majorName",
         m.edu_level as "eduLevel",
-        SUM(CASE WHEN ua.score IS NULL THEN 0 ELSE ua.score END) as total_score,
-        COUNT(s.id) as scale_count,
-        COUNT(s.id) * 2 as denominator,
+        SUM(CASE WHEN ua.score IS NULL THEN 0 ELSE ua.score * mea.weight END) as total_score,
+        SUM(mea.weight) as weighted_count,
+        SUM(mea.weight * 2) as weighted_denominator,
         ROUND(
           COALESCE(
-            CAST(SUM(CASE WHEN ua.score IS NULL THEN 0 ELSE ua.score END) AS NUMERIC) / 
-            NULLIF(CAST(COUNT(s.id) *2 AS NUMERIC), 0),
+            CAST(SUM(CASE WHEN ua.score IS NULL THEN 0 ELSE ua.score * mea.weight END) AS NUMERIC) / 
+            NULLIF(CAST(SUM(mea.weight * 2) AS NUMERIC), 0),
             0
           )::NUMERIC, 
           2
-        )::FLOAT as score
+        )::FLOAT as score,
+        ROUND(
+          COALESCE(
+            CAST(SUM(CASE WHEN ua.score IS NULL OR s.action != 'potential' THEN 0 ELSE ua.score * mea.weight END) AS NUMERIC) / 
+            NULLIF(CAST(SUM(CASE WHEN s.action = 'potential' THEN mea.weight * 2 ELSE 0 END) AS NUMERIC), 0),
+            0
+          )::NUMERIC, 
+          2
+        )::FLOAT as "potentialScore"
       FROM major_details md
       INNER JOIN majors m ON m.code = md.code
       INNER JOIN major_element_analysis mea ON mea.major_id = md.id
