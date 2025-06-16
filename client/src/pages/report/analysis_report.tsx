@@ -127,11 +127,11 @@ const App: React.FC = () => {
                         className="flex items-center"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/professColleges?majorId=${item.majorCode}`);
+                          navigate(`/professColleges?majorCode=${item.majorCode}&score=${item.score}`);
                         }}
                       >
                         <span className="text-gray-500">{item.majorCode}</span>
-                        <span className="ml-4 text-gray-800 cursor-pointer hover:text-gray-600 underline">
+                        <span className="ml-1 text-gray-800 cursor-pointer hover:text-gray-600 underline">
                           {item.majorName}
                         </span>
                       </div>
@@ -140,7 +140,7 @@ const App: React.FC = () => {
                           className="text-green-500 font-medium mr-2 cursor-pointer hover:text-green-600 underline"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate('/loveEnergy');
+                            navigate(`/loveEnergy?majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&isLove=true`);
                           }}
                         >
                           热爱能量 {item.score * 100} 分！
@@ -210,11 +210,11 @@ const App: React.FC = () => {
                         className="flex items-center"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/professColleges?majorId=${item.majorCode}`);
+                          navigate(`/professColleges?majorId=${item.majorCode}&score=${item.score}`);
                         }}
                       >
                         <span className="text-gray-500">{item.majorCode}</span>
-                        <span className="ml-4 text-gray-800 cursor-pointer hover:text-gray-600 underline">
+                        <span className="ml-1 text-gray-800 cursor-pointer hover:text-gray-600 underline">
                           {item.majorName}
                         </span>
                       </div>
@@ -223,7 +223,7 @@ const App: React.FC = () => {
                           className="text-red-500 font-medium mr-2 cursor-pointer hover:text-green-600 underline"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate('/loveEnergy');
+                            navigate(`/loveEnergy?majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&isLove=false`);
                           }}
                         >
                           热爱能量 {item.score * 100} 分！

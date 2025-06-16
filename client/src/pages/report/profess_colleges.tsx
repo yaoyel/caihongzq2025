@@ -1,13 +1,19 @@
 // @ts-nocheck
 import '@fortawesome/fontawesome-free/css/all.min.css';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, Card, Tag, Tabs } from 'antd';
 import { ArrowLeftOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { getMajorDetail, getMajorBrief } from '../../config';
+
 const App: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState('intro');
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [majorDetail, setMajorDetail] = useState(null);
+  const [majorBrief, setMajorBrief] = useState(null);
+  const [loading, setLoading] = useState(true);
   const schools = [
     {
       id: '1',
@@ -28,6 +34,41 @@ const App: React.FC = () => {
     },
     // 更多学校数据...
   ];
+
+  useEffect(() => {
+    const fetchMajorInfo = async () => {
+      try {
+        const majorCode = searchParams.get('majorCode');
+        const score = searchParams.get('score');
+        console.log(majorCode);
+        if (!majorCode||!score) {
+          console.error('未找到专业代码');
+          return;
+        }
+
+        const [detailResponse, briefResponse] = await Promise.all([
+          getMajorDetail(majorCode),
+          getMajorBrief(majorCode)
+        ]);
+
+        if (detailResponse && detailResponse.code === 200) {
+          setMajorDetail(detailResponse.data);
+          console.log(detailResponse.data);
+        }
+        if (briefResponse&&briefResponse.code === 200) {
+          setMajorBrief(briefResponse.data);
+          console.log(briefResponse.data);
+        }
+      } catch (error) {
+        console.error('获取专业信息失败:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMajorInfo();
+  }, [searchParams]);
+
   const renderContent = () => {
     if (selectedSchool) {
       const school = schools.find((s) => s.id === selectedSchool);
@@ -169,7 +210,7 @@ const App: React.FC = () => {
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="mr-3"
           />
-          <span className="font-medium">计算机科学与技术</span>
+          <span className="font-medium">{majorDetail?.major?.name}</span>
         </div>
       </div>
 
@@ -177,7 +218,7 @@ const App: React.FC = () => {
       <div className="fixed top-14 left-0 right-0 bg-white shadow-sm z-40">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
-            <span className="text-lg font-medium">002 逻辑学</span>
+            <span className="text-lg font-medium">{majorDetail?.major?.code} {majorDetail?.major?.name}</span>
             <div className="flex items-center">
               <span className="text-green-600 font-bold text-xl">热爱能量 98分！</span>
             </div>

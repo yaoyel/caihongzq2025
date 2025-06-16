@@ -1,23 +1,124 @@
 // @ts-nocheck
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Button } from 'antd';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { SpinLoading } from 'antd-mobile';
 import {
   QuestionCircleOutlined,
   ArrowLeftOutlined,
   SearchOutlined,
   UserOutlined,
 } from '@ant-design/icons';
+import { getMajorDetail, getScalesByElementsWithAnswers } from '../../config';
 const App: React.FC = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [selectedModal, setSelectedModal] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'learnHappy' | 'learnWell'>('learnHappy');
+  const [elementList, setElementList] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // 添加页面加载时滚动到顶部的效果
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  const majorCode = searchParams.get('majorCode');
+  const score = searchParams.get('score');
+  const isLove = searchParams.get('isLove');
+  const majorName = searchParams.get('majorName');
+  const [majorDetail, setMajorDetail] = useState(null);
+  const getMyScore = (elementId: string) => {
+    let myScores = '';
+    elementList.map((s: any, index: number) => {
+      if (s.elementId === elementId) {
+        myScores += s.score + '/';
+      }
+    });
+    return myScores.slice(0, -1);
+  };
+
+  const scoreToBigletters = (score: number) => {
+    switch (score) {
+      case 2:
+        return 'A';
+      case 1:
+        return 'B';
+      case 0:
+        return 'C';
+      case -1:
+        return 'D';
+      case -2:
+        return 'E';
+    }
+  };
   const handleModalOpen = (modalId: string) => {
     setSelectedModal(modalId);
   };
   const handleModalClose = () => {
     setSelectedModal(null);
   };
+  useEffect(() => {
+    const fetchMajorInfo = async () => {
+      try {
+        setLoading(true);
+        const userStr = localStorage.getItem('user');
+        if (!majorCode || !score) {
+          console.error('未找到专业代码');
+          return;
+        }
+
+        const response = await getMajorDetail(majorCode);
+
+        if (response && response.code === 200) {
+          console.log(response.data);
+          //获取维度id
+          let ids = '';
+          response.data.majorElementAnalyses.map((item: any) => {
+            ids += item.element.id + ',';
+          });
+          if (ids) {
+            //获取维度及问卷和答案
+            const user = JSON.parse(userStr);
+            const scaleResponse = await getScalesByElementsWithAnswers(ids, user.data.id);
+            if (scaleResponse && scaleResponse.code === 200) {
+              let list = [];
+              scaleResponse.data.map((item: any) => {
+                if (item.options && item.options.length > 0) {
+                  list.push({
+                    elementId: item.elementId,
+                    score: item.answers && scoreToBigletters(item.answers[0].score),
+                    options: item.options,
+                  });
+                }
+              });
+              if (list.length > 0) {
+                setElementList(list);
+                console.log('elementList');
+                console.log(list);
+              }
+            }
+          }
+          setMajorDetail(response.data);
+        }
+      } catch (error) {
+        console.error('获取乐学善学信息失败:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMajorInfo();
+  }, [searchParams]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <SpinLoading color="primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen bg-gray-50">
       {/* 顶部导航栏 */}
@@ -32,13 +133,37 @@ const App: React.FC = () => {
         <div className="text-lg font-medium">乐学&善学特质</div>
       </nav>
       {/* 分数展示 */}
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-6 mt-14">
+      <div className="bg-white rounded-lg shadow-sm p-4  mt-14">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-lg font-medium">002 逻辑学</span>
+          <span className="text-lg font-medium">
+            {majorCode} {majorName}
+          </span>
           <div className="flex items-center">
-            <span className="text-green-600 font-bold text-xl">热爱能量 98分！</span>
+            <span
+              className={
+                isLove === 'true'
+                  ? 'text-green-600 font-bold text-xl'
+                  : 'text-red-600 font-bold text-xl'
+              }
+            >
+              热爱能量 {score * 100}分！
+            </span>
           </div>
         </div>
+      </div>
+      <div
+        style={{
+          fontSize: '11px',
+          color: '#6B7280',
+          border: '1px dashed #34D399',
+          borderRadius: '6px',
+          padding: '8px 12px',
+          margin: '10px 10px',
+          background: '#F9FAFB',
+          display: 'block',
+        }}
+      >
+        专业热爱能量值=该专业"乐学/善学特质"得分/总分*100
       </div>
       {/* 内容切换导航条 */}
       <div className="bg-white shadow-sm z-40">
@@ -63,83 +188,46 @@ const App: React.FC = () => {
         <div
           className={`bg-white rounded-lg shadow-sm p-6 mb-6 ${activeTab === 'learnHappy' ? 'block' : 'hidden'}`}
         >
-          <h2 className="text-xl font-bold mb-6 text-gray-800">乐学特质：</h2>
+          {/* <h2 className="text-xl font-bold mb-6 text-gray-800">乐学特质：</h2> */}
           {/* 特质项目1 */}
-          <div className="mb-8">
-            <div className="mb-4">
-              <h3 className="text-lg font-medium text-gray-700 mb-2">
-                1.喜欢～5.想～5.2.创意思考～5.2.2.不需要达到的
-              </h3>
-              <div className="flex items-center justify-between">
-                <span className="text-green-600">我的自评：A</span>
-                <Button
-                  type="link"
-                  className="flex items-center text-green-600"
-                  onClick={() => handleModalOpen('modal1')}
-                >
-                  <QuestionCircleOutlined className="mr-1" />
-                  查看问卷内容
-                </Button>
-              </div>
-            </div>
-            <div className="pl-4 text-gray-600 leading-relaxed">
-              <p className="mb-2">
-                • 经常为某种发现不停惊喜（如研究自然进化规律、探索文明演变趋势）
-              </p>
-              <p className="mb-2">
-                • "想"时总希望有更多新发现（如：深入思考复杂问题时，因认识规律而欣喜）
-              </p>
-              <p className="mb-2">• 就算没目标，也喜欢各种"发现"……"（纯粹为兴趣演练各种推演）</p>
-            </div>
-          </div>
-          {/* 特质项目2 */}
-          <div className="mb-8">
-            <div className="flex flex-col mb-4">
-              <h3 className="text-lg font-medium text-gray-700 mb-2">
-                2.喜欢～6.做～6.1.能独立完成的～6.1.1.偏思维运算类
-              </h3>
-              <div className="flex items-center justify-between">
-                <span className="text-green-600">我的自评：A</span>
-                <Button
-                  type="link"
-                  className="flex items-center text-green-600"
-                  onClick={() => handleModalOpen('modal2')}
-                >
-                  <QuestionCircleOutlined className="mr-1" />
-                  查看问卷内容
-                </Button>
-              </div>
-            </div>
-            <div className="pl-4 text-gray-600 leading-relaxed">
-              <p className="mb-2">• 经常为验证方法的"正确性"、想法的"可行性"而投入</p>
-              <p className="mb-2">• "做"时很专注/很用心（如：基于某例落地验证理论/方法时）</p>
-              <p className="mb-2">• 喜欢手脑结合，验证方法正确、细法可行</p>
-            </div>
-          </div>
-          {/* 特质项目3 */}
-          <div className="mb-8">
-            <div className="flex flex-col mb-4">
-              <h3 className="text-lg font-medium text-gray-700 mb-2">
-                3.喜欢～4.记～4.2.主动记忆～4.2.1.理解时
-              </h3>
-              <div className="flex items-center justify-between">
-                <span className="text-green-600">我的自评：A</span>
-                <Button
-                  type="link"
-                  className="flex items-center text-green-600"
-                  onClick={() => handleModalOpen('modal3')}
-                >
-                  <QuestionCircleOutlined className="mr-1" />
-                  查看问卷内容
-                </Button>
-              </div>
-            </div>
-            <div className="pl-4 text-gray-600 leading-relaxed">
-              <p className="mb-2">• 经常在理解后乐于记住（如备考知识点、演讲台词）</p>
-              <p className="mb-2">• 记忆理解的内容时总觉得很有价值</p>
-              <p className="mb-2">• 需要记忆的内容，只要理解，就能花时间去记忆</p>
-            </div>
-          </div>
+          {majorDetail &&
+            majorDetail.majorElementAnalyses?.map((item, index) => {
+              if (item.type === 'lexue') {
+                return (
+                  <div className="mb-8">
+                    <div className="mb-4">
+                      <h3 className="text-lg font-medium text-gray-700 mb-2">
+                        {index + 1}.{item.element.type === 'talent' ? '天赋' : '喜欢'}-
+                        {item.element.dimension}～{item.element.name} （{item.element.status}）
+                      </h3>
+                      <div className="flex items-center justify-between">
+                        <span className="text-green-600">
+                          我的自评：{getMyScore(item.element.id)}
+                        </span>
+                        <Button
+                          type="link"
+                          className="flex items-center text-green-600"
+                          onClick={() => handleModalOpen('modal1')}
+                        >
+                          <QuestionCircleOutlined className="mr-1" />
+                          查看问卷内容
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="text-l font-bold mb-1 text-gray-800">特质描述：</div>
+                    <div className="pl-4 text-gray-600 leading-relaxed">
+                      <p className="mb-2">• {item.summary}</p>
+                      <p className="mb-2">• {item.theoryBasis}</p>
+                    </div>
+
+                    <div className="text-l font-bold mb-1 text-gray-800">匹配原因：</div>
+                    <div className="pl-4 text-gray-600 leading-relaxed">
+                      <p className="mb-2">{item.matchReason}</p>
+                    </div>
+                  </div>
+                );
+              }
+            })}
         </div>
         {/* 善学特质部分 */}
         <div
@@ -147,26 +235,44 @@ const App: React.FC = () => {
         >
           <h2 className="text-xl font-bold mb-6 text-gray-800">善学特质：</h2>
           {/* 特质项目1 */}
-          <div className="mb-8">
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-700">
-                1.天赋～2.听～2.2.能听出不同的点～2.2.1.需理解内容
-              </h3>
-              <Button
-                type="link"
-                className="flex items-center text-green-600"
-                onClick={() => handleModalOpen('modal4')}
-              >
-                <QuestionCircleOutlined className="mr-1" />
-                查看问卷内容
-              </Button>
-            </div>
-            <div className="pl-4 text-gray-600 leading-relaxed">
-              <p className="mb-2">• 理解内容后，能迅速听出和自己认知不一致的点</p>
-              <p className="mb-2">• 听出不一致的点时，往往会追问"是什么导致差异"</p>
-              <p className="mb-2">• 善于质疑与反思（记忆中的闪光点）</p>
-            </div>
-          </div>
+          {majorDetail &&
+            majorDetail.majorElementAnalyses?.map((item, index) => {
+              if (item.type === 'shanxue') {
+                return (
+                  <div className="mb-8">
+                    <div className="mb-4">
+                      <h3 className="text-lg font-medium text-gray-700 mb-2">
+                        {index + 1}.{item.element.type === 'talent' ? '天赋' : '喜欢'}-
+                        {item.element.dimension}～{item.element.name} （{item.element.status}）
+                      </h3>
+                      <div className="flex items-center justify-between">
+                        <span className="text-green-600">
+                          我的自评：{getMyScore(item.element.id)}
+                        </span>
+                        <Button
+                          type="link"
+                          className="flex items-center text-green-600"
+                          onClick={() => handleModalOpen('modal1')}
+                        >
+                          <QuestionCircleOutlined className="mr-1" />
+                          查看问卷内容
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="text-l font-bold mb-1 text-gray-800">特质描述：</div>
+                    <div className="pl-4 text-gray-600 leading-relaxed">
+                      <p className="mb-2">• {item.summary}</p>
+                      <p className="mb-2">• {item.theoryBasis}</p>
+                    </div>
+
+                    <div className="text-l font-bold mb-1 text-gray-800">匹配原因：</div>
+                    <div className="pl-4 text-gray-600 leading-relaxed">
+                      <p className="mb-2">{item.matchReason}</p>
+                    </div>
+                  </div>
+                );
+              }
+            })}
         </div>
       </div>
       {/* 模态框 */}

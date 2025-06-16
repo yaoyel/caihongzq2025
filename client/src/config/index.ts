@@ -34,6 +34,9 @@ export const api = {
     users: '/users',
     updateNickname: (userId: string) => `/users/updateNickname/${userId}`,
     majorScores: (userId: string) => `/majors/userscores/${userId}`,
+    majorDetail: (code: string) => `/majors/${code}/detail`,
+    majorBrief: (code: string) => `/majors/${code}/brief`,
+    scalesByElements: (elementIds: string, userId: string) => `/scales/by-elements-with-answers?elementIds=${elementIds}&userId=${userId}`,
   }
 };
 
@@ -129,6 +132,132 @@ export const getUserMajorScores = async (
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(error.response?.data?.message || '获取专业分析分数失败');
+    }
+    throw error;
+  }
+};
+
+// 专业详情接口类型定义
+interface MajorDetail {
+  code: string;
+  name: string;
+  description: string;
+  requirements: string;
+  careerProspects: string;
+  relatedMajors: string[];
+}
+
+interface MajorDetailResponse {
+  success: boolean;
+  message: string;
+  data: MajorDetail;
+}
+
+/**
+ * 获取专业详细信息
+ * @param code 专业代码
+ * @returns Promise<MajorDetailResponse>
+ */
+export const getMajorDetail = async (
+  code: string
+): Promise<MajorDetailResponse> => {
+  try {
+    const response = await axios.get<MajorDetailResponse>(
+      getApiUrl(api.endpoints.majorDetail(code)),
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '获取专业详情失败');
+    }
+    throw error;
+  }
+};
+
+// 专业简要信息接口类型定义
+interface MajorBrief {
+  code: string;
+  name: string;
+  category: string;
+  degree: string;
+  duration: number;
+  description: string;
+}
+
+interface MajorBriefResponse {
+  success: boolean;
+  message: string;
+  data: MajorBrief;
+}
+
+/**
+ * 获取专业简要信息
+ * @param code 专业代码
+ * @returns Promise<MajorBriefResponse>
+ */
+export const getMajorBrief = async (
+  code: string
+): Promise<MajorBriefResponse> => {
+  try {
+    const response = await axios.get<MajorBriefResponse>(
+      getApiUrl(api.endpoints.majorBrief(code)),
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '获取专业简要信息失败');
+    }
+    throw error;
+  }
+};
+
+// 问卷内容和答案接口类型定义
+interface ScaleAnswer {
+  questionId: number;
+  answer: string;
+  score?: number;
+}
+
+interface ScaleWithAnswers {
+  id: number;
+  title: string;
+  description: string;
+  questions: Array<{
+    id: number;
+    content: string;
+    type: string;
+    options?: string[];
+  }>;
+  answers: ScaleAnswer[];
+}
+
+interface ScalesWithAnswersResponse {
+  success: boolean;
+  message: string;
+  data: ScaleWithAnswers[];
+}
+
+/**
+ * 获取指定元素ID的问卷内容和答案
+ * @param elementIds 元素ID列表，用逗号分隔
+ * @param userId 用户ID
+ * @returns Promise<ScalesWithAnswersResponse>
+ */
+export const getScalesByElementsWithAnswers = async (
+  elementIds: string,
+  userId: string
+): Promise<ScalesWithAnswersResponse> => {
+  try {
+    const response = await axios.get<ScalesWithAnswersResponse>(
+      getApiUrl(api.endpoints.scalesByElements(elementIds, userId)),
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '获取问卷内容和答案失败');
     }
     throw error;
   }

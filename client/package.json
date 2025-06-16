@@ -25,6 +25,7 @@
     "@wangeditor/editor": "^5.1.23",
     "@wangeditor/editor-for-react": "^1.0.6",
     "antd": "^5.14.1",
+    "antd-mobile": "^5.39.0",
     "axios": "^1.6.7",
     "echarts": "^5.6.0",
     "html2pdf.js": "^0.10.2",
