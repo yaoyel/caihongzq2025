@@ -23,6 +23,10 @@ export class Scale {
   @JoinColumn({ name: 'element_id' })
   element: Element;
 
+  // action为potential表示为了发现潜能，其他action未定
+  @Column({ name: 'action', nullable: true, length:32, default: '' })
+  action: string;
+
   @OneToMany(() => ScaleOption, option => option.scale)
   options: ScaleOption[];
 

@@ -96,7 +96,7 @@ export class MajorController {
   /**
    * 获取用户的专业匹配得分
    * @param userId 用户ID
-   * @returns 专业匹配得分视图模型
+   * @returns 专业匹配得分视图模型，包含总分和潜力值得分
    */
   @Get('/userscores/:userId')
   async getUserMajorScores(@Param('userId') userId: string): Promise<UserMajorScoresViewModel> {
@@ -109,8 +109,14 @@ export class MajorController {
       // 计算所有专业的匹配得分
       const majorScores = await this.majorScoreService.calculateMajorScores(userId);
 
-      // 按得分降序排序并转换为视图模型
-      const sortedScores = majorScores.sort((a, b) => b.score - a.score);
+      // 按总分降序排序，总分相同时按潜力值降序排序
+      const sortedScores = majorScores.sort((a, b) => {
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        return b.potentialScore - a.potentialScore;
+      });
+
       return toUserMajorScoresViewModel(userId, sortedScores);
       
     } catch (error: unknown) {

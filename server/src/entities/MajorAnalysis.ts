@@ -43,6 +43,8 @@ import {
     @Column({ type: 'varchar', length: 20, comment: '类型（lexue/shanxue）' })
     type: 'lexue' | 'shanxue';
   
+    @Column({ name: 'weight', comment: '权重', default: 1, type: 'int'})
+    weight: number;
     /**
      * 关联的元素ID
      */
