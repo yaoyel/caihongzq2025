@@ -89,13 +89,13 @@ export class Major {
   /**
    * 记录创建时间
    */
-  @CreateDateColumn({ comment: '记录创建时间',name:"created_at" })
+  @CreateDateColumn({ comment: '记录创建时间',name:"created_at", select:false })
   createdAt: Date;
 
   /**
    * 记录最后更新时间
    */
-  @UpdateDateColumn({ comment: '记录最后更新时间',name:"updated_at" })
+  @UpdateDateColumn({ comment: '记录最后更新时间',name:"updated_at", select:false })
   updatedAt: Date;
 
   // ==================== 关系映射 ====================

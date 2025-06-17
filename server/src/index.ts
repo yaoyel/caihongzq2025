@@ -30,7 +30,7 @@ import { UserAnalysisController } from './controllers/userAnalysis.controller';
 import { Scale168Controller } from './controllers/scale168.controller';
 import { MajorController } from './controllers/major.controller'
 import { SchoolController } from './controllers/school.controller'
-import mpVerifyRouter from './routes/mp-verify';
+import mpVerifyRouter from './routes/mp-verify';        
 async function bootstrap() {
     try {
         // 1. 设置依赖注入容器

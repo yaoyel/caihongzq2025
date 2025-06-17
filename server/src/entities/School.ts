@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne, Index } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne, Index, JoinColumn } from "typeorm";
 import { SchoolDetail } from "./SchoolDetail";
 import { SchoolMajor } from "./SchoolMajor";
 
@@ -172,10 +172,12 @@ export class School {
     /**
      * 该学校开设的专业关联列表 (一对多关系)
      * 一个学校可以开设多个专业
+     * 使用学校代码(code)作为关联字段
      */
     @OneToMany('SchoolMajor', 'school', {
         cascade: true, // 级联操作
     })
+    @JoinColumn({ name: 'school_code', referencedColumnName: 'code' })
     schoolMajors: SchoolMajor[];
 
     // ==================== 辅助方法 ====================

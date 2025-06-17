@@ -140,6 +140,7 @@ export class MajorDetail {
 
   /**
    * 关联的学校专业信息列表（一个专业详情对应多个学校专业记录）
+   * 通过专业代码(code)字段与 SchoolMajor 表关联
    */
   @OneToMany(() => SchoolMajor, (schoolMajor) => schoolMajor.majorDetail)
   schoolMajors: SchoolMajor[];
