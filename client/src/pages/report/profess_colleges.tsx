@@ -34,28 +34,22 @@ const App: React.FC = () => {
     },
     // 更多学校数据...
   ];
-
+  const majorCode = searchParams.get('majorCode');
+  const score = searchParams.get('score');
+  const majorName = searchParams.get('majorName');
+  const isLove = searchParams.get('isLove');
   useEffect(() => {
     const fetchMajorInfo = async () => {
       try {
-        const majorCode = searchParams.get('majorCode');
-        const score = searchParams.get('score');
         console.log(majorCode);
-        if (!majorCode||!score) {
+        if (!majorCode || !score) {
           console.error('未找到专业代码');
           return;
         }
 
-        const [detailResponse, briefResponse] = await Promise.all([
-          getMajorDetail(majorCode),
-          getMajorBrief(majorCode)
-        ]);
+        const briefResponse = await getMajorBrief(majorCode);
 
-        if (detailResponse && detailResponse.code === 200) {
-          setMajorDetail(detailResponse.data);
-          console.log(detailResponse.data);
-        }
-        if (briefResponse&&briefResponse.code === 200) {
+        if (briefResponse && briefResponse.code === 200) {
           setMajorBrief(briefResponse.data);
           console.log(briefResponse.data);
         }
@@ -136,23 +130,46 @@ const App: React.FC = () => {
       case 'intro':
         return (
           <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-            <h2 className="text-xl font-medium mb-4">计算机科学与技术</h2>
+            <h2 className="text-xl font-medium mb-4">{majorName}</h2>
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-medium mb-4">专业介绍</h3>
               <p className="text-gray-700 leading-relaxed">
-                计算机科学与技术专业是研究计算机系统的结构、原理以及应用的学科，培养具有扎实的计算机理论基础、系统的专业知识和强大的实践能力的高素质人才。
+                <div
+                  className="text-sm"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '10px',
+                  }}
+                >
+                  <span>
+                    <b>层次：</b>
+                    {majorBrief?.educationLevel
+                      ? majorBrief?.educationLevel === 'ben'
+                        ? '本科'
+                        : '其他'
+                      : '其他'}
+                  </span>
+                  <span>
+                    <b>学制：</b>
+                    {majorBrief?.studyPeriod}
+                  </span>
+                  <span>
+                    <b>学位：</b>
+                    {majorBrief?.awardedDegree}
+                  </span>
+                </div>
+                {majorBrief?.majorBrief ? majorBrief?.majorBrief : '专业介绍正在搜集中...'}
               </p>
             </div>
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-medium mb-4">就业方向</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium mb-2">软件开发工程师</h4>
-                  <p className="text-gray-600 text-sm">平均薪资：25k-35k</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium mb-2">算法工程师</h4>
-                  <p className="text-gray-600 text-sm">平均薪资：30k-50k</p>
+                  {majorBrief?.careerDevelopment
+                    ? majorBrief?.careerDevelopment
+                    : '就业方向正在搜集中...'}
                 </div>
               </div>
             </div>
@@ -193,6 +210,28 @@ const App: React.FC = () => {
             </div>
           </div>
         );
+      case 'courses':
+        return (
+          <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+            <h2 className="text-xl font-medium mb-4">本专业主修课程</h2>
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <p className="text-gray-700 leading-relaxed">
+                {majorBrief?.studyContent ? majorBrief?.studyContent : '专业主修课程正在搜集中...'}
+              </p>
+            </div>
+          </div>
+        );
+      case 'shares':
+        return (
+          <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+            <h2 className="text-xl font-medium mb-4">学长分享</h2>
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <p className="text-gray-700 leading-relaxed">
+                {majorBrief?.seniorTalk ? majorBrief?.seniorTalk : '学长分享正在搜集中...'}
+              </p>
+            </div>
+          </div>
+        );
       default:
         return null;
     }
@@ -203,14 +242,19 @@ const App: React.FC = () => {
     <div className="h-screen flex flex-col">
       <div className="h-14 bg-white shadow-sm fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4">
         <div className="flex items-center">
-          <Button type="text" icon={<ArrowLeftOutlined />} className="mr-2" onClick={() => navigate(-1)} />
+          <Button
+            type="text"
+            icon={<ArrowLeftOutlined />}
+            className="mr-2"
+            onClick={() => navigate(-1)}
+          />
           <Button
             type="text"
             icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="mr-3"
           />
-          <span className="font-medium">{majorDetail?.major?.name}</span>
+          <span className="text-lg font-medium text-center">{majorName}</span>
         </div>
       </div>
 
@@ -218,17 +262,27 @@ const App: React.FC = () => {
       <div className="fixed top-14 left-0 right-0 bg-white shadow-sm z-40">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
-            <span className="text-lg font-medium">{majorDetail?.major?.code} {majorDetail?.major?.name}</span>
+            <span className="text-lg font-medium">
+              {majorCode} {majorName}
+            </span>
             <div className="flex items-center">
-              <span className="text-green-600 font-bold text-xl">热爱能量 98分！</span>
+              <span
+                className={
+                  isLove === 'true'
+                    ? 'text-green-600 font-bold text-xl'
+                    : 'text-red-600 font-bold text-xl'
+                }
+              >
+                热爱能量 {Math.ceil(score * 100)}分！
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-1 pt-[120px]">
+      <div className="flex flex-1 pt-[110px]">
         <div
-          className={`${sidebarCollapsed ? 'w-14' : 'w-[120px]'} bg-white shadow-sm fixed left-0 top-[120px] bottom-0 transition-all duration-300`}
+          className={`${sidebarCollapsed ? 'w-14' : 'w-[120px]'} bg-white shadow-sm fixed left-0 top-[110px] bottom-0 transition-all duration-300`}
         >
           <div className="flex flex-col py-4 space-y-2">
             <button
@@ -265,7 +319,7 @@ const App: React.FC = () => {
               onClick={() => setActiveSection('shares')}
             >
               <i className={`fas fa-users text-base ${!sidebarCollapsed ? 'mr-3' : ''}`}></i>
-              {!sidebarCollapsed && <span className="text-sm">家长分享</span>}
+              {!sidebarCollapsed && <span className="text-sm">学长分享</span>}
             </button>
           </div>
         </div>

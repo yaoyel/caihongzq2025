@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { SpinLoading } from 'antd-mobile';
+import { SpinLoading, Card, Radio, Modal as MobileModal, Space } from 'antd-mobile';
 import {
   QuestionCircleOutlined,
   ArrowLeftOutlined,
@@ -10,13 +10,29 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 import { getMajorDetail, getScalesByElementsWithAnswers } from '../../config';
+import { color } from 'echarts';
 const App: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [selectedModal, setSelectedModal] = useState<string | null>(null);
+  const [modalSelects, setModalSelects] = useState([]);
   const [activeTab, setActiveTab] = useState<'learnHappy' | 'learnWell'>('learnHappy');
   const [elementList, setElementList] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // 添加自定义样式
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .adm-radio-content {
+        font-size: 12px !important;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   // 添加页面加载时滚动到顶部的效果
   useEffect(() => {
@@ -52,7 +68,19 @@ const App: React.FC = () => {
         return 'E';
     }
   };
-  const handleModalOpen = (modalId: string) => {
+  const handleModalOpen = (modalId: string, elementId: string) => {
+    const newModalSelects = [];
+    elementList &&
+      elementList.map((item: any) => {
+        if (item.elementId === elementId) {
+          newModalSelects.push({
+            name: item.content,
+            options: item.options,
+            score: item.score,
+          });
+        }
+      });
+    setModalSelects(newModalSelects);
     setSelectedModal(modalId);
   };
   const handleModalClose = () => {
@@ -86,6 +114,7 @@ const App: React.FC = () => {
               scaleResponse.data.map((item: any) => {
                 if (item.options && item.options.length > 0) {
                   list.push({
+                    content: item.content,
                     elementId: item.elementId,
                     score: item.answers && scoreToBigletters(item.answers[0].score),
                     options: item.options,
@@ -146,14 +175,14 @@ const App: React.FC = () => {
                   : 'text-red-600 font-bold text-xl'
               }
             >
-              热爱能量 {score * 100}分！
+              热爱能量 {Math.ceil(score * 100)}分！
             </span>
           </div>
         </div>
       </div>
       <div
         style={{
-          fontSize: '11px',
+          fontSize: '12px',
           color: '#6B7280',
           border: '1px dashed #34D399',
           borderRadius: '6px',
@@ -207,7 +236,7 @@ const App: React.FC = () => {
                         <Button
                           type="link"
                           className="flex items-center text-green-600"
-                          onClick={() => handleModalOpen('modal1')}
+                          onClick={() => handleModalOpen('modal1', item.element.id)}
                         >
                           <QuestionCircleOutlined className="mr-1" />
                           查看问卷内容
@@ -252,7 +281,7 @@ const App: React.FC = () => {
                         <Button
                           type="link"
                           className="flex items-center text-green-600"
-                          onClick={() => handleModalOpen('modal1')}
+                          onClick={() => handleModalOpen('modal1', item.element.id)}
                         >
                           <QuestionCircleOutlined className="mr-1" />
                           查看问卷内容
@@ -274,24 +303,69 @@ const App: React.FC = () => {
               }
             })}
         </div>
+
+        <div
+          style={{
+            fontSize: '12px',
+            color: '#6B7280',
+            border: '1px dashed #34D399',
+            borderRadius: '6px',
+            padding: '8px 12px',
+            margin: '10px 10px',
+            background: '#F9FAFB',
+            display: 'block',
+          }}
+        >
+          <b>温馨提醒：</b>
+          <span style={{ color: '#1677ff' }}>
+            此处仅列出该专业最重要几项乐学/善学特质，不意味着其他特质对学好该专业不重要
+          </span>
+          ，且"热爱能量"分值源于您对自身喜欢与天赋自评，受自我认知深入程度影响，请结合实际情况综合考量。
+        </div>
       </div>
       {/* 模态框 */}
-      <Modal
-        title="问卷内容"
-        open={selectedModal !== null}
-        onCancel={handleModalClose}
-        footer={null}
-        className="max-w-lg"
-      >
-        <div className="p-4">
-          <p className="text-gray-700">
-            {selectedModal === 'modal1' && '这里是问卷1的详细内容...'}
-            {selectedModal === 'modal2' && '这里是问卷2的详细内容...'}
-            {selectedModal === 'modal3' && '这里是问卷3的详细内容...'}
-            {selectedModal === 'modal4' && '这里是问卷4的详细内容...'}
-          </p>
-        </div>
-      </Modal>
+      <MobileModal
+        visible={selectedModal !== null}
+        className="custom-modal-width"
+        style={undefined}
+        title="问卷内容及您的自评"
+        content={
+          <div className="p-4 text-gray-600 " style={{ display: 'flex', flexDirection: 'column' }}>
+            {modalSelects &&
+              modalSelects.length > 0 &&
+              modalSelects.map((item: any, index: number) => (
+                <React.Fragment key={index}>
+                  <div className="text-sm mb-4">
+                    {index + 1}.{item.name}
+                  </div>
+                  <Radio.Group value={item.score}>
+                    {item.options &&
+                      item.options.map((option: any, idx: number) => (
+                        <Space direction="vertical">
+                          <Radio
+                            key={idx}
+                            value={scoreToBigletters(option.optionValue)}
+                            className="text-sm mb-2"
+                          >
+                            {option.optionName}
+                            {option.additionalInfo ? '（' + option.additionalInfo + '）' : ''}
+                          </Radio>
+                        </Space>
+                      ))}
+                  </Radio.Group>
+                </React.Fragment>
+              ))}
+          </div>
+        }
+        closeOnAction
+        onClose={handleModalClose}
+        actions={[
+          {
+            key: 'close',
+            text: '关闭',
+          },
+        ]}
+      />
     </div>
   );
 };

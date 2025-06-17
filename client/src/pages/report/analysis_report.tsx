@@ -91,7 +91,7 @@ const App: React.FC = () => {
             className="mr-2"
           />
         </div>
-        <h1 className="text-lg font-medium flex-1 text-center">专业分析报告</h1>
+        <h1 className="text-lg font-medium flex-1 text-center">各专业分析报告</h1>
       </div>
       {/* 主要内容区域 */}
       <div className="pt-16 px-4">
@@ -127,7 +127,9 @@ const App: React.FC = () => {
                         className="flex items-center"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/professColleges?majorCode=${item.majorCode}&score=${item.score}`);
+                          navigate(
+                            `/professColleges?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isLove=true`
+                          );
                         }}
                       >
                         <span className="text-gray-500">{item.majorCode}</span>
@@ -140,10 +142,12 @@ const App: React.FC = () => {
                           className="text-green-500 font-medium mr-2 cursor-pointer hover:text-green-600 underline"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/loveEnergy?majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&isLove=true`);
+                            navigate(
+                              `/loveEnergy?majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&isLove=true`
+                            );
                           }}
                         >
-                          热爱能量 {item.score * 100} 分！
+                          热爱能量 {Math.ceil(item.score * 100)} 分！
                         </div>
                         <DownOutline
                           className={`transition-transform ${expanded.includes(index) ? 'rotate-180' : ''}`}
@@ -210,7 +214,9 @@ const App: React.FC = () => {
                         className="flex items-center"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/professColleges?majorId=${item.majorCode}&score=${item.score}`);
+                          navigate(
+                            `/professColleges?majorId=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&isLove=false`
+                          );
                         }}
                       >
                         <span className="text-gray-500">{item.majorCode}</span>
@@ -223,10 +229,12 @@ const App: React.FC = () => {
                           className="text-red-500 font-medium mr-2 cursor-pointer hover:text-green-600 underline"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/loveEnergy?majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&isLove=false`);
+                            navigate(
+                              `/loveEnergy?majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&isLove=false`
+                            );
                           }}
                         >
-                          热爱能量 {item.score * 100} 分！
+                          热爱能量 {Math.ceil(item.score * 100)} 分！
                         </div>
                         <DownOutline
                           className={`transition-transform ${expandedNoLove.includes(index) ? 'rotate-180' : ''}`}
