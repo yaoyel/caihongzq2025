@@ -30,6 +30,7 @@ import { UserAnalysisController } from './controllers/userAnalysis.controller';
 import { Scale168Controller } from './controllers/scale168.controller';
 import { MajorController } from './controllers/major.controller'
 import { SchoolController } from './controllers/school.controller'
+import mpVerifyRouter from './routes/mp-verify';
 async function bootstrap() {
     try {
         // 1. 设置依赖注入容器
@@ -63,9 +64,13 @@ async function bootstrap() {
         app.use(requestLoggerMiddleware);
         app.use(errorHandlerMiddleware);
         app.use(responseMiddleware);
-        // 6. 注入微信路由
+
+        // 注册不需要 /api 前缀的路由
+        app.use(mpVerifyRouter.routes());
+        app.use(mpVerifyRouter.allowedMethods());
+        
+        // 注入其他路由
         app.use(wechatRouter.routes());
-    
         app.use(wechatRouter.allowedMethods());
 
         // 7. 配置路由控制器

@@ -2,6 +2,14 @@ import { Context } from 'koa';
 import { logger } from '../config/logger';
 
 /**
+ * 不需要统一处理的路径白名单
+ */
+const RESPONSE_WHITELIST = [
+  '/MP_verify_s4aW7Fr0j7gMb5cG.txt',
+  // 在此处添加其他不需要统一处理的路径
+];
+
+/**
  * 统一响应接口
  */
 interface ResponseData<T = any> {
@@ -58,6 +66,12 @@ declare module 'koa' {
  * @param next 下一个中间件函数
  */
 export async function responseMiddleware(ctx: Context, next: (err?: any) => Promise<any>) {
+  // 如果路径在白名单中，直接跳过处理
+  if (RESPONSE_WHITELIST.includes(ctx.path)) {
+    await next();
+    return;
+  }
+
   try {
     // 处理请求
     await next();
