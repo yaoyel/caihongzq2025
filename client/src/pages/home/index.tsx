@@ -7,7 +7,10 @@ import { Dialog } from 'antd-mobile';
 const App: React.FC = () => {
   const navigate = useNavigate();
   return (
-    <div className="relative min-h-[762px] bg-white text-gray-800 pb-1" style={{ height: '100vh' ,overflowY: 'hidden'}}>
+    <div
+      className="relative min-h-[762px] bg-white text-gray-800 pb-1"
+      style={{ height: '100vh', minHeight: '100vh' }}
+    >
       {/* 顶部导航栏 */}
       <div className="fixed top-0 w-full bg-white shadow-md z-50 px-5 py-4 flex justify-between items-center">
         <span className="text-xl font-semibold text-green-700">发现热爱</span>
