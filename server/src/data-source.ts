@@ -28,11 +28,11 @@ export const AppDataSource = new DataSource({
     name: 'default', // 设置默认连接名
     type: 'postgres',
     host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '15432'),
+    port: parseInt(process.env.DB_PORT || '5432'),
     username: process.env.DB_USER || 'rbridge',
     password: process.env.DB_PASSWORD || 'chrdwvr450G',
     database: process.env.DB_NAME || 'caihongzq-8088',
-    // synchronize: false,
+    // synchronize: false, // 生产环境不要打开
     logging: process.env.NODE_ENV === 'development',
     namingStrategy: new class extends DefaultNamingStrategy {
         columnName(propertyName: string, customName: string): string {
