@@ -3,14 +3,15 @@ import React from 'react';
 import { Button } from 'antd';
 import { TextOutline } from 'antd-mobile-icons';
 import { useNavigate } from 'react-router-dom';
+import { Dialog } from 'antd-mobile';
 const App: React.FC = () => {
   const navigate = useNavigate();
   return (
-    <div className="relative min-h-[762px] bg-white text-gray-800 pb-1">
+    <div className="relative min-h-[762px] bg-white text-gray-800 pb-1" style={{ height: '100vh' ,overflowY: 'hidden'}}>
       {/* 顶部导航栏 */}
       <div className="fixed top-0 w-full bg-white shadow-md z-50 px-5 py-4 flex justify-between items-center">
         <span className="text-xl font-semibold text-green-700">发现热爱</span>
-        <i className="fas fa-bell text-gray-600 text-lg"></i>
+        {/* <i className="fas fa-bell text-gray-600 text-lg"></i> */}
       </div>
 
       {/* 主要内容区域 */}
@@ -72,11 +73,24 @@ const App: React.FC = () => {
               &nbsp; 开启自评问卷
             </button>
           </div>
-          <div onClick={() => navigate('/analysisReport')} className="grid grid-cols-2 gap-4">
-            <button className="!rounded-button w-full bg-green-100 text-green-800 py-4 px-6 rounded-xl text-base font-medium shadow-sm hover:bg-green-200 transition-colors duration-300">
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={() => navigate('/analysisReport')}
+              className="!rounded-button w-full bg-green-100 text-green-800 py-4 px-6 rounded-xl text-base font-medium shadow-sm hover:bg-green-200 transition-colors duration-300"
+            >
               <span className="font-bold">专业</span>解析
             </button>
-            <button className="!rounded-button w-full bg-green-100 text-green-800 py-4 px-6 rounded-xl text-base font-medium shadow-sm hover:bg-green-200 transition-colors duration-300">
+            <button
+              onClick={() =>
+                Dialog.alert({
+                  content: `如果您基于本站自评报考了“最爱专业”并如愿录取，请回来点击“彩蛋！”，我们为您大学继续“寻找最真的自己，发现热爱”和“与自己在一起，在热爱中心想事成”准备了一份‘爱的礼物’！`,
+                  onConfirm: () => {
+                    console.log('Confirmed');
+                  },
+                })
+              }
+              className="!rounded-button w-full bg-green-100 text-green-800 py-4 px-6 rounded-xl text-base font-medium shadow-sm hover:bg-green-200 transition-colors duration-300"
+            >
               趣味发现
             </button>
           </div>

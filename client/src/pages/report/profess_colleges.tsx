@@ -63,6 +63,37 @@ const App: React.FC = () => {
     fetchMajorInfo();
   }, [searchParams]);
 
+  const getMajorBriefHtml = (majorBrief: string, defaultStr: string) => {
+    if (majorBrief) {
+      majorBrief = majorBrief.replace(/'/g, '"');
+      const seniorTalkList = JSON.parse(majorBrief);
+
+      let html = '';
+      for (const [key, value] of Object.entries(seniorTalkList)) {
+        let htmlTemp = '';
+        if (key === '典型岗位与工作内容') {
+          const jobs = value;
+          jobs &&
+            jobs.length > 0 &&
+            jobs.map((item) => {
+              Object.values(item).forEach((value, index) => {
+                htmlTemp += `<p class="text-gray-700 leading-relaxed mb-4">${value}</p>`;
+              });
+            });
+        }
+        if (!htmlTemp) {
+          htmlTemp = value;
+        }
+        console.log(htmlTemp);
+        html += `<h3 class="text-lg font-medium mb-2">${key}：</h3><p class="text-gray-700 leading-relaxed mb-4">${htmlTemp}</p>`;
+      }
+
+      return html;
+    } else {
+      return defaultStr;
+    }
+  };
+
   const renderContent = () => {
     if (selectedSchool) {
       const school = schools.find((s) => s.id === selectedSchool);
@@ -164,14 +195,13 @@ const App: React.FC = () => {
               </p>
             </div>
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-medium mb-4">就业方向</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  {majorBrief?.careerDevelopment
-                    ? majorBrief?.careerDevelopment
-                    : '就业方向正在搜集中...'}
-                </div>
-              </div>
+              {/* <h3 className="text-lg font-medium mb-4">就业方向</h3> */}
+              <div
+                className="text-gray-700 leading-relaxed"
+                dangerouslySetInnerHTML={{
+                  __html: getMajorBriefHtml(majorBrief?.careerDevelopment, '就业方向正在搜集中...'),
+                }}
+              ></div>
             </div>
           </div>
         );
@@ -215,9 +245,12 @@ const App: React.FC = () => {
           <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
             <h2 className="text-xl font-medium mb-4">本专业主修课程</h2>
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <p className="text-gray-700 leading-relaxed">
-                {majorBrief?.studyContent ? majorBrief?.studyContent : '专业主修课程正在搜集中...'}
-              </p>
+              <p
+                className="text-gray-700 leading-relaxed"
+                dangerouslySetInnerHTML={{
+                  __html: getMajorBriefHtml(majorBrief?.studyContent, '专业主修课程正在搜集中...'),
+                }}
+              ></p>
             </div>
           </div>
         );
@@ -226,9 +259,12 @@ const App: React.FC = () => {
           <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
             <h2 className="text-xl font-medium mb-4">学长分享</h2>
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <p className="text-gray-700 leading-relaxed">
-                {majorBrief?.seniorTalk ? majorBrief?.seniorTalk : '学长分享正在搜集中...'}
-              </p>
+              <p
+                className="text-gray-700 leading-relaxed"
+                dangerouslySetInnerHTML={{
+                  __html: getMajorBriefHtml(majorBrief?.seniorTalk, '学长分享正在搜集中...'),
+                }}
+              ></p>
             </div>
           </div>
         );

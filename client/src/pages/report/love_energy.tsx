@@ -148,6 +148,9 @@ const App: React.FC = () => {
     );
   }
 
+  let lexueIndex = 0;
+  let shanxueIndex = 0;
+
   return (
     <div className="relative min-h-screen bg-gray-50">
       {/* 顶部导航栏 */}
@@ -222,11 +225,12 @@ const App: React.FC = () => {
           {majorDetail &&
             majorDetail.majorElementAnalyses?.map((item, index) => {
               if (item.type === 'lexue') {
+                lexueIndex = lexueIndex + 1;
                 return (
                   <div className="mb-8">
                     <div className="mb-4">
                       <h3 className="text-lg font-medium text-gray-700 mb-2">
-                        {index + 1}.{item.element.type === 'talent' ? '天赋' : '喜欢'}-
+                        {lexueIndex}.{item.element.type === 'talent' ? '天赋' : '喜欢'}-
                         {item.element.dimension}～{item.element.name} （{item.element.status}）
                       </h3>
                       <div className="flex items-center justify-between">
@@ -262,16 +266,17 @@ const App: React.FC = () => {
         <div
           className={`bg-white rounded-lg shadow-sm p-6 ${activeTab === 'learnWell' ? 'block' : 'hidden'}`}
         >
-          <h2 className="text-xl font-bold mb-6 text-gray-800">善学特质：</h2>
+          {/* <h2 className="text-xl font-bold mb-6 text-gray-800">善学特质：</h2> */}
           {/* 特质项目1 */}
           {majorDetail &&
             majorDetail.majorElementAnalyses?.map((item, index) => {
               if (item.type === 'shanxue') {
+                shanxueIndex = shanxueIndex + 1;
                 return (
                   <div className="mb-8">
                     <div className="mb-4">
                       <h3 className="text-lg font-medium text-gray-700 mb-2">
-                        {index + 1}.{item.element.type === 'talent' ? '天赋' : '喜欢'}-
+                        {shanxueIndex}.{item.element.type === 'talent' ? '天赋' : '喜欢'}-
                         {item.element.dimension}～{item.element.name} （{item.element.status}）
                       </h3>
                       <div className="flex items-center justify-between">

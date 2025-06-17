@@ -1,7 +1,26 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Button, Row, Col, Space, Card, message, Spin, Menu, Dropdown } from 'antd';
-import { WechatOutlined, SafetyCertificateOutlined, UserOutlined, SettingOutlined, LogoutOutlined, CaretDownOutlined } from '@ant-design/icons';
+import {
+  Layout,
+  Typography,
+  Button,
+  Row,
+  Col,
+  Space,
+  Card,
+  message,
+  Spin,
+  Menu,
+  Dropdown,
+} from 'antd';
+import {
+  WechatOutlined,
+  SafetyCertificateOutlined,
+  UserOutlined,
+  SettingOutlined,
+  LogoutOutlined,
+  CaretDownOutlined,
+} from '@ant-design/icons';
 import styled from '@emotion/styled';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -13,7 +32,7 @@ const { Content } = Layout;
 
 const StyledLayout = styled(Layout)`
   min-height: 100vh;
-  background: linear-gradient(45deg, #89C4F4 0%, #C7F4D3 100%);
+  background: linear-gradient(45deg, #89c4f4 0%, #c7f4d3 100%);
   position: relative;
   overflow: hidden;
 
@@ -78,21 +97,27 @@ const WechatButton = styled(Button)`
   height: 60px;
   width: 240px;
   font-size: 18px;
-  background: #FFB347;
-  border-color: #FFB347;
+  background: #ffb347;
+  border-color: #ffb347;
   box-shadow: 0 4px 12px rgba(255, 179, 71, 0.3);
-  
+
   &:hover {
-    background: #FFA533;
-    border-color: #FFA533;
+    background: #ffa533;
+    border-color: #ffa533;
   }
 
   @keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
-  
+
   animation: pulse 2s infinite;
 `;
 
@@ -105,10 +130,14 @@ const RealTimeNotice = styled.div`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   animation: slideIn 0.3s ease-out;
-  
+
   @keyframes slideIn {
-    from { transform: translateX(-100%); }
-    to { transform: translateX(0); }
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
   }
 `;
 
@@ -138,11 +167,21 @@ const StageCard = styled.div`
     }
   }
 
-  &:nth-child(1) { animation-delay: 0.2s; }
-  &:nth-child(2) { animation-delay: 0.4s; }
-  &:nth-child(3) { animation-delay: 0.6s; }
-  &:nth-child(4) { animation-delay: 0.8s; }
-  &:nth-child(5) { animation-delay: 1s; }
+  &:nth-child(1) {
+    animation-delay: 0.2s;
+  }
+  &:nth-child(2) {
+    animation-delay: 0.4s;
+  }
+  &:nth-child(3) {
+    animation-delay: 0.6s;
+  }
+  &:nth-child(4) {
+    animation-delay: 0.8s;
+  }
+  &:nth-child(5) {
+    animation-delay: 1s;
+  }
 `;
 
 const StageTitle = styled.h3`
@@ -198,10 +237,10 @@ const ScrollContainer = styled.div`
 const InteractionItem = styled.div`
   padding: 8px;
   margin: 4px 0;
-  background: rgba(255,255,255,0.9);
+  background: rgba(255, 255, 255, 0.9);
   border-radius: 6px;
   animation: slideIn 0.5s ease-out;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 `;
 
 const loveInteractions = [
@@ -220,7 +259,7 @@ const loveInteractions = [
   '看法不一致很正常，各自保留看法也是共识',
   '不认同时不着急提出，先听、多想想，再提出完善建议',
   '分享时尽量只说确认过的事实、验证过的规律',
-  '不断确认与孩子有共识的点'
+  '不断确认与孩子有共识的点',
 ];
 
 const talentScenes = [
@@ -259,7 +298,7 @@ const talentScenes = [
   '干什么时孩子会成为小朋友的模仿对象？',
   '孩子相对轻松就能做出好结果的是哪方面的事？',
   '孩子不需教就能掌握得不错的是哪方面的知识？',
-  '什么事上孩子总能带领小朋友一起玩？'
+  '什么事上孩子总能带领小朋友一起玩？',
 ];
 
 const LoginContainer = styled.div`
@@ -296,7 +335,7 @@ const LoginContainer = styled.div`
       border-radius: 8px;
       padding: 20px;
       background: #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -374,7 +413,7 @@ const LoginPage: React.FC = () => {
 
       // 检查数据完整性
       const { ticket, sceneStr, qrUrl, isTest } = response.data.data;
-    
+
       if ((!ticket || !sceneStr) && !isTest) {
         throw new Error('响应数据不完整');
       }
@@ -386,7 +425,7 @@ const LoginPage: React.FC = () => {
 
       // 更新状态
       setQrUrl(qrUrl);
-      
+
       if (!isTest) {
         startPolling(sceneStr);
       } else {
@@ -410,19 +449,19 @@ const LoginPage: React.FC = () => {
       try {
         const response = await axios.get(`${getApiUrl(`/wechat/check-login?scene=${scene}`)}`);
         console.log(response);
-        const { success, user, token } = response.data.data; 
+        const { success, user, token } = response.data.data;
         if (success) {
           // 清除轮询定时器
           clearInterval(pollingTimer);
           setPolling(false);
-          
+
           // 存储用户信息和token
           localStorage.setItem('user', JSON.stringify(user));
           localStorage.setItem('token', token);
-          
+
           // 设置全局请求头
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-          
+
           message.success('登录成功');
           navigate('/home');
           return true; // 登录成功返回 true
@@ -468,45 +507,50 @@ const LoginPage: React.FC = () => {
       try {
         const user = JSON.parse(userStr);
         setUserInfo(user);
-        
+
         // 设置全局请求头
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        
+
         // 获取用户信息
         const response = await axios.get(getApiUrl('/users/me'));
-        
+
         if (response.status === 200) {
           // 更新用户信息
           localStorage.setItem('user', JSON.stringify(response.data));
-          navigate('/home');
+          navigate('/default');
           return;
         }
       } catch (error: any) {
         console.error('自动登录失败:', error);
-        
+
         if (error.response?.status === 401) {
           // 清除无效的认证信息
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           setUserInfo(null);
         }
-        
+
         // 如果获取用户信息失败，显示二维码
         getLoginQrCode();
       }
     };
 
-    localStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsIm5pY2tuYW1lIjoi5bqE5Lqu5LquIiwiYXZhdGFyVXJsIjoiIiwiaWF0IjoxNzUwMDMzMjY1LCJleHAiOjE3NTI2MjUyNjV9.xnIxZ6lrDQLk-cdyQlHSJ01b4m49Fd57YtwBXhCBvxg');
-    localStorage.setItem('user', JSON.stringify({
-      id: 6,
-      username: '',
-      nickname: '',
-      avatarUrl: '',
-      role: 'parent'
-    }));
+    localStorage.setItem(
+      'token',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsIm5pY2tuYW1lIjoi5bqE5Lqu5LquIiwiYXZhdGFyVXJsIjoiIiwiaWF0IjoxNzUwMDMzMjY1LCJleHAiOjE3NTI2MjUyNjV9.xnIxZ6lrDQLk-cdyQlHSJ01b4m49Fd57YtwBXhCBvxg'
+    );
+    localStorage.setItem(
+      'user',
+      JSON.stringify({
+        id: 6,
+        username: '',
+        nickname: '',
+        avatarUrl: '',
+        role: 'parent',
+      })
+    );
     checkLocalAuth();
   }, [navigate]);
-
 
   const handleWechatLogin = () => {
     if (!polling) {
@@ -524,7 +568,7 @@ const LoginPage: React.FC = () => {
                 <Title level={2} style={{ marginBottom: 32, color: '#1890ff' }}>
                   🌱 五道杠成长体系
                 </Title>
-                
+
                 {[
                   {
                     stage: '第一阶段',
@@ -534,8 +578,8 @@ const LoginPage: React.FC = () => {
                     abilities: [
                       '发展自信与自驱',
                       '基础情绪能力：感知兴趣带来的愉悦感',
-                      '原始动力：无压力状态下的主动尝试'
-                    ]
+                      '原始动力：无压力状态下的主动尝试',
+                    ],
                   },
                   {
                     stage: '第二阶段',
@@ -545,8 +589,8 @@ const LoginPage: React.FC = () => {
                     abilities: [
                       '发展自强与自律',
                       '决策能力：基于兴趣的优先级判断',
-                      '延迟满足：为天赋发展承受短期压力'
-                    ]
+                      '延迟满足：为天赋发展承受短期压力',
+                    ],
                   },
                   {
                     stage: '第三阶段',
@@ -556,8 +600,8 @@ const LoginPage: React.FC = () => {
                     abilities: [
                       '发展韧性（抗压 + 坚持）与思辨',
                       '抗压性：将困难转化为具体可执行步骤',
-                      '逻辑验证：用天赋能力反向推导问题本质'
-                    ]
+                      '逻辑验证：用天赋能力反向推导问题本质',
+                    ],
                   },
                   {
                     stage: '第四阶段',
@@ -567,8 +611,8 @@ const LoginPage: React.FC = () => {
                     abilities: [
                       '发展系统化（整合 + 创新）与预见性',
                       '模式重构：将前两阶段积累的经验模块化',
-                      '风险预判：基于天赋特质的创新可行性评估'
-                    ]
+                      '风险预判：基于天赋特质的创新可行性评估',
+                    ],
                   },
                   {
                     stage: '第五阶段',
@@ -578,9 +622,9 @@ const LoginPage: React.FC = () => {
                     abilities: [
                       '发展元认知（规律洞察 + 自我迭代）',
                       '认知升维：建立跨领域的能力迁移框架',
-                      '动态校准：用失败数据优化天赋应用模型'
-                    ]
-                  }
+                      '动态校准：用失败数据优化天赋应用模型',
+                    ],
+                  },
                 ].map((phase, index) => (
                   <StageCard key={index}>
                     <StageTitle>
@@ -592,7 +636,7 @@ const LoginPage: React.FC = () => {
                         <Text strong>🕒 时机：</Text>
                         {phase.timing}
                       </StageItem>
-                      
+
                       <StageItem>
                         <Text strong>🎯 核心目标：</Text>
                         {phase.target}
@@ -607,26 +651,29 @@ const LoginPage: React.FC = () => {
                             </StageSubItem>
                           ))}
                         </div>
-                    </div>
+                      </div>
                     </StageContent>
                   </StageCard>
                 ))}
               </GrowthStages>
             </Col>
 
-            <Col span={12} style={{ 
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              marginTop: '100px',
-            }}>
+            <Col
+              span={12}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                marginTop: '100px',
+              }}
+            >
               <Space direction="vertical" size="large" align="center">
                 {error ? (
                   <div style={{ textAlign: 'center' }}>
                     <Text type="danger">{error}</Text>
                     <br />
-                    <Button 
-                      type="primary" 
+                    <Button
+                      type="primary"
                       onClick={() => getLoginQrCode()}
                       style={{ marginTop: '16px' }}
                     >
@@ -645,14 +692,14 @@ const LoginPage: React.FC = () => {
                           </Text>
                         </div>
                       ) : (
-                        <img 
-                          src={qrUrl} 
-                          alt="微信扫码登录" 
-                          style={{ 
-                            maxWidth: '100%', 
-                            maxHeight: '100%', 
-                            objectFit: 'contain' 
-                          }} 
+                        <img
+                          src={qrUrl}
+                          alt="微信扫码登录"
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '100%',
+                            objectFit: 'contain',
+                          }}
                           onError={() => {
                             setError('二维码加载失败');
                             setQrUrl('');
@@ -665,9 +712,9 @@ const LoginPage: React.FC = () => {
                     </div>
                   </>
                 ) : (
-                  <WechatButton 
-                    type="primary" 
-                    icon={<WechatOutlined />} 
+                  <WechatButton
+                    type="primary"
+                    icon={<WechatOutlined />}
                     onClick={handleWechatLogin}
                     loading={loading}
                     disabled={loading}
@@ -675,17 +722,12 @@ const LoginPage: React.FC = () => {
                     {loading ? '获取中...' : '获取登录二维码'}
                   </WechatButton>
                 )}
-                
-                
+
                 <div style={{ width: '100%', marginTop: 40 }}>
                   <Row gutter={[24, 24]}>
                     <Col span={24}>
                       <Card
-                        title={
-                          <div style={{ color: '#1890ff' }}>
-                            ❤️ 爱的互动指南（16条）
-                          </div>
-                        }
+                        title={<div style={{ color: '#1890ff' }}>❤️ 爱的互动指南（16条）</div>}
                         bordered={false}
                       >
                         <div style={{ paddingRight: '8px' }}>
@@ -700,11 +742,7 @@ const LoginPage: React.FC = () => {
 
                     <Col span={24}>
                       <Card
-                        title={
-                          <div style={{ color: '#1890ff' }}>
-                            🔍 天赋发现场景（36个）
-                          </div>
-                        }
+                        title={<div style={{ color: '#1890ff' }}>🔍 天赋发现场景（36个）</div>}
                         bordered={false}
                       >
                         <ScrollContainer>
@@ -727,11 +765,7 @@ const LoginPage: React.FC = () => {
             <div style={{ textAlign: 'center' }}>
               <Text type="danger">{error}</Text>
               <br />
-              <Button 
-                type="primary" 
-                onClick={() => getLoginQrCode()}
-                style={{ marginTop: '16px' }}
-              >
+              <Button type="primary" onClick={() => getLoginQrCode()} style={{ marginTop: '16px' }}>
                 重试
               </Button>
             </div>
@@ -747,14 +781,14 @@ const LoginPage: React.FC = () => {
                     </Text>
                   </div>
                 ) : (
-                  <img 
-                    src={qrUrl} 
-                    alt="微信扫码登录" 
-                    style={{ 
-                      maxWidth: '100%', 
-                      maxHeight: '100%', 
-                      objectFit: 'contain' 
-                    }} 
+                  <img
+                    src={qrUrl}
+                    alt="微信扫码登录"
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      objectFit: 'contain',
+                    }}
                     onError={() => {
                       setError('二维码加载失败');
                       setQrUrl('');
@@ -767,9 +801,9 @@ const LoginPage: React.FC = () => {
               </div>
             </>
           ) : (
-            <WechatButton 
-              type="primary" 
-              icon={<WechatOutlined />} 
+            <WechatButton
+              type="primary"
+              icon={<WechatOutlined />}
               onClick={handleWechatLogin}
               loading={loading}
               disabled={loading}
