@@ -451,7 +451,7 @@ const App: React.FC = () => {
           </div>
         </div>
         <div
-          className={`flex-1 ${sidebarCollapsed ? 'ml-14' : 'ml-[120px]'} max-w-[calc(100vw-120px)] transition-all duration-300`}
+          className={`flex-1 ${sidebarCollapsed ? 'ml-14' : 'ml-[120px]'} ${sidebarCollapsed ? 'max-w-[calc(100vw-56px)]' : 'max-w-[calc(100vw-120px)]'} transition-all duration-300`}
         >
           {renderContent()}
         </div>

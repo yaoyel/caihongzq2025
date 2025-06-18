@@ -463,7 +463,7 @@ const LoginPage: React.FC = () => {
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
           message.success('登录成功');
-          navigate('/home');
+          navigate('/default');
           return true; // 登录成功返回 true
         }
         return false; // 未登录返回 false
@@ -551,8 +551,6 @@ const LoginPage: React.FC = () => {
     // );
 
     checkLocalAuth();
-    // 清除轮询定时器
-    clearInterval(pollingTimer);
     setPolling(false);
   }, [navigate]);
 
