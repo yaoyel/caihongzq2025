@@ -1,11 +1,11 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Button, Modal } from 'antd';
+import { Button, Modal, Tag } from 'antd';
 import * as echarts from 'echarts';
 import { DownOutline, LeftOutline } from 'antd-mobile-icons';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { getApiUrl, getUserMajorScores } from '../../config';
+import { getApiUrl, getUserMajorScores, getMajorDetail } from '../../config';
 import { SpinLoading } from 'antd-mobile';
 
 const App: React.FC = () => {
@@ -16,6 +16,26 @@ const App: React.FC = () => {
   const [majoNoLove, setmajorNoLove] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  const [majorDetails, setMajorDetail] = useState([]);
+  
+  const getMajorDetailInfo = async (majorCode) => {
+    try {
+      if (!majorCode) {
+        console.error('未找到专业代码');
+        return;
+      }
+      if (majorDetails.some((item) => item.code === majorCode)) {
+        return;
+      }
+      const detailResponse = await getMajorDetail(majorCode);
+      if (detailResponse && detailResponse.code === 200 && detailResponse.data) {
+        setMajorDetail(prev => [...prev, detailResponse.data]);
+      }
+    } catch (error) {
+      console.error('获取专业详细信息失败:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchMajorScores = async () => {
@@ -40,6 +60,12 @@ const App: React.FC = () => {
           // 获取后3条最低分数据并倒序
           const bottomScores = scores.slice(-3).reverse();
           setmajorNoLove(bottomScores);
+
+          // 获取专业详情
+          if (topScores && bottomScores) {
+            getMajorDetailInfo(topScores[0].majorCode);
+            getMajorDetailInfo(bottomScores[0].majorCode);
+          }
         } else {
           message.error(response.message || '修改昵称失败');
         }
@@ -78,6 +104,66 @@ const App: React.FC = () => {
   };
   const handleCancel = () => {
     setIsModalVisible(false);
+  };
+
+  const renderMajorDetail = (code: string) => {
+    const majorDetail = majorDetails.find((item) => item.code === code);
+    if (majorDetail) {
+      const careerDevelopmentT = majorDetail.careerDevelopment.replace(/'/g, '"');
+      const careerDevelopmentTemp = JSON.parse(careerDevelopmentT);
+      const schools =
+        majorDetail.schools && majorDetail.schools.length > 10
+          ? majorDetail.schools.slice(0, 10)
+          : majorDetail.schools;
+      return (
+        <div className="space-y-3">
+          <div className="bg-green-50 rounded-lg p-3">
+            <div className="text-sm font-medium text-green-700 mb-1">专业简介</div>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              {majorDetail.majorBrief ?? '正在收集...'}
+            </p>
+          </div>
+          <div className="bg-blue-50 rounded-lg p-3">
+            <div className="text-sm font-medium text-blue-700 mb-1">就业方向</div>
+            <p className="text-xs text-gray-600">
+              {careerDevelopmentTemp['主要就业方向'] ?? '正在收集...'}
+            </p>
+          </div>
+          <div className="bg-purple-50 rounded-lg p-3">
+            <div className="text-sm font-medium text-purple-700 mb-1">招生院校</div>
+            <p className="text-xs text-gray-600">
+              {schools && schools.length > 0
+                ? schools.map((i, index) => (
+                    <>
+                      <Tag color="green" className="mb-1">
+                        {i.name}
+                      </Tag>
+                      {index === schools.length - 1 ? '......' : ''}
+                    </>
+                  ))
+                : '正在收集...'}
+            </p>
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div className="space-y-3">
+          <div className="bg-green-50 rounded-lg p-3">
+            <div className="text-sm font-medium text-green-700 mb-1">专业简介</div>
+            <p className="text-xs text-gray-600 leading-relaxed">正在收集...</p>
+          </div>
+          <div className="bg-blue-50 rounded-lg p-3">
+            <div className="text-sm font-medium text-blue-700 mb-1">就业前景</div>
+            <p className="text-xs text-gray-600">正在收集...</p>
+          </div>
+          <div className="bg-purple-50 rounded-lg p-3">
+            <div className="text-sm font-medium text-purple-700 mb-1">招生院校</div>
+            <p className="text-xs text-gray-600">正在收集...</p>
+          </div>
+        </div>
+      );
+    }
   };
   return (
     <div className="relative min-h-screen bg-[#FFFDF7] pb-16">
@@ -121,7 +207,10 @@ const App: React.FC = () => {
                   <div className="flex flex-col">
                     <div
                       className="flex justify-between items-center mb-3 cursor-pointer"
-                      onClick={() => handleExpand(index)}
+                      onClick={() => {
+                        getMajorDetailInfo(item.majorCode);
+                        handleExpand(index);
+                      }}
                     >
                       <div
                         className="flex items-center"
@@ -155,24 +244,7 @@ const App: React.FC = () => {
                         />
                       </div>
                     </div>
-                    {expanded.includes(index) && (
-                      <div className="space-y-3">
-                        <div className="bg-green-50 rounded-lg p-3">
-                          <div className="text-sm font-medium text-green-700 mb-1">专业简介</div>
-                          <p className="text-xs text-gray-600 leading-relaxed">
-                            {item.description || '暂无简介'}
-                          </p>
-                        </div>
-                        <div className="bg-blue-50 rounded-lg p-3">
-                          <div className="text-sm font-medium text-blue-700 mb-1">就业前景</div>
-                          <p className="text-xs text-gray-600">{item.courses || '就业前景'}</p>
-                        </div>
-                        <div className="bg-purple-50 rounded-lg p-3">
-                          <div className="text-sm font-medium text-purple-700 mb-1">招生院校</div>
-                          <p className="text-xs text-gray-600">{item.parentShare || '招生院校'}</p>
-                        </div>
-                      </div>
-                    )}
+                    {expanded.includes(index) && renderMajorDetail(item.majorCode)}
                   </div>
                 </div>
               ))
@@ -208,14 +280,17 @@ const App: React.FC = () => {
                   <div className="flex flex-col">
                     <div
                       className="flex justify-between items-center mb-3 cursor-pointer"
-                      onClick={() => handleExpandNoLove(index)}
+                      onClick={() => {
+                        getMajorDetailInfo(item.majorCode);
+                        handleExpandNoLove(index);
+                      }}
                     >
                       <div
                         className="flex items-center"
                         onClick={(e) => {
                           e.stopPropagation();
                           navigate(
-                            `/professColleges?majorId=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&isLove=false`
+                            `/professColleges?majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&isLove=false`
                           );
                         }}
                       >
@@ -242,24 +317,7 @@ const App: React.FC = () => {
                         />
                       </div>
                     </div>
-                    {expandedNoLove.includes(index) && (
-                      <div className="space-y-3">
-                        <div className="bg-green-50 rounded-lg p-3">
-                          <div className="text-sm font-medium text-green-700 mb-1">专业简介</div>
-                          <p className="text-xs text-gray-600 leading-relaxed">
-                            {item.description || '暂无简介'}
-                          </p>
-                        </div>
-                        <div className="bg-blue-50 rounded-lg p-3">
-                          <div className="text-sm font-medium text-blue-700 mb-1">就业前景</div>
-                          <p className="text-xs text-gray-600">{item.courses || '就业前景'}</p>
-                        </div>
-                        <div className="bg-purple-50 rounded-lg p-3">
-                          <div className="text-sm font-medium text-purple-700 mb-1">招生院校</div>
-                          <p className="text-xs text-gray-600">{item.parentShare || '招生院校'}</p>
-                        </div>
-                      </div>
-                    )}
+                    {expandedNoLove.includes(index) && renderMajorDetail(item.majorCode)}
                   </div>
                 </div>
               ))

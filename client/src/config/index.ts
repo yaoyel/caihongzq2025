@@ -37,6 +37,7 @@ export const api = {
     majorDetail: (code: string) => `/majors/${code}/detail`,
     majorBrief: (code: string) => `/majors/${code}/brief`,
     scalesByElements: (elementIds: string, userId: string) => `/scales/by-elements-with-answers?elementIds=${elementIds}&userId=${userId}`,
+    schoolDetail: (schoolId: string) => `/schools/${schoolId}`,
   }
 };
 
@@ -258,6 +259,46 @@ export const getScalesByElementsWithAnswers = async (
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(error.response?.data?.message || '获取问卷内容和答案失败');
+    }
+    throw error;
+  }
+};
+
+// 院校信息接口类型定义
+interface SchoolDetail {
+  id: string;
+  name: string;
+  type: string;
+  location: string;
+  description: string;
+  features: string[];
+  admissionRequirements: string;
+  website?: string;
+}
+
+interface SchoolDetailResponse {
+  success: boolean;
+  message: string;
+  data: SchoolDetail;
+}
+
+/**
+ * 获取院校详细信息
+ * @param schoolId 院校ID
+ * @returns Promise<SchoolDetailResponse>
+ */
+export const getSchoolDetail = async (
+  schoolId: string
+): Promise<SchoolDetailResponse> => {
+  try {
+    const response = await axios.get<SchoolDetailResponse>(
+      getApiUrl(api.endpoints.schoolDetail(schoolId)),
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '获取院校详情失败');
     }
     throw error;
   }

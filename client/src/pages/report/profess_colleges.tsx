@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Card, Tag, Tabs } from 'antd';
 import { ArrowLeftOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getMajorDetail, getMajorBrief } from '../../config';
+import { getMajorDetail, getMajorBrief, getSchoolDetail } from '../../config';
 
 const App: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -14,26 +14,10 @@ const App: React.FC = () => {
   const [majorDetail, setMajorDetail] = useState(null);
   const [majorBrief, setMajorBrief] = useState(null);
   const [loading, setLoading] = useState(true);
-  const schools = [
-    {
-      id: '1',
-      name: '清华大学',
-      location: '北京市',
-      tags: ['985', '211', '双一流'],
-      intro: '清华大学创建于1911年，是一所世界知名的高等学府...',
-      advantages: ['计算机科学', '人工智能', '电子工程'],
-      labs: ['智能技术与系统国家重点实验室', '微纳电子技术研究中心'],
-      reviews: [
-        {
-          content: '作为一名清华计算机系的学长，我觉得最大的收获是...',
-          author: '王同学 2021级',
-        },
-      ],
-      limitations: ['竞争压力大', '学习强度高'],
-      admissionInfo: '2024年计划招生350人，综合评价录取...',
-    },
-    // 更多学校数据...
-  ];
+  const [schoolDetailInfo, setSchoolDetail] = useState(null);
+  const [schoolLoading, setSchoolLoading] = useState(false);
+  const [schools, setSchools] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const majorCode = searchParams.get('majorCode');
   const score = searchParams.get('score');
   const majorName = searchParams.get('majorName');
@@ -61,8 +45,50 @@ const App: React.FC = () => {
     };
 
     fetchMajorInfo();
+
+    const fetchMajorDetail = async () => {
+      try {
+        if (!majorCode || !score) {
+          console.error('未找到专业代码');
+          return;
+        }
+
+        const detailResponse = await getMajorDetail(majorCode);
+
+        if (detailResponse && detailResponse.code === 200) {
+          if (detailResponse.data.schools) {
+            setSchools(detailResponse.data.schools);
+          }
+        }
+      } catch (error) {
+        console.error('获取专业详细信息失败:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMajorDetail();
   }, [searchParams]);
 
+  //获取院校信息
+  const getSchools = async (schoolCode: string) => {
+    if (!majorCode) {
+      console.error('未找到专业代码');
+      return;
+    }
+    //  setSchoolLoading(true);
+    try {
+      const response = await getSchoolDetail(schoolCode);
+      if (response && response.code === 200) {
+        setSchoolDetail(response.data);
+        console.log(response.data);
+      }
+    } catch (error) {
+      console.error('获取院校信息失败:', error);
+    } finally {
+      // setSchoolLoading(false);
+    }
+  };
   const getMajorBriefHtml = (majorBrief: string, defaultStr: string) => {
     if (majorBrief) {
       majorBrief = majorBrief.replace(/'/g, '"');
@@ -72,19 +98,20 @@ const App: React.FC = () => {
       for (const [key, value] of Object.entries(seniorTalkList)) {
         let htmlTemp = '';
         if (key === '典型岗位与工作内容') {
-          const jobs = value;
-          jobs &&
-            jobs.length > 0 &&
-            jobs.map((item) => {
-              Object.values(item).forEach((value, index) => {
-                htmlTemp += `<p class="text-gray-700 leading-relaxed mb-4">${value}</p>`;
-              });
-            });
+          // if (Array.isArray(value)) {
+          //   for (const item of value) {
+          //     console.log(item);
+          //     htmlTemp += `<h3 class="text-sm font-medium mb-2">${item["岗位"]}：</h3><p class="text-gray-700 leading-relaxed mb-4">${item["内容"]}</p>`;
+          //   }
+          // } else {
+            for (const [key1, value1] of Object.entries(value)) {
+              htmlTemp += `<h3 class="text-sm font-medium mb-2">${key1}：</h3><p class="text-gray-700 leading-relaxed mb-4">${value1}</p>`;
+            }
+          // }
         }
         if (!htmlTemp) {
           htmlTemp = value;
         }
-        console.log(htmlTemp);
         html += `<h3 class="text-lg font-medium mb-2">${key}：</h3><p class="text-gray-700 leading-relaxed mb-4">${htmlTemp}</p>`;
       }
 
@@ -94,10 +121,18 @@ const App: React.FC = () => {
     }
   };
 
+  const filteredSchools = schools?.filter((school) => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      school.name.toLowerCase().includes(searchLower) ||
+      school.provinceName.toLowerCase().includes(searchLower) ||
+      school.cityName.toLowerCase().includes(searchLower) ||
+      school.belong.toLowerCase().includes(searchLower)
+    );
+  });
+
   const renderContent = () => {
     if (selectedSchool) {
-      const school = schools.find((s) => s.id === selectedSchool);
-      if (!school) return null;
       return (
         <div className="p-4">
           <div className="mb-6">
@@ -106,12 +141,14 @@ const App: React.FC = () => {
               alt="校园风光"
               className="w-full h-48 object-cover rounded-lg shadow-md mb-4"
             />
-            <div className="flex gap-2 mb-4">
-              {school.tags.map((tag, index) => (
-                <Tag key={index} color="green">
-                  {tag}
-                </Tag>
-              ))}
+            <div className="gap-2 ">
+              {schoolDetailInfo &&
+                schoolDetailInfo.features &&
+                schoolDetailInfo.features.split(',').map((tag, index) => (
+                  <Tag key={index} color="green" className="mb-2">
+                    {tag}
+                  </Tag>
+                ))}
             </div>
           </div>
           <Tabs
@@ -122,33 +159,49 @@ const App: React.FC = () => {
                 label: '学校简介',
                 children: (
                   <div className="space-y-4">
-                    <p className="text-gray-700">{school.intro}</p>
+                    <p className="text-gray-700">
+                      {(schoolDetailInfo && schoolDetailInfo.schoolDetail) ?? '正在收集...'}
+                    </p>
                   </div>
                 ),
               },
               {
                 key: 'advantages',
-                label: '优势专业',
+                label: '国家级特色专业',
                 children: (
                   <div className="grid grid-cols-2 gap-4">
-                    {school.advantages.map((adv, index) => (
-                      <Card key={index} className="shadow-sm">
-                        <h4 className="font-medium">{adv}</h4>
-                      </Card>
-                    ))}
+                    {schoolDetailInfo &&
+                      schoolDetailInfo.majors.map((adv, index) => {
+                        if (adv.isNationalFeature) {
+                          return (
+                            <Card key={'adv' + index} className="shadow-sm">
+                              <h4 className="font-medium">{adv.name}</h4>
+                              <Tag color="green">{adv.eduLevel === 'ben' ? '本科' : '专科'}</Tag>
+                              <Tag color="green">{adv.studyPeriod}</Tag>
+                            </Card>
+                          );
+                        }
+                      })}
                   </div>
                 ),
               },
               {
                 key: 'labs',
-                label: '重点实验室',
+                label: '省级特色专业',
                 children: (
-                  <div className="space-y-4">
-                    {school.labs.map((lab, index) => (
-                      <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                        <h4 className="font-medium">{lab}</h4>
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-2 gap-4">
+                    {schoolDetailInfo &&
+                      schoolDetailInfo.majors.map((adv, index) => {
+                        if (adv.isProvinceFeature) {
+                          return (
+                            <Card key={'adv' + index} className="shadow-sm">
+                              <h4 className="font-medium">{adv.name}</h4>
+                              <Tag color="green">{adv.eduLevel === 'ben' ? '本科' : '专科'}</Tag>
+                              <Tag color="green">{adv.studyPeriod}</Tag>
+                            </Card>
+                          );
+                        }
+                      })}
                   </div>
                 ),
               },
@@ -205,7 +258,7 @@ const App: React.FC = () => {
             </div>
           </div>
         );
-      case 'schools':
+      case 'schools': {
         return (
           <div className="p-6 bg-gray-50 min-h-screen">
             <div className="mb-6">
@@ -214,32 +267,58 @@ const App: React.FC = () => {
                   type="text"
                   placeholder="搜索院校..."
                   className="w-full h-10 pl-10 pr-4 text-sm border-none rounded-lg bg-white shadow-sm focus:outline-none"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-6">
-              {schools.map((school) => (
-                <Card
-                  key={school.id}
-                  className="cursor-pointer hover:shadow-lg transition-shadow border-none"
-                  onClick={() => setSelectedSchool(school.id)}
-                  hoverable
-                >
-                  <h3 className="font-medium mb-2">{school.name}</h3>
-                  <p className="text-gray-600 text-sm">{school.location}</p>
-                  <div className="mt-2">
-                    {school.tags.map((tag, index) => (
-                      <Tag key={index} color="green">
-                        {tag}
-                      </Tag>
-                    ))}
-                  </div>
-                </Card>
-              ))}
-            </div>
+            {schoolLoading ? (
+              <div className="flex justify-center items-center h-40">
+                <div className="text-gray-500">加载中...</div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                {filteredSchools?.length > 0 ? (
+                  filteredSchools.map((school) => (
+                    <Card
+                      key={school.code}
+                      className="cursor-pointer hover:shadow-lg transition-shadow border-none"
+                      onClick={() => {
+                        getSchools(school.code);
+                        setSelectedSchool(school.code);
+                      }}
+                      hoverable
+                    >
+                      <h3 className="font-medium mb-2">{school.name}</h3>
+                      <p className="text-gray-600 text-sm">
+                        {school.provinceName}-{school.cityName}
+                      </p>
+                      <div className="mt-2">
+                        <Tag className="mr-2 mb-2" color="green">
+                          {school.nature === 'public'
+                            ? '公办'
+                            : school.nature === 'private'
+                              ? '民办'
+                              : '独立学院'}
+                        </Tag>
+                        <Tag className="mr-2 mb-2" color="blue">
+                          {school.belong}
+                        </Tag>
+                        <Tag className="mr-2 mb-2" color="yellow">
+                          {school.level === 'ben' ? '本科' : '专科'}
+                        </Tag>
+                      </div>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="col-span-2 text-center py-8 text-gray-500">未找到匹配的院校</div>
+                )}
+              </div>
+            )}
           </div>
         );
+      }
       case 'courses':
         return (
           <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -325,7 +404,10 @@ const App: React.FC = () => {
               className={`px-4 h-12 flex items-center justify-center ${
                 activeSection === 'intro' ? 'bg-green-50 text-green-600' : 'hover:bg-gray-50'
               }`}
-              onClick={() => setActiveSection('intro')}
+              onClick={() => {
+                setSelectedSchool(null);
+                setActiveSection('intro');
+              }}
             >
               <i className={`fas fa-file-alt text-base ${!sidebarCollapsed ? 'mr-3' : ''}`}></i>
               {!sidebarCollapsed && <span className="text-sm">专业介绍</span>}
@@ -334,7 +416,10 @@ const App: React.FC = () => {
               className={`px-4 h-12 flex items-center justify-center ${
                 activeSection === 'courses' ? 'bg-green-50 text-green-600' : 'hover:bg-gray-50'
               }`}
-              onClick={() => setActiveSection('courses')}
+              onClick={() => {
+                setSelectedSchool(null);
+                setActiveSection('courses');
+              }}
             >
               <i className={`fas fa-book text-base ${!sidebarCollapsed ? 'mr-3' : ''}`}></i>
               {!sidebarCollapsed && <span className="text-sm">主修课程</span>}
@@ -343,7 +428,10 @@ const App: React.FC = () => {
               className={`px-4 h-12 flex items-center justify-center ${
                 activeSection === 'schools' ? 'bg-green-50 text-green-600' : 'hover:bg-gray-50'
               }`}
-              onClick={() => setActiveSection('schools')}
+              onClick={() => {
+                setSelectedSchool(null);
+                setActiveSection('schools');
+              }}
             >
               <i className={`fas fa-school text-base ${!sidebarCollapsed ? 'mr-3' : ''}`}></i>
               {!sidebarCollapsed && <span className="text-sm">招生院校</span>}
@@ -352,7 +440,10 @@ const App: React.FC = () => {
               className={`px-4 h-12 flex items-center justify-center ${
                 activeSection === 'shares' ? 'bg-green-50 text-green-600' : 'hover:bg-gray-50'
               }`}
-              onClick={() => setActiveSection('shares')}
+              onClick={() => {
+                setSelectedSchool(null);
+                setActiveSection('shares');
+              }}
             >
               <i className={`fas fa-users text-base ${!sidebarCollapsed ? 'mr-3' : ''}`}></i>
               {!sidebarCollapsed && <span className="text-sm">学长分享</span>}
@@ -360,7 +451,7 @@ const App: React.FC = () => {
           </div>
         </div>
         <div
-          className={`flex-1 ${sidebarCollapsed ? 'ml-14' : 'ml-[120px]'} transition-all duration-300`}
+          className={`flex-1 ${sidebarCollapsed ? 'ml-14' : 'ml-[120px]'} max-w-[calc(100vw-120px)] transition-all duration-300`}
         >
           {renderContent()}
         </div>

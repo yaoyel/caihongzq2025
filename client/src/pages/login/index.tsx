@@ -549,7 +549,11 @@ const LoginPage: React.FC = () => {
     //     role: 'parent',
     //   })
     // );
+
     checkLocalAuth();
+    // 清除轮询定时器
+    clearInterval(pollingTimer);
+    setPolling(false);
   }, [navigate]);
 
   const handleWechatLogin = () => {
