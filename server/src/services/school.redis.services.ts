@@ -12,7 +12,7 @@ export class SchoolRedisService {
   static async getAllSchools(): Promise<any[]> {
     const client = RedisModule.getClient();
     // 获取所有学校的key
-    const keys = await client.keys('school:*');
+    const keys = await client.keys('school_detail:*');
     if (!keys.length) return [];
 
     // 批量获取学校数据
@@ -34,7 +34,7 @@ export class SchoolRedisService {
    */
   static async getSchool(code: string): Promise<any | null> {
     const client = RedisModule.getClient();
-    const key = `school:${code}`;
+    const key = `school_detail:${code}`;
     const data = await client.get(key);
     
     return data ? JSON.parse(data) : null;

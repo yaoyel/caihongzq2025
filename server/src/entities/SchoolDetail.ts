@@ -132,7 +132,7 @@ export class SchoolDetail {
     /**
      * 最后修改人
      */
-    @Column({ type: 'jsonb', nullable: true, name: 'last_modified_by' })
+    @Column({ type: 'jsonb', nullable: true, name: 'last_modified_by' ,select:false})
     lastModifiedBy: {
         id: string;
         name: string;
@@ -143,7 +143,7 @@ export class SchoolDetail {
     /**
      * 创建时间
      */
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumn({ name: 'created_at',select:false })
     createdAt: Date;
 
     /**
