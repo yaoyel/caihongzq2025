@@ -104,9 +104,9 @@ const App: React.FC = () => {
           //     htmlTemp += `<h3 class="text-sm font-medium mb-2">${item["岗位"]}：</h3><p class="text-gray-700 leading-relaxed mb-4">${item["内容"]}</p>`;
           //   }
           // } else {
-            for (const [key1, value1] of Object.entries(value)) {
-              htmlTemp += `<h3 class="text-sm font-medium mb-2">${key1}：</h3><p class="text-gray-700 leading-relaxed mb-4">${value1}</p>`;
-            }
+          for (const [key1, value1] of Object.entries(value)) {
+            htmlTemp += `<h3 class="text-sm font-medium mb-2">${key1}：</h3><p class="text-gray-700 leading-relaxed mb-4">${value1}</p>`;
+          }
           // }
         }
         if (!htmlTemp) {
@@ -133,6 +133,20 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     if (selectedSchool) {
+      let schoolHistoryIntro = '正在收集...';
+
+      if (
+        schoolDetailInfo &&
+        schoolDetailInfo.schoolDetail &&
+        schoolDetailInfo.schoolDetail.historyIntro
+      ) {
+        for (const [key, value] of Object.entries(
+          JSON.parse(schoolDetailInfo.schoolDetail.historyIntro)
+        )) {
+          schoolHistoryIntro = value;
+        }
+      }
+
       return (
         <div className="p-4">
           <div className="mb-6">
@@ -159,9 +173,7 @@ const App: React.FC = () => {
                 label: '学校简介',
                 children: (
                   <div className="space-y-4">
-                    <p className="text-gray-700">
-                      {(schoolDetailInfo && schoolDetailInfo.schoolDetail) ?? '正在收集...'}
-                    </p>
+                    <p className="text-gray-700">{schoolHistoryIntro}</p>
                   </div>
                 ),
               },
