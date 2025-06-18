@@ -417,7 +417,7 @@ const Scale168Assessment: React.FC = () => {
     }
     const user = JSON.parse(userStr);
     console.log('user', user);
-    return user.id ?? user.data.id;
+    return user?.id ?? user?.data?.id;
   };
 
   // 辅助函数：根据返回的值找到匹配的选项ID
@@ -833,7 +833,7 @@ const Scale168Assessment: React.FC = () => {
       }
 
       const user = JSON.parse(userStr);
-      const response = await updateUserNickname(user.data.id, newNickname);
+      const response = await updateUserNickname(user?.id ?? user?.data?.id, newNickname);
 
       if (response && response.code === 200) {
         message.success('昵称修改成功');
@@ -989,7 +989,7 @@ const Scale168Assessment: React.FC = () => {
                 const userStr = localStorage.getItem('user');
                 if (userStr) {
                   const user = JSON.parse(userStr);
-                  setNewNickname(user.nickname || '');
+                  setNewNickname(user?.nickname ?? (user?.data?.nickname || ''));
                 }
                 setIsNicknameModalVisible(true);
               }}

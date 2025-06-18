@@ -48,7 +48,7 @@ const App: React.FC = () => {
         }
 
         const user = JSON.parse(userStr);
-        const userId = user.id ?? user.data.id;
+        const userId = user?.id ?? user?.data?.id;
         const response = await getUserMajorScores(userId);
         if (response && response.code === 200) {
           // 获取所有分数数据
