@@ -355,6 +355,7 @@ const Scale168Assessment: React.FC = () => {
   useEffect(() => {
     if (allQuestions.length > 0) {
       // 问题加载完成后，加载用户答案
+      console.log('allQuestions', allQuestions);
       fetch168Answers();
     }
   }, [allQuestions.length]);
@@ -415,7 +416,8 @@ const Scale168Assessment: React.FC = () => {
       return null;
     }
     const user = JSON.parse(userStr);
-    return user.id;
+    console.log('user', user);
+    return user.id ?? user.data.id;
   };
 
   // 辅助函数：根据返回的值找到匹配的选项ID
@@ -745,7 +747,7 @@ const Scale168Assessment: React.FC = () => {
   };
 
   const handleComplete = async () => {
-    navigate('/report');
+    navigate('/analysisReport');
   };
 
   const findFirstUnansweredCategory = () => {
