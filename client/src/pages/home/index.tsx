@@ -20,22 +20,20 @@ const App: React.FC = () => {
       {/* 主要内容区域 */}
       <div className="mt-20 px-5 space-y-6" style={{ marginTop: '3.9rem' }}>
         {/* 重要提示 */}
-        <div className="bg-red-50 border-l-4 border-red-500 p-5 rounded-r-lg shadow-sm">
+        {/* <div className="bg-red-50 border-l-4 border-red-500 p-5 rounded-r-lg shadow-sm">
           <p className="text-red-700 font-bold text-center text-lg">本问卷仅限考生本人作答！</p>
-        </div>
+        </div> */}
 
         {/* 顶部标语区域 */}
-        <div className="relative">
+        {/* <div className="relative">
           <div className="border-2 border-green-400 border-dashed rounded-xl p-5 flex justify-between items-center bg-green-50">
             <span className="text-lg font-medium text-green-700">发现热爱，奔赴未来！</span>
-            {/* <button className="!rounded-button bg-green-500 text-white px-5 py-2 rounded-full text-sm hover:bg-green-600 transition-colors duration-300 shadow-sm">
-开启探索
-</button> */}
+
           </div>
-        </div>
+        </div> */}
 
         {/* 倒计时信息区域 */}
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 shadow-sm">
+        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 shadow-sm pt-10">
           <p className="mb-3 text-base leading-relaxed">本问卷会引导您看见自己内心的喜欢与天赋。</p>
           <p className="mb-3 text-base leading-relaxed">
             不论高考成绩如何，它都会助您培育"热爱的种子"，找到喜欢且擅长的专业。
@@ -62,6 +60,7 @@ const App: React.FC = () => {
               作答：选择时，无需过多考虑，根据直觉或回顾选择
               <span className="text-green-600 font-bold">"最像自己"</span>的选项即可。
             </p>
+            <p className="text-red-700 font-bold  text-lg">本问卷仅限考生本人作答！</p>
           </div>
         </div>
 
@@ -86,7 +85,7 @@ const App: React.FC = () => {
             <button
               onClick={() =>
                 Dialog.alert({
-                  content: `如果您基于本站自评报考了“最爱专业”并如愿录取，请回来点击“彩蛋！”，我们为您大学继续“寻找最真的自己，发现热爱”和“与自己在一起，在热爱中心想事成”准备了一份‘爱的礼物’！`,
+                  content: `‘爱的礼物’！`,
                   onConfirm: () => {
                     console.log('Confirmed');
                   },

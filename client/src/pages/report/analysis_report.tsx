@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Button, Modal, Tag } from 'antd';
+import { Button, Modal, Tag, message } from 'antd';
 import * as echarts from 'echarts';
 import { DownOutline, LeftOutline } from 'antd-mobile-icons';
 import { ArrowLeftOutlined } from '@ant-design/icons';
@@ -18,7 +18,7 @@ const App: React.FC = () => {
   const navigate = useNavigate();
 
   const [majorDetails, setMajorDetail] = useState([]);
-  
+
   const getMajorDetailInfo = async (majorCode) => {
     try {
       if (!majorCode) {
@@ -30,7 +30,7 @@ const App: React.FC = () => {
       }
       const detailResponse = await getMajorDetail(majorCode);
       if (detailResponse && detailResponse.code === 200 && detailResponse.data) {
-        setMajorDetail(prev => [...prev, detailResponse.data]);
+        setMajorDetail((prev) => [...prev, detailResponse.data]);
       }
     } catch (error) {
       console.error('获取专业详细信息失败:', error);
@@ -110,8 +110,12 @@ const App: React.FC = () => {
   const renderMajorDetail = (code: string) => {
     const majorDetail = majorDetails.find((item) => item.code === code);
     if (majorDetail) {
-      const careerDevelopmentT = majorDetail.careerDevelopment.replace(/'/g, '"');
-      const careerDevelopmentTemp = JSON.parse(careerDevelopmentT);
+      const careerDevelopmentT = majorDetail.careerDevelopment?.replace(/'/g, '"');
+      let careerDevelopmentTemp = '';
+      if (careerDevelopmentT) {
+        careerDevelopmentTemp = JSON.parse(careerDevelopmentT);
+      }
+
       const schools =
         majorDetail.schools && majorDetail.schools.length > 10
           ? majorDetail.schools.slice(0, 10)

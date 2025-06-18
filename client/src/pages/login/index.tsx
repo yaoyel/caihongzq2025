@@ -534,7 +534,9 @@ const LoginPage: React.FC = () => {
         getLoginQrCode();
       }
     };
-
+    // 清除无效的认证信息
+    // localStorage.removeItem('token');
+    // localStorage.removeItem('user');
     // localStorage.setItem(
     //   'token',
     //   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsIm5pY2tuYW1lIjoi5bqE5Lqu5LquIiwiYXZhdGFyVXJsIjoiIiwiaWF0IjoxNzUwMDMzMjY1LCJleHAiOjE3NTI2MjUyNjV9.xnIxZ6lrDQLk-cdyQlHSJ01b4m49Fd57YtwBXhCBvxg'
@@ -542,7 +544,7 @@ const LoginPage: React.FC = () => {
     // localStorage.setItem(
     //   'user',
     //   JSON.stringify({
-    //     id: 6,
+    //     id: 8,
     //     username: '',
     //     nickname: '',
     //     avatarUrl: '',
