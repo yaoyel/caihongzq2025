@@ -10,6 +10,7 @@ import { SpinLoading } from 'antd-mobile';
 
 const App: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isAuthModalVisible, setIsAuthModalVisible] = useState(false);
   const [expanded, setExpanded] = useState([0]);
   const [expandedNoLove, setExpandedNoLove] = useState([0]);
   const [majorLove, setmajorLove] = useState([]);
@@ -42,8 +43,8 @@ const App: React.FC = () => {
       try {
         const userStr = localStorage.getItem('new-user');
         if (!userStr) {
-          message.error('请先登录');
-          navigate('/login');
+          setIsAuthModalVisible(true);
+          setLoading(false);
           return;
         }
 
@@ -105,6 +106,15 @@ const App: React.FC = () => {
   };
   const handleCancel = () => {
     setIsModalVisible(false);
+  };
+
+  const handleAuthCancel = () => {
+    setIsAuthModalVisible(false);
+  };
+
+  const handleWechatAuth = () => {
+    const authUrl = 'https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxe85481f908a50ffc&redirect_uri=http://www.caihongzq.com/analysisReport/&response_type=code&scope=snsapi_userinfo&state=STATE&connect_redirect=1#wechat_redirect';
+    window.location.href = authUrl;
   };
 
   const renderMajorDetail = (majorInf: any, isLove: boolean = false) => {
@@ -406,6 +416,43 @@ const App: React.FC = () => {
               >
                 立即支付
               </Button>
+            </div>
+          </Modal>
+          
+          {/* 微信授权弹窗 */}
+          <Modal
+            title="微信授权登录"
+            open={isAuthModalVisible}
+            onCancel={handleAuthCancel}
+            footer={null}
+            className="rounded-2xl"
+            closable={false}
+          >
+            <div className="py-6">
+              <div className="text-center mb-6">
+                <div className="text-2xl font-semibold text-gray-800 mb-2">需要授权登录</div>
+                <div className="text-gray-500 text-sm mb-4">请使用微信授权登录以查看专业分析报告</div>
+                <div className="bg-green-50 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-gray-600">
+                    授权后将获得您的微信头像、昵称等基本信息，用于个性化推荐服务
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <Button
+                  type="primary"
+                  className="w-full h-12 !rounded-button text-lg font-medium bg-gradient-to-r from-green-500 to-green-400 border-none hover:opacity-90"
+                  onClick={handleWechatAuth}
+                >
+                  微信授权登录
+                </Button>
+                <Button
+                  className="w-full h-10 !rounded-button text-gray-600 border-gray-300 hover:border-gray-400"
+                  onClick={handleAuthCancel}
+                >
+                  稍后再说
+                </Button>
+              </div>
             </div>
           </Modal>
         </div>

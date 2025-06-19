@@ -41,7 +41,7 @@ const App: React.FC = () => {
             console.log('登录成功:', result.data.user);
             
             // 从URL参数中获取目标页面，如果没有则默认跳转到home
-            const targetPath = urlParams.get('redirect') || urlParams.get('path') || '/home';
+            const targetPath = urlParams.get('redirect') || urlParams.get('path') || '/default';
             navigate(targetPath);
           }
         } catch (error) {
