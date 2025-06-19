@@ -40,7 +40,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const fetchMajorScores = async () => {
       try {
-        const userStr = localStorage.getItem('user');
+        const userStr = localStorage.getItem('new-user');
         if (!userStr) {
           message.error('请先登录');
           navigate('/login');
@@ -107,8 +107,8 @@ const App: React.FC = () => {
     setIsModalVisible(false);
   };
 
-  const renderMajorDetail = (code: string) => {
-    const majorDetail = majorDetails.find((item) => item.code === code);
+  const renderMajorDetail = (majorInf: any, isLove: boolean = false) => {
+    const majorDetail = majorDetails.find((item) => item.code === majorInf.majorCode);
     if (majorDetail) {
       const careerDevelopmentT = majorDetail.careerDevelopment?.replace(/'/g, '"');
       let careerDevelopmentTemp = '';
@@ -117,21 +117,57 @@ const App: React.FC = () => {
       }
 
       const schools =
-        majorDetail.schools && majorDetail.schools.length > 10
-          ? majorDetail.schools.slice(0, 10)
+        majorDetail.schools && majorDetail.schools.length > 3
+          ? majorDetail.schools.slice(0, 3)
           : majorDetail.schools;
       return (
         <div className="space-y-3">
           <div className="bg-green-50 rounded-lg p-3">
             <div className="text-sm font-medium text-green-700 mb-1">专业简介</div>
             <p className="text-xs text-gray-600 leading-relaxed">
-              {majorDetail.majorBrief ?? '正在收集...'}
+              {majorDetail.majorBrief ? (
+                <>
+                  {majorDetail.majorBrief.length > 50
+                    ? `${majorDetail.majorBrief.substring(0, 50)}...`
+                    : majorDetail.majorBrief}
+                  <span
+                    className="text-blue-500 ml-1 cursor-pointer hover:text-blue-600"
+                    onClick={() => {
+                      navigate(
+                        `/professColleges?majorCode=${majorInf.majorCode}&&majorName=${majorInf.majorName}&score=${majorInf.score}&isLove=${isLove}`
+                      );
+                    }}
+                  >
+                    查看更多
+                  </span>
+                </>
+              ) : (
+                '正在收集...'
+              )}
             </p>
           </div>
           <div className="bg-blue-50 rounded-lg p-3">
             <div className="text-sm font-medium text-blue-700 mb-1">就业方向</div>
             <p className="text-xs text-gray-600">
-              {careerDevelopmentTemp['主要就业方向'] ?? '正在收集...'}
+              {careerDevelopmentTemp['主要就业方向'] ? (
+                <>
+                  {careerDevelopmentTemp['主要就业方向'].length > 50
+                    ? `${careerDevelopmentTemp['主要就业方向'].substring(0, 50)}...`
+                    : careerDevelopmentTemp['主要就业方向']}
+                  <span
+                    className="text-blue-500 ml-1 cursor-pointer hover:text-blue-600"
+                    onClick={() => {
+                      navigate(
+                        `/professColleges?majorCode=${majorInf.majorCode}&&majorName=${majorInf.majorName}&score=${majorInf.score}&isLove=${isLove}`
+                      );
+                    }}
+                  >
+                    查看更多
+                  </span>
+                </>
+              ) : (
+                '正在收集...'
+              )}
             </p>
           </div>
           <div className="bg-purple-50 rounded-lg p-3">
@@ -143,7 +179,20 @@ const App: React.FC = () => {
                       <Tag color="green" className="mb-1">
                         {i.name}
                       </Tag>
-                      {index === schools.length - 1 ? '......' : ''}
+                      {index === schools.length - 1 ? (
+                        <span
+                          className="text-blue-500 ml-1 cursor-pointer hover:text-blue-600"
+                          onClick={() => {
+                            navigate(
+                              `/professColleges?majorCode=${majorInf.majorCode}&&majorName=${majorInf.majorName}&score=${majorInf.score}&isLove=${isLove}`
+                            );
+                          }}
+                        >
+                          查看更多
+                        </span>
+                      ) : (
+                        ''
+                      )}
                     </>
                   ))
                 : '正在收集...'}
@@ -249,7 +298,7 @@ const App: React.FC = () => {
                         />
                       </div>
                     </div>
-                    {expanded.includes(index) && renderMajorDetail(item.majorCode)}
+                    {expanded.includes(index) && renderMajorDetail(item, true)}
                   </div>
                 </div>
               ))
@@ -322,7 +371,7 @@ const App: React.FC = () => {
                         />
                       </div>
                     </div>
-                    {expandedNoLove.includes(index) && renderMajorDetail(item.majorCode)}
+                    {expandedNoLove.includes(index) && renderMajorDetail(item)}
                   </div>
                 </div>
               ))

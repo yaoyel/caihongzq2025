@@ -164,7 +164,7 @@ const AdultQAAssessment: React.FC = () => {
   }, []);
 
   const getUserId = () => {
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem('new-user');
     if (!userStr) {
       message.error('用户未登录');
       navigate('/login');
@@ -176,7 +176,7 @@ const AdultQAAssessment: React.FC = () => {
 
   const fetchQuestions = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('new-token');
       if (!token) {
         message.error('请先登录');
         navigate('/login');
@@ -208,7 +208,7 @@ const AdultQAAssessment: React.FC = () => {
     if (!userId) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('new-token');
       const response = await axios.get(getApiUrl(`/questions/answers/user/${userId}/summary`), {
         params: { ageRange: '14+' },
         headers: {
@@ -252,7 +252,7 @@ const AdultQAAssessment: React.FC = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('new-token');
       await axios.post(getApiUrl(`/questions/${currentQuestionId}/answers`), {
         userId,
         content,

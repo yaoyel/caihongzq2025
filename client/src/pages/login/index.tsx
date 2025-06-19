@@ -361,7 +361,7 @@ const LoginPage: React.FC = () => {
   const [userInfo, setUserInfo] = useState<any>(null);
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem('new-user');
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
@@ -495,8 +495,8 @@ const LoginPage: React.FC = () => {
   // 检查本地存储并尝试自动登录
   useEffect(() => {
     const checkLocalAuth = async () => {
-      const token = localStorage.getItem('token');
-      const userStr = localStorage.getItem('user');
+      const token = localStorage.getItem('new-token');
+      const userStr = localStorage.getItem('new-user');
 
       if (!token || !userStr) {
         // 如果没有本地认证信息，显示二维码

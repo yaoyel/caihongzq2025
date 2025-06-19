@@ -819,8 +819,8 @@ const ReportPage: React.FC = () => {
   // 在 ReportPage 组件中添加这些函数
   const handleConfirm = async (doubleEdgedId: number) => {
     try {
-      const token = localStorage.getItem('token');
-      const userStr = localStorage.getItem('user');
+      const token = localStorage.getItem('new-token');
+      const userStr = localStorage.getItem('new-user');
 
       if (!token || !userStr) {
         message.error('请先登录');
@@ -890,7 +890,7 @@ const ReportPage: React.FC = () => {
 
   // 获取用户ID的函数（如果还没有的话）
   const getUserId = () => {
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem('new-user');
     if (!userStr) {
       message.error('用户未登录');
       navigate('/login');
@@ -905,7 +905,7 @@ const ReportPage: React.FC = () => {
     if (!userId) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('new-token');
       if (!token) {
         message.error('请先登录');
         navigate('/login');
@@ -1002,7 +1002,7 @@ const ReportPage: React.FC = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('new-token');
         if (!token) {
           message.error('请先登录');
           return;
@@ -1048,7 +1048,7 @@ const ReportPage: React.FC = () => {
   // 添加保存答案的函数
   const saveScaleAnswers = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('new-token');
       if (!token) {
         message.error('请先登录');
         return false;
@@ -1133,8 +1133,8 @@ const ReportPage: React.FC = () => {
   // 添加获取答题统计的函数
   const fetchAnswerStats = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const userStr = localStorage.getItem('user');
+      const token = localStorage.getItem('new-token');
+      const userStr = localStorage.getItem('new-user');
 
       if (!token || !userStr) {
         message.error('请先登录');
@@ -1245,8 +1245,8 @@ const ReportPage: React.FC = () => {
   // 添加获取聊天记录的函数
   const fetchAnalysisMessages = async (groupTitle: string, itemTitle: string) => {
     try {
-      const token = localStorage.getItem('token');
-      const userStr = localStorage.getItem('user');
+      const token = localStorage.getItem('new-token');
+      const userStr = localStorage.getItem('new-user');
       const user = JSON.parse(userStr!);
       if (!token || !userStr) return;
 
@@ -1281,8 +1281,8 @@ const ReportPage: React.FC = () => {
   // 修改创建session的函数
   const createAnalysisSession = async (groupTitle: string, itemTitle: string, prompt: string) => {
     try {
-      const token = localStorage.getItem('token');
-      const userStr = localStorage.getItem('user');
+      const token = localStorage.getItem('new-token');
+      const userStr = localStorage.getItem('new-user');
       const user = JSON.parse(userStr!);
       if (!token || !userStr) {
         message.error('请先登录');

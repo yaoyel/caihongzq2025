@@ -90,7 +90,7 @@ const App: React.FC = () => {
     const fetchMajorInfo = async () => {
       try {
         setLoading(true);
-        const userStr = localStorage.getItem('user');
+        const userStr = localStorage.getItem('new-user');
         if (!majorCode || !score) {
           console.error('未找到专业代码');
           return;
@@ -231,7 +231,7 @@ const App: React.FC = () => {
                     <div className="mb-4">
                       <h3 className="text-lg font-medium text-gray-700 mb-2">
                         {lexueIndex}.{item.element.type === 'talent' ? '天赋' : '喜欢'}-
-                        {item.element.dimension}～{item.element.name} （{item.element.status}）
+                        {item.element.name} （{item.element.status}）
                       </h3>
                       <div className="flex items-center justify-between">
                         <span className="text-green-600">
@@ -277,7 +277,7 @@ const App: React.FC = () => {
                     <div className="mb-4">
                       <h3 className="text-lg font-medium text-gray-700 mb-2">
                         {shanxueIndex}.{item.element.type === 'talent' ? '天赋' : '喜欢'}-
-                        {item.element.dimension}～{item.element.name} （{item.element.status}）
+                        {item.element.name} （{item.element.status}）
                       </h3>
                       <div className="flex items-center justify-between">
                         <span className="text-green-600">

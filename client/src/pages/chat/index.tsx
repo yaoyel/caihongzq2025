@@ -300,7 +300,7 @@ const ChatPage: React.FC<ChatPageProps> = ({
     // 先关闭现有连接
     closeEventSource();
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('new-token');
     if (!token) return;
 
     // 如果没有活动会话，不建立连接
@@ -506,7 +506,7 @@ const ChatPage: React.FC<ChatPageProps> = ({
   }, [isLoading, onStreamingChange]);
 
   const getUserId = () => {
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem('new-user');
     if (!userStr) {
       message.error('用户未登录');
       navigate('/login');
@@ -521,7 +521,7 @@ const ChatPage: React.FC<ChatPageProps> = ({
     if (!userId) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('new-token');
       if (!token) {
         message.error('请先登录');
         navigate('/login');
@@ -550,7 +550,7 @@ const ChatPage: React.FC<ChatPageProps> = ({
 
   const fetchMessages = async (sessionId: string) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('new-token');
       if (!token) {
         message.error('请先登录');
         navigate('/login');
@@ -683,7 +683,7 @@ const ChatPage: React.FC<ChatPageProps> = ({
     if (!userId) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('new-token');
       if (!token) {
         message.error('请先登录');
         navigate('/login');
@@ -735,7 +735,7 @@ const ChatPage: React.FC<ChatPageProps> = ({
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('new-token');
       if (!token) {
         message.error('请先登录');
         navigate('/login');
@@ -805,7 +805,7 @@ const ChatPage: React.FC<ChatPageProps> = ({
 
   // 添加获取认证信息的辅助函数
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('new-token');
     if (!token) {
       message.error('请先登录');
       throw new Error('未登录');
@@ -1031,7 +1031,7 @@ const ChatPage: React.FC<ChatPageProps> = ({
                               okType: 'danger',
                               async onOk() {
                                 try {
-                                  const token = localStorage.getItem('token');
+                                  const token = localStorage.getItem('new-token');
                                   if (!token) {
                                     message.error('请先登录');
                                     navigate('/login');

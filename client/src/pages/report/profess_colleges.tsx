@@ -231,7 +231,7 @@ const App: React.FC = () => {
               <h3 className="text-lg font-medium mb-4">专业介绍</h3>
               <p className="text-gray-700 leading-relaxed">
                 <div
-                  className="text-sm"
+                  className="text-xm"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -422,7 +422,7 @@ const App: React.FC = () => {
               }}
             >
               <i className={`fas fa-file-alt text-base ${!sidebarCollapsed ? 'mr-3' : ''}`}></i>
-              {!sidebarCollapsed && <span className="text-sm">专业介绍</span>}
+              {!sidebarCollapsed && <span className="text-xm">专业介绍</span>}
             </button>
             <button
               className={`px-4 h-12 flex items-center justify-center ${
@@ -434,7 +434,7 @@ const App: React.FC = () => {
               }}
             >
               <i className={`fas fa-book text-base ${!sidebarCollapsed ? 'mr-3' : ''}`}></i>
-              {!sidebarCollapsed && <span className="text-sm">主修课程</span>}
+              {!sidebarCollapsed && <span className="text-xm">主修课程</span>}
             </button>
             <button
               className={`px-4 h-12 flex items-center justify-center ${
@@ -446,7 +446,7 @@ const App: React.FC = () => {
               }}
             >
               <i className={`fas fa-school text-base ${!sidebarCollapsed ? 'mr-3' : ''}`}></i>
-              {!sidebarCollapsed && <span className="text-sm">招生院校</span>}
+              {!sidebarCollapsed && <span className="text-xm">招生院校</span>}
             </button>
             <button
               className={`px-4 h-12 flex items-center justify-center ${
@@ -458,7 +458,7 @@ const App: React.FC = () => {
               }}
             >
               <i className={`fas fa-users text-base ${!sidebarCollapsed ? 'mr-3' : ''}`}></i>
-              {!sidebarCollapsed && <span className="text-sm">学长分享</span>}
+              {!sidebarCollapsed && <span className="text-xm">学长分享</span>}
             </button>
           </div>
         </div>

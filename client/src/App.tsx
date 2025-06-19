@@ -1,6 +1,6 @@
 // @ts-nocheck
-import React, { useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import HomePage from './pages';
 import LoginPage from './pages/login';
 import AssessmentPage from './pages/assessment';
@@ -16,36 +16,64 @@ import HomeDiscover from './pages/home';
 import AnalysisReport from './pages/report/analysis_report';
 import ProfessColleges from './pages/report/profess_colleges';
 import LoveEnergy from './pages/report/love_energy';
+import {handleWechatCallback } from './config';
 const App: React.FC = () => {
-  // 获取url输入的Query参数
-  const getRequestQueryParams = (search: string) => {
-    if (!search) {
-      return {};
-    }
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
-    //获取url中"?"符后的字串
-    // let theRequest = new Object();
-    let theRequest: { [key: string]: any } = {};
-    if (search.indexOf('?') != -1) {
-      let str = search.slice(1);
-      let strs = str.split('&');
-
-      for (var i = 0; i < strs.length; i++) {
-        theRequest[strs[i].split('=')[0]] = decodeURIComponent(strs[i].split('=')[1]);
-      }
-    }
-    return theRequest;
-  };
-
-  const queryparams = getRequestQueryParams(decodeURIComponent(location.search)) as {
-    code: string;
-    [key: string]: any;
-    fromShareLink: boolean;
-  };
 
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const state = urlParams.get('state');
+    const token = localStorage.getItem('new-token');
+    const userStr = localStorage.getItem('new-user');
+
+    const handleCallback = async () => {
+      if (code) {
+        setIsLoading(true);
+        try {
+          const result = await handleWechatCallback(code);
+          if (result.success && result.data.token) {
+            localStorage.setItem('new-token', result.data.token);
+            localStorage.setItem('new-user', JSON.stringify(result.data.user));
+
+            console.log('登录成功:', result.data.user);
+            
+            // 从URL参数中获取目标页面，如果没有则默认跳转到home
+            const targetPath = urlParams.get('redirect') || urlParams.get('path') || '/home';
+            navigate(targetPath);
+          }
+        } catch (error) {
+          console.error('登录失败:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    if (code && (!token || !userStr)) {
+      handleCallback();
+    }
     console.log(queryparams);
-  }, []);
+  }, [navigate]);
+
+  // 显示loading状态
+  if (isLoading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontSize: '18px',
+        color: '#666'
+      }}>
+        登录中...
+      </div>
+    );
+  }
+
   return (
     <Routes>
       <Route path="/" element={<LoginPage />} />

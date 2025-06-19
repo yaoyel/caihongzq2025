@@ -150,7 +150,7 @@ const ScaleAssessment: React.FC = () => {
   const fetchAllQuestions = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('new-token');
       if (!token) {
         message.error('请先登录');
         navigate('/login');
@@ -186,7 +186,7 @@ const ScaleAssessment: React.FC = () => {
   };
 
   const getUserId = () => {
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem('new-user');
     if (!userStr) {
       message.error('用户未登录');
       navigate('/login');
@@ -201,7 +201,7 @@ const ScaleAssessment: React.FC = () => {
     if (!userId) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('new-token');
       if (!token) {
         message.error('请先登录');
         navigate('/login');
@@ -234,7 +234,7 @@ const ScaleAssessment: React.FC = () => {
     if (!userId) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('new-token');
       if (!token) {
         message.error('请先登录');
         navigate('/login');

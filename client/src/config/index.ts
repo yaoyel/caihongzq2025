@@ -38,12 +38,13 @@ export const api = {
     majorBrief: (code: string) => `/majors/${code}/brief`,
     scalesByElements: (elementIds: string, userId: string) => `/scales/by-elements-with-answers?elementIds=${elementIds}&userId=${userId}`,
     schoolDetail: (schoolId: string) => `/schools/${schoolId}`,
+    wechatCallback: '/wechat/callback',
   }
 };
 
 // 添加一个辅助函数来设置请求头
 export const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('new-token');
     if (!token) return {};
     
     console.log('使用 token:', token);
@@ -303,3 +304,84 @@ export const getSchoolDetail = async (
     throw error;
   }
 };
+
+// 微信登录回调接口类型定义
+interface WechatCallbackRequest {
+  code: string;
+  state?: string;
+}
+
+interface WechatUserInfo {
+  openid: string;
+  nickname: string;
+  sex: number;
+  province: string;
+  city: string;
+  country: string;
+  headimgurl: string;
+  privilege: string[];
+  unionid?: string;
+}
+
+interface WechatCallbackResponse {
+  success: boolean;
+  message: string;
+  data: {
+    token: string;
+    user: WechatUserInfo;
+    isNewUser: boolean;
+  };
+}
+
+/**
+ * 微信登录回调处理
+ * @param code 微信授权码
+ * @param state 可选的状态参数
+ * @returns Promise<WechatCallbackResponse>
+ */
+export const handleWechatCallback = async (
+  code: string,
+  state?: string
+): Promise<WechatCallbackResponse> => {
+  try {
+    const requestData: WechatCallbackRequest = { code };
+    if (state) {
+      requestData.state = state;
+    }
+
+    const response = await axios.post<WechatCallbackResponse>(
+      getApiUrl(api.endpoints.wechatCallback),
+      requestData
+    );
+
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '微信登录失败');
+    }
+    throw error;
+  }
+};
+
+/**
+ * 获取微信登录URL（用于重定向到微信授权页面）
+ * @param redirectUri 回调地址
+ * @param state 可选的状态参数
+ * @returns 微信授权URL
+ */
+export const getWechatAuthUrl = (redirectUri: string, state?: string): string => {
+  const appId = import.meta.env.VITE_WECHAT_APP_ID || '';
+  const scope = 'snsapi_userinfo';
+  const responseType = 'code';
+  
+  let url = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=${responseType}&scope=${scope}`;
+  
+  if (state) {
+    url += `&state=${encodeURIComponent(state)}`;
+  }
+  
+  url += '#wechat_redirect';
+  
+  return url;
+};
+
