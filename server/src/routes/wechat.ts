@@ -41,6 +41,29 @@ interface WechatCallbackBody {
   EventKey: string;
 }
 
+// OAuth2 接口返回数据类型定义
+interface WechatOAuthTokenResponse {
+  access_token: string;
+  expires_in: number;
+  refresh_token: string;
+  openid: string;
+  scope: string;
+  unionid?: string;
+}
+
+interface WechatOAuthUserInfo {
+  openid: string;
+  nickname: string;
+  sex: number;
+  language: string;
+  city: string;
+  province: string;
+  country: string;
+  headimgurl: string;
+  privilege: string[];
+  unionid?: string;
+}
+
 const router = new Router({ prefix: '/api/wechat' });
 const userRepository = AppDataSource.getRepository(User);
 
@@ -134,18 +157,88 @@ router.all('/callback', async (ctx: Context) => {
     rawBody: ctx.request.rawBody
   });
 
-  // 处理GET请求（服务器验证）
+  // 处理GET请求 - 服务器验证或OAuth回调
   if (ctx.method === 'GET') {
-    const { signature, timestamp, nonce, echostr } = ctx.query;
-    
-    if (echostr) {
-      console.log('收到微信验证请求');
-      ctx.body = echostr;
-    } else {
-      ctx.status = 400;
-      ctx.body = { error: '缺少 echostr 参数' };
+    // 处理服务器验证请求
+    if (ctx.query.echostr) {
+      console.log('收到微信验证请求，echostr:', ctx.query.echostr);
+      ctx.body = ctx.query.echostr;
+      return;
     }
-    return;
+
+    // 处理OAuth2回调
+    if (ctx.query.code && ctx.query.state) {
+      try {
+        const { code } = ctx.query; 
+        
+        // 获取access_token
+        const tokenResponse = await axios.get<WechatOAuthTokenResponse>(
+          `https://api.weixin.qq.com/sns/oauth2/access_token?appid=wxe85481f908a50ffc&secret=ba4da60a306e90f0103b40380bae104d&code=${code}&grant_type=authorization_code`
+        );
+
+        const { access_token, openid, unionid } = tokenResponse.data;
+
+        // 获取用户信息
+        const userInfoResponse = await axios.get<WechatOAuthUserInfo>(
+          `https://api.weixin.qq.com/sns/userinfo?access_token=${access_token}&openid=${openid}&lang=zh_CN`
+        );
+
+        const { nickname, headimgurl: avatarUrl, sex } = userInfoResponse.data;
+
+        // 查找或创建用户
+        let user = await userRepository.findOne({ where: { openid } });
+
+        if (user) {
+          // 更新现有用户信息
+          const needsUpdate = 
+            user.nickname !== nickname ||
+            user.avatarUrl !== avatarUrl ||
+            user.gender !== sex.toString();
+
+          if (needsUpdate) {
+            user.nickname = nickname;
+            user.avatarUrl = avatarUrl;
+            user.gender = sex.toString();
+            await userRepository.save(user);
+            console.log('用户信息已更新:', user);
+          }
+        } else {
+          // 创建新用户
+          user = new User();
+          user.openid = openid;
+          user.nickname = nickname;
+          user.avatarUrl = avatarUrl;
+          user.gender = sex.toString();
+          user.unionid = unionid;
+          user.createdAt = new Date();
+          await userRepository.save(user); 
+          console.log('新用户已创建:', user);
+        }
+
+        // 生成JWT token
+        const token = JwtUtil.generateToken({ 
+          userId: user.id, 
+          nickname: user.nickname, 
+          avatarUrl: user.avatarUrl 
+        });
+
+        // 返回用户信息和token
+        ctx.body = { 
+          user: {
+            id: user.id,
+            nickname: user.nickname,
+            avatarUrl: user.avatarUrl,
+            gender: user.gender
+          },
+          token
+        };
+        
+        return;
+      } catch (error: any) {
+        console.error('OAuth处理失败:', error);
+        throw error;
+      }
+    }
   }
 
   // 处理POST请求（事件推送）
@@ -275,7 +368,7 @@ router.all('/callback', async (ctx: Context) => {
 // 检查登录状态
 router.get('/check-login', async (ctx: Context) => {
   const { scene } = ctx.query;
-  
+  console.log('检查登录状态:', { scene });
   if (!scene || typeof scene !== 'string') {
     ctx.status = 400;
     ctx.body = { error: '参数错误' };
@@ -283,7 +376,7 @@ router.get('/check-login', async (ctx: Context) => {
   }
 
   const sceneInfo = sceneMap.get(scene);
-  
+  console.log('检查登录状态:', { sceneInfo });
   if (!sceneInfo) {
     ctx.status = 404;
     ctx.body = { error: '二维码已过期' };

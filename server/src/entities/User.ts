@@ -7,13 +7,31 @@ export class User {
     id: number;
 
     @Column({ length: 100, unique: true, name: 'openid' })
-    openid: string;
+    openid: string; 
 
     @Column({ length: 100, nullable: true, name: 'nickname' })
     nickname: string;
 
     @Column({ nullable: true, name: 'avatar_url' })
     avatarUrl: string;
+
+    @Column({ length: 100, unique: true, name: 'unionid', nullable: true })
+    unionid?: string;
+
+    @Column({ nullable: true, name: 'province_id', type: 'int' })
+    provinceId?: number;
+
+    @Column({ nullable: true, name: 'score', type: 'int' })
+    score?: number;
+
+    @Column({ nullable: true, name: 'preferred_subjects',length: 32 })
+    preferredSubjects?: string; 
+
+    @Column({ nullable: true, name: 'secondary_subjects',length: 32 })
+    secondarySubjects?: string;
+
+    @Column({ nullable: true, name: 'enroll_type',length: 32 })
+    enrollType?: string;  
 
     @Column({ 
         type: "enum", 

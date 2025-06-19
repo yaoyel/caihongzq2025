@@ -35,6 +35,8 @@ services:
       - app-network
     ports:
       - "3000:3000" 
+    volumes:
+      - ./logs:/app/logs
 
   db:
     image: postgres:14-alpine

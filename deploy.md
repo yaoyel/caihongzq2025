@@ -58,6 +58,18 @@ docker-compose restart client  # 重启前端
 # 数据库恢复
 cat backup_20240101.sql | docker exec -i rbridge-db psql -U postgres rbridge
 
+# Redis 备份和恢复
+# Redis 备份（使用 redis-cli 的 SAVE 命令触发 RDB 快照）
+docker exec rbridge-redis redis-cli -a ${REDIS_PASSWORD} SAVE
+
+# 复制 Redis 备份文件到宿主机
+docker cp rbridge-redis:/data/dump.rdb redis_backup_$(date +%Y%m%d).rdb
+
+# Redis 恢复（将备份文件复制回容器）
+docker cp redis_backup_20240101.rdb rbridge-redis:/data/dump.rdb
+# 重启 Redis 容器以加载备份
+docker-compose restart redis
+
 # 检查容器状态
 docker ps -a
 

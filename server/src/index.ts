@@ -42,6 +42,12 @@ async function bootstrap() {
 
         // 2.1 初始化 Redis 客户端，确保全局可用
         RedisModule.getClient(); // 初始化 Redis 客户端
+        
+        // 测试日志系统
+        logger.debug('测试 debug 级别日志');
+        logger.info('测试 info 级别日志');
+        logger.warn('测试 warn 级别日志');
+        logger.error('测试 error 级别日志');
 
         // 3. 创建应用
         const app = new Koa();
