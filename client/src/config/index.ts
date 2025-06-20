@@ -344,14 +344,14 @@ export const handleWechatCallback = async (
   state?: string
 ): Promise<WechatCallbackResponse> => {
   try {
-    const requestData: WechatCallbackRequest = { code };
+    // 构建查询参数
+    const params = new URLSearchParams({ code });
     if (state) {
-      requestData.state = state;
+      params.append('state', state);
     }
 
-    const response = await axios.post<WechatCallbackResponse>(
-      getApiUrl(api.endpoints.wechatCallback),
-      requestData
+    const response = await axios.get<WechatCallbackResponse>(
+      `${getApiUrl(api.endpoints.wechatCallback)}?${params.toString()}`
     );
 
     return response.data;
