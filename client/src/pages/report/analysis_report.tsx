@@ -5,7 +5,13 @@ import * as echarts from 'echarts';
 import { DownOutline, LeftOutline } from 'antd-mobile-icons';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { getApiUrl, getUserMajorScores, getMajorDetail, createWechatPayOrder, callWechatPay } from '../../config';
+import {
+  getApiUrl,
+  getUserMajorScores,
+  getMajorDetail,
+  createWechatPayOrder,
+  callWechatPay,
+} from '../../config';
 import { SpinLoading } from 'antd-mobile';
 
 const App: React.FC = () => {
@@ -17,6 +23,7 @@ const App: React.FC = () => {
   const [majoNoLove, setmajorNoLove] = useState([]);
   const [loading, setLoading] = useState(true);
   const [payLoading, setPayLoading] = useState(false);
+  const [isPaySuccess, setIsPaySuccess] = useState(false);
   const navigate = useNavigate();
 
   const [majorDetails, setMajorDetail] = useState([]);
@@ -38,24 +45,22 @@ const App: React.FC = () => {
       console.error('获取专业详细信息失败:', error);
     }
   };
+  const fetchMajorScores = async () => {
+    try {
+      const userStr = localStorage.getItem('new-user');
+      if (!userStr) {
+        setIsAuthModalVisible(true);
+        setLoading(false);
+        return;
+      }
 
-  useEffect(() => {
-    const fetchMajorScores = async () => {
-      try {
-        const userStr = localStorage.getItem('new-user');
-        if (!userStr) {
-          setIsAuthModalVisible(true);
-          setLoading(false);
-          return;
-        }
-
-        const user = JSON.parse(userStr);
-        const userId = user?.id ?? user?.data?.id;
-        const response = await getUserMajorScores(userId);
-        if (response && response.code === 200) {
-          // 获取所有分数数据
-          const scores = (response.data && response.data.scores) || [];
-
+      const user = JSON.parse(userStr);
+      const userId = user?.id ?? user?.data?.id;
+      const response = await getUserMajorScores(userId);
+      if (response && response.code === 200) {
+        // 获取所有分数数据
+        const scores = (response.data && response.data.scores) || [];
+        if (scores.length === 6) {
           // 获取前3条最高分数据
           const topScores = scores.slice(0, 3);
           setmajorLove(topScores);
@@ -63,22 +68,30 @@ const App: React.FC = () => {
           // 获取后3条最低分数据并倒序
           const bottomScores = scores.slice(-3).reverse();
           setmajorNoLove(bottomScores);
-
-          // 获取专业详情
-          if (topScores && bottomScores) {
-            getMajorDetailInfo(topScores[0].majorCode);
-            getMajorDetailInfo(bottomScores[0].majorCode);
-          }
         } else {
-          message.error(response.message || '修改昵称失败');
-        }
-      } catch (error) {
-        console.error('获取专业分数失败:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+          const minNum = Math.ceil(scores.length / 2);
+          const topScores = scores.slice(0, minNum);
+          const bottomScores = scores.slice(-minNum).reverse();
+          setmajorLove(topScores);
 
+          setmajorNoLove(bottomScores);
+        }
+
+        // 获取专业详情
+        if (topScores && bottomScores) {
+          getMajorDetailInfo(topScores[0].majorCode);
+          getMajorDetailInfo(bottomScores[0].majorCode);
+        }
+      } else {
+        message.error(response.message || '修改昵称失败');
+      }
+    } catch (error) {
+      console.error('获取专业分数失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
     fetchMajorScores();
   }, []);
 
@@ -121,7 +134,7 @@ const App: React.FC = () => {
   const handlePayment = async () => {
     try {
       setPayLoading(true);
-      
+
       // 获取用户openid
       const openid = getUserOpenid();
       if (!openid) {
@@ -133,12 +146,18 @@ const App: React.FC = () => {
 
       // 支付金额：88元 = 8800分
       const amount = 1;
-      
+
       // 调用微信支付
       const paySuccess = await callWechatPay(openid, amount);
-      
+
       if (paySuccess) {
         message.success('支付成功！');
+        //重新加载页面
+        setLoading(true);
+        message.loading('正在帮您解锁所有专业报告', 0);
+        await fetchMajorScores();
+        message.destroy();
+        setIsPaySuccess(true);
         setIsModalVisible(false);
         // 这里可以添加支付成功后的逻辑，比如刷新数据或跳转页面
       } else {
@@ -366,15 +385,17 @@ const App: React.FC = () => {
               ))
             )}
           </div>
-          <div className="mt-4 relative">
-            <button
-              onClick={showModal}
-              className="text-blue-500 text-sm flex items-center group hover:text-blue-600 transition-colors"
-            >
-              查看更多
-              <i className="fas fa-arrow-right ml-1 transform transition-transform group-hover:translate-x-1"></i>
-            </button>
-          </div>
+          {!isPaySuccess && (
+            <div className="mt-4 relative">
+              <button
+                onClick={showModal}
+                className="text-blue-500 text-sm flex items-center group hover:text-blue-600 transition-colors"
+              >
+                查看更多
+                <i className="fas fa-arrow-right ml-1 transform transition-transform group-hover:translate-x-1"></i>
+              </button>
+            </div>
+          )}
         </div>
         {/* "难爱"专业部分 */}
         <div>
@@ -439,13 +460,15 @@ const App: React.FC = () => {
               ))
             )}
           </div>
-          <button
-            onClick={showModal}
-            className="text-blue-500 text-sm mt-4 flex items-center group hover:text-blue-600 transition-colors"
-          >
-            查看更多
-            <i className="fas fa-arrow-right ml-1 transform transition-transform group-hover:translate-x-1"></i>
-          </button>
+          {!isPaySuccess && (
+            <button
+              onClick={showModal}
+              className="text-blue-500 text-sm mt-4 flex items-center group hover:text-blue-600 transition-colors"
+            >
+              查看更多
+              <i className="fas fa-arrow-right ml-1 transform transition-transform group-hover:translate-x-1"></i>
+            </button>
+          )}
           {/* 支付弹窗 */}
           <Modal
             title="解锁完整分析报告"

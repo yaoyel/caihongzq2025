@@ -99,7 +99,6 @@ const App: React.FC = () => {
         const response = await getMajorDetail(majorCode);
 
         if (response && response.code === 200) {
-          console.log(response.data);
           //获取维度id
           let ids = '';
           response.data.majorElementAnalyses.map((item: any) => {
@@ -108,7 +107,10 @@ const App: React.FC = () => {
           if (ids) {
             //获取维度及问卷和答案
             const user = JSON.parse(userStr);
-            const scaleResponse = await getScalesByElementsWithAnswers(ids, user.data.id);
+            const scaleResponse = await getScalesByElementsWithAnswers(
+              ids,
+              user.id ?? user.data.id
+            );
             if (scaleResponse && scaleResponse.code === 200) {
               let list = [];
               scaleResponse.data.map((item: any) => {
@@ -123,8 +125,6 @@ const App: React.FC = () => {
               });
               if (list.length > 0) {
                 setElementList(list);
-                console.log('elementList');
-                console.log(list);
               }
             }
           }
