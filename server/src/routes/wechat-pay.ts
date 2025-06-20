@@ -59,7 +59,9 @@ interface IWxPayResult {
   bank_type: string;
   attach: string;
   success_time: string;
-  openid: string;
+  payer: {
+    openid: string;
+  };
   amount: {
     total: number;
     payer_total: number;
@@ -146,7 +148,7 @@ export function payRouter(): Router {
           order.bank_type = result.bank_type;
           order.attach = result.attach;
           order.success_time = new Date(result.success_time);
-          order.openid = result.openid;
+          order.openid = result.payer.openid;
           order.total_amount = result.amount.total;
           order.payer_total = result.amount.payer_total;
           order.currency = result.amount.currency;
