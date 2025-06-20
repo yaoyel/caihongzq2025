@@ -55,7 +55,6 @@ const App: React.FC = () => {
     if (code && (!token || !userStr)) {
       handleCallback();
     }
-    console.log(queryparams);
   }, [navigate]);
 
   // 显示loading状态
