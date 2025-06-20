@@ -1,4 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, Generated } from "typeorm";
+import { Order } from './Order';
 
 @Entity("users")
 export class User {
@@ -49,4 +50,8 @@ export class User {
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
+
+    // 添加与订单的一对多关联
+    @OneToMany(() => Order, order => order.user)
+    orders: Order[];
 }

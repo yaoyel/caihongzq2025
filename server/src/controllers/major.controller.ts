@@ -5,6 +5,10 @@ import { Service } from 'typedi';
 import { ScaleService } from '../services/scale.service';
 import { MajorScoreService } from '../services/major.service';
 import { UserMajorScoresViewModel, toUserMajorScoresViewModel } from '../view-models/major.score.view.model';
+import { getRepository } from 'typeorm';
+import { User } from '../entities/User';
+import { Order } from '../entities/Order';
+import { AppDataSource } from '../data-source';
 
 /**
  * 专业信息控制器
@@ -106,6 +110,17 @@ export class MajorController {
         throw new Error('用户ID不能为空');
       }
 
+      // 判断用户是否存在，是否购买了产品
+      const userRepository = AppDataSource.getRepository(User);
+      const user = await userRepository.findOne({
+        where: { id: parseInt(userId) },
+        relations: ['orders']
+      });
+
+      if (!user) {
+        throw new Error('用户不存在');
+      }
+
       // 计算所有专业的匹配得分
       const majorScores = await this.majorScoreService.calculateMajorScores(userId);
 
@@ -117,7 +132,20 @@ export class MajorController {
         return b.potentialScore - a.potentialScore;
       });
 
-      return toUserMajorScoresViewModel(userId, sortedScores);
+      // 判断用户是否已经购买了产品，如果未购买，只提取majorScores数组的前三条和最后三条
+      const hasPurchased = user.orders && user.orders.some(order => 
+        order.trade_state === 'SUCCESS' || order.trade_state === 'COMPLETED'
+      );
+
+      let processedScores = sortedScores;
+      if (!hasPurchased && sortedScores.length > 6) {
+        // 获取前三条和后三条数据
+        const topThree = sortedScores.slice(0, 3);
+        const bottomThree = sortedScores.slice(-3);
+        processedScores = [...topThree, ...bottomThree];
+      }
+
+      return toUserMajorScoresViewModel(userId, processedScores);
       
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '未知错误';
