@@ -37,6 +37,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/db ./db
 COPY .env ./
 COPY MP_verify_s4aW7Fr0j7gMb5cG.txt ./
+COPY pay_cert ./pay_cert
 # 从构建阶段复制必要的文件到运行阶段
 # 只复制编译后的文件(dist)、依赖(node_modules)和数据库初始化文件
 # 这样可以减小最终镜像的大小
