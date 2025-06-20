@@ -167,7 +167,7 @@ router.all('/callback', async (ctx: Context) => {
     }
 
     // 处理OAuth2回调
-    if (ctx.query.code && ctx.query.state) {
+    if (ctx.query.code) {
       try {
         const { code } = ctx.query; 
         

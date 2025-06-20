@@ -17,6 +17,7 @@ export async function jwtMiddleware(ctx: Context, next: Next) {
             '/api/wechat/check-login',
            '/ api/wechat/check',
            '/api/chat/stream' ,
+           '/api/pay/notify',
            '/MP_verify_s4aW7Fr0j7gMb5cG.txt'
         ];
 

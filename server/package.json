@@ -24,8 +24,10 @@
     "@koa/cors": "^4.0.0",
     "@koa/router": "^12.0.1",
     "@types/axios": "^0.9.36",
+    "@types/bcrypt": "^5.0.2",
     "@types/koa-router": "^7.4.8",
     "axios": "^1.7.9",
+    "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "class-validator-jsonschema": "^5.0.1",
@@ -38,6 +40,7 @@
     "koa-logger": "^3.2.1",
     "koa-router": "^13.0.1",
     "koa2-swagger-ui": "^5.10.0",
+    "nanoid": "^5.1.5",
     "openai": "^4.85.3",
     "pg": "^8.13.3",
     "pino": "^8.17.2",
@@ -48,6 +51,7 @@
     "routing-controllers-openapi": "^4.0.0",
     "typedi": "^0.10.0",
     "typeorm": "^0.3.19",
+    "wechatpay-node-v3": "^2.2.1",
     "winston": "^3.11.0"
   },
   "devDependencies": {

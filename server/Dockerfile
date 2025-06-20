@@ -32,10 +32,11 @@ WORKDIR /app
 
 # 仅复制必要文件
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/package*.json ./ 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/db ./db
 COPY .env ./
+COPY MP_verify_s4aW7Fr0j7gMb5cG.txt ./
 # 从构建阶段复制必要的文件到运行阶段
 # 只复制编译后的文件(dist)、依赖(node_modules)和数据库初始化文件
 # 这样可以减小最终镜像的大小
