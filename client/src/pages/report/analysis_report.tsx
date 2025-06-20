@@ -5,7 +5,7 @@ import * as echarts from 'echarts';
 import { DownOutline, LeftOutline } from 'antd-mobile-icons';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { getApiUrl, getUserMajorScores, getMajorDetail } from '../../config';
+import { getApiUrl, getUserMajorScores, getMajorDetail, createWechatPayOrder, callWechatPay } from '../../config';
 import { SpinLoading } from 'antd-mobile';
 
 const App: React.FC = () => {
@@ -16,6 +16,7 @@ const App: React.FC = () => {
   const [majorLove, setmajorLove] = useState([]);
   const [majoNoLove, setmajorNoLove] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [payLoading, setPayLoading] = useState(false);
   const navigate = useNavigate();
 
   const [majorDetails, setMajorDetail] = useState([]);
@@ -101,6 +102,56 @@ const App: React.FC = () => {
     });
   };
 
+  // 获取用户openid
+  const getUserOpenid = () => {
+    try {
+      const userStr = localStorage.getItem('new-user');
+      if (!userStr) {
+        return null;
+      }
+      const user = JSON.parse(userStr);
+      return user?.openid || user?.data?.openid;
+    } catch (error) {
+      console.error('获取用户openid失败:', error);
+      return null;
+    }
+  };
+
+  // 处理支付
+  const handlePayment = async () => {
+    try {
+      setPayLoading(true);
+      
+      // 获取用户openid
+      const openid = getUserOpenid();
+      if (!openid) {
+        message.error('请先登录微信账号');
+        setIsModalVisible(false);
+        setIsAuthModalVisible(true);
+        return;
+      }
+
+      // 支付金额：88元 = 8800分
+      const amount = 1;
+      
+      // 调用微信支付
+      const paySuccess = await callWechatPay(openid, amount);
+      
+      if (paySuccess) {
+        message.success('支付成功！');
+        setIsModalVisible(false);
+        // 这里可以添加支付成功后的逻辑，比如刷新数据或跳转页面
+      } else {
+        message.info('支付已取消');
+      }
+    } catch (error) {
+      console.error('支付失败:', error);
+      message.error(error.message || '支付失败，请重试');
+    } finally {
+      setPayLoading(false);
+    }
+  };
+
   const showModal = () => {
     setIsModalVisible(true);
   };
@@ -113,7 +164,8 @@ const App: React.FC = () => {
   };
 
   const handleWechatAuth = () => {
-    const authUrl = 'https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxe85481f908a50ffc&redirect_uri=http://www.caihongzq.com/analysisReport/&response_type=code&scope=snsapi_userinfo&state=STATE&connect_redirect=1#wechat_redirect';
+    const authUrl =
+      'https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxe85481f908a50ffc&redirect_uri=http://www.caihongzq.com/analysisReport/&response_type=code&scope=snsapi_userinfo&state=STATE&connect_redirect=1#wechat_redirect';
     window.location.href = authUrl;
   };
 
@@ -412,13 +464,15 @@ const App: React.FC = () => {
               <Button
                 type="primary"
                 className="w-full h-12 !rounded-button text-lg font-medium bg-gradient-to-r from-green-500 to-green-400 border-none hover:opacity-90"
-                onClick={handleCancel}
+                onClick={handlePayment}
+                loading={payLoading}
+                disabled={payLoading}
               >
-                立即支付
+                {payLoading ? '支付中...' : '立即支付'}
               </Button>
             </div>
           </Modal>
-          
+
           {/* 微信授权弹窗 */}
           <Modal
             title="微信授权登录"
@@ -431,7 +485,9 @@ const App: React.FC = () => {
             <div className="py-6">
               <div className="text-center mb-6">
                 <div className="text-2xl font-semibold text-gray-800 mb-2">需要授权登录</div>
-                <div className="text-gray-500 text-sm mb-4">请使用微信授权登录以查看专业分析报告</div>
+                <div className="text-gray-500 text-sm mb-4">
+                  请使用微信授权登录以查看专业分析报告
+                </div>
                 <div className="bg-green-50 rounded-lg p-4 mb-4">
                   <p className="text-sm text-gray-600">
                     授权后将获得您的微信头像、昵称等基本信息，用于个性化推荐服务

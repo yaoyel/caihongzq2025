@@ -9,6 +9,7 @@ import { useContainer as typeormUseContainer } from 'typeorm';
 import { initializeDataSource } from './data-source';
 import { logger } from './config/logger';
 import wechatRouter from './routes/wechat';
+import { payRouter } from './routes/wechat-pay';
 import { DataSource } from 'typeorm';
 import RedisModule from './redis/redis.module';
 
@@ -78,6 +79,10 @@ async function bootstrap() {
         // 注入其他路由
         app.use(wechatRouter.routes());
         app.use(wechatRouter.allowedMethods());
+        
+        // 注册微信支付路由
+        app.use(payRouter().routes());
+        app.use(payRouter().allowedMethods());
 
         // 7. 配置路由控制器
         useKoaServer(app, {

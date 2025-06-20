@@ -1,6 +1,23 @@
 // @ts-nocheck
 import axios from 'axios';
 
+// 微信JS-SDK类型声明
+declare global {
+  interface Window {
+    wx: {
+      chooseWXPay: (config: {
+        timestamp: string;
+        nonceStr: string;
+        package: string;
+        signType: string;
+        paySign: string;
+        success: (res: any) => void;
+        cancel: (res: any) => void;
+        fail: (res: any) => void;
+      }) => void;
+    };
+  }
+}
 
 // 从环境变量中获取API主机地址
 const getApiHost = () => {
@@ -39,6 +56,7 @@ export const api = {
     scalesByElements: (elementIds: string, userId: string) => `/scales/by-elements-with-answers?elementIds=${elementIds}&userId=${userId}`,
     schoolDetail: (schoolId: string) => `/schools/${schoolId}`,
     wechatCallback: '/wechat/callback',
+    wechatPay: '/pay/transactions_jsapi',
   }
 };
 
@@ -383,5 +401,103 @@ export const getWechatAuthUrl = (redirectUri: string, state?: string): string =>
   url += '#wechat_redirect';
   
   return url;
+};
+
+// 微信支付接口类型定义
+interface WechatPayRequest {
+  openid: string; // 用户openid
+  amount: number; // 支付金额（分）
+}
+
+interface WechatPayResponse {
+  success: boolean;
+  message: string;
+  data: {
+    timeStamp: string;
+    nonceStr: string;
+    package: string;
+    signType: string;
+    paySign: string;
+    outTradeNo: string;
+  };
+}
+
+/**
+ * 创建微信支付订单
+ * @param openid 用户openid
+ * @param amount 支付金额（分）
+ * @returns Promise<WechatPayResponse>
+ */
+export const createWechatPayOrder = async (
+  openid: string,
+  amount: number
+): Promise<WechatPayResponse> => {
+  try {
+    const params = new URLSearchParams({
+      openid,
+      amount: amount.toString()
+    });
+    
+    const response = await axios.get<WechatPayResponse>(
+      `${getApiUrl(api.endpoints.wechatPay)}?${params.toString()}`,
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '创建微信支付订单失败');
+    }
+    throw error;
+  }
+};
+
+/**
+ * 调用微信支付
+ * @param openid 用户openid
+ * @param amount 支付金额（分）
+ * @returns Promise<boolean> 支付是否成功
+ */
+export const callWechatPay = async (
+  openid: string,
+  amount: number
+): Promise<boolean> => {
+  try {
+    // 创建支付订单
+    const payResponse = await createWechatPayOrder(openid, amount);
+    
+    if (!payResponse.success) {
+      throw new Error(payResponse.message);
+    }
+
+    // 调用微信支付
+    return new Promise((resolve, reject) => {
+      if (typeof window !== 'undefined' && window.wx) {
+        window.wx.chooseWXPay({
+          timestamp: payResponse.data.timeStamp,
+          nonceStr: payResponse.data.nonceStr,
+          package: payResponse.data.package,
+          signType: payResponse.data.signType,
+          paySign: payResponse.data.paySign,
+          success: function (res: any) {
+            console.log('微信支付成功:', res);
+            resolve(true);
+          },
+          cancel: function (res: any) {
+            console.log('微信支付取消:', res);
+            resolve(false);
+          },
+          fail: function (res: any) {
+            console.error('微信支付失败:', res);
+            reject(new Error('微信支付失败'));
+          }
+        });
+      } else {
+        reject(new Error('微信JS-SDK未加载'));
+      }
+    });
+  } catch (error) {
+    console.error('调用微信支付失败:', error);
+    throw error;
+  }
 };
 
