@@ -3,6 +3,8 @@ import { customAlphabet } from "nanoid";
 import WxPay from "wechatpay-node-v3";
 import fs from "fs"; 
 import { Context } from 'koa';
+import { Order } from '../entities/Order';
+import { AppDataSource } from '../data-source';
 const dotenv = require("dotenv");
 const path = require("path");
 
@@ -13,6 +15,7 @@ interface IWxPayConfig {
   PUBLIC_KEY: string;
   PRIVATE_KEY: string;
   WX_PAY_NOTIFY_URL: string;
+  WX_PAY_V3_KEY: string;
 }
 
 // 调用微信支付接口需要的参数
@@ -44,6 +47,27 @@ interface IWxPayNotify {
   };
 }
 
+// 支付成功回调数据结构
+interface IWxPayResult {
+  mchid: string;
+  appid: string;
+  out_trade_no: string;
+  transaction_id: string;
+  trade_type: string;
+  trade_state: string;
+  trade_state_desc: string;
+  bank_type: string;
+  attach: string;
+  success_time: string;
+  openid: string;
+  amount: {
+    total: number;
+    payer_total: number;
+    currency: string;
+    payer_currency: string;
+  };
+}
+
 // 加载环境变量
 const config = dotenv.config();
 const payEnv = config.parsed as IWxPayConfig;
@@ -53,7 +77,7 @@ const pay = new WxPay({
   appid: payEnv.WECHAT_APPID,
   mchid: payEnv.WX_PAY_MCHID,
   publicKey: fs.readFileSync(path.resolve(__dirname, "../../pay_cert/apiclient_cert.pem")),
-  privateKey: fs.readFileSync(path.resolve(__dirname, "..`/pay_cert/apiclient_key.pem")),
+  privateKey: fs.readFileSync(path.resolve(__dirname, "../../pay_cert/apiclient_key.pem")),
 });
   
 export function payRouter(): Router {
@@ -105,12 +129,34 @@ export function payRouter(): Router {
       
       if (requestBody) {
         if (requestBody.event_type === "TRANSACTION.SUCCESS" && requestBody.resource_type === "encrypt-resource") {
-          const { ciphertext, associated_data, nonce, key } = requestBody.resource;
-          const result = pay.decipher_gcm(ciphertext, associated_data, nonce, key);
+          const { ciphertext, associated_data, nonce } = requestBody.resource;
+          const key = payEnv.WX_PAY_V3_KEY;
+          const result = pay.decipher_gcm(ciphertext, associated_data, nonce, key) as IWxPayResult;
+          
+          // 保存订单数据
+          const orderRepository = AppDataSource.getRepository(Order);
+          const order = new Order();
+          order.mchid = result.mchid;
+          order.appid = result.appid;
+          order.out_trade_no = result.out_trade_no;
+          order.transaction_id = result.transaction_id;
+          order.trade_type = result.trade_type;
+          order.trade_state = result.trade_state;
+          order.trade_state_desc = result.trade_state_desc;
+          order.bank_type = result.bank_type;
+          order.attach = result.attach;
+          order.success_time = new Date(result.success_time);
+          order.openid = result.openid;
+          order.total_amount = result.amount.total;
+          order.payer_total = result.amount.payer_total;
+          order.currency = result.amount.currency;
+          order.payer_currency = result.amount.payer_currency;
+
+          await orderRepository.save(order);
+          console.log('订单数据保存成功:', order.out_trade_no);
+
           ctx.status = 200;
-          console.log('支付成功，解密后的数据:', result);
-          // todo storeData
-          ctx.body = {
+          ctx.body = { 
             code: "SUCCESS",
             message: "成功"
           };
