@@ -25,16 +25,16 @@ const getApiHost = () => {
   if (import.meta.env && import.meta.env.VITE_API_HOST) {
     return import.meta.env.VITE_API_HOST;
   }
-  
+
   // 如果没有环境变量，则根据当前域名判断
-  return window.location.hostname === 'localhost' 
-    ? 'http://localhost:3000' 
+  return window.location.hostname === 'localhost'
+    ? 'http://localhost:3000'
     : 'http://caihongzq.com:3000';
 };
 
 export const config = {
   apiHost: getApiHost(),
-  apiPrefix: '/api'
+  apiPrefix: '/api',
 };
 
 export const getApiUrl = (path: string) => {
@@ -53,47 +53,49 @@ export const api = {
     majorScores: (userId: string) => `/majors/userscores/${userId}`,
     majorDetail: (code: string) => `/majors/${code}/detail`,
     majorBrief: (code: string) => `/majors/${code}/brief`,
-    scalesByElements: (elementIds: string, userId: string) => `/scales/by-elements-with-answers?elementIds=${elementIds}&userId=${userId}`,
+    scalesByElements: (elementIds: string, userId: string) =>
+      `/scales/by-elements-with-answers?elementIds=${elementIds}&userId=${userId}`,
     schoolDetail: (schoolId: string) => `/schools/${schoolId}`,
     wechatCallback: '/wechat/callback',
     wechatPay: '/pay/transactions_jsapi',
-  }
+  },
 };
 
 // 添加一个辅助函数来设置请求头
 export const getAuthHeaders = () => {
-    const token = localStorage.getItem('new-token');
-    if (!token) return {};
-    
-    console.log('使用 token:', token);
-    return {
-        'Authorization': `Bearer ${token}`
-    };
+  const token = localStorage.getItem('new-token');
+  if (!token) return {};
+
+  console.log('使用 token:', token);
+  return {
+    Authorization: `Bearer ${token}`,
+  };
 };
 
 // 这段代码应该移到一个实际使用的组件中，而不是在配置文件中执行
 // 或者可以创建一个初始化函数，在需要时调用
 export const checkUserAuth = () => {
-    axios.get(getApiUrl('/users/me'), { headers: getAuthHeaders() })
-        .then(response => {
-            console.log('用户信息响应:', response);
-        })
-        .catch(error => {
-            console.error('获取用户信息失败:', error);
-        });
+  axios
+    .get(getApiUrl('/users/me'), { headers: getAuthHeaders() })
+    .then((response) => {
+      console.log('用户信息响应:', response);
+    })
+    .catch((error) => {
+      console.error('获取用户信息失败:', error);
+    });
 };
 
 // 修改用户昵称的接口类型定义
 interface UpdateNicknameRequest {
-    nickname: string;
+  nickname: string;
 }
 
 interface UpdateNicknameResponse {
-    success: boolean;
-    message: string;
-    data?: {
-        nickname: string;
-    };
+  success: boolean;
+  message: string;
+  data?: {
+    nickname: string;
+  };
 }
 
 /**
@@ -103,22 +105,22 @@ interface UpdateNicknameResponse {
  * @returns Promise<UpdateNicknameResponse>
  */
 export const updateUserNickname = async (
-    userId: string,
-    nickname: string
+  userId: string,
+  nickname: string
 ): Promise<UpdateNicknameResponse> => {
-    try {
-        const response = await axios.put<UpdateNicknameResponse>(
-            getApiUrl(api.endpoints.updateNickname(userId)),
-            { nickname },
-            { headers: getAuthHeaders() }
-        );
-        return response.data;
-    } catch (error) {
-        if (axios.isAxiosError(error)) {
-            throw new Error(error.response?.data?.message || '修改昵称失败');
-        }
-        throw error;
+  try {
+    const response = await axios.put<UpdateNicknameResponse>(
+      getApiUrl(api.endpoints.updateNickname(userId)),
+      { nickname },
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '修改昵称失败');
     }
+    throw error;
+  }
 };
 
 // 专业分析分数接口类型定义
@@ -140,9 +142,7 @@ interface MajorScoresResponse {
  * @param userId 用户ID
  * @returns Promise<MajorScoresResponse>
  */
-export const getUserMajorScores = async (
-  userId: string
-): Promise<MajorScoresResponse> => {
+export const getUserMajorScores = async (userId: string): Promise<MajorScoresResponse> => {
   try {
     const response = await axios.get<MajorScoresResponse>(
       getApiUrl(api.endpoints.majorScores(userId)),
@@ -178,9 +178,7 @@ interface MajorDetailResponse {
  * @param code 专业代码
  * @returns Promise<MajorDetailResponse>
  */
-export const getMajorDetail = async (
-  code: string
-): Promise<MajorDetailResponse> => {
+export const getMajorDetail = async (code: string): Promise<MajorDetailResponse> => {
   try {
     const response = await axios.get<MajorDetailResponse>(
       getApiUrl(api.endpoints.majorDetail(code)),
@@ -216,9 +214,7 @@ interface MajorBriefResponse {
  * @param code 专业代码
  * @returns Promise<MajorBriefResponse>
  */
-export const getMajorBrief = async (
-  code: string
-): Promise<MajorBriefResponse> => {
+export const getMajorBrief = async (code: string): Promise<MajorBriefResponse> => {
   try {
     const response = await axios.get<MajorBriefResponse>(
       getApiUrl(api.endpoints.majorBrief(code)),
@@ -306,9 +302,7 @@ interface SchoolDetailResponse {
  * @param schoolId 院校ID
  * @returns Promise<SchoolDetailResponse>
  */
-export const getSchoolDetail = async (
-  schoolId: string
-): Promise<SchoolDetailResponse> => {
+export const getSchoolDetail = async (schoolId: string): Promise<SchoolDetailResponse> => {
   try {
     const response = await axios.get<SchoolDetailResponse>(
       getApiUrl(api.endpoints.schoolDetail(schoolId)),
@@ -391,15 +385,15 @@ export const getWechatAuthUrl = (redirectUri: string, state?: string): string =>
   const appId = import.meta.env.VITE_WECHAT_APP_ID || '';
   const scope = 'snsapi_userinfo';
   const responseType = 'code';
-  
+
   let url = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=${responseType}&scope=${scope}`;
-  
+
   if (state) {
     url += `&state=${encodeURIComponent(state)}`;
   }
-  
+
   url += '#wechat_redirect';
-  
+
   return url;
 };
 
@@ -435,9 +429,9 @@ export const createWechatPayOrder = async (
   try {
     const params = new URLSearchParams({
       openid,
-      amount: amount.toString()
+      amount: amount.toString(),
     });
-    
+
     const response = await axios.get<WechatPayResponse>(
       `${getApiUrl(api.endpoints.wechatPay)}?${params.toString()}`,
       { headers: getAuthHeaders() }
@@ -457,27 +451,24 @@ export const createWechatPayOrder = async (
  * @param amount 支付金额（分）
  * @returns Promise<boolean> 支付是否成功
  */
-export const callWechatPay = async (
-  openid: string,
-  amount: number
-): Promise<boolean> => {
+export const callWechatPay = async (openid: string, amount: number): Promise<boolean> => {
   try {
     // 创建支付订单
     const payResponse = await createWechatPayOrder(openid, amount);
-    
-    if (!payResponse.success) {
+
+    if (payResponse.code !== 200) {
       throw new Error(payResponse.message);
     }
 
     // 调用微信支付
     return new Promise((resolve, reject) => {
-      if (typeof window !== 'undefined' && window.wx) {
+      if (typeof window !== 'undefined' && window.wx && payResponse.data && payResponse.data.data) {
         window.wx.chooseWXPay({
-          timestamp: payResponse.data.timeStamp,
-          nonceStr: payResponse.data.nonceStr,
-          package: payResponse.data.package,
-          signType: payResponse.data.signType,
-          paySign: payResponse.data.paySign,
+          timestamp: payResponse.data.data.timeStamp,
+          nonceStr: payResponse.data.data.nonceStr,
+          package: payResponse.data.data.package,
+          signType: payResponse.data.data.signType,
+          paySign: payResponse.data.data.paySign,
           success: function (res: any) {
             console.log('微信支付成功:', res);
             resolve(true);
@@ -489,7 +480,7 @@ export const callWechatPay = async (
           fail: function (res: any) {
             console.error('微信支付失败:', res);
             reject(new Error('微信支付失败'));
-          }
+          },
         });
       } else {
         reject(new Error('微信JS-SDK未加载'));
@@ -500,4 +491,3 @@ export const callWechatPay = async (
     throw error;
   }
 };
-
