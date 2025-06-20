@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Unique, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Unique, Index, ManyToOne, JoinColumn } from 'typeorm';
+import { User } from './User';
 
 /**
  * 订单实体类
@@ -60,4 +61,9 @@ export class Order {
 
   @UpdateDateColumn({ comment: '更新时间' })
   updated_at: Date;
+
+  // 添加与用户的多对一关联
+  @ManyToOne(() => User, user => user.orders)
+  @JoinColumn({ name: 'openid', referencedColumnName: 'openid' })
+  user: User;
 } 
