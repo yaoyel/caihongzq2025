@@ -228,7 +228,8 @@ router.all('/callback', async (ctx: Context) => {
             id: user.id,
             nickname: user.nickname,
             avatarUrl: user.avatarUrl,
-            gender: user.gender
+            gender: user.gender,
+            openid,
           },
           token
         };
