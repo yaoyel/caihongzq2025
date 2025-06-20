@@ -482,7 +482,7 @@ export const callWechatPay = async (openid: string, amount: number): Promise<boo
       if (typeof window !== 'undefined' && window.WeixinJSBridge && payResponse.data && payResponse.data.data) {
         console.log('调起支付', payResponse.data.data);
         window.WeixinJSBridge.invoke('getBrandWCPayRequest', {
-          appId: import.meta.env.VITE_WECHAT_APP_ID || '',
+          appId: "wxe85481f908a50ffc",
           timeStamp: payResponse.data.data.timeStamp,
           nonceStr: payResponse.data.data.nonceStr,
           package: payResponse.data.data.package,
