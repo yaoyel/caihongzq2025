@@ -16,11 +16,10 @@ import HomeDiscover from './pages/home';
 import AnalysisReport from './pages/report/analysis_report';
 import ProfessColleges from './pages/report/profess_colleges';
 import LoveEnergy from './pages/report/love_energy';
-import {handleWechatCallback } from './config';
+import { handleWechatCallback } from './config';
 const App: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -34,12 +33,12 @@ const App: React.FC = () => {
         setIsLoading(true);
         try {
           const result = await handleWechatCallback(code);
-          if (result.success && result.data.token) {
+          if (result.code == 200 && result.data.token) {
             localStorage.setItem('new-token', result.data.token);
             localStorage.setItem('new-user', JSON.stringify(result.data.user));
 
             console.log('登录成功:', result.data.user);
-            
+
             // 从URL参数中获取目标页面，如果没有则默认跳转到home
             const targetPath = urlParams.get('redirect') || urlParams.get('path') || '/default';
             navigate(targetPath);
@@ -60,14 +59,16 @@ const App: React.FC = () => {
   // 显示loading状态
   if (isLoading) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        fontSize: '18px',
-        color: '#666'
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          fontSize: '18px',
+          color: '#666',
+        }}
+      >
         登录中...
       </div>
     );
