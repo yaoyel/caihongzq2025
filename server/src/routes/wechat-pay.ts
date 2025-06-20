@@ -53,9 +53,9 @@ const pay = new WxPay({
   publicKey: fs.readFileSync(path.resolve(__dirname, "../pay_cert/apiclient_cert.pem")),
   privateKey: fs.readFileSync(path.resolve(__dirname, "../pay_cert/apiclient_key.pem")),
 });
-
+  
 export function payRouter(): Router {
-  const router = new Router();
+  const router = new Router({ prefix: '/api/wechat' });
 
   // combine_transactions_jsapi
   router.get("/pay/transactions_jsapi", async (ctx: Context) => {
@@ -111,5 +111,5 @@ export function payRouter(): Router {
     }
   });
 
-  return router;
+  return router; 
 }
