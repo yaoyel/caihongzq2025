@@ -52,8 +52,8 @@ const payEnv = config.parsed as IWxPayConfig;
 const pay = new WxPay({
   appid: payEnv.WECHAT_APPID,
   mchid: payEnv.WX_PAY_MCHID,
-  publicKey: fs.readFileSync(path.resolve(__dirname, "../pay_cert/apiclient_cert.pem")),
-  privateKey: fs.readFileSync(path.resolve(__dirname, "../pay_cert/apiclient_key.pem")),
+  publicKey: fs.readFileSync(path.resolve(__dirname, "../../pay_cert/apiclient_cert.pem")),
+  privateKey: fs.readFileSync(path.resolve(__dirname, "..`/pay_cert/apiclient_key.pem")),
 });
   
 export function payRouter(): Router {
