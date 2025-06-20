@@ -16,6 +16,20 @@ declare global {
         fail: (res: any) => void;
       }) => void;
     };
+    WeixinJSBridge: {
+      invoke: (
+        method: string,
+        config: {
+          appId: string;
+          timeStamp: string;
+          nonceStr: string;
+          package: string;
+          signType: string;
+          paySign: string;
+        },
+        callback: (res: any) => void
+      ) => void;
+    };
   }
 }
 
@@ -453,37 +467,41 @@ export const createWechatPayOrder = async (
  */
 export const callWechatPay = async (openid: string, amount: number): Promise<boolean> => {
   try {
+    console.log('openid', openid);
+    console.log('amount', amount);
     // 创建支付订单
     const payResponse = await createWechatPayOrder(openid, amount);
-
+    console.log('payResponse', payResponse);
     if (payResponse.code !== 200) {
       throw new Error(payResponse.message);
     }
 
     // 调用微信支付
     return new Promise((resolve, reject) => {
-      if (typeof window !== 'undefined' && window.wx && payResponse.data && payResponse.data.data) {
-        window.wx.chooseWXPay({
-          timestamp: payResponse.data.data.timeStamp,
+      console.log('payResponse', payResponse.data.data);
+      if (typeof window !== 'undefined' && window.WeixinJSBridge && payResponse.data && payResponse.data.data) {
+        console.log('调起支付', payResponse.data.data);
+        window.WeixinJSBridge.invoke('getBrandWCPayRequest', {
+          appId: import.meta.env.VITE_WECHAT_APP_ID || '',
+          timeStamp: payResponse.data.data.timeStamp,
           nonceStr: payResponse.data.data.nonceStr,
           package: payResponse.data.data.package,
           signType: payResponse.data.data.signType,
           paySign: payResponse.data.data.paySign,
-          success: function (res: any) {
+        }, function (res: any) {
+          if (res.err_msg === 'get_brand_wcpay_request:ok') {
             console.log('微信支付成功:', res);
             resolve(true);
-          },
-          cancel: function (res: any) {
+          } else if (res.err_msg === 'get_brand_wcpay_request:cancel') {
             console.log('微信支付取消:', res);
             resolve(false);
-          },
-          fail: function (res: any) {
+          } else {
             console.error('微信支付失败:', res);
             reject(new Error('微信支付失败'));
-          },
+          }
         });
       } else {
-        reject(new Error('微信JS-SDK未加载'));
+        reject(new Error('WeixinJSBridge未加载'));
       }
     });
   } catch (error) {
