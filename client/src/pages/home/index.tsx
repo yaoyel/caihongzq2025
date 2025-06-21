@@ -11,7 +11,8 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const handleWechatAuth = () => {
-    const authUrl = 'https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxe85481f908a50ffc&redirect_uri=http://www.caihongzq.com/default/&response_type=code&scope=snsapi_userinfo&state=STATE&connect_redirect=1#wechat_redirect';
+    const authUrl =
+      'https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxe85481f908a50ffc&redirect_uri=http://www.caihongzq.com/default/&response_type=code&scope=snsapi_userinfo&state=STATE&connect_redirect=1#wechat_redirect';
     window.location.href = authUrl;
   };
 
@@ -31,17 +32,17 @@ const App: React.FC = () => {
 
   return (
     <div
-      className="relative min-h-[762px] bg-white text-gray-800 pb-1"
+      className="relative min-h-[762px] bg-white text-gray-800 pb-1 flex flex-col justify-top items-center"
       style={{ height: '100vh', minHeight: '100vh' }}
     >
       {/* 顶部导航栏 */}
-      <div className="fixed top-0 w-full bg-white shadow-md z-50 px-5 py-4 flex justify-between items-center">
+      <div className=" top-0 w-full bg-white shadow-md z-50 px-5 py-4 flex justify-between items-center">
         <span className="text-xl font-semibold text-green-700">发现热爱</span>
         {/* <i className="fas fa-bell text-gray-600 text-lg"></i> */}
       </div>
 
       {/* 主要内容区域 */}
-      <div className="mt-20 px-5 space-y-6" style={{ marginTop: '3.9rem' }}>
+      <div className=" px-5 space-y-6 mt-6">
         {/* 重要提示 */}
         {/* <div className="bg-red-50 border-l-4 border-red-500 p-5 rounded-r-lg shadow-sm">
           <p className="text-red-700 font-bold text-center text-lg">本问卷仅限考生本人作答！</p>

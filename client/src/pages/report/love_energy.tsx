@@ -167,7 +167,14 @@ const App: React.FC = () => {
       {/* 分数展示 */}
       <div className="bg-white rounded-lg shadow-sm p-4  mt-14">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-lg font-medium">
+          <span
+            className="text-lg font-medium"
+            onClick={() =>
+              navigate(
+                `/professColleges?majorCode=${majorCode}&majorName=${majorName}&score=${score}&isLove=${isLove}`
+              )
+            }
+          >
             {majorCode} {majorName}
           </span>
           <div className="flex items-center">

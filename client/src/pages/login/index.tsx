@@ -534,7 +534,7 @@ const LoginPage: React.FC = () => {
         getLoginQrCode();
       }
     };
-    // 清除无效的认证信息
+    //清除无效的认证信息
     // localStorage.removeItem('token');
     // localStorage.removeItem('user');
     // localStorage.setItem(

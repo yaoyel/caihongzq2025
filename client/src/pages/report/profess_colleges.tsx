@@ -8,6 +8,12 @@ import { getMajorDetail, getMajorBrief, getSchoolDetail } from '../../config';
 
 const App: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const typeSection = searchParams.get('type');
+  const majorCode = searchParams.get('majorCode');
+  const score = searchParams.get('score');
+  const majorName = searchParams.get('majorName');
+  const isLove = searchParams.get('isLove');
+
   const [activeSection, setActiveSection] = useState('intro');
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -18,10 +24,7 @@ const App: React.FC = () => {
   const [schoolLoading, setSchoolLoading] = useState(false);
   const [schools, setSchools] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const majorCode = searchParams.get('majorCode');
-  const score = searchParams.get('score');
-  const majorName = searchParams.get('majorName');
-  const isLove = searchParams.get('isLove');
+
   useEffect(() => {
     const fetchMajorInfo = async () => {
       try {
@@ -35,6 +38,7 @@ const App: React.FC = () => {
 
         if (briefResponse && briefResponse.code === 200) {
           setMajorBrief(briefResponse.data);
+          setActiveSection(typeSection ?? 'intro');
           console.log(briefResponse.data);
         }
       } catch (error) {

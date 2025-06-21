@@ -1,10 +1,10 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Button, Modal, Tag, message } from 'antd';
+import { Button, Modal, Tag, message, Tabs, Input } from 'antd';
 import * as echarts from 'echarts';
 import { DownOutline, LeftOutline } from 'antd-mobile-icons';
-import { ArrowLeftOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { ArrowLeftOutlined, SearchOutlined } from '@ant-design/icons';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   getApiUrl,
   getUserMajorScores,
@@ -24,7 +24,9 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [payLoading, setPayLoading] = useState(false);
   const [isPaySuccess, setIsPaySuccess] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [majorDetails, setMajorDetail] = useState([]);
 
@@ -34,12 +36,22 @@ const App: React.FC = () => {
         console.error('未找到专业代码');
         return;
       }
-      if (majorDetails.some((item) => item.code === majorCode)) {
-        return;
-      }
+
+      console.log('正在获取专业详情:', majorCode);
       const detailResponse = await getMajorDetail(majorCode);
       if (detailResponse && detailResponse.code === 200 && detailResponse.data) {
-        setMajorDetail((prev) => [...prev, detailResponse.data]);
+        console.log('获取专业详情成功:', majorCode, detailResponse.data);
+        setMajorDetail((prev) => {
+          // 检查是否已经存在该专业的详情
+          if (prev.some((item) => item.code === majorCode)) {
+            console.log('专业详情已存在，跳过添加:', majorCode);
+            return prev;
+          }
+          console.log('添加新的专业详情:', majorCode);
+          return [...prev, detailResponse.data];
+        });
+      } else {
+        console.error('获取专业详情失败:', majorCode, detailResponse);
       }
     } catch (error) {
       console.error('获取专业详细信息失败:', error);
@@ -56,34 +68,43 @@ const App: React.FC = () => {
 
       const user = JSON.parse(userStr);
       const userId = user?.id ?? user?.data?.id;
+      console.log('开始获取专业分数，用户ID:', userId);
+
       const response = await getUserMajorScores(userId);
+      console.log('获取专业分数响应:', response);
+
       if (response && response.code === 200) {
         // 获取所有分数数据
         const scores = (response.data && response.data.scores) || [];
+        console.log('获取到的分数数据:', scores);
+
+        let topScores = [];
+        let bottomScores = [];
+
         if (scores.length === 6) {
           // 获取前3条最高分数据
-          const topScores = scores.slice(0, 3);
+          topScores = scores.slice(0, 3);
           setmajorLove(topScores);
 
-          // 获取后3条最低分数据并倒序
-          const bottomScores = scores.slice(-3).reverse();
+          // 获取后3条最低分数据
+          bottomScores = scores.slice(-3);
           setmajorNoLove(bottomScores);
         } else {
-          const minNum = Math.ceil(scores.length / 2);
-          const topScores = scores.slice(0, minNum);
-          const bottomScores = scores.slice(-minNum).reverse();
+          topScores = scores.filter((item) => item.score > 0);
+          bottomScores = scores.filter((item) => item.score <= 0);
           setmajorLove(topScores);
 
           setmajorNoLove(bottomScores);
         }
 
         // 获取专业详情
-        if (topScores && bottomScores) {
+        if (topScores && bottomScores && topScores.length > 0 && bottomScores.length > 0) {
+          console.log('开始获取专业详情');
           getMajorDetailInfo(topScores[0].majorCode);
           getMajorDetailInfo(bottomScores[0].majorCode);
         }
       } else {
-        message.error(response.message || '修改昵称失败');
+        message.error(response.message || '获取专业分数失败');
       }
     } catch (error) {
       console.error('获取专业分数失败:', error);
@@ -94,6 +115,21 @@ const App: React.FC = () => {
   useEffect(() => {
     fetchMajorScores();
   }, []);
+
+  // 监听专业详情状态变化
+  useEffect(() => {
+    console.log('专业详情状态更新:', majorDetails);
+  }, [majorDetails]);
+
+  // 监听最爱专业状态变化
+  useEffect(() => {
+    console.log('最爱专业状态更新:', majorLove);
+  }, [majorLove]);
+
+  // 监听难爱专业状态变化
+  useEffect(() => {
+    console.log('难爱专业状态更新:', majoNoLove);
+  }, [majoNoLove]);
 
   const handleExpand = (index: number) => {
     setExpanded((prev) => {
@@ -191,10 +227,15 @@ const App: React.FC = () => {
   const renderMajorDetail = (majorInf: any, isLove: boolean = false) => {
     const majorDetail = majorDetails.find((item) => item.code === majorInf.majorCode);
     if (majorDetail) {
-      const careerDevelopmentT = majorDetail.careerDevelopment?.replace(/'/g, '"');
-      let careerDevelopmentTemp = '';
-      if (careerDevelopmentT) {
-        careerDevelopmentTemp = JSON.parse(careerDevelopmentT);
+      let careerDevelopmentTemp = {};
+      try {
+        const careerDevelopmentT = majorDetail.careerDevelopment?.replace(/'/g, '"');
+        if (careerDevelopmentT) {
+          careerDevelopmentTemp = JSON.parse(careerDevelopmentT);
+        }
+      } catch (error) {
+        console.error('解析就业方向数据失败:', error);
+        careerDevelopmentTemp = {};
       }
 
       const schools =
@@ -256,7 +297,7 @@ const App: React.FC = () => {
             <p className="text-xs text-gray-600">
               {schools && schools.length > 0
                 ? schools.map((i, index) => (
-                    <>
+                    <React.Fragment key={index}>
                       <Tag color="green" className="mb-1">
                         {i.name}
                       </Tag>
@@ -265,7 +306,7 @@ const App: React.FC = () => {
                           className="text-blue-500 ml-1 cursor-pointer hover:text-blue-600"
                           onClick={() => {
                             navigate(
-                              `/professColleges?majorCode=${majorInf.majorCode}&&majorName=${majorInf.majorName}&score=${majorInf.score}&isLove=${isLove}`
+                              `/professColleges?majorCode=${majorInf.majorCode}&&majorName=${majorInf.majorName}&score=${majorInf.score}&isLove=${isLove}&type=${'schools'}`
                             );
                           }}
                         >
@@ -274,7 +315,7 @@ const App: React.FC = () => {
                       ) : (
                         ''
                       )}
-                    </>
+                    </React.Fragment>
                   ))
                 : '正在收集...'}
             </p>
@@ -300,18 +341,49 @@ const App: React.FC = () => {
       );
     }
   };
+
+  // 检查是否有上一页
+  const hasPreviousPage = () => {
+    return window.history.length > 1;
+  };
+
+  // 搜索功能
+  const handleSearch = (value: string) => {
+    setSearchValue(value);
+  };
+
+  // 过滤专业数据
+  const filterMajors = (majors: any[]) => {
+    if (!searchValue.trim()) {
+      return majors;
+    }
+    return majors.filter(
+      (major) =>
+        major.majorName?.toLowerCase().includes(searchValue.toLowerCase()) ||
+        major.majorCode?.toLowerCase().includes(searchValue.toLowerCase())
+    );
+  };
+
+  // 获取过滤后的最爱专业
+  const filteredMajorLove = filterMajors(majorLove);
+
+  // 获取过滤后的难爱专业
+  const filteredMajorNoLove = filterMajors(majoNoLove);
+
   return (
     <div className="relative min-h-screen bg-[#FFFDF7] pb-16">
       {/* 顶部导航栏 */}
       <div className="fixed top-0 left-0 right-0 h-12 bg-white shadow-sm z-50 flex items-center">
-        <div className="absolute left-4">
-          <Button
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate(-1)}
-            className="mr-2"
-          />
-        </div>
+        {hasPreviousPage() && (
+          <div className="absolute left-4">
+            <Button
+              type="text"
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate(-1)}
+              className="mr-2"
+            />
+          </div>
+        )}
         <h1 className="text-lg font-medium flex-1 text-center">各专业分析报告</h1>
       </div>
       {/* 主要内容区域 */}
@@ -322,219 +394,269 @@ const App: React.FC = () => {
             温馨提示：以下分析，均基于您对自身喜欢与天赋自评，受自我认知深入程度影响，请结合实际情况综合考量。
           </p>
         </div>
-        {/* "最爱"专业部分 */}
-        <div className="mb-8">
-          <div className="flex items-center mb-4">
-            <span className="text-green-500 text-xl font-medium">"最爱"</span>
-            <span className="text-gray-700 text-xl ml-1">专业</span>
-          </div>
-          <div className="space-y-4">
-            {loading ? (
-              <div className="flex justify-center items-center py-8">
-                <SpinLoading color="primary" />
-              </div>
-            ) : (
-              majorLove.map((item, index) => (
-                <div
-                  key={index}
-                  className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-300 border border-gray-100"
-                >
-                  <div className="flex flex-col">
-                    <div
-                      className="flex justify-between items-center mb-3 cursor-pointer"
-                      onClick={() => {
-                        getMajorDetailInfo(item.majorCode);
-                        handleExpand(index);
-                      }}
-                    >
-                      <div
-                        className="flex items-center"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(
-                            `/professColleges?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isLove=true`
-                          );
-                        }}
-                      >
-                        <span className="text-gray-500">{item.majorCode}</span>
-                        <span className="ml-1 text-gray-800 cursor-pointer hover:text-gray-600 underline">
-                          {item.majorName}
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <div
-                          className="text-green-500 font-medium mr-2 cursor-pointer hover:text-green-600 underline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(
-                              `/loveEnergy?majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&isLove=true`
-                            );
-                          }}
-                        >
-                          热爱能量 {Math.ceil(item.score * 100)} 分！
-                        </div>
-                        <DownOutline
-                          className={`transition-transform ${expanded.includes(index) ? 'rotate-180' : ''}`}
-                          style={{ fontSize: 18 }}
-                        />
-                      </div>
-                    </div>
-                    {expanded.includes(index) && renderMajorDetail(item, true)}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          {!isPaySuccess && (
-            <div className="mt-4 relative">
-              <button
-                onClick={showModal}
-                className="text-blue-500 text-sm flex items-center group hover:text-blue-600 transition-colors"
-              >
-                查看更多
-                <i className="fas fa-arrow-right ml-1 transform transition-transform group-hover:translate-x-1"></i>
-              </button>
-            </div>
-          )}
+
+        {/* 搜索框 */}
+        <div className="mb-6">
+          <Input
+            placeholder="搜索专业名称或编号..."
+            prefix={<SearchOutlined className="text-gray-400" />}
+            value={searchValue}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="rounded-lg"
+            size="large"
+            allowClear
+          />
         </div>
-        {/* "难爱"专业部分 */}
-        <div>
-          <div className="flex items-center mb-4">
-            <span className="text-red-500 text-xl font-medium">"难爱"</span>
-            <span className="text-gray-700 text-xl ml-1">专业</span>
-          </div>
-          <div className="space-y-4">
-            {loading ? (
-              <div className="flex justify-center items-center py-8">
-                <SpinLoading color="primary" />
-              </div>
-            ) : (
-              majoNoLove.map((item, index) => (
-                <div
-                  key={index}
-                  className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-300 border border-gray-100"
-                >
-                  <div className="flex flex-col">
-                    <div
-                      className="flex justify-between items-center mb-3 cursor-pointer"
-                      onClick={() => {
-                        getMajorDetailInfo(item.majorCode);
-                        handleExpandNoLove(index);
-                      }}
-                    >
-                      <div
-                        className="flex items-center"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(
-                            `/professColleges?majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&isLove=false`
-                          );
-                        }}
-                      >
-                        <span className="text-gray-500">{item.majorCode}</span>
-                        <span className="ml-1 text-gray-800 cursor-pointer hover:text-gray-600 underline">
-                          {item.majorName}
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <div
-                          className="text-red-500 font-medium mr-2 cursor-pointer hover:text-green-600 underline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(
-                              `/loveEnergy?majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&isLove=false`
-                            );
-                          }}
-                        >
-                          热爱能量 {Math.ceil(item.score * 100)} 分！
-                        </div>
-                        <DownOutline
-                          className={`transition-transform ${expandedNoLove.includes(index) ? 'rotate-180' : ''}`}
-                          style={{ fontSize: 18 }}
-                        />
-                      </div>
-                    </div>
-                    {expandedNoLove.includes(index) && renderMajorDetail(item)}
+
+        {/* 专业分析页签 */}
+        <div className="mb-8">
+          <Tabs
+            defaultActiveKey="love"
+            type="card"
+            size="large"
+            items={[
+              {
+                key: 'love',
+                label: (
+                  <div className="flex items-center">
+                    <span className="text-green-500 text-lg font-medium">"最爱"</span>
+                    <span className="text-gray-700 text-lg ml-1">专业</span>
+                    {searchValue && (
+                      <span className="ml-2 text-xs text-gray-500">
+                        ({filteredMajorLove.length}/{majorLove.length})
+                      </span>
+                    )}
                   </div>
-                </div>
-              ))
-            )}
-          </div>
-          {!isPaySuccess && (
-            <button
-              onClick={showModal}
-              className="text-blue-500 text-sm mt-4 flex items-center group hover:text-blue-600 transition-colors"
+                ),
+                children: (
+                  <div className="space-y-4">
+                    {loading ? (
+                      <div className="flex justify-center items-center py-8">
+                        <SpinLoading color="primary" />
+                      </div>
+                    ) : filteredMajorLove.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        {searchValue ? '未找到匹配的专业' : '暂无数据'}
+                      </div>
+                    ) : (
+                      filteredMajorLove.map((item, index) => (
+                        <div
+                          key={index}
+                          className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-300 border border-gray-100"
+                        >
+                          <div className="flex flex-col">
+                            <div
+                              className="flex justify-between items-center mb-3 cursor-pointer"
+                              onClick={() => {
+                                getMajorDetailInfo(item.majorCode);
+                                handleExpand(index);
+                              }}
+                            >
+                              <div
+                                className="flex items-center"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(
+                                    `/professColleges?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isLove=true`
+                                  );
+                                }}
+                              >
+                                <span className="text-gray-500">{item.majorCode}</span>
+                                <span className="ml-1 text-gray-800 cursor-pointer hover:text-gray-600 underline">
+                                  {item.majorName}
+                                </span>
+                              </div>
+                              <div className="flex items-center">
+                                <div
+                                  className="text-green-500 font-medium mr-2 cursor-pointer hover:text-green-600 underline"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(
+                                      `/loveEnergy?majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&isLove=true`
+                                    );
+                                  }}
+                                >
+                                  热爱能量 {Math.ceil(item.score * 100)} 分！
+                                </div>
+                                <DownOutline
+                                  className={`transition-transform ${expanded.includes(index) ? 'rotate-180' : ''}`}
+                                  style={{ fontSize: 18 }}
+                                />
+                              </div>
+                            </div>
+                            {expanded.includes(index) && renderMajorDetail(item, true)}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    {!isPaySuccess && majorLove.length <= 3 && (
+                      <div className="mt-4 relative">
+                        <button
+                          onClick={showModal}
+                          className="text-blue-500 text-sm flex items-center group hover:text-blue-600 transition-colors"
+                        >
+                          查看更多
+                          <i className="fas fa-arrow-right ml-1 transform transition-transform group-hover:translate-x-1"></i>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ),
+              },
+              {
+                key: 'noLove',
+                label: (
+                  <div className="flex items-center">
+                    <span className="text-red-500 text-lg font-medium">"难爱"</span>
+                    <span className="text-gray-700 text-lg ml-1">专业</span>
+                    {searchValue && (
+                      <span className="ml-2 text-xs text-gray-500">
+                        ({filteredMajorNoLove.length}/{majoNoLove.length})
+                      </span>
+                    )}
+                  </div>
+                ),
+                children: (
+                  <div className="space-y-4">
+                    {loading ? (
+                      <div className="flex justify-center items-center py-8">
+                        <SpinLoading color="primary" />
+                      </div>
+                    ) : filteredMajorNoLove.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        {searchValue ? '未找到匹配的专业' : '暂无数据'}
+                      </div>
+                    ) : (
+                      filteredMajorNoLove.map((item, index) => (
+                        <div
+                          key={index}
+                          className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-300 border border-gray-100"
+                        >
+                          <div className="flex flex-col">
+                            <div
+                              className="flex justify-between items-center mb-3 cursor-pointer"
+                              onClick={() => {
+                                getMajorDetailInfo(item.majorCode);
+                                handleExpandNoLove(index);
+                              }}
+                            >
+                              <div
+                                className="flex items-center"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(
+                                    `/professColleges?majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&isLove=false`
+                                  );
+                                }}
+                              >
+                                <span className="text-gray-500">{item.majorCode}</span>
+                                <span className="ml-1 text-gray-800 cursor-pointer hover:text-gray-600 underline">
+                                  {item.majorName}
+                                </span>
+                              </div>
+                              <div className="flex items-center">
+                                <div
+                                  className="text-red-500 font-medium mr-2 cursor-pointer hover:text-green-600 underline"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(
+                                      `/loveEnergy?majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&isLove=false`
+                                    );
+                                  }}
+                                >
+                                  热爱能量 {Math.ceil(item.score * 100)} 分！
+                                </div>
+                                <DownOutline
+                                  className={`transition-transform ${expandedNoLove.includes(index) ? 'rotate-180' : ''}`}
+                                  style={{ fontSize: 18 }}
+                                />
+                              </div>
+                            </div>
+                            {expandedNoLove.includes(index) && renderMajorDetail(item)}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    {!isPaySuccess && majoNoLove.length <= 3 && (
+                      <button
+                        onClick={showModal}
+                        className="text-blue-500 text-sm mt-4 flex items-center group hover:text-blue-600 transition-colors"
+                      >
+                        查看更多
+                        <i className="fas fa-arrow-right ml-1 transform transition-transform group-hover:translate-x-1"></i>
+                      </button>
+                    )}
+                  </div>
+                ),
+              },
+            ]}
+          />
+        </div>
+
+        {/* 支付弹窗 */}
+        <Modal
+          title="解锁完整分析报告"
+          open={isModalVisible}
+          onCancel={handleCancel}
+          footer={null}
+          className="rounded-2xl"
+        >
+          <div className="py-6">
+            <div className="text-center mb-6">
+              <div className="text-2xl font-semibold text-gray-800 mb-2">亲友特惠</div>
+              <div className="text-4xl font-bold text-red-500 mb-2">¥0.01</div>
+              <div className="text-gray-500 text-sm mb-4">原价 ¥298</div>
+              <div className="text-sm text-gray-600 mb-4">解锁全部 845 个本科专业热爱能量值</div>
+            </div>
+            <Button
+              type="primary"
+              className="w-full h-12 !rounded-button text-lg font-medium bg-gradient-to-r from-green-500 to-green-400 border-none hover:opacity-90"
+              onClick={handlePayment}
+              loading={payLoading}
+              disabled={payLoading}
             >
-              查看更多
-              <i className="fas fa-arrow-right ml-1 transform transition-transform group-hover:translate-x-1"></i>
-            </button>
-          )}
-          {/* 支付弹窗 */}
-          <Modal
-            title="解锁完整分析报告"
-            open={isModalVisible}
-            onCancel={handleCancel}
-            footer={null}
-            className="rounded-2xl"
-          >
-            <div className="py-6">
-              <div className="text-center mb-6">
-                <div className="text-2xl font-semibold text-gray-800 mb-2">亲友特惠</div>
-                <div className="text-4xl font-bold text-red-500 mb-2">¥88</div>
-                <div className="text-gray-500 text-sm mb-4">原价 ¥298</div>
-                <div className="text-sm text-gray-600 mb-4">解锁全部 845 个本科专业热爱能量值</div>
+              {payLoading ? '支付中...' : '立即支付'}
+            </Button>
+          </div>
+        </Modal>
+
+        {/* 微信授权弹窗 */}
+        <Modal
+          title="微信授权登录"
+          open={isAuthModalVisible}
+          onCancel={handleAuthCancel}
+          footer={null}
+          className="rounded-2xl"
+          closable={false}
+        >
+          <div className="py-6">
+            <div className="text-center mb-6">
+              <div className="text-2xl font-semibold text-gray-800 mb-2">需要授权登录</div>
+              <div className="text-gray-500 text-sm mb-4">请使用微信授权登录以查看专业分析报告</div>
+              <div className="bg-green-50 rounded-lg p-4 mb-4">
+                <p className="text-sm text-gray-600">
+                  授权后将获得您的微信头像、昵称等基本信息，用于个性化推荐服务
+                </p>
               </div>
+            </div>
+            <div className="space-y-3">
               <Button
                 type="primary"
                 className="w-full h-12 !rounded-button text-lg font-medium bg-gradient-to-r from-green-500 to-green-400 border-none hover:opacity-90"
-                onClick={handlePayment}
-                loading={payLoading}
-                disabled={payLoading}
+                onClick={handleWechatAuth}
               >
-                {payLoading ? '支付中...' : '立即支付'}
+                微信授权登录
+              </Button>
+              <Button
+                className="w-full h-10 !rounded-button text-gray-600 border-gray-300 hover:border-gray-400"
+                onClick={handleAuthCancel}
+              >
+                稍后再说
               </Button>
             </div>
-          </Modal>
+          </div>
+        </Modal>
 
-          {/* 微信授权弹窗 */}
-          <Modal
-            title="微信授权登录"
-            open={isAuthModalVisible}
-            onCancel={handleAuthCancel}
-            footer={null}
-            className="rounded-2xl"
-            closable={false}
-          >
-            <div className="py-6">
-              <div className="text-center mb-6">
-                <div className="text-2xl font-semibold text-gray-800 mb-2">需要授权登录</div>
-                <div className="text-gray-500 text-sm mb-4">
-                  请使用微信授权登录以查看专业分析报告
-                </div>
-                <div className="bg-green-50 rounded-lg p-4 mb-4">
-                  <p className="text-sm text-gray-600">
-                    授权后将获得您的微信头像、昵称等基本信息，用于个性化推荐服务
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <Button
-                  type="primary"
-                  className="w-full h-12 !rounded-button text-lg font-medium bg-gradient-to-r from-green-500 to-green-400 border-none hover:opacity-90"
-                  onClick={handleWechatAuth}
-                >
-                  微信授权登录
-                </Button>
-                <Button
-                  className="w-full h-10 !rounded-button text-gray-600 border-gray-300 hover:border-gray-400"
-                  onClick={handleAuthCancel}
-                >
-                  稍后再说
-                </Button>
-              </div>
-            </div>
-          </Modal>
-        </div>
         {/* 底部说明文字 */}
         <div className="mt-8 text-sm text-gray-500 leading-relaxed">
           <p>
