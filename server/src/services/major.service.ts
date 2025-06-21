@@ -27,7 +27,7 @@ export class MajorScoreService {
   /**
    * 计算专业匹配得分
    * @param userId 用户ID
-   * @returns 专业得分列表，包含总分和潜力值得分
+   * @returns 专业得分列表，包含总分和潜力值得分（仅本科专业）
    */
   async calculateMajorScores(userId: string): Promise<MajorScore[]> {
     // 使用原生SQL查询提升性能
@@ -69,7 +69,7 @@ export class MajorScoreService {
       INNER JOIN elements e ON e.id = mea.element_id
       INNER JOIN scales s ON s.element_id = e.id
       LEFT JOIN user_answers ua ON ua.scale_id = s.id
-      where s.id > 112
+      WHERE s.id > 112 AND m.edu_level = 'ben'
       GROUP BY md.code, m.name, m.edu_level
       ORDER BY score DESC
     `, [userId]);
