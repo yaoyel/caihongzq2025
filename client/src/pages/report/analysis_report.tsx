@@ -114,8 +114,8 @@ const App: React.FC = () => {
   const loadMore = useCallback(async () => {
     if (loadingMore || visibleCount >= filteredMajorLove.length) return;
     setLoadingMore(true);
-    await new Promise(resolve => setTimeout(resolve, 300));
-    setVisibleCount(prev => Math.min(prev + 10, filteredMajorLove.length));
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    setVisibleCount((prev) => Math.min(prev + 10, filteredMajorLove.length));
     setLoadingMore(false);
   }, [filteredMajorLove.length, loadingMore, visibleCount]);
 
@@ -123,8 +123,8 @@ const App: React.FC = () => {
   const loadMoreNoLove = useCallback(async () => {
     if (loadingMoreNoLove || visibleCountNoLove >= filteredMajorNoLove.length) return;
     setLoadingMoreNoLove(true);
-    await new Promise(resolve => setTimeout(resolve, 300));
-    setVisibleCountNoLove(prev => Math.min(prev + 10, filteredMajorNoLove.length));
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    setVisibleCountNoLove((prev) => Math.min(prev + 10, filteredMajorNoLove.length));
     setLoadingMoreNoLove(false);
   }, [filteredMajorNoLove.length, loadingMoreNoLove, visibleCountNoLove]);
 
@@ -232,11 +232,12 @@ const App: React.FC = () => {
 
           setmajorNoLove(bottomScores);
         }
-
-        // 获取专业详情
-        if (topScores && bottomScores && topScores.length > 0 && bottomScores.length > 0) {
-          console.log('开始获取专业详情');
+        console.log('topScores', topScores, bottomScores);
+        if (topScores && topScores.length > 0) {
           getMajorDetailInfo(topScores[0].majorCode);
+        }
+        // 获取专业详情
+        if (bottomScores && bottomScores.length > 0) {
           getMajorDetailInfo(bottomScores[0].majorCode);
         }
       } else {
@@ -494,11 +495,14 @@ const App: React.FC = () => {
   }, []);
 
   // 计算总高度
-  const getTotalHeight = useCallback((items, expandedItems) => {
-    return items.reduce((total, _, index) => {
-      return total + getItemHeight(index, expandedItems.includes(index));
-    }, 0);
-  }, [getItemHeight]);
+  const getTotalHeight = useCallback(
+    (items, expandedItems) => {
+      return items.reduce((total, _, index) => {
+        return total + getItemHeight(index, expandedItems.includes(index));
+      }, 0);
+    },
+    [getItemHeight]
+  );
 
   return (
     <div className="relative min-h-screen bg-[#FFFDF7] pb-16">
@@ -559,7 +563,7 @@ const App: React.FC = () => {
                   </div>
                 ),
                 children: (
-                  <div 
+                  <div
                     ref={containerRef}
                     className="space-y-4 max-h-[600px] overflow-y-auto"
                     onScroll={handleScroll}
@@ -623,15 +627,13 @@ const App: React.FC = () => {
                                   </div>
                                 </div>
                                 {expanded.includes(index) && (
-                                  <div className="mt-3">
-                                    {renderMajorDetail(item, true)}
-                                  </div>
+                                  <div className="mt-3">{renderMajorDetail(item, true)}</div>
                                 )}
                               </div>
                             </div>
                           ))}
                         </div>
-                        
+
                         {/* 加载更多提示 */}
                         {visibleCount < filteredMajorLove.length && (
                           <div className="text-center py-4">
@@ -645,7 +647,10 @@ const App: React.FC = () => {
                             >
                               {loadingMore ? (
                                 <>
-                                  <SpinLoading color="primary" style={{ fontSize: 14, marginRight: 8 }} />
+                                  <SpinLoading
+                                    color="primary"
+                                    style={{ fontSize: 14, marginRight: 8 }}
+                                  />
                                   加载中...
                                 </>
                               ) : (
@@ -656,7 +661,7 @@ const App: React.FC = () => {
                         )}
                       </>
                     )}
-                    {!isPaySuccess && majorLove.length <= 3 && (
+                    {!isPaySuccess && majorLove <= 3 && majoNoLove.length <= 3 && (
                       <div className="mt-4 relative">
                         <button
                           onClick={showModal}
@@ -684,7 +689,7 @@ const App: React.FC = () => {
                   </div>
                 ),
                 children: (
-                  <div 
+                  <div
                     ref={containerNoLoveRef}
                     className="space-y-4 max-h-[600px] overflow-y-auto"
                     onScroll={handleScrollNoLove}
@@ -748,15 +753,13 @@ const App: React.FC = () => {
                                   </div>
                                 </div>
                                 {expandedNoLove.includes(index) && (
-                                  <div className="mt-3">
-                                    {renderMajorDetail(item)}
-                                  </div>
+                                  <div className="mt-3">{renderMajorDetail(item)}</div>
                                 )}
                               </div>
                             </div>
                           ))}
                         </div>
-                        
+
                         {/* 加载更多提示 */}
                         {visibleCountNoLove < filteredMajorNoLove.length && (
                           <div className="text-center py-4">
@@ -770,7 +773,10 @@ const App: React.FC = () => {
                             >
                               {loadingMoreNoLove ? (
                                 <>
-                                  <SpinLoading color="primary" style={{ fontSize: 14, marginRight: 8 }} />
+                                  <SpinLoading
+                                    color="primary"
+                                    style={{ fontSize: 14, marginRight: 8 }}
+                                  />
                                   加载中...
                                 </>
                               ) : (
@@ -781,7 +787,7 @@ const App: React.FC = () => {
                         )}
                       </>
                     )}
-                    {!isPaySuccess && majoNoLove.length <= 3 && (
+                    {!isPaySuccess && majorLove <= 3 && majoNoLove.length <= 3 && (
                       <button
                         onClick={showModal}
                         className="text-blue-500 text-sm mt-4 flex items-center group hover:text-blue-600 transition-colors"
