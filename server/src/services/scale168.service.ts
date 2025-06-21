@@ -26,10 +26,21 @@ export class Scale168Service {
 
   /**
    * 获取所有量表题目
-   * @returns 量表题目列表
+   * @returns 量表题目列表，按照特定规则排序
    */
   async getAllScales(): Promise<Scale[]> {
-    return this.scaleRepository.find({where: { direction: '168' }, relations: ['options'], order: { id: 'ASC' }});
+    return this.scaleRepository.createQueryBuilder('scale')
+      .leftJoinAndSelect('scale.options', 'options')
+      .where('scale.direction = :direction', { direction: '168' })
+      .orderBy(
+        `CASE 
+          WHEN scale.element_id BETWEEN 1 AND 28 THEN 2 * scale.element_id - 1
+          WHEN scale.element_id BETWEEN 29 AND 56 THEN 2 * (scale.element_id - 28)
+          ELSE scale.element_id
+        END`,
+        'ASC'
+      )
+      .getMany();
   }
 
   /**
