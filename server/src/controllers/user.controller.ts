@@ -2,6 +2,7 @@ import { JsonController, Post, Body, Get, Param, Authorized, Ctx, NotFoundError,
 import { OpenAPI } from 'routing-controllers-openapi';
 import { Service } from 'typedi';
 import { UserService } from '../services/user.service';
+import { UserViewModel } from '../view-models/user.view.model';
 
 @JsonController('/users')
 @Service()
@@ -21,8 +22,8 @@ export class UserController {
     }
 
     @Get('/me')
-    @OpenAPI({ summary: '获取用户信息' }) 
-    async me(@Ctx() ctx: { state: { user?: { userId: number } } }) {
+    @OpenAPI({ summary: '获取当前用户信息' }) 
+    async me(@Ctx() ctx: { state: { user?: { userId: number } } }): Promise<UserViewModel | { code: number, message: string }> {
         try {
             console.log('获取当前用户信息，ctx.state:', ctx.state);
             
@@ -34,15 +35,32 @@ export class UserController {
             const userId = ctx.state.user.userId;
             console.log('尝试获取用户信息，userId:', userId);
             
-            const user = await this.userService.findOne(userId);
+            const user = await this.userService.findOneWithCounts(userId);
             
             if (!user) {
                 console.error(`未找到用户，userId: ${userId}`);
                 throw new NotFoundError('用户不存在');
             }
             
-            console.log('成功获取用户信息:', user);
-            return user;
+            // 转换为视图模型
+            const userViewModel: UserViewModel = {
+                id: user.id,
+                openid: user.openid,
+                nickname: user.nickname,
+                avatarUrl: user.avatarUrl,
+                provinceId: user.provinceId,
+                score: user.score,
+                preferredSubjects: user.preferredSubjects,
+                secondarySubjects: user.secondarySubjects,
+                enrollType: user.enrollType,
+                userType: user.userType,
+                age: user.age,
+                gender: user.gender,
+                orderCount: user.orderCount,
+                scaleAnswerCount: user.scaleAnswerCount
+            };
+             
+            return userViewModel;
         } catch (error) {
             console.error('获取用户信息失败:', error);
             return { code: 500, message: `获取用户信息失败: ${error instanceof Error ? error.message : '未知错误'}` };

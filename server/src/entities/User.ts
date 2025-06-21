@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, Generated } from "typeorm";
 import { Order } from './Order';
+import { ScaleAnswer } from './ScaleAnswer';
 
 @Entity("users")
 export class User {
@@ -54,4 +55,8 @@ export class User {
     // 添加与订单的一对多关联
     @OneToMany(() => Order, order => order.user)
     orders: Order[];
+
+    // 添加与量表答案的一对多关联
+    @OneToMany(() => ScaleAnswer, scaleAnswer => scaleAnswer.user)
+    scaleAnswers: ScaleAnswer[];
 }

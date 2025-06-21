@@ -64,4 +64,51 @@ export class UserService {
             throw error;
         }
     }
+
+    /**
+     * 查找用户并计算订单和量表答案数量
+     * @param id 用户ID
+     * @returns 包含统计数据的用户信息
+     */
+    async findOneWithCounts(id: number) {
+        try {
+            console.log(`尝试查找用户及统计数据，id: ${id}`);
+            
+            const user = await this.userRepository
+                .createQueryBuilder('user')
+                .select('user')
+                .addSelect(subQuery => {
+                    return subQuery
+                        .select('COUNT(orders.id)', 'orderCount')
+                        .from('orders', 'orders')
+                        .where('orders.openid = user.openid');
+                }, 'orderCount')
+                .addSelect(subQuery => {
+                    return subQuery
+                        .select('COUNT(answers.id)', 'scaleAnswerCount')
+                        .from('scale_answers', 'answers')
+                        .where('answers.userId = user.id and answers.scale_id > 112');
+                }, 'scaleAnswerCount')
+                .where('user.id = :id', { id })
+                .getRawAndEntities();
+             
+            if (!user.entities[0]) {
+                console.log(`未找到用户，id: ${id}`);
+                return null;
+            }
+
+            // 合并用户数据和统计数据
+            const userData = user.entities[0];
+            const counts = user.raw[0];
+             
+            return {
+                ...userData,
+                orderCount: parseInt(counts.orderCount) || 0,
+                scaleAnswerCount: parseInt(counts.scaleAnswerCount) || 0
+            };
+        } catch (error) {
+            console.error(`查找用户及统计数据失败，id: ${id}`, error);
+            throw error;
+        }
+    }
 } 
