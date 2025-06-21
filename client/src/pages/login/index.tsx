@@ -535,14 +535,14 @@ const LoginPage: React.FC = () => {
       }
     };
     //清除无效的认证信息
-    // localStorage.removeItem('token');
-    // localStorage.removeItem('user');
+    // localStorage.removeItem('new-token');
+    // localStorage.removeItem('new-user');
     // localStorage.setItem(
-    //   'token',
-    //   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsIm5pY2tuYW1lIjoi5bqE5Lqu5LquIiwiYXZhdGFyVXJsIjoiIiwiaWF0IjoxNzUwMDMzMjY1LCJleHAiOjE3NTI2MjUyNjV9.xnIxZ6lrDQLk-cdyQlHSJ01b4m49Fd57YtwBXhCBvxg'
+    //   'new-token',
+    //   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsIm5pY2tuYW1lIjoi5bqE5LquIiwiYXZhdGFyVXJsIjoiaHR0cHM6Ly90aGlyZHd4LnFsb2dvLmNuL21tb3Blbi92aV8zMi9EWUFJT2dxODNlcWljRkE4dWZyTDdqaGs0TFZxaWFIYjBmMHZ3MUM1ckpaa1dpYXM2eXdJaWI0WHNraWFvR0RyckRhN3hoMFp0dTZ4OHFxTExWemg3WW1CRWlidy8xMzIiLCJpYXQiOjE3NTA0ODI0MjIsImV4cCI6MTc1MzA3NDQyMn0.uO341iZXVY9LiHPki-Dj_fcisTkSDsPK7HOETLFtg4s'
     // );
     // localStorage.setItem(
-    //   'user',
+    //   'new-user',
     //   JSON.stringify({
     //     id: 8,
     //     username: '',

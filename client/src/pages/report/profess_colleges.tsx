@@ -1,6 +1,6 @@
 // @ts-nocheck
 import '@fortawesome/fontawesome-free/css/all.min.css';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Button, Card, Tag, Tabs } from 'antd';
 import { ArrowLeftOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -24,6 +24,14 @@ const App: React.FC = () => {
   const [schoolLoading, setSchoolLoading] = useState(false);
   const [schools, setSchools] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // 新增分页相关状态
+  const [displayedSchools, setDisplayedSchools] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const schoolsPerPage = 10;
+  const scrollContainerRef = useRef(null);
 
   useEffect(() => {
     const fetchMajorInfo = async () => {
@@ -125,15 +133,57 @@ const App: React.FC = () => {
     }
   };
 
-  const filteredSchools = schools?.filter((school) => {
-    const searchLower = searchQuery.toLowerCase();
-    return (
-      school.name.toLowerCase().includes(searchLower) ||
-      school.provinceName.toLowerCase().includes(searchLower) ||
-      school.cityName.toLowerCase().includes(searchLower) ||
-      school.belong.toLowerCase().includes(searchLower)
-    );
-  });
+  const filteredSchools = useMemo(
+    () =>
+      schools?.filter((school) => {
+        const searchLower = searchQuery.toLowerCase();
+        return (
+          school.name.toLowerCase().includes(searchLower) ||
+          school.provinceName.toLowerCase().includes(searchLower) ||
+          school.cityName.toLowerCase().includes(searchLower) ||
+          school.belong.toLowerCase().includes(searchLower)
+        );
+      }),
+    [schools, searchQuery]
+  );
+
+  // 处理分页显示学校
+  useEffect(() => {
+    if (filteredSchools) {
+      const startIndex = 0;
+      const endIndex = currentPage * schoolsPerPage;
+      const schoolsToShow = filteredSchools.slice(startIndex, endIndex);
+      setDisplayedSchools(schoolsToShow);
+      setHasMore(endIndex < filteredSchools.length);
+    }
+  }, [filteredSchools, currentPage]);
+
+  // 搜索时重置分页
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  // 加载更多学校
+  const loadMoreSchools = useCallback(() => {
+    if (loadingMore || !hasMore) return;
+
+    setLoadingMore(true);
+    setTimeout(() => {
+      setCurrentPage((prev) => prev + 1);
+      setLoadingMore(false);
+    }, 300);
+  }, [loadingMore, hasMore]);
+
+  // 滚动监听
+  const handleScroll = useCallback(
+    (e) => {
+      const { scrollTop, scrollHeight, clientHeight } = e.target;
+      if (scrollHeight - scrollTop <= clientHeight + 100 && hasMore && !loadingMore) {
+        loadMoreSchools();
+      }
+    },
+    [hasMore, loadingMore, loadMoreSchools]
+  );
 
   const renderContent = () => {
     if (selectedSchool) {
@@ -159,11 +209,11 @@ const App: React.FC = () => {
               alt="校园风光"
               className="w-full h-48 object-cover rounded-lg shadow-md mb-4"
             />
-            <div className="gap-2 ">
+            <div className="flex flex-wrap gap-2">
               {schoolDetailInfo &&
                 schoolDetailInfo.features &&
                 schoolDetailInfo.features.split(',').map((tag, index) => (
-                  <Tag key={index} color="green" className="mb-2">
+                  <Tag key={index} color="green">
                     {tag}
                   </Tag>
                 ))}
@@ -190,10 +240,16 @@ const App: React.FC = () => {
                       schoolDetailInfo.majors.map((adv, index) => {
                         if (adv.isNationalFeature) {
                           return (
-                            <Card key={'adv' + index} className="shadow-sm">
+                            <Card
+                              key={'adv' + index}
+                              className="shadow-sm"
+                              style={{ padding: '8px' }}
+                            >
                               <h4 className="font-medium">{adv.name}</h4>
-                              <Tag color="green">{adv.eduLevel === 'ben' ? '本科' : '专科'}</Tag>
-                              <Tag color="green">{adv.studyPeriod}</Tag>
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                <Tag color="green">{adv.eduLevel === 'ben' ? '本科' : '专科'}</Tag>
+                                <Tag color="green">{adv.studyPeriod}</Tag>
+                              </div>
                             </Card>
                           );
                         }
@@ -210,10 +266,16 @@ const App: React.FC = () => {
                       schoolDetailInfo.majors.map((adv, index) => {
                         if (adv.isProvinceFeature) {
                           return (
-                            <Card key={'adv' + index} className="shadow-sm">
+                            <Card
+                              key={'adv' + index}
+                              className="shadow-sm"
+                              style={{ padding: '8px' }}
+                            >
                               <h4 className="font-medium">{adv.name}</h4>
-                              <Tag color="green">{adv.eduLevel === 'ben' ? '本科' : '专科'}</Tag>
-                              <Tag color="green">{adv.studyPeriod}</Tag>
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                <Tag color="green">{adv.eduLevel === 'ben' ? '本科' : '专科'}</Tag>
+                                <Tag color="green">{adv.studyPeriod}</Tag>
+                              </div>
                             </Card>
                           );
                         }
@@ -294,42 +356,71 @@ const App: React.FC = () => {
                 <div className="text-gray-500">加载中...</div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-2">
-                {filteredSchools?.length > 0 ? (
-                  filteredSchools.map((school) => (
-                    <Card
-                      key={school.code}
-                      className="cursor-pointer hover:shadow-lg transition-shadow border-none"
-                      onClick={() => {
-                        getSchools(school.code);
-                        setSelectedSchool(school.code);
-                      }}
-                      hoverable
-                    >
-                      <h3 className="font-medium mb-2">{school.name}</h3>
-                      <p className="text-gray-600 text-sm">
-                        {school.provinceName}-{school.cityName}
-                      </p>
-                      <div className="mt-2">
-                        <Tag className="mr-2 mb-2" color="green">
-                          {school.nature === 'public'
-                            ? '公办'
-                            : school.nature === 'private'
-                              ? '民办'
-                              : '独立学院'}
-                        </Tag>
-                        <Tag className="mr-2 mb-2" color="blue">
-                          {school.belong}
-                        </Tag>
-                        <Tag className="mr-2 mb-2" color="yellow">
-                          {school.level === 'ben' ? '本科' : '专科'}
-                        </Tag>
-                      </div>
-                    </Card>
-                  ))
-                ) : (
-                  <div className="col-span-2 text-center py-8 text-gray-500">未找到匹配的院校</div>
-                )}
+              <div
+                className="h-[calc(100vh-200px)] overflow-y-auto"
+                ref={scrollContainerRef}
+                onScroll={handleScroll}
+              >
+                <div className="grid grid-cols-2 gap-2">
+                  {displayedSchools?.length > 0 ? (
+                    displayedSchools.map((school) => (
+                      <Card
+                        key={school.code}
+                        className="cursor-pointer hover:shadow-lg transition-shadow border-none"
+                        style={{ padding: '8px' }}
+                        onClick={() => {
+                          getSchools(school.code);
+                          setSelectedSchool(school.code);
+                        }}
+                        hoverable
+                      >
+                        <h3 className="font-medium mb-2">{school.name}</h3>
+                        <p className="text-gray-600 text-sm">
+                          {school.provinceName}-{school.cityName}
+                        </p>
+                        <p className="text-gray-600 text-sm mt-10">{school.features}</p>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          <Tag className="mb-1" color="green">
+                            {school.nature === 'public'
+                              ? '公办'
+                              : school.nature === 'private'
+                                ? '民办'
+                                : '独立学院'}
+                          </Tag>
+                          <Tag className="mb-1" color="blue">
+                            {school.belong}
+                          </Tag>
+                          <Tag className="mb-1" color="yellow">
+                            {school.level === 'ben' ? '本科' : '专科'}
+                          </Tag>
+                          {school.categories && (
+                            <Tag className="mb-1" color="purple">
+                              {school.categories}
+                            </Tag>
+                          )}
+                        </div>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="col-span-2 text-center py-8 text-gray-500">
+                      未找到匹配的院校
+                    </div>
+                  )}
+
+                  {/* 加载更多提示 */}
+                  {loadingMore && (
+                    <div className="col-span-2 text-center py-4">
+                      <div className="text-gray-500">加载更多院校中...</div>
+                    </div>
+                  )}
+
+                  {/* 没有更多数据提示 */}
+                  {!hasMore && displayedSchools?.length > 0 && (
+                    <div className="col-span-2 text-center py-4">
+                      <div className="text-gray-500">已显示全部院校</div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -403,6 +494,11 @@ const App: React.FC = () => {
                     ? 'text-green-600 font-bold text-xl'
                     : 'text-red-600 font-bold text-xl'
                 }
+                onClick={(e) => {
+                  navigate(
+                    `/loveEnergy?majorCode=${majorCode}&majorName=${majorName}&score=${score}&isLove=${isLove}`
+                  );
+                }}
               >
                 热爱能量 {Math.ceil(score * 100)}分！
               </span>

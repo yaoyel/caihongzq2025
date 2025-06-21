@@ -184,6 +184,7 @@ const App: React.FC = () => {
                   ? 'text-green-600 font-bold text-xl'
                   : 'text-red-600 font-bold text-xl'
               }
+             
             >
               热爱能量 {Math.ceil(score * 100)}分！
             </span>

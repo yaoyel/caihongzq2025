@@ -63,6 +63,7 @@ export const api = {
     scales: '/scales',
     questions: '/questions',
     users: '/users',
+    userMe: '/users/me',
     updateNickname: (userId: string) => `/users/updateNickname/${userId}`,
     majorScores: (userId: string) => `/majors/userscores/${userId}`,
     majorDetail: (code: string) => `/majors/${code}/detail`,
@@ -506,6 +507,41 @@ export const callWechatPay = async (openid: string, amount: number): Promise<boo
     });
   } catch (error) {
     console.error('调用微信支付失败:', error);
+    throw error;
+  }
+};
+
+// 当前用户信息接口类型定义
+interface UserInfo {
+  id: string;
+  nickname: string;
+  openid: string;
+  avatar?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface UserMeResponse {
+  success: boolean;
+  message: string;
+  data: UserInfo;
+}
+
+/**
+ * 获取当前用户信息
+ * @returns Promise<UserMeResponse>
+ */
+export const getCurrentUser = async (): Promise<UserMeResponse> => {
+  try {
+    const response = await axios.get<UserMeResponse>(
+      getApiUrl(api.endpoints.userMe),
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '获取用户信息失败');
+    }
     throw error;
   }
 };
