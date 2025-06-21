@@ -40,6 +40,8 @@ export class Scale168Service {
         END`,
         'ASC'
       )
+      .addOrderBy('scale.id', 'ASC')
+      .addOrderBy('options.display_order', 'ASC')
       .getMany();
   }
 
