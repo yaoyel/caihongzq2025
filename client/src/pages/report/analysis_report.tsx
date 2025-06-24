@@ -233,13 +233,7 @@ const App: React.FC = () => {
           setmajorNoLove(bottomScores);
         }
         console.log('topScores', topScores, bottomScores);
-        if (topScores && topScores.length > 0) {
-          getMajorDetailInfo(topScores[0].majorCode);
-        }
-        // 获取专业详情
-        if (bottomScores && bottomScores.length > 0) {
-          getMajorDetailInfo(bottomScores[0].majorCode);
-        }
+        // 专业详情现在通过 useEffect 自动加载第一个专业的详情
       } else {
         message.error(response.message || '获取专业分数失败');
       }
@@ -267,6 +261,30 @@ const App: React.FC = () => {
   useEffect(() => {
     console.log('难爱专业状态更新:', majoNoLove);
   }, [majoNoLove]);
+
+  // 监听过滤后的专业数组变化，自动加载第一个专业的详情
+  useEffect(() => {
+    // 如果过滤后的最爱专业有数据，加载第一个专业的详情
+    if (filteredMajorLove.length > 0) {
+      const firstMajor = filteredMajorLove[0];
+      if (firstMajor && firstMajor.majorCode) {
+        console.log('自动加载最爱专业第一个专业详情:', firstMajor.majorCode);
+        getMajorDetailInfo(firstMajor.majorCode);
+      }
+    }
+  }, [filteredMajorLove]);
+
+  // 监听过滤后的难爱专业数组变化，自动加载第一个专业的详情
+  useEffect(() => {
+    // 如果过滤后的难爱专业有数据，加载第一个专业的详情
+    if (filteredMajorNoLove.length > 0) {
+      const firstMajor = filteredMajorNoLove[0];
+      if (firstMajor && firstMajor.majorCode) {
+        console.log('自动加载难爱专业第一个专业详情:', firstMajor.majorCode);
+        getMajorDetailInfo(firstMajor.majorCode);
+      }
+    }
+  }, [filteredMajorNoLove]);
 
   const handleExpand = (index: number) => {
     setExpanded((prev) => {
@@ -661,7 +679,7 @@ const App: React.FC = () => {
                         )}
                       </>
                     )}
-                    {!isPaySuccess && majorLove <= 3 && majoNoLove.length <= 3 && (
+                    {!isPaySuccess && majorLove.length <= 3 && majoNoLove.length <= 3 && (
                       <div className="mt-4 relative">
                         <button
                           onClick={showModal}
@@ -787,7 +805,7 @@ const App: React.FC = () => {
                         )}
                       </>
                     )}
-                    {!isPaySuccess && majorLove <= 3 && majoNoLove.length <= 3 && (
+                    {!isPaySuccess && majorLove.length <= 3 && majoNoLove.length <= 3 && (
                       <button
                         onClick={showModal}
                         className="text-blue-500 text-sm mt-4 flex items-center group hover:text-blue-600 transition-colors"
