@@ -5,12 +5,14 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   Index,
   Unique,
 } from 'typeorm';
 import { MajorDetail } from './MajorDetail';
 import { School } from './School';
+import { MajorHistoryScore } from './MajorHistoryScore';
 
 /**
  * 学校专业关联表实体类
@@ -192,6 +194,13 @@ export class SchoolMajor {
     referencedColumnName: 'code'
   })
   school: School;
+
+  /**
+   * 关联的历年分数记录（一对多关系）
+   * 一个学校专业可以有多个历年分数记录
+   */
+  @OneToMany(() => MajorHistoryScore, historyScore => historyScore.schoolMajor)
+  historyScores: MajorHistoryScore[];
 
   // ==================== 辅助方法 ====================
 

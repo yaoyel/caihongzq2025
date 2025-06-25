@@ -81,18 +81,33 @@ import {
      */
     @Column({ type: 'text', nullable: true, comment: '原始输入' , name: 'raw_input'})
     rawInput: string;
+
+    /**
+     * 潜力转换原因
+     */
+    @Column({ type: 'text', nullable: true, comment: '潜在转换原因' , name: 'potential_conversion_reason'})
+    potentialConversionReason?: string;
+
+    /**
+     * 潜力转换值
+     */
+    @Column({ type: 'varchar', length: 8, nullable: true, comment: '潜力转换值' , name: 'potential_conversion_value'})
+    potentialConversionValue?: string;
+
+    /**
+     * 潜力转换值
   
     /**
      * 创建时间，自动生成
      */
-    @CreateDateColumn({ name: 'create_time', type: 'timestamp', comment: '创建时间' ,select: false})
-    createTime: Date;
+    @CreateDateColumn({ name: 'created_at', type: 'timestamp', comment: '创建时间' ,select: false})
+    createdAt: Date;
   
     /**
      * 更新时间，自动更新
      */
-    @UpdateDateColumn({ name: 'update_time', type: 'timestamp', comment: '更新时间' ,select: false})
-    updateTime: Date;
+    @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', comment: '更新时间' ,select: false})
+    updatedAt: Date;
   
     /**
      * 最后更新用户

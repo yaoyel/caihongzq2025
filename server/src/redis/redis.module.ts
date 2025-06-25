@@ -9,6 +9,7 @@ console.log('REDIS_MASTER_HOST:', process.env.REDIS_MASTER_HOST);
 console.log('REDIS_MASTER_PORT:', process.env.REDIS_MASTER_PORT);
 console.log('REDIS_PASSWORD:', process.env.REDIS_PASSWORD);
 console.log('REDIS_DB:', process.env.REDIS_DB);
+
 /**
  * Redis 客户端单例模块
  * 负责初始化并导出 Redis 客户端实例
@@ -45,6 +46,127 @@ class RedisModule {
       });
     }
     return RedisModule.client;
+  }
+
+  /**
+   * 生成所有可能的选科组合
+   * @param subjects 选科数组
+   * @returns 所有可能的组合
+   */
+  private static generateAllCombinations(subjects: string[]): string[] {
+    const combinations: string[] = [];
+    const n = subjects.length;
+
+    // 单科
+    subjects.forEach(subject => combinations.push(subject));
+
+    // 双科组合
+    for (let i = 0; i < n - 1; i++) {
+      for (let j = i + 1; j < n; j++) {
+        combinations.push(`${subjects[i]}_${subjects[j]}`);
+      }
+    }
+
+    // 三科组合
+    if (n >= 3) {
+      for (let i = 0; i < n - 2; i++) {
+        for (let j = i + 1; j < n - 1; j++) {
+          for (let k = j + 1; k < n; k++) {
+            combinations.push(`${subjects[i]}_${subjects[j]}_${subjects[k]}`);
+          }
+        }
+      }
+    }
+
+    // 添加"或"的关系
+    if (subjects.includes('化学') && subjects.includes('生物')) {
+      combinations.push('化学或生物');
+    }
+
+    return combinations;
+  }
+
+  /**
+   * 生成学生选科可能匹配的模式
+   * @param firstSubject 首选科目
+   * @param secondSubjects 次选科目数组
+   * @returns 可能匹配的模式数组
+   */
+  private static generateMatchingPatterns(firstSubject: string, secondSubjects: string[]): string[] {
+    const patterns: string[] = [];
+    
+    // 生成所有可能的组合
+    const combinations = RedisModule.generateAllCombinations(secondSubjects);
+    
+    // 不限匹配
+    patterns.push(`${firstSubject}:不限`);
+    patterns.push(`综合:不限`);
+    
+    // 完全匹配（保持原始顺序）
+    combinations.forEach(combo => {
+      patterns.push(`${firstSubject}:${combo}`);
+      patterns.push(`综合:${combo}`);
+    });
+    
+    return patterns;
+  }
+
+  /**
+   * 查找匹配的专业代码
+   * @param province 省份
+   * @param firstSubject 首选科目
+   * @param secondSubjects 次选科目数组
+   * @returns Promise<string[]> 匹配的专业代码数组
+   */
+  public static async findMatchingMajors(
+    province: string,
+    firstSubject: string,
+    secondSubjects: string[]
+  ): Promise<string[]> {
+    try {
+      const client = RedisModule.getClient();
+      const patterns = RedisModule.generateMatchingPatterns(firstSubject, secondSubjects);
+      const matchingMajors = new Set<string>();
+
+      // 使用multi代替pipeline
+      const multi = client.multi();
+      
+      // 查询所有匹配模式
+      for (const pattern of patterns) {
+        const key = `subject_req:${province}:${pattern}`;
+        multi.sMembers(key);
+      }
+
+      // 执行multi命令并处理结果
+      const results = await multi.exec();
+      if (!results) return [];
+
+      // 处理结果
+      for (const result of results) {
+        if (result && Array.isArray(result)) {
+          result.forEach(major => {
+            if (typeof major === 'string') {
+              matchingMajors.add(major);
+            }
+          });
+        }
+      }
+
+      return Array.from(matchingMajors);
+    } catch (error) {
+      console.error('查询匹配专业时出错:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 获取所有可能的匹配模式
+   * @param firstSubject 首选科目
+   * @param secondSubjects 次选科目数组
+   * @returns string[] 匹配模式数组
+   */
+  public static getMatchingPatterns(firstSubject: string, secondSubjects: string[]): string[] {
+    return RedisModule.generateMatchingPatterns(firstSubject, secondSubjects);
   }
 }
 

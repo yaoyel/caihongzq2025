@@ -32,6 +32,9 @@ export class User {
     @Column({ nullable: true, name: 'secondary_subjects',length: 32 })
     secondarySubjects?: string;
 
+    @Column({ nullable: true, name: 'rank',type: 'int' })
+    rank?: number;
+
     @Column({ nullable: true, name: 'enroll_type',length: 32 })
     enrollType?: string;  
 

@@ -30,6 +30,7 @@ export interface SchoolMajorViewModel extends MajorViewModel {
   isFirstClass: boolean;        // 一流专业
   studyPeriod: number;          // 学制
   rank?: number;                // 排名
+  score?: number;                // 分数
 }
 
 /**
@@ -74,7 +75,8 @@ function toSchoolMajorViewModel(data: any): SchoolMajorViewModel {
     isImportant: data.isImportant || false,
     isFirstClass: data.isFirstClass || false,
     studyPeriod: data.studyPeriod || 4,
-    rank: data.rank || undefined
+    rank: data.rank || undefined,
+    score: data.score || undefined
   };
 }
 

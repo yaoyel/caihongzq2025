@@ -111,4 +111,55 @@ export class UserService {
             throw error;
         }
     }
+
+    /**
+     * 更新用户选科和分数信息
+     */
+    async updateProfile(
+        id: number,
+        updateData: {
+            provinceId?: number;
+            preferredSubjects?: string;
+            secondarySubjects?: string;
+            enrollType?: string;
+            score?: number;
+            rank?: number;
+            
+        }
+    ): Promise<User | null> {
+        try {
+            const userRepository = AppDataSource.getRepository(User);
+            const user = await userRepository.findOne({ where: { id } });
+
+            if (!user) {
+                return null;
+            }
+
+            // 只更新提供的字段
+            if (updateData.provinceId !== undefined) {
+                user.provinceId = updateData.provinceId;
+            }
+            if (updateData.preferredSubjects !== undefined) {
+                user.preferredSubjects = updateData.preferredSubjects;
+            }
+            if (updateData.secondarySubjects !== undefined) {
+                user.secondarySubjects = updateData.secondarySubjects;
+            }
+            if (updateData.enrollType !== undefined) {
+                user.enrollType = updateData.enrollType;
+            }
+            if (updateData.score !== undefined) {
+                user.score = updateData.score;
+            }
+            if (updateData.rank !== undefined) {
+                user.rank = updateData.rank;
+            }
+
+            // 保存更新后的用户信息
+            return await userRepository.save(user);
+        } catch (error) {
+            console.error('更新用户信息失败:', error);
+            throw error;
+        }
+    }
 } 

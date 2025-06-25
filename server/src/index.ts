@@ -10,7 +10,7 @@ import { initializeDataSource } from './data-source';
 import { logger } from './config/logger';
 import wechatRouter from './routes/wechat';
 import { DataSource } from 'typeorm';
-import RedisModule from './redis/redis.module';
+import RedisModule from './redis/redis.module'; 
 
 // 导入所有控制器
 import { ElementController } from './controllers/element.controller';
@@ -32,6 +32,7 @@ import { MajorController } from './controllers/major.controller'
 import { SchoolController } from './controllers/school.controller'
 import mpVerifyRouter from './routes/mp-verify';   
 import { payRouter } from './routes/wechat-pay';
+import { ConfigController } from './controllers/config.controller';
      
 async function bootstrap() {
     try {
@@ -82,7 +83,7 @@ async function bootstrap() {
         // 注入其他路由
         app.use(wechatRouter.routes());
         app.use(wechatRouter.allowedMethods());
-
+ 
         // 7. 配置路由控制器
         useKoaServer(app, {
             controllers: [
@@ -98,7 +99,8 @@ async function bootstrap() {
                 UserAnalysisController,
                 Scale168Controller,
                 MajorController,
-                SchoolController
+                SchoolController,
+                ConfigController    
             ],
             middlewares: [],
             routePrefix: '/api',

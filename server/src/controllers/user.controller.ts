@@ -25,8 +25,7 @@ export class UserController {
     @OpenAPI({ summary: '获取当前用户信息' }) 
     async me(@Ctx() ctx: { state: { user?: { userId: number } } }): Promise<UserViewModel | { code: number, message: string }> {
         try {
-            console.log('获取当前用户信息，ctx.state:', ctx.state);
-            
+    
             if (!ctx?.state?.user?.userId) {
                 console.error('未获取到用户信息，ctx.state:', ctx.state);
                 return { code: 401, message: '未获取到用户信息' };
@@ -106,5 +105,71 @@ export class UserController {
             };
         }
     }
-  
+
+    /**
+     * 更新用户选科和分数信息
+     */
+    @Put('/:id/profile')
+    @OpenAPI({ summary: '更新用户选科和分数信息' })
+    async updateProfile(
+        @Param('id') id: number,
+        @Body() updateData: {
+            provinceId?: number;
+            preferredSubjects?: string;
+            secondarySubjects?: string;
+            enrollType?: string;
+            score?: number;
+            rank?: number;
+        }
+    ) {
+        try { 
+            // 验证省份ID
+            if (updateData.provinceId && (updateData.provinceId < 11 || updateData.provinceId > 65)) {
+                 throw new Error('无效的省份ID');
+            }
+
+            // 验证首选科目
+            if (updateData.preferredSubjects && !['物理', '历史', '综合','文科','理科'].includes(updateData.preferredSubjects)) {
+                throw new Error('无效的首选科目');
+            }
+
+            // 验证次选科目（可以是多个，用逗号分隔）
+            if (updateData.secondarySubjects && updateData.preferredSubjects !=="文科" && updateData.preferredSubjects !=="理科") {
+                const validSecondarySubjects = ['物理', '化学', '生物', '政治', '历史', '地理','技术'];
+                const subjects = updateData.secondarySubjects.split(',').map(s => s.trim());
+                const isValid = subjects.every(s => validSecondarySubjects.includes(s));
+                if (!isValid) {
+                   throw new Error('无效的次选科目');
+                }
+
+                // 验证物理和历史的互斥关系
+                if (updateData.preferredSubjects === '物理' && subjects.includes('历史')) {
+                    throw new Error('首选科目为物理时，次选科目不能包含历史');
+                }
+                if (updateData.preferredSubjects === '历史' && subjects.includes('物理')) {
+                    throw new Error('首选科目为历史时，次选科目不能包含物理');
+                }
+            } 
+
+            // 验证分数范围
+            if (updateData.score !== undefined && (updateData.score < 0 || updateData.score > 750)) {
+                throw new Error('无效的分数范围');
+            }
+
+            // 验证排名范围
+            if (updateData.rank !== undefined && (updateData.rank < 0)) {
+                throw new Error('无效的位次范围');
+            }
+
+            const updatedUser = await this.userService.updateProfile(id, updateData);
+
+            if (!updatedUser) {
+                throw new Error('用户不存在');
+            }
+ 
+            return  updatedUser ;
+        } catch (error) {
+            throw new Error(`更新用户信息失败: ${error instanceof Error ? error.message : '未知错误'}`);
+        }
+    }
 }

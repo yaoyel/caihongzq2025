@@ -2,6 +2,59 @@ import { SchoolDetail } from "../entities/SchoolDetail";
 import { SchoolViewModel } from "./base.school.view.model";
 
 /**
+ * 专业历年分数视图模型
+ */
+interface MajorHistoryScoreViewModel {
+  /** 学校专业ID */
+  // schoolMajorId: number;
+  
+  /** 省份 */
+  province: string;
+  
+  /** 科类（文科/理科/综合） */
+  subjectType: string;
+  
+  /** 批次 */
+  batch: string;
+  
+  /** 选科要求 */
+  subjectSelection: string | null;
+  
+  /** 计划专业名称 */
+  planMajorName: string | null;
+  
+  /** 计划招生人数 */
+  // planNum: number | null;
+  
+  /** 学制 */
+  studyPeriod: string | null;
+  
+  /** 学费 */
+  tuition: string | null;
+  
+  /** 历年分数数据 */
+  historyScore: {
+    [year: string]: {
+      minScore?: number;
+      avgScore?: number;
+      maxScore?: number;
+      enrollmentCount?: number;
+      notes?: string;
+    };
+  } | null;
+  
+  /** 年份 */
+  // year: number;
+}
+
+/**
+ * 扩展的学校视图模型，包含历年分数
+ */
+interface ExtendedSchoolViewModel extends SchoolViewModel {
+  historyScores?: MajorHistoryScoreViewModel[];
+}
+
+/**
  * 专业详情基础视图模型
  * 包含专业的基本信息字段
  */
@@ -42,7 +95,7 @@ export class MajorDetailViewModel extends BaseMajorDetailViewModel {
     eduLevel: string;
     level: 1 | 2 | 3;
   };
-  schools: SchoolViewModel[];
+  schools: ExtendedSchoolViewModel[];
   majorElementAnalyses: Array<{
     id: number;
     type: 'lexue' | 'shanxue';
@@ -108,6 +161,21 @@ export function toMajorDetailViewModel(data: any): MajorDetailViewModel | undefi
       cityName: school.cityName,
       rankingOfRK: school.rankingOfRK,
       rankingOfXYH: school.rankingOfXYH,
+      historyScores: Array.isArray(school.historyScores) 
+        ? school.historyScores.map((score: any) => ({
+            // schoolMajorId: score.schoolMajorId,
+            province: score.province,
+            subjectType: score.subjectType,
+            batch: score.batch,
+            subjectSelection: score.subjectSelection,
+            planMajorName: score.planMajorName,
+            // planNum: score.planNum,
+            studyPeriod: score.studyPeriod,
+            tuition: score.tuition,
+            historyScore: score.historyScore,
+            year: score.year
+          }))
+        : []
     })) : [],
     majorElementAnalyses: Array.isArray(data.majorElementAnalyses) ? data.majorElementAnalyses.map((analysis: any) => ({
       id: analysis.id,
@@ -115,6 +183,9 @@ export function toMajorDetailViewModel(data: any): MajorDetailViewModel | undefi
       summary: analysis.summary,
       matchReason: analysis.matchReason,
       theoryBasis: analysis.theoryBasis,
+      rawInput: analysis.rawInput,
+      potentialConversionReason: analysis.potentialConversionReason,
+      potentialConversionValue: analysis.potentialConversionValue,
       element: analysis.element ? {
         id: analysis.element.id,
         name: analysis.element.name,
