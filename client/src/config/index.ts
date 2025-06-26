@@ -65,6 +65,7 @@ export const api = {
     users: '/users',
     userMe: '/users/me',
     updateNickname: (userId: string) => `/users/updateNickname/${userId}`,
+    updateProfile: (userId: string) => `/users/${userId}/profile`,
     majorScores: (userId: string) => `/majors/userscores/${userId}`,
     majorDetail: (code: string) => `/majors/${code}/detail`,
     majorBrief: (code: string) => `/majors/${code}/brief`,
@@ -73,6 +74,7 @@ export const api = {
     schoolDetail: (schoolId: string) => `/schools/${schoolId}`,
     wechatCallback: '/wechat/callback',
     wechatPay: '/pay/transactions_jsapi',
+    gaokaoConfig: '/config/gaokao', // 高考配置接口
   },
 };
 
@@ -101,10 +103,6 @@ export const checkUserAuth = () => {
 };
 
 // 修改用户昵称的接口类型定义
-interface UpdateNicknameRequest {
-  nickname: string;
-}
-
 interface UpdateNicknameResponse {
   success: boolean;
   message: string;
@@ -138,31 +136,16 @@ export const updateUserNickname = async (
   }
 };
 
-// 专业分析分数接口类型定义
-interface MajorScore {
-  majorId: string;
-  majorName: string;
-  score: number;
-  rank: number;
-}
-
-interface MajorScoresResponse {
-  success: boolean;
-  message: string;
-  data: MajorScore[];
-}
-
 /**
  * 获取用户专业分析分数排序列表
  * @param userId 用户ID
  * @returns Promise<MajorScoresResponse>
  */
-export const getUserMajorScores = async (userId: string): Promise<MajorScoresResponse> => {
+export const getUserMajorScores = async (userId: string): Promise<any> => {
   try {
-    const response = await axios.get<MajorScoresResponse>(
-      getApiUrl(api.endpoints.majorScores(userId)),
-      { headers: getAuthHeaders() }
-    );
+    const response = await axios.get<any>(getApiUrl(api.endpoints.majorScores(userId)), {
+      headers: getAuthHeaders(),
+    });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -333,11 +316,6 @@ export const getSchoolDetail = async (schoolId: string): Promise<SchoolDetailRes
 };
 
 // 微信登录回调接口类型定义
-interface WechatCallbackRequest {
-  code: string;
-  state?: string;
-}
-
 interface WechatUserInfo {
   openid: string;
   nickname: string;
@@ -413,11 +391,6 @@ export const getWechatAuthUrl = (redirectUri: string, state?: string): string =>
 };
 
 // 微信支付接口类型定义
-interface WechatPayRequest {
-  openid: string; // 用户openid
-  amount: number; // 支付金额（分）
-}
-
 interface WechatPayResponse {
   success: boolean;
   message: string;
@@ -473,34 +446,38 @@ export const callWechatPay = async (openid: string, amount: number): Promise<boo
     // 创建支付订单
     const payResponse = await createWechatPayOrder(openid, amount);
     console.log('payResponse', payResponse);
-    if (payResponse.code !== 200) {
+    if (!payResponse.success) {
       throw new Error(payResponse.message);
     }
 
     // 调用微信支付
     return new Promise((resolve, reject) => {
-      console.log('payResponse', payResponse.data.data);
-      if (typeof window !== 'undefined' && window.WeixinJSBridge && payResponse.data && payResponse.data.data) {
-        console.log('调起支付', payResponse.data.data);
-        window.WeixinJSBridge.invoke('getBrandWCPayRequest', {
-          appId: "wxe85481f908a50ffc",
-          timeStamp: payResponse.data.data.timeStamp,
-          nonceStr: payResponse.data.data.nonceStr,
-          package: payResponse.data.data.package,
-          signType: payResponse.data.data.signType,
-          paySign: payResponse.data.data.paySign,
-        }, function (res: any) {
-          if (res.err_msg === 'get_brand_wcpay_request:ok') {
-            console.log('微信支付成功:', res);
-            resolve(true);
-          } else if (res.err_msg === 'get_brand_wcpay_request:cancel') {
-            console.log('微信支付取消:', res);
-            resolve(false);
-          } else {
-            console.error('微信支付失败:', res);
-            reject(new Error('微信支付失败'));
+      console.log('payResponse', payResponse.data);
+      if (typeof window !== 'undefined' && window.WeixinJSBridge && payResponse.data) {
+        console.log('调起支付', payResponse.data);
+        window.WeixinJSBridge.invoke(
+          'getBrandWCPayRequest',
+          {
+            appId: 'wxe85481f908a50ffc',
+            timeStamp: payResponse.data.timeStamp,
+            nonceStr: payResponse.data.nonceStr,
+            package: payResponse.data.package,
+            signType: payResponse.data.signType,
+            paySign: payResponse.data.paySign,
+          },
+          function (res: any) {
+            if (res.err_msg === 'get_brand_wcpay_request:ok') {
+              console.log('微信支付成功:', res);
+              resolve(true);
+            } else if (res.err_msg === 'get_brand_wcpay_request:cancel') {
+              console.log('微信支付取消:', res);
+              resolve(false);
+            } else {
+              console.error('微信支付失败:', res);
+              reject(new Error('微信支付失败'));
+            }
           }
-        });
+        );
       } else {
         reject(new Error('WeixinJSBridge未加载'));
       }
@@ -533,10 +510,9 @@ interface UserMeResponse {
  */
 export const getCurrentUser = async (): Promise<UserMeResponse> => {
   try {
-    const response = await axios.get<UserMeResponse>(
-      getApiUrl(api.endpoints.userMe),
-      { headers: getAuthHeaders() }
-    );
+    const response = await axios.get<UserMeResponse>(getApiUrl(api.endpoints.userMe), {
+      headers: getAuthHeaders(),
+    });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -544,4 +520,78 @@ export const getCurrentUser = async (): Promise<UserMeResponse> => {
     }
     throw error;
   }
+};
+
+/**
+ * 获取高考省份和科目配置
+ * @returns Promise<GaokaoConfigResponse>
+ */
+export const getGaokaoConfig = async (): Promise<any> => {
+  try {
+    const response = await axios.get<any>(getApiUrl(api.endpoints.gaokaoConfig), {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '获取高考配置失败');
+    }
+    throw error;
+  }
+};
+
+interface UpdateProfileRequest {
+  province: string; // 省份
+  preferredSubjects: string; // 选考科目列表
+  secondarySubjects: string;
+  score: number; // 高考分数（可选）
+  rank: number;
+}
+
+/**
+ * 更新用户档案信息（包括高考选科信息）
+ * @param userId 用户ID
+ * @param profileData 要更新的档案数据
+ * @returns Promise<UpdateProfileResponse>
+ */
+export const updateUserProfile = async (
+  userId: string,
+  profileData: UpdateProfileRequest
+): Promise<any> => {
+  try {
+    const response = await axios.put<any>(
+      getApiUrl(api.endpoints.updateProfile(userId)),
+      profileData,
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '更新用户档案失败');
+    }
+    throw error;
+  }
+};
+
+/**
+ * 专门用于更新高考选科信息的便捷函数
+ * @param userId 用户ID
+ * @param province 省份
+ * @param subjects 选考科目列表
+ * @param score 高考分数（可选）
+ * @returns Promise<UpdateProfileResponse>
+ */
+export const updateGaokaoInfo = async (
+  userId: string,
+  province: string,
+  subjects: string[],
+  score?: number
+): Promise<UpdateProfileResponse> => {
+  const gaokaoInfo: GaokaoSubject = {
+    province,
+    subjects,
+    ...(score !== undefined && { score }),
+  };
+
+  return updateUserProfile(userId, { gaokaoInfo });
 };

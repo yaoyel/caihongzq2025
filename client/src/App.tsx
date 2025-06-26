@@ -12,11 +12,18 @@ import ChatPage from './pages/chat';
 import AdultQAAssessment from './pages/assessment/qa-adult';
 import UserProfile from './users/UserProfile';
 import Scale168Assessment from './pages/assessment/scale-168';
-import HomeDiscover from './pages/home';
 import AnalysisReport from './pages/report/analysis_report';
 import ProfessColleges from './pages/report/profess_colleges';
 import LoveEnergy from './pages/report/love_energy';
-import { handleWechatCallback } from './config';
+import BasicInfo from './pages/home/basicInfo';
+import MajorList from './pages/major/list';
+import MajorLoveDetail from './pages/major/majorLoveDetail';
+import MajorJobIntro from './pages/major/majorJobIntro';
+import StudyTrait from './pages/major/studyTrait';
+import EduDefault from './pages/educational';
+import Intention from './pages/intention';
+import Volunteer from './pages/volunteer';
+import { handleWechatCallback, getCurrentUser } from './config';
 const App: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -24,7 +31,6 @@ const App: React.FC = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
-    const state = urlParams.get('state');
     const token = localStorage.getItem('new-token');
     const userStr = localStorage.getItem('new-user');
 
@@ -38,6 +44,11 @@ const App: React.FC = () => {
             localStorage.setItem('new-user', JSON.stringify(result.data.user));
 
             console.log('登录成功:', result.data.user);
+            //获取已答题数量
+            const user = await getCurrentUser();
+            if (user.code == 200 && user.data) {
+              localStorage.setItem('scaleAnswerCount', JSON.stringify(user.data.scaleAnswerCount));
+            }
 
             // 从URL参数中获取目标页面，如果没有则默认跳转到home
             const targetPath = urlParams.get('redirect') || urlParams.get('path') || '/default';
@@ -88,10 +99,17 @@ const App: React.FC = () => {
       <Route path="/chat" element={<ChatPage />} />
       <Route path="/assessment/qa-adult" element={<AdultQAAssessment />} />
       <Route path="/profile" element={<UserProfile />} />
-      <Route path="/default" element={<HomeDiscover />} />
       <Route path="/analysisReport" element={<AnalysisReport />} />
       <Route path="/professColleges" element={<ProfessColleges />} />
       <Route path="/loveEnergy" element={<LoveEnergy />} />
+      <Route path="/basicInfo" element={<BasicInfo />} />
+      <Route path="/major/list" element={<MajorList />} />
+      <Route path="/major/majorlovedetail" element={<MajorLoveDetail />} />
+      <Route path="/major/majorjobintro" element={<MajorJobIntro />} />
+      <Route path="/major/studyTrait" element={<StudyTrait />} />
+      <Route path="/educational" element={<EduDefault />} />
+      <Route path="/intention" element={<Intention />} />
+      <Route path="/volunteer" element={<Volunteer />} />
     </Routes>
   );
 };

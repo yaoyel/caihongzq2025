@@ -118,3 +118,18 @@ body {
     padding: 0 12px;
   }
 }
+
+.page-bg {
+  height: calc(100vh - 80px);
+  overflow-y: auto;
+  background: #f7f8fa;
+  display: flex;
+  flex-direction: column;
+}
+.page-bg-hasTop {
+  height: calc(100vh - 120px);
+  overflow-y: auto;
+  background: #f7f8fa;
+  display: flex;
+  flex-direction: column;
+}
