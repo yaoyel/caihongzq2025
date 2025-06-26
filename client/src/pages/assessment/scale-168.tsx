@@ -747,7 +747,7 @@ const Scale168Assessment: React.FC = () => {
   };
 
   const handleComplete = async () => {
-    navigate('/analysisReport');
+    navigate('/major/list');
   };
 
   const findFirstUnansweredCategory = () => {
