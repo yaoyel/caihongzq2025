@@ -28,6 +28,7 @@ import './list.css'; // 可根据需要自定义样式
  */
 const MajorPage: React.FC = () => {
   const scaleAnswerCount = localStorage.getItem('scaleAnswerCount');
+  console.log(scaleAnswerCount, 'scaleAnswerCount');
   const navigator = useNavigate();
   // 原始专业列表数据
   const [originalMajors, setOriginalMajors] = useState<any[]>([]);

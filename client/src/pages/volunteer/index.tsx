@@ -10,6 +10,7 @@ const EducationalPage: React.FC = () => {
     // 页面初始化逻辑
   }, []);
   const scaleAnswerCount = localStorage.getItem('scaleAnswerCount');
+  console.log(scaleAnswerCount, 'scaleAnswerCount');
   if (scaleAnswerCount !== '168') {
     return (
       <>
