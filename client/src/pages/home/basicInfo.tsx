@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import top from '../../public/basic_info_top.png';
 import { EnvironmentOutlined } from '@ant-design/icons';
 import { Picker, Dialog } from 'antd-mobile';
-import { updateUserProfile } from '../../config';
+import { updateUserProfile, getCurrentUser } from '../../config';
 /**
  * 高考志愿信息完善页面
  * 严格按照设计图尺寸、字体、间距等实现
@@ -80,9 +80,35 @@ const BasicInfo: React.FC = () => {
   const [score, setScore] = useState('');
   const [rank, setRank] = useState('');
   const [showProvincePicker, setShowProvincePicker] = useState(false);
+  const userStr = localStorage.getItem('new-user');
+  console.log(userStr);
+
+  useEffect(() => {
+    const getUserInfo = async () => {
+      const user = await getCurrentUser();
+      if (user.code == 200 && user.data) {
+        if (user.data.province) {
+          setProvince(user.data.province);
+        }
+        if (user.data.preferredSubjects) {
+          setFirstSubject(user.data.preferredSubjects);
+        }
+        if (user.data.secondarySubjects) {
+          setSecondSubject(user.data.secondarySubjects.split(','));
+        }
+        if (user.data.score) {
+          setScore(user.data.score);
+        }
+        if (user.data.rank) {
+          setRank(user.data.rank);
+        }
+      }
+    };
+    getUserInfo();
+  }, []);
 
   const updateProfile = async () => {
-    const userStr = localStorage.getItem('new-user');
+    let firstSubjectTemp = firstSubject;
     if (!userStr) {
       return;
     }
@@ -115,7 +141,7 @@ const BasicInfo: React.FC = () => {
         });
         return;
       }
-      setFirstSubject('综合');
+      firstSubjectTemp = '综合';
     } else if (province === '新疆' || province === '西藏') {
       if (firstSubject === '') {
         Dialog.alert({
@@ -150,7 +176,7 @@ const BasicInfo: React.FC = () => {
     try {
       const gaokaoConfigResponse = await updateUserProfile(userId, {
         province: province,
-        preferredSubjects: firstSubject,
+        preferredSubjects: firstSubjectTemp,
         secondarySubjects: secondSubject.join(','),
         score: Number(score),
         rank: Number(rank),

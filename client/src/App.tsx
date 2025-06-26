@@ -49,7 +49,7 @@ const App: React.FC = () => {
             if (user.code == 200 && user.data) {
               localStorage.setItem('scaleAnswerCount', JSON.stringify(user.data.scaleAnswerCount));
             }
-
+            console.log(localStorage.getItem('scaleAnswerCount'));
             // 从URL参数中获取目标页面，如果没有则默认跳转到home
             const targetPath = urlParams.get('redirect') || urlParams.get('path') || '/default';
             navigate(targetPath);
