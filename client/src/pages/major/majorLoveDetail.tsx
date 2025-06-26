@@ -172,7 +172,7 @@ const MajorLoveDetail: React.FC = () => {
                 }
               />
               <CardItem
-                text="3.学长学姐说"
+                text="3.学长说"
                 onClick={() =>
                   navigator(
                     `/major/majorjobintro?type=major&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
@@ -266,12 +266,9 @@ const MajorLoveDetail: React.FC = () => {
               <CardItem
                 text="3.（-5%）到（-15%）位次院校"
                 onClick={() => {
-                  Dialog.alert({
-                    content: '功能正在开发中，敬请期待',
-                    onConfirm: () => {
-                      navigator('/major/list');
-                    },
-                  });
+                  navigator(
+                    `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                  );
                 }}
               />
             </div>

@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Card, Modal } from 'antd';
+import Top from '../comm/top';
 import BottomNav from '../comm/bottom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Radio, Space } from 'antd-mobile';
@@ -8,12 +9,11 @@ import { CheckCircleFill } from 'antd-mobile-icons';
 import { getMajorDetail, getScalesByElementsWithAnswers } from '../../config';
 import trait_icon from '../../public/trait_icon.png';
 import './list.css'; // 假设复用专业列表样式，可根据需要自定义
-import Top from '../comm/top';
+
 import { color } from 'echarts';
 
-const userStr: any = window.localStorage.getItem('user') || '{}';
-
 const StudyTrait: React.FC = () => {
+  const userStr = localStorage.getItem('new-user');
   const [searchParams] = useSearchParams();
   const navigator = useNavigate();
   const [selectedModal, setSelectedModal] = useState<string | null>(null);
@@ -60,7 +60,7 @@ const StudyTrait: React.FC = () => {
               const user = JSON.parse(userStr);
               const scaleResponse = await getScalesByElementsWithAnswers(
                 ids,
-                user.id ?? user.data.id
+                user?.id ?? user?.data?.id
               );
               if (scaleResponse && scaleResponse.code === 200) {
                 const listTemp: any[] = [];
@@ -161,7 +161,7 @@ const StudyTrait: React.FC = () => {
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 40 }}>
       <Top title={`${majorCode ?? ''}${majorName ?? ''}`} onBack={() => navigator(-1)} />
-      <div className="bg-[#f7f7fa] flex justify-center items-start p-3">
+      <div className="bg-[#f7f7fa] flex flex-col justify-center items-start p-3">
         {/* 页面主卡片 */}
         <Card className="rounded-2xl w-full max-w-xl shadow" bodyStyle={{ padding: '24px 16px' }}>
           {/* 页面标题 */}
@@ -213,7 +213,7 @@ const StudyTrait: React.FC = () => {
                     <div className="mb-1">
                       <span className="text-blue-600 flex items-center font-medium">
                         <CheckCircleFill className="mr-2" />
-                        {majorType === 'yanxue' ? '特质状态' : '维度状态'}
+                        维度状态
                       </span>
                       <div className="text-gray-700 text-sm mt-1">
                         <div>

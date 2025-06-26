@@ -11,7 +11,7 @@ const EducationalPage: React.FC = () => {
   }, []);
   const scaleAnswerCount = localStorage.getItem('scaleAnswerCount');
   console.log(scaleAnswerCount, 'scaleAnswerCount');
-  if (scaleAnswerCount !== '168') {
+  if (!scaleAnswerCount || (scaleAnswerCount && Number(scaleAnswerCount) !== 168)) {
     return (
       <>
         <StartWelcomePage />

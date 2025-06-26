@@ -235,7 +235,7 @@ const MajorPage: React.FC = () => {
       }
 
       // 支付金额：88元 = 8800分
-      const amount = 1;
+      const amount = 100;
 
       // 调用微信支付
       const paySuccess = await callWechatPay(openid, amount);
@@ -318,7 +318,7 @@ const MajorPage: React.FC = () => {
     if (!name) return '';
     return name.length > 6 ? name.substring(0, 6) + '...' : name;
   };
-  if (scaleAnswerCount !== '168') {
+  if (!scaleAnswerCount || (scaleAnswerCount && Number(scaleAnswerCount) !== 168)) {
     return (
       <>
         <StartWelcomePage />
@@ -585,7 +585,7 @@ const MajorPage: React.FC = () => {
       </div>
 
       {/* 查看更多按钮（支付相关） */}
-      {majors.length <= 5 && (
+      {majors.length <= 10 && (
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32 }}>
           <Button
             type="primary"
@@ -617,7 +617,7 @@ const MajorPage: React.FC = () => {
         <div className="py-6">
           <div className="text-center mb-6">
             <div className="text-2xl font-semibold text-gray-800 mb-2">亲友特惠</div>
-            <div className="text-4xl font-bold text-red-500 mb-2">¥0.01</div>
+            <div className="text-4xl font-bold text-red-500 mb-2">¥1</div>
             <div className="text-gray-500 text-sm mb-4">原价 ¥298</div>
             <div className="text-sm text-gray-600 mb-4">解锁全部 845 个本科专业热爱能量值</div>
           </div>

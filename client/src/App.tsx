@@ -23,6 +23,8 @@ import StudyTrait from './pages/major/studyTrait';
 import EduDefault from './pages/educational';
 import Intention from './pages/intention';
 import Volunteer from './pages/volunteer';
+import MajorSchools from './pages/major/majorSchools';
+import SchoolDetail from './pages/major/schooldetail';
 import { handleWechatCallback, getCurrentUser } from './config';
 const App: React.FC = () => {
   const navigate = useNavigate();
@@ -110,6 +112,8 @@ const App: React.FC = () => {
       <Route path="/educational" element={<EduDefault />} />
       <Route path="/intention" element={<Intention />} />
       <Route path="/volunteer" element={<Volunteer />} />
+      <Route path="/major/majorSchools" element={<MajorSchools />} />
+      <Route path="/major/schooldetail" element={<SchoolDetail />} />
     </Routes>
   );
 };
