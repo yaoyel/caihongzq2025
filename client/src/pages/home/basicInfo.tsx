@@ -183,7 +183,7 @@ const BasicInfo: React.FC = () => {
       });
       if (gaokaoConfigResponse && gaokaoConfigResponse.code === 200) {
         console.log(scaleAnswerCount, 'scaleAnswerCount');
-        if (!scaleAnswerCount || (scaleAnswerCount && Number(scaleAnswerCount) !== 168)) {
+        if (scaleAnswerCount && Number(scaleAnswerCount) !== 168) {
           Dialog.alert({
             content: '考生信息更新成功，请填写自评问卷',
             confirmText: '填写自评问卷',
