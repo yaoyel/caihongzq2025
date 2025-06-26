@@ -213,7 +213,7 @@ const StudyTrait: React.FC = () => {
                     <div className="mb-1">
                       <span className="text-blue-600 flex items-center font-medium">
                         <CheckCircleFill className="mr-2" />
-                        {majorType === 'yanxue' ? '特质状态' : '维度状态'}
+                        维度状态
                       </span>
                       <div className="text-gray-700 text-sm mt-1">
                         <div>

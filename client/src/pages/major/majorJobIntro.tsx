@@ -155,7 +155,7 @@ const MajorJobIntro: React.FC = () => {
             {/* 学长学姐说 */}
             <div>
               <div style={sectionTitleStyle}>
-                {majorType === 'major' ? '学长学姐说' : '发展前景'}
+                {majorType === 'major' ? '学长说' : '发展前景'}
               </div>
               <div
                 style={{ marginTop: 12 }}

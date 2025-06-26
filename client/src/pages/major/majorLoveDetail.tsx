@@ -172,7 +172,7 @@ const MajorLoveDetail: React.FC = () => {
                 }
               />
               <CardItem
-                text="3.学长学姐说"
+                text="3.学长说"
                 onClick={() =>
                   navigator(
                     `/major/majorjobintro?type=major&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
