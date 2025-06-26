@@ -446,24 +446,29 @@ export const callWechatPay = async (openid: string, amount: number): Promise<boo
     // 创建支付订单
     const payResponse = await createWechatPayOrder(openid, amount);
     console.log('payResponse', payResponse);
-    if (!payResponse.success) {
+    if (payResponse && payResponse.code !== 200) {
       throw new Error(payResponse.message);
     }
 
     // 调用微信支付
     return new Promise((resolve, reject) => {
-      console.log('payResponse', payResponse.data);
-      if (typeof window !== 'undefined' && window.WeixinJSBridge && payResponse.data) {
-        console.log('调起支付', payResponse.data);
+      console.log('payResponse', payResponse.data.data);
+      if (
+        typeof window !== 'undefined' &&
+        window.WeixinJSBridge &&
+        payResponse.data &&
+        payResponse.data.data
+      ) {
+        console.log('调起支付', payResponse.data.data);
         window.WeixinJSBridge.invoke(
           'getBrandWCPayRequest',
           {
             appId: 'wxe85481f908a50ffc',
-            timeStamp: payResponse.data.timeStamp,
-            nonceStr: payResponse.data.nonceStr,
-            package: payResponse.data.package,
-            signType: payResponse.data.signType,
-            paySign: payResponse.data.paySign,
+            timeStamp: payResponse.data.data.timeStamp,
+            nonceStr: payResponse.data.data.nonceStr,
+            package: payResponse.data.data.package,
+            signType: payResponse.data.data.signType,
+            paySign: payResponse.data.data.paySign,
           },
           function (res: any) {
             if (res.err_msg === 'get_brand_wcpay_request:ok') {
