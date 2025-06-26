@@ -12,9 +12,8 @@ import './list.css'; // 假设复用专业列表样式，可根据需要自定�
 
 import { color } from 'echarts';
 
-const userStr: any = window.localStorage.getItem('user') || '{}';
-
 const StudyTrait: React.FC = () => {
+  const userStr = localStorage.getItem('new-user');
   const [searchParams] = useSearchParams();
   const navigator = useNavigate();
   const [selectedModal, setSelectedModal] = useState<string | null>(null);
@@ -61,7 +60,7 @@ const StudyTrait: React.FC = () => {
               const user = JSON.parse(userStr);
               const scaleResponse = await getScalesByElementsWithAnswers(
                 ids,
-                user.id ?? user.data.id
+                user?.id ?? user?.data?.id
               );
               if (scaleResponse && scaleResponse.code === 200) {
                 const listTemp: any[] = [];
