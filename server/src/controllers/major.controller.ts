@@ -108,12 +108,12 @@ export class MajorController {
       // 如果没有找到数据
       if (!rawData) {
         return {};
-      }
-
-      console.log(PROVINCE_CODE_TO_NAME[user!.province || '11'],user!.preferredSubjects);
+      } 
       
       // 根据用户信息，从redis中查询专业对应的分数
-      const historyScore = await this.majorRedisService.getMajorScores(code, PROVINCE_CODE_TO_NAME[user!.province || '11'], user!.preferredSubjects || '综合', user.enrollType || '本科批');
+      const historyScore = await this.majorRedisService.getMajorScores(code, user!.province || '北京', user!.preferredSubjects || '综合');
+
+      console.log(historyScore);
 
       // 将历年分数数据添加到对应的学校对象中
       if (Array.isArray(rawData.schools) && Array.isArray(historyScore)) {
@@ -250,6 +250,7 @@ export class MajorController {
         firstSubject,
         secondSubjectsArray
       );
+
 
       // 获取专业详细信息并组装结果
       const majorDetails = await Promise.all(
