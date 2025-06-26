@@ -82,7 +82,7 @@ const BasicInfo: React.FC = () => {
   const [showProvincePicker, setShowProvincePicker] = useState(false);
   const userStr = localStorage.getItem('new-user');
   console.log(userStr);
-
+  const scaleAnswerCount = localStorage.getItem('scaleAnswerCount');
   useEffect(() => {
     const getUserInfo = async () => {
       const user = await getCurrentUser();
@@ -182,13 +182,28 @@ const BasicInfo: React.FC = () => {
         rank: Number(rank),
       });
       if (gaokaoConfigResponse && gaokaoConfigResponse.code === 200) {
-        Dialog.alert({
-          content: '考生信息更新成功，请填写自评问卷/查看专业',
-          confirmText: '去填写自评问卷/查看专业',
-          onConfirm: () => {
-            navigator('/major/list');
-          },
-        });
+        console.log(scaleAnswerCount, 'scaleAnswerCount');
+        if (!scaleAnswerCount || (scaleAnswerCount && Number(scaleAnswerCount) !== 168)) {
+          Dialog.alert({
+            content: '考生信息更新成功，请填写自评问卷',
+            confirmText: '填写自评问卷',
+            onConfirm: () => {
+              navigator('/major/list');
+            },
+          });
+        } else {
+          Dialog.confirm({
+            content: '考生信息更新成功',
+            confirmText: '重做自评',
+            cancelText: '查看专业报告',
+            onConfirm: () => {
+              navigator('/assessment/scale168');
+            },
+            onCancel: () => {
+              navigator('/major/list');
+            },
+          });
+        }
       }
     } catch (error) {
       console.error('考生信息更新失败:', error);
@@ -229,9 +244,12 @@ const BasicInfo: React.FC = () => {
   const handleSecondSubjectSelect = (value: string) => {
     setSecondSubject((prev) => {
       if (prev.includes(value)) {
+        console.log(prev, 'prev');
         // 如果已选中，则取消选择
         return prev.filter((item) => item !== value);
       } else {
+        console.log(prev.length, 'prev');
+        console.log(prev, 'value');
         // 如果未选中且未达到2个，则添加
         if (prev.length < 2) {
           return [...prev, value];
@@ -503,6 +521,10 @@ const BasicInfo: React.FC = () => {
             setProvince(String(value[0]));
           }
           setShowProvincePicker(false);
+          setFirstSubject('');
+          setSecondSubject([]);
+          setScore('');
+          setRank('');
         }}
         title="选择省份"
       />

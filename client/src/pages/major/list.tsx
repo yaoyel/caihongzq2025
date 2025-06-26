@@ -318,7 +318,7 @@ const MajorPage: React.FC = () => {
     if (!name) return '';
     return name.length > 6 ? name.substring(0, 6) + '...' : name;
   };
-  if (scaleAnswerCount && Number(scaleAnswerCount) !== 168) {
+  if (!scaleAnswerCount || (scaleAnswerCount && Number(scaleAnswerCount) !== 168)) {
     return (
       <>
         <StartWelcomePage />
