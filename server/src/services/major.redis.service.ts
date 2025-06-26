@@ -91,12 +91,13 @@ export class MajorRedisService {
   ): Promise<MajorHistoryScore[]> {
     try {
       // 构建基础键名
-      let redisKey = `major_scores:${code}_${province}_${subjectType}`;
+      let redisKey = `major_scores:${code}_${province}_${subjectType}`; 
       
       if (batch) {
         redisKey += `_${batch}`;
         // 精确匹配一个批次
         const data = await this.redisClient.zRange(redisKey, start, end, { REV: true });
+        console.log(data);
         return data.map(item => JSON.parse(item));
       } else {
         // 如果没有指定批次，查找所有匹配的键
@@ -111,7 +112,8 @@ export class MajorRedisService {
               batch: key.split('_').pop() // 添加批次信息
             }));
           })
-        );
+        ); 
+      
         
         // 合并所有批次的数据，并按2024年分数排序
         return allData

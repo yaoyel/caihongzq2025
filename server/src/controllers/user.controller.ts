@@ -47,7 +47,7 @@ export class UserController {
                 openid: user.openid,
                 nickname: user.nickname,
                 avatarUrl: user.avatarUrl,
-                provinceId: user.provinceId,
+                province: user.province,
                 score: user.score,
                 preferredSubjects: user.preferredSubjects,
                 secondarySubjects: user.secondarySubjects,
@@ -114,7 +114,7 @@ export class UserController {
     async updateProfile(
         @Param('id') id: number,
         @Body() updateData: {
-            provinceId?: number;
+            province?: string;
             preferredSubjects?: string;
             secondarySubjects?: string;
             enrollType?: string;
@@ -124,8 +124,8 @@ export class UserController {
     ) {
         try { 
             // 验证省份ID
-            if (updateData.provinceId && (updateData.provinceId < 11 || updateData.provinceId > 65)) {
-                 throw new Error('无效的省份ID');
+            if (!updateData.province) {
+                 throw new Error('无效的省份');
             }
 
             // 验证首选科目

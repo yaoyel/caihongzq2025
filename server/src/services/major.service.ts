@@ -134,7 +134,7 @@ export class MajorScoreService {
         ds.tiaozhan_deduction as "tiaozhanDeduction",
         ROUND(
           CAST(
-            ss.base_score - COALESCE(ds.tiaozhan_deduction, 0) - COALESCE(ds.yanxue_deduction, 0)
+            ss.base_score - ((COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0)) / 2)
           AS NUMERIC),
           2
         )::NUMERIC as score,
@@ -241,7 +241,7 @@ export class MajorScoreService {
         ss.major_code as "majorCode",
         ROUND(
           CAST(
-            ss.base_score - COALESCE(ds.tiaozhan_deduction, 0) - COALESCE(ds.yanxue_deduction, 0)
+                  ss.base_score - ((COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0)) / 2)
           AS NUMERIC),
           2
         )::NUMERIC as score
@@ -343,7 +343,7 @@ export class MajorScoreService {
         ss.edu_level as "eduLevel",
         ROUND(
           CAST(
-            ss.base_score - COALESCE(ds.tiaozhan_deduction, 0) - COALESCE(ds.yanxue_deduction, 0)
+            ss.base_score - ((COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0)) / 2)
           AS NUMERIC),
           2
         )::NUMERIC as score

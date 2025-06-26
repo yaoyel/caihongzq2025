@@ -20,8 +20,8 @@ export class User {
     @Column({ length: 100, unique: true, name: 'unionid', nullable: true })
     unionid?: string;
 
-    @Column({ nullable: true, name: 'province_id', type: 'int' })
-    provinceId?: number;
+    @Column({ nullable: true, name: 'province', type: 'varchar' })
+    province?: string;
 
     @Column({ nullable: true, name: 'score', type: 'int' })
     score?: number;

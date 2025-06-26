@@ -118,7 +118,7 @@ export class UserService {
     async updateProfile(
         id: number,
         updateData: {
-            provinceId?: number;
+            province?: string;
             preferredSubjects?: string;
             secondarySubjects?: string;
             enrollType?: string;
@@ -136,8 +136,8 @@ export class UserService {
             }
 
             // 只更新提供的字段
-            if (updateData.provinceId !== undefined) {
-                user.provinceId = updateData.provinceId;
+            if (updateData.province !== undefined) {
+                user.province = updateData.province;
             }
             if (updateData.preferredSubjects !== undefined) {
                 user.preferredSubjects = updateData.preferredSubjects;

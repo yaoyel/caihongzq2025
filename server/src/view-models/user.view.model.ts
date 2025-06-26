@@ -26,7 +26,7 @@ export class UserViewModel {
   /**
    * 省份ID
    */
-  provinceId?: number;
+  province?: string;
 
   /**
    * 分数

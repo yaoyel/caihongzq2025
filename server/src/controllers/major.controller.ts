@@ -110,8 +110,10 @@ export class MajorController {
         return {};
       }
 
+      console.log(PROVINCE_CODE_TO_NAME[user!.province || '11'],user!.preferredSubjects);
+      
       // 根据用户信息，从redis中查询专业对应的分数
-      const historyScore = await this.majorRedisService.getMajorScores(code, PROVINCE_CODE_TO_NAME[user!.provinceId || '11'], user!.preferredSubjects || '综合', user.enrollType || '本科批');
+      const historyScore = await this.majorRedisService.getMajorScores(code, PROVINCE_CODE_TO_NAME[user!.province || '11'], user!.preferredSubjects || '综合', user.enrollType || '本科批');
 
       // 将历年分数数据添加到对应的学校对象中
       if (Array.isArray(rawData.schools) && Array.isArray(historyScore)) {
@@ -161,13 +163,12 @@ export class MajorController {
         throw new Error('用户不存在');
       }
 
-      const {provinceId, preferredSubjects, secondarySubjects} = user;
-      const provinceName = PROVINCE_CODE_TO_NAME[provinceId || '11'];
+      const {province, preferredSubjects, secondarySubjects} = user; 
       const firstSubject = preferredSubjects || '综合';      
       // 获取选科匹配的专业代码列表
       const secondSubjectsArray = (secondarySubjects || '').split(',').filter(Boolean);
       const matchingMajorCodes = await this.majorRedisService.getMatchingStats(
-        provinceName,
+        province || '北京',
         firstSubject,
         secondSubjectsArray
       );

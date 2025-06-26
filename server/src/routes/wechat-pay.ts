@@ -94,7 +94,7 @@ export function payRouter(): Router {
       if (!amount) throw new Error("The amount parameter is required.");
 
       const params: IWxPayParams = {
-        description: "智愿逆袭",
+        description: "逆袭智愿",
         out_trade_no: customAlphabet("1234567890", 32)(),
         appid: payEnv.WECHAT_APPID,
         notify_url: payEnv.WX_PAY_NOTIFY_URL,

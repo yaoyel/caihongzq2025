@@ -21,14 +21,15 @@ export enum SubjectType {
  * 科目选择配置接口
  */
 export interface SubjectConfig {
-  mode: GaoKaoMode;           // 高考模式
-  primarySubjects?: {         // 首选科目
-    count: number;           // 需要选择的数量
-    subjects: string[];      // 可选的科目列表
+  province: string;          // 省份名称
+  mode: GaoKaoMode;         // 高考模式
+  primarySubjects?: {       // 首选科目
+    count: number;          // 需要选择的数量
+    subjects: string[];     // 可选的科目列表
   };
-  secondarySubjects?: {       // 次选科目
-    count: number;           // 需要选择的数量
-    subjects: string[];      // 可选的科目列表
+  secondarySubjects?: {     // 次选科目
+    count: number;          // 需要选择的数量
+    subjects: string[];     // 可选的科目列表
   };
   traditionalSubjects?: string[]; // 传统文理科选择
 }
@@ -36,9 +37,10 @@ export interface SubjectConfig {
 /**
  * 各省份高考模式和科目选择配置
  */
-export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
+export const GAOKAO_SUBJECT_CONFIG: SubjectConfig[] = [
   // 3+3模式省份
-  '北京': {
+  {
+    province: '北京',
     mode: GaoKaoMode.MODE_3_3,
     primarySubjects: {
       count: 0,
@@ -49,7 +51,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['物理', '化学', '生物', '历史', '政治', '地理']
     }
   },
-  '上海': {
+  {
+    province: '上海',
     mode: GaoKaoMode.MODE_3_3,
     primarySubjects: {
       count: 0,
@@ -60,18 +63,20 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['物理', '化学', '生物', '历史', '政治', '地理']
     }
   },
-  '浙江': {
+  {
+    province: '浙江',
     mode: GaoKaoMode.MODE_3_4,
     primarySubjects: {
-        count: 0,
-        subjects: ['综合']
-      },
+      count: 0,
+      subjects: ['综合']
+    },
     secondarySubjects: {
       count: 4,
       subjects: ['物理', '化学', '生物', '历史', '政治', '地理', '技术']
     }
   },
-  '山东': {
+  {
+    province: '山东',
     mode: GaoKaoMode.MODE_3_3,
     primarySubjects: {
       count: 0,
@@ -82,7 +87,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['物理', '化学', '生物', '历史', '政治', '地理']
     }
   },
-  '天津': {
+  {
+    province: '天津',
     mode: GaoKaoMode.MODE_3_3,
     primarySubjects: {
       count: 0,
@@ -93,7 +99,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['物理', '化学', '生物', '历史', '政治', '地理']
     }
   },
-  '海南': {
+  {
+    province: '海南',
     mode: GaoKaoMode.MODE_3_3,
     primarySubjects: {
       count: 0,
@@ -106,7 +113,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
   },
 
   // 3+1+2模式省份
-  '河北': {
+  {
+    province: '河北',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -117,7 +125,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '辽宁': {
+  {
+    province: '辽宁',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -128,7 +137,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '江苏': {
+  {
+    province: '江苏',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -139,7 +149,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '福建': {
+  {
+    province: '福建',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -150,7 +161,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '湖北': {
+  {
+    province: '湖北',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -161,7 +173,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '湖南': {
+  {
+    province: '湖南',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -172,7 +185,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '广东': {
+  {
+    province: '广东',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -183,7 +197,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '重庆': {
+  {
+    province: '重庆',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -194,7 +209,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '甘肃': {
+  {
+    province: '甘肃',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -205,7 +221,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '黑龙江': {
+  {
+    province: '黑龙江',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -216,7 +233,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '吉林': {
+  {
+    province: '吉林',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -227,7 +245,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '安徽': {
+  {
+    province: '安徽',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -238,7 +257,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '江西': {
+  {
+    province: '江西',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -249,7 +269,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '贵州': {
+  {
+    province: '贵州',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -260,7 +281,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '广西': {
+  {
+    province: '广西',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -271,7 +293,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '山西': {
+  {
+    province: '山西',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -282,7 +305,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '内蒙古': {
+  {
+    province: '内蒙古',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -293,7 +317,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '河南': {
+  {
+    province: '河南',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -304,7 +329,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '四川': {
+  {
+    province: '四川',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -315,7 +341,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '云南': {
+  {
+    province: '云南',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -326,7 +353,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '陕西': {
+  {
+    province: '陕西',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -337,7 +365,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '青海': {
+  {
+    province: '青海',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -348,7 +377,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['化学', '生物', '政治', '地理']
     }
   },
-  '宁夏': {
+  {
+    province: '宁夏',
     mode: GaoKaoMode.MODE_3_1_2,
     primarySubjects: {
       count: 1,
@@ -361,7 +391,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
   },
 
   // 传统文理科模式省份
-  '西藏': {
+  {
+    province: '西藏',
     mode: GaoKaoMode.MODE_TRADITIONAL,
     primarySubjects: {
       count: 1,
@@ -372,7 +403,8 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['文科', '理科']
     }
   },
-  '新疆': {
+  {
+    province: '新疆',
     mode: GaoKaoMode.MODE_TRADITIONAL,
     primarySubjects: {
       count: 0,
@@ -383,7 +415,7 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
       subjects: ['文科', '理科']
     }
   }
-};
+];
 
 /**
  * 获取指定省份的高考模式配置
@@ -391,7 +423,7 @@ export const GAOKAO_SUBJECT_CONFIG: { [key: string]: SubjectConfig } = {
  * @returns 该省份的高考模式配置
  */
 export function getProvinceSubjectConfig(province: string): SubjectConfig | undefined {
-  return GAOKAO_SUBJECT_CONFIG[province];
+  return GAOKAO_SUBJECT_CONFIG.find(config => config.province === province);
 }
 
 /**
@@ -400,9 +432,9 @@ export function getProvinceSubjectConfig(province: string): SubjectConfig | unde
  * @returns 采用该模式的省份列表
  */
 export function getProvincesByMode(mode: GaoKaoMode): string[] {
-  return Object.entries(GAOKAO_SUBJECT_CONFIG)
-    .filter(([_, config]) => config.mode === mode)
-    .map(([province]) => province);
+  return GAOKAO_SUBJECT_CONFIG
+    .filter(config => config.mode === mode)
+    .map(config => config.province);
 }
 
 /**
@@ -415,7 +447,7 @@ export function validateSubjectSelection(
   province: string,
   subjects: string[]
 ): boolean {
-  const config = GAOKAO_SUBJECT_CONFIG[province];
+  const config = GAOKAO_SUBJECT_CONFIG.find(config => config.province === province);
   if (!config) return false;
 
   switch (config.mode) {
