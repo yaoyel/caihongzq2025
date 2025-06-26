@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Card, Modal } from 'antd';
+import Top from '../comm/top';
 import BottomNav from '../comm/bottom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Radio, Space } from 'antd-mobile';
@@ -8,7 +9,7 @@ import { CheckCircleFill } from 'antd-mobile-icons';
 import { getMajorDetail, getScalesByElementsWithAnswers } from '../../config';
 import trait_icon from '../../public/trait_icon.png';
 import './list.css'; // 假设复用专业列表样式，可根据需要自定义
-import Top from '../comm/top';
+
 import { color } from 'echarts';
 
 const userStr: any = window.localStorage.getItem('user') || '{}';

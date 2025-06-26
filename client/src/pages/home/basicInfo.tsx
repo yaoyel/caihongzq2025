@@ -183,8 +183,8 @@ const BasicInfo: React.FC = () => {
       });
       if (gaokaoConfigResponse && gaokaoConfigResponse.code === 200) {
         Dialog.alert({
-          content: '考生信息更新成功，请填写自评问卷',
-          confirmText: '去填写自评问卷',
+          content: '考生信息更新成功，请填写自评问卷/查看专业',
+          confirmText: '去填写自评问卷/查看专业',
           onConfirm: () => {
             navigator('/major/list');
           },
