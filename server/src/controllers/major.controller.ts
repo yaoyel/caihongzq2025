@@ -25,6 +25,17 @@ interface MajorMatchResult {
 }
 
 /**
+ * 带排名信息的学校接口
+ */
+interface SchoolWithRank extends SchoolViewModel {
+  id: number;
+  historyScores?: any[];
+  averageRank?: number;
+  rankDiffPercentage?: number;
+  group?: number;
+}
+
+/**
  * 专业信息控制器
  */ 
 @JsonController('/majors')
@@ -108,23 +119,72 @@ export class MajorController {
       // 如果没有找到数据
       if (!rawData) {
         return {};
-      } 
+      }  
       
       // 根据用户信息，从redis中查询专业对应的分数
-      const historyScore = await this.majorRedisService.getMajorScores(code, user!.province || '北京', user!.preferredSubjects || '综合');
+      const historyScore = await this.majorRedisService.getMajorScores(code, user!.province || '北京', user!.preferredSubjects || '综合', user!.secondarySubjects || '');
 
-      console.log(historyScore);
+      const rank = user.rank;
 
-      // 将历年分数数据添加到对应的学校对象中
+      // 将历年分数数据添加到对应的学校对象中，并按位次分组排序
+      if (!rank) {
+        console.warn('用户位次信息缺失，将按照默认顺序排序');
+        // 转换为视图模型并返回
+        const defaultViewModel = toMajorDetailViewModel(rawData);
+        if (!defaultViewModel) {
+          throw new Error('专业信息格式不正确');
+        }
+        return defaultViewModel;
+      }
+      
       if (Array.isArray(rawData.schools) && Array.isArray(historyScore)) {
         rawData.schools = rawData.schools.map((school: { id: number } & SchoolViewModel) => {
           const schoolScores = historyScore.filter(score => score.schoolMajorId === school.id);
+          const avgRank = this.majorRedisService.getAverageRank(
+            schoolScores.length > 0 ? schoolScores[0].historyScore as unknown as string : null
+          );
+          
+          // 计算与用户位次的差异百分比
+          const rankDiffPercentage = avgRank === 0 ? 0 : ((avgRank - rank) / rank) * 100;
+          
+          // 确定分组
+          let group = 0; // 默认组（无分数或差异过大）
+          if (avgRank > 0) { // 只对有位次的学校进行分组
+            if (rankDiffPercentage > 5 && rankDiffPercentage <= 10) {
+              group = 1; // 5%到10%
+            } else if (rankDiffPercentage >= -5 && rankDiffPercentage <= 5) {
+              group = 2; // -5%到5%（最匹配）
+            } else if (rankDiffPercentage >= -15 && rankDiffPercentage < -5) {
+              group = 3; // -5%到-15%
+            }
+          }
+          
           return {
             ...school,
-            historyScores: schoolScores
+            historyScores: schoolScores,
+            averageRank: avgRank,
+            rankDiffPercentage,
+            group
           };
+        }).sort((a: SchoolWithRank, b: SchoolWithRank) => {
+          // 首先按分组排序（组2最优先，然后是组3，组1，最后是组0）
+          const groupOrder = [2, 3, 1, 0];
+          const groupDiff = groupOrder.indexOf(a.group || 0) - groupOrder.indexOf(b.group || 0);
+          if (groupDiff !== 0) return groupDiff;
+          
+          // 在同一分组内，按位次差异的绝对值排序（差异越小越靠前）
+          if (a.averageRank && b.averageRank) {
+            return Math.abs(a.rankDiffPercentage || 0) - Math.abs(b.rankDiffPercentage || 0);
+          }
+          
+          // 如果一个有位次一个没有，有位次的排前面
+          if (a.averageRank && !b.averageRank) return -1;
+          if (!a.averageRank && b.averageRank) return 1;
+          
+          return 0;
         });
       }
+      console.log(rawData);
       
       // 转换为视图模型
       const viewModel = toMajorDetailViewModel(rawData);

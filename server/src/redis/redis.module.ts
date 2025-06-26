@@ -1,7 +1,7 @@
 // 引入 redis 和 dotenv 包
 import { createClient, RedisClientType } from 'redis';
 import * as dotenv from 'dotenv';
-import * as path from 'path';
+import * as path from 'path'; 
 
 // 加载 .env 文件中的环境变量
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -50,20 +50,32 @@ class RedisModule {
 
   /**
    * 生成所有可能的选科组合
+   * @param firstSubject 首选科目
    * @param subjects 选科数组
    * @returns 所有可能的组合
    */
-  private static generateAllCombinations(subjects: string[]): string[] {
+  private static generateAllCombinations(firstSubject: string, subjects: string[]): string[] {
     const combinations: string[] = [];
     const n = subjects.length;
 
+    // 如果subjects为空，直接返回不限组合
+    if (n === 0) {
+      return [`${firstSubject}_不限`];
+    }
+
     // 单科
-    subjects.forEach(subject => combinations.push(subject));
+    subjects.forEach(subject => {
+      if (subject !== firstSubject) {  // 避免自己组合自己
+        combinations.push(`${firstSubject}_${subject}`);
+      }
+    });
 
     // 双科组合
     for (let i = 0; i < n - 1; i++) {
       for (let j = i + 1; j < n; j++) {
-        combinations.push(`${subjects[i]}_${subjects[j]}`);
+        if (subjects[i] !== firstSubject && subjects[j] !== firstSubject) {  // 避免自己组合自己
+          combinations.push(`${firstSubject}_${subjects[i]}_${subjects[j]}`);
+        }
       }
     }
 
@@ -72,18 +84,32 @@ class RedisModule {
       for (let i = 0; i < n - 2; i++) {
         for (let j = i + 1; j < n - 1; j++) {
           for (let k = j + 1; k < n; k++) {
-            combinations.push(`${subjects[i]}_${subjects[j]}_${subjects[k]}`);
+            if (subjects[i] !== firstSubject && subjects[j] !== firstSubject && subjects[k] !== firstSubject) {
+              combinations.push(`${firstSubject}_${subjects[i]}_${subjects[j]}_${subjects[k]}`);
+            }
           }
         }
       }
     }
 
-    // 添加"或"的关系
-    if (subjects.includes('化学') && subjects.includes('生物')) {
-      combinations.push('化学或生物');
+    // 添加最后两个科目的"或"组合
+    if (n >= 2) {
+      const lastTwo = subjects.slice(-2);
+      if (!lastTwo.includes(firstSubject)) {
+        combinations.push(`${firstSubject}_${lastTwo[0]}或${lastTwo[1]}`);
+      }
     }
 
+    // 添加"不限"组合
+    combinations.push(`${firstSubject}_不限`);
+
     return combinations;
+
+    // 验证生成的组合是否在配置的有效组合中
+    // return combinations.filter(combo => {
+    //   const [subject, pattern] = combo.split(':');
+    //   return isValidCombination(subject, pattern);
+    // });
   }
 
   /**
@@ -93,20 +119,11 @@ class RedisModule {
    * @returns 可能匹配的模式数组
    */
   private static generateMatchingPatterns(firstSubject: string, secondSubjects: string[]): string[] {
-    const patterns: string[] = [];
-    
     // 生成所有可能的组合
-    const combinations = RedisModule.generateAllCombinations(secondSubjects);
+    const patterns = RedisModule.generateAllCombinations(firstSubject, secondSubjects);
     
-    // 不限匹配
-    patterns.push(`${firstSubject}:不限`);
-    patterns.push(`综合:不限`);
-    
-    // 完全匹配（保持原始顺序）
-    combinations.forEach(combo => {
-      patterns.push(`${firstSubject}:${combo}`);
-      patterns.push(`综合:${combo}`);
-    });
+    // 添加综合科目的组合
+    // const comprehensivePatterns = RedisModule.generateAllCombinations('综合', secondSubjects);
     
     return patterns;
   }

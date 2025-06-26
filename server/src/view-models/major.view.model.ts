@@ -161,6 +161,9 @@ export function toMajorDetailViewModel(data: any): MajorDetailViewModel | undefi
       cityName: school.cityName,
       rankingOfRK: school.rankingOfRK,
       rankingOfXYH: school.rankingOfXYH,
+      group:school.group,
+      averageRank:school.averageRank,
+      rankDiffPercentage: school.rankDiffPercentage,
       historyScores: Array.isArray(school.historyScores) 
         ? school.historyScores.map((score: any) => ({
             // schoolMajorId: score.schoolMajorId,
