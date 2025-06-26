@@ -55,6 +55,7 @@ export class UserController {
                 userType: user.userType,
                 age: user.age,
                 gender: user.gender,
+                rank: user.rank,
                 orderCount: user.orderCount,
                 scaleAnswerCount: user.scaleAnswerCount
             };
