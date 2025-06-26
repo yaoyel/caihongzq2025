@@ -59,6 +59,11 @@ export class UserViewModel {
   age: number;
 
   /**
+   * 排名
+   */
+  rank: number;
+
+  /**
    * 性别
    */
   gender: string; 
