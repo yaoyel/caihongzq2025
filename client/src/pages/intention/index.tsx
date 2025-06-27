@@ -58,7 +58,7 @@ const EducationalPage: React.FC = () => {
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-blue-700">
                 <span className="font-medium">预计上线时间：</span>
-                2025年7月1
+                2025年6月底
               </p>
             </div>
           </div>

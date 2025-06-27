@@ -139,27 +139,52 @@ const SchoolDetail: React.FC = () => {
             {/* 热爱专业 */}
             <div style={{ marginBottom: 24 }}>
               <div style={sectionTitleStyle}>热爱专业</div>
-              <div
-                style={{ marginTop: 12 }}
-                onClick={() =>
-                  navigator(
-                    `/major/loveMajorSchool?schoolName=${schoolName}&schoolCode=${schoolCode}`
-                  )
-                }
-              >
-                <div className="flex items-center justify-between  mb-2">
+              <div style={{ marginTop: 12 }}>
+                <div
+                  className="flex items-center justify-between  mb-2"
+                  onClick={() =>
+                    tuijianSchools1.length > 0 &&
+                    navigator(
+                      `/major/loveMajorSchool?schoolName=${schoolName}&schoolCode=${schoolCode}`
+                    )
+                  }
+                >
                   <span>1.-5%到+5%位次专业 {tuijianSchools1.length}个</span>
                   <span className="mr-2">{'>'}</span>
                 </div>
-                <div className=" flex items-center justify-between mb-2">
+                <div
+                  className=" flex items-center justify-between mb-2"
+                  onClick={() =>
+                    tuijianSchools2.length > 0 &&
+                    navigator(
+                      `/major/loveMajorSchool?schoolName=${schoolName}&schoolCode=${schoolCode}`
+                    )
+                  }
+                >
                   <span>2.-15% 到-5%位次专业 {tuijianSchools2.length}个</span>
                   <span className="mr-2">{'>'}</span>
                 </div>
-                <div className=" flex items-center justify-between mb-2">
+                <div
+                  className=" flex items-center justify-between mb-2"
+                  onClick={() =>
+                    tuijianSchools3.length > 0 &&
+                    navigator(
+                      `/major/loveMajorSchool?schoolName=${schoolName}&schoolCode=${schoolCode}`
+                    )
+                  }
+                >
                   <span>3.+5%到+10%位次专业 {tuijianSchools3.length}个</span>
                   <span className="mr-2">{'>'}</span>
                 </div>
-                <div className=" flex items-center justify-between mb-2">
+                <div
+                  className=" flex items-center justify-between mb-2"
+                  onClick={() =>
+                    tuijianSchools4.length > 0 &&
+                    navigator(
+                      `/major/loveMajorSchool?schoolName=${schoolName}&schoolCode=${schoolCode}`
+                    )
+                  }
+                >
                   <span>4.其他位次专业 {tuijianSchools4.length}个</span>
                   <span className="mr-2">{'>'}</span>
                 </div>
