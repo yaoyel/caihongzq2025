@@ -194,13 +194,13 @@ const BasicInfo: React.FC = () => {
         } else {
           Dialog.confirm({
             content: '考生信息更新成功',
-            confirmText: '重做自评',
-            cancelText: '查看专业报告',
+            confirmText: '查看专业报告',
+            cancelText: '重做自评',
             onConfirm: () => {
-              navigator('/assessment/scale168');
+              navigator('/major/list');
             },
             onCancel: () => {
-              navigator('/major/list');
+              navigator('/assessment/scale168');
             },
           });
         }

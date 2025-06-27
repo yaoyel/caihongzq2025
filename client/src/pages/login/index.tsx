@@ -463,7 +463,7 @@ const LoginPage: React.FC = () => {
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
           message.success('登录成功');
-          navigate('/default');
+          navigate('/basicInfo');
           return true; // 登录成功返回 true
         }
         return false; // 未登录返回 false
@@ -517,7 +517,7 @@ const LoginPage: React.FC = () => {
         if (response.status === 200) {
           // 更新用户信息
           localStorage.setItem('user', JSON.stringify(response.data));
-          navigate('/default');
+          navigate('/basicInfo');
           return;
         }
       } catch (error: any) {

@@ -53,7 +53,7 @@ const App: React.FC = () => {
             }
             console.log(localStorage.getItem('scaleAnswerCount'));
             // 从URL参数中获取目标页面，如果没有则默认跳转到home
-            const targetPath = urlParams.get('redirect') || urlParams.get('path') || '/default';
+            const targetPath = urlParams.get('redirect') || urlParams.get('path') || '/basicInfo';
             navigate(targetPath);
           }
         } catch (error) {

@@ -27,6 +27,13 @@ const MajorLoveDetail: React.FC = () => {
   // 收藏状态（静态展示，可后续接入逻辑）
   const [collected, setCollected] = React.useState(false);
 
+  //+5--5
+  const [tuijianSchools1, setTuijianSchools1] = useState([]);
+  //-15- -5
+  const [tuijianSchools2, setTuijianSchools2] = useState([]);
+  //5--10
+  const [tuijianSchools3, setTuijianSchools3] = useState([]);
+
   // 切换收藏状态
   const handleCollect = () => {
     setCollected(!collected);
@@ -46,6 +53,11 @@ const MajorLoveDetail: React.FC = () => {
           if (detailResponse.data) {
             console.log(detailResponse.data);
             setMajorDetail(detailResponse.data);
+            if (detailResponse.data.schools) {
+              setTuijianSchools1(detailResponse.data.schools.filter((s) => s.group === 2));
+              setTuijianSchools2(detailResponse.data.schools.filter((s) => s.group === 3));
+              setTuijianSchools3(detailResponse.data.schools.filter((s) => s.group === 1));
+            }
           }
         }
       } catch (error) {
@@ -237,34 +249,29 @@ const MajorLoveDetail: React.FC = () => {
               <img src={zhaoshengyuanxiao} alt="招生院校" className="w-7 h-7 mr-2" />
               <span className="text-[#2d6cf6] font-bold text-base">招生院校</span>
               <span className="text-[#2d6cf6] font-bold ml-2">
-                {majorDetail?.schools?.length}所
+                {tuijianSchools1.length + tuijianSchools2.length + tuijianSchools3.length}所
               </span>
             </div>
             <div className="divide-y">
               <CardItem
-                text="1.+5%到+10%位次院校"
+                text={'1.+5%到-5%位次院校 (' + tuijianSchools1.length + ')所'}
                 onClick={() => {
-                  Dialog.alert({
-                    content: '功能正在开发中，敬请期待',
-                    onConfirm: () => {
-                      navigator('/major/list');
-                    },
-                  });
+                  navigator(
+                    `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                  );
+                }}
+              />
+
+              <CardItem
+                text={'2.-5% 到-15%位次院校 (' + tuijianSchools2.length + ')所'}
+                onClick={() => {
+                  navigator(
+                    `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                  );
                 }}
               />
               <CardItem
-                text="2.+5%到（-5%）位次院校"
-                onClick={() => {
-                  Dialog.alert({
-                    content: '功能正在开发中，敬请期待',
-                    onConfirm: () => {
-                      navigator('/major/list');
-                    },
-                  });
-                }}
-              />
-              <CardItem
-                text="3.（-5%）到（-15%）位次院校"
+                text={'3.+5%到+10%位次院校 (' + tuijianSchools3.length + ')所'}
                 onClick={() => {
                   navigator(
                     `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
