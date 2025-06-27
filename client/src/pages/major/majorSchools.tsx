@@ -20,6 +20,8 @@ const MajorSchools: React.FC = () => {
   const [tuijianSchools2, setTuijianSchools2] = useState([]);
   //5--10
   const [tuijianSchools3, setTuijianSchools3] = useState([]);
+  //其他位次院校
+  const [tuijianSchools4, setTuijianSchools4] = useState([]);
   useEffect(() => {
     const fetchMajorDetail = async () => {
       try {
@@ -36,6 +38,7 @@ const MajorSchools: React.FC = () => {
               setTuijianSchools1(detailResponse.data.schools.filter((s) => s.group === 2));
               setTuijianSchools2(detailResponse.data.schools.filter((s) => s.group === 3));
               setTuijianSchools3(detailResponse.data.schools.filter((s) => s.group === 1));
+              setTuijianSchools4(detailResponse.data.schools.filter((s) => s.group === 0));
             }
           }
         }
@@ -49,6 +52,23 @@ const MajorSchools: React.FC = () => {
   }, [searchParams]);
   const navigator = useNavigate();
 
+  const getHistoryScore = (historyScores) => {
+    let htmlTemp = '';
+    if (historyScores && historyScores.length > 0) {
+      historyScores?.map((item, i) => {
+        htmlTemp += `<div>${item.tuition}  ${item.planMajorName}</div>`;
+        item.historyScore?.map((hs, ihs) => {
+          for (const [key, value] of Object.entries(hs)) {
+            const valueTemp = value.split(',');
+            htmlTemp += `<div  className="flex justify-between text-sm text-gray-700" style="display:flex;justify-content:space-between;"><span className="w-14 mr-2">${key}</span><span className="w-14 mr-2">${valueTemp && valueTemp.length > 2 ? valueTemp[0] + '分' : ''}</span>
+              <span className="w-20 mr-2">第${valueTemp && valueTemp.length > 2 ? valueTemp[1] : ''}位次</span>
+              <span>招生${valueTemp && valueTemp.length > 2 ? valueTemp[2] : ''}名</span></div>`;
+          }
+        });
+      });
+    }
+    return htmlTemp;
+  };
   const renderSchool = (school) => {
     return (
       <div key={school.name} className="py-1 border-b last:border-b-0">
@@ -83,20 +103,10 @@ const MajorSchools: React.FC = () => {
           <span className="text-gray-400 text-lg">&gt;</span>
         </div>
         {/* 招生数据 */}
-        <div className="mt-2 space-y-1">
-          {[
-            { year: '2024年', score: '638分', rank: '第51位次', count: '招生50名' },
-            { year: '2023年', score: '638分', rank: '第51位次', count: '招生30名' },
-            { year: '2022年', score: '638分', rank: '第51位次', count: '招生40名' },
-          ].map((item, i) => (
-            <div key={i} className="flex text-sm text-gray-700">
-              <span className="w-14">{item.year}</span>
-              <span className="w-14">{item.score}</span>
-              <span className="w-20">{item.rank}</span>
-              <span>{item.count}</span>
-            </div>
-          ))}
-        </div>
+        <div
+          className="mt-2 space-y-1"
+          dangerouslySetInnerHTML={{ __html: getHistoryScore(school?.historyScores) }}
+        ></div>
       </div>
     );
   };
@@ -151,6 +161,13 @@ const MajorSchools: React.FC = () => {
           <div className="w-full max-w-xl">
             {/* 模拟院校数据 */}
             {tuijianSchools3.map((school) => renderSchool(school))}
+          </div>
+          {tuijianSchools4.length > 0 &&
+            renderSchoolTop('其他位次段院校(' + tuijianSchools4.length + '所)')}
+          {/* 院校招生信息列表 */}
+          <div className="w-full max-w-xl">
+            {/* 模拟院校数据 */}
+            {tuijianSchools4.map((school) => renderSchool(school))}
           </div>
         </Card>
       </div>

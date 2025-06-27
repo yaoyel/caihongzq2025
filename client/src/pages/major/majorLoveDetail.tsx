@@ -33,6 +33,8 @@ const MajorLoveDetail: React.FC = () => {
   const [tuijianSchools2, setTuijianSchools2] = useState([]);
   //5--10
   const [tuijianSchools3, setTuijianSchools3] = useState([]);
+  //其他位次院校
+  const [tuijianSchools4, setTuijianSchools4] = useState([]);
 
   // 切换收藏状态
   const handleCollect = () => {
@@ -57,6 +59,7 @@ const MajorLoveDetail: React.FC = () => {
               setTuijianSchools1(detailResponse.data.schools.filter((s) => s.group === 2));
               setTuijianSchools2(detailResponse.data.schools.filter((s) => s.group === 3));
               setTuijianSchools3(detailResponse.data.schools.filter((s) => s.group === 1));
+              setTuijianSchools4(detailResponse.data.schools.filter((s) => s.group === 0));
             }
           }
         }
@@ -256,26 +259,38 @@ const MajorLoveDetail: React.FC = () => {
               <CardItem
                 text={'1.-5%到+5%位次院校 (' + tuijianSchools1.length + ')所'}
                 onClick={() => {
-                  navigator(
-                    `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
-                  );
+                  tuijianSchools1.length > 0 &&
+                    navigator(
+                      `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    );
                 }}
               />
 
               <CardItem
                 text={'2.-15% 到-5%位次院校 (' + tuijianSchools2.length + ')所'}
                 onClick={() => {
-                  navigator(
-                    `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
-                  );
+                  tuijianSchools2.length > 0 &&
+                    navigator(
+                      `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    );
                 }}
               />
               <CardItem
                 text={'3.+5%到+10%位次院校 (' + tuijianSchools3.length + ')所'}
                 onClick={() => {
-                  navigator(
-                    `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
-                  );
+                  tuijianSchools3.length > 0 &&
+                    navigator(
+                      `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    );
+                }}
+              />
+              <CardItem
+                text={'3.其他位次院校 (' + tuijianSchools4.length + ')所'}
+                onClick={() => {
+                  tuijianSchools4.length > 0 &&
+                    navigator(
+                      `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    );
                 }}
               />
             </div>

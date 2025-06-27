@@ -24,6 +24,14 @@ const SchoolDetail: React.FC = () => {
     marginBottom: 16,
     fontSize: 18,
   };
+  //+5--5
+  const [tuijianSchools1, setTuijianSchools1] = useState([]);
+  //-15- -5
+  const [tuijianSchools2, setTuijianSchools2] = useState([]);
+  //5--10
+  const [tuijianSchools3, setTuijianSchools3] = useState([]);
+  //其他位次院校
+  const [tuijianSchools4, setTuijianSchools4] = useState([]);
 
   useEffect(() => {
     //获取院校信息
@@ -38,6 +46,12 @@ const SchoolDetail: React.FC = () => {
         if (response && response.code === 200) {
           setSchoolDetail(response.data);
           console.log(response.data);
+          if (response.data.majors) {
+            setTuijianSchools1(response.data.majors.filter((s) => s.group === 2));
+            setTuijianSchools2(response.data.majors.filter((s) => s.group === 3));
+            setTuijianSchools3(response.data.majors.filter((s) => s.group === 1));
+            setTuijianSchools4(response.data.majors.filter((s) => s.group === 0));
+          }
         }
       } catch (error) {
         console.error('获取院校信息失败:', error);
@@ -134,15 +148,19 @@ const SchoolDetail: React.FC = () => {
                 }
               >
                 <div className="flex items-center justify-between  mb-2">
-                  <span>1.-5%到+5%位次专业</span>
+                  <span>1.-5%到+5%位次专业 {tuijianSchools1.length}个</span>
                   <span className="mr-2">{'>'}</span>
                 </div>
                 <div className=" flex items-center justify-between mb-2">
-                  <span>2.-15% 到-5%位次专业</span>
+                  <span>2.-15% 到-5%位次专业 {tuijianSchools2.length}个</span>
                   <span className="mr-2">{'>'}</span>
                 </div>
                 <div className=" flex items-center justify-between mb-2">
-                  <span>3.+5%到+10%位次专业</span>
+                  <span>3.+5%到+10%位次专业 {tuijianSchools3.length}个</span>
+                  <span className="mr-2">{'>'}</span>
+                </div>
+                <div className=" flex items-center justify-between mb-2">
+                  <span>4.其他位次专业 {tuijianSchools4.length}个</span>
                   <span className="mr-2">{'>'}</span>
                 </div>
               </div>
