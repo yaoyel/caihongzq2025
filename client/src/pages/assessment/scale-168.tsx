@@ -994,7 +994,7 @@ const Scale168Assessment: React.FC = () => {
                 setIsNicknameModalVisible(true);
               }}
             />
-            <StyledHomeButton icon={<HomeOutlined />} onClick={() => navigate('/default')} />
+            <StyledHomeButton icon={<HomeOutlined />} onClick={() => navigate('/basicInfo')} />
           </TitleRow>
           <ResponsiveSteps
             current={dimensions.indexOf(currentDimension)}
@@ -1008,20 +1008,34 @@ const Scale168Assessment: React.FC = () => {
 
           <StyledCard
             title={
-              <Space>
-                <Text style={{ color: getCurrentCategoryColor() }}>
-                  {categories.find((c) => c.type === currentCategory)?.title} - {currentDimension}
-                </Text>
+              <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+                <Space>
+                  <Text style={{ color: getCurrentCategoryColor() }}>
+                    {categories.find((c) => c.type === currentCategory)?.title} - {currentDimension}
+                  </Text>
+                  <Progress
+                    percent={
+                      ((currentPage + 1) / Math.ceil(questions.length / questionsPerPage)) * 100
+                    }
+                    format={() =>
+                      `第 ${currentPage + 1}/${Math.ceil(questions.length / questionsPerPage)} 页`
+                    }
+                    size="small"
+                    style={{ width: 120 }}
+                    strokeColor={getCurrentCategoryColor()}
+                  />
+                </Space>
                 <Progress
-                  percent={
-                    ((currentPage + 1) / Math.ceil(questions.length / questionsPerPage)) * 100
-                  }
-                  format={() =>
-                    `第 ${currentPage + 1}/${Math.ceil(questions.length / questionsPerPage)} 页`
-                  }
-                  size="small"
-                  style={{ width: 120 }}
-                  strokeColor={getCurrentCategoryColor()}
+                  percent={Math.round(progress)}
+                  format={() => (
+                    <span style={{ color: '#fa8c16', fontWeight: 'bold' }}>
+                      总进度 {Math.round(progress)}%
+                    </span>
+                  )}
+                  size="large"
+                  style={{ width: 150 }}
+                  strokeColor="#fa8c16"
+                  strokeWidth={8}
                 />
               </Space>
             }

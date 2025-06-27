@@ -5,10 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { SearchOutlined, StarOutlined, StarFilled } from '@ant-design/icons';
 import BottomNav from '../comm/bottom';
 import StartWelcomePage from '../comm/startWelcome';
-import {
-  getUserMajorScores,
-  callWechatPay,
-} from '../../config';
+import { getUserMajorScores, callWechatPay } from '../../config';
 import './list.css'; // 可根据需要自定义样式
 
 /**
@@ -464,24 +461,29 @@ const MajorPage: React.FC = () => {
             ) : majors.length > 0 ? (
               displayMajors.map((item: any, idx: number) => {
                 // 计算在完整列表中的索引
-                const fullListIndex = majors.findIndex((major: any) => major.majorCode === item.majorCode);
+                const fullListIndex = majors.findIndex(
+                  (major: any) => major.majorCode === item.majorCode
+                );
                 const isRecommendedMajor = recommendFlags[fullListIndex];
                 // 判断是否需要插入分割线
-                const needDivider = lastRecommendIndex !== -1 && fullListIndex === lastRecommendIndex + 1;
+                const needDivider =
+                  lastRecommendIndex !== -1 && fullListIndex === lastRecommendIndex + 1;
                 return (
                   <React.Fragment key={item.majorCode}>
                     {needDivider && (
-                      <div style={{
-                        margin: '16px 0',
-                        padding: '12px 24px',
-                        background: '#f8fafc',
-                        color: '#666',
-                        fontSize: 14,
-                        borderTop: '1px solid #e5e7eb',
-                        borderBottom: '1px solid #e5e7eb',
-                        textAlign: 'center',
-                        fontWeight: 500,
-                      }}>
+                      <div
+                        style={{
+                          margin: '16px 0',
+                          padding: '12px 24px',
+                          background: '#f8fafc',
+                          color: '#666',
+                          fontSize: 14,
+                          borderTop: '1px solid #e5e7eb',
+                          borderBottom: '1px solid #e5e7eb',
+                          textAlign: 'center',
+                          fontWeight: 500,
+                        }}
+                      >
                         以下专业，根据院校招生简章选科要求，您暂时不可报考，规划长远发展时可作为参考。
                       </div>
                     )}
@@ -491,7 +493,8 @@ const MajorPage: React.FC = () => {
                         alignItems: 'center',
                         padding: '0 8px',
                         height: 44,
-                        borderBottom: idx === displayMajors.length - 1 ? 'none' : '1px solid #f0f0f0',
+                        borderBottom:
+                          idx === displayMajors.length - 1 ? 'none' : '1px solid #f0f0f0',
                         fontSize: 14,
                         color: isRecommendedMajor ? '#333' : '#bbb', // 推荐深色，不推荐淡色
                         background: isRecommendedMajor ? '#fff7e6' : '#f3f4f6', // 推荐橙色，不推荐灰色
@@ -500,12 +503,21 @@ const MajorPage: React.FC = () => {
                       }}
                     >
                       <div
-                        onClick={() =>
-                          navigator(
-                            `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&lexueScore=${item.lexueScore}&shanxueScore=${item.shanxueScore}&yanxueDeduction=${item.yanxueDeduction}&tiaozhanDeduction=${item.tiaozhanDeduction}`
-                          )
+                        onClick={
+                          isRecommendedMajor
+                            ? () =>
+                                navigator(
+                                  `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&lexueScore=${item.lexueScore}&shanxueScore=${item.shanxueScore}&yanxueDeduction=${item.yanxueDeduction}&tiaozhanDeduction=${item.tiaozhanDeduction}`
+                                )
+                            : undefined
                         }
-                        style={{ flex: 1, position: 'relative' }}
+                        style={{
+                          flex: 1,
+                          position: 'relative',
+                          cursor: isRecommendedMajor ? 'pointer' : 'not-allowed',
+                          pointerEvents: isRecommendedMajor ? 'auto' : 'none',
+                        }}
+                        aria-disabled={!isRecommendedMajor}
                       >
                         {/* 专业编号和名称 */}
                         <span style={{ color: '#666', marginRight: 8 }}>{item.majorCode}</span>
@@ -532,7 +544,9 @@ const MajorPage: React.FC = () => {
                           </span>
                         )} */}
                         {/* 跳转箭头 */}
-                        <span style={{ color: '#bbb', fontSize: 18 }}>{'>'}</span>
+                        {isRecommendedMajor && (
+                          <span style={{ color: '#bbb', fontSize: 18 }}>{'>'}</span>
+                        )}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center' }}>
                         {/* 热爱能量 */}

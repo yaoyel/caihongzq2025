@@ -53,13 +53,13 @@ const MajorSchools: React.FC = () => {
     return (
       <div key={school.name} className="py-1 border-b last:border-b-0">
         {/* 院校头部 */}
-        <div className="flex items-center justify-between cursor-pointer">
-          <div
-            className="flex items-center"
-            onClick={() =>
-              navigator(`/major/schooldetail?code=${school.code}&schoolname=${school.name}`)
-            }
-          >
+        <div
+          className="flex items-center justify-between cursor-pointer"
+          onClick={() =>
+            navigator(`/major/schooldetail?code=${school.code}&schoolname=${school.name}`)
+          }
+        >
+          <div className="flex items-center">
             <span className="text-blue-600 font-bold text-base mr-2">{school.name}</span>
             <span
               key={school.name + school.nature}
