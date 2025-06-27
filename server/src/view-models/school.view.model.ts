@@ -31,6 +31,10 @@ export interface SchoolMajorViewModel extends MajorViewModel {
   studyPeriod: number;          // 学制
   rank?: number;                // 排名
   score?: number;                // 分数
+  averageRank?: number;
+  rankDiffPercentage?: number;
+  group?: number;
+  historyScore?: any;
 }
 
 /**
@@ -76,7 +80,11 @@ function toSchoolMajorViewModel(data: any): SchoolMajorViewModel {
     isFirstClass: data.isFirstClass || false,
     studyPeriod: data.studyPeriod || 4,
     rank: data.rank || undefined,
-    score: data.score || undefined
+    score: data.score || undefined,
+    averageRank: data.averageRank || '',
+    rankDiffPercentage: data.rankDiffPercentage || '',
+    group: data.group || 0,
+    historyScore: data.historyScore || {}
   };
 }
 
