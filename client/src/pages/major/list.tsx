@@ -41,36 +41,32 @@ const MajorPage: React.FC = () => {
   const listAreaRef = useRef<HTMLDivElement>(null);
 
   /**
-   * 判断专业是否为推荐
-   * @param currentIndex 当前专业索引
+   * 计算推荐标记数组，当前项分数大于等于下一个项分数则推荐，否则break后续都不推荐
    * @param majorsList 专业列表
-   * @returns 是否为推荐
+   * @returns 推荐标记数组
    */
-  const isRecommended = (currentIndex: number, majorsList: any[]) => {
-    // 如果是最后一个专业，不推荐
-    if (currentIndex >= majorsList.length - 1) {
-      return false;
-    }
-    
-    const currentScore = majorsList[currentIndex].score;
-    const nextScore = majorsList[currentIndex + 1].score;
-    
-    // 如果当前分数小于下一个分数，不推荐
-    if (currentScore < nextScore) {
-      return false;
-    }
-    
-    // 如果当前分数大于等于下一个分数，检查之前是否出现过后面大于前面的情况
-    // 如果之前出现过后面大于前面的情况，则后续都不推荐
-    for (let i = 0; i < currentIndex; i++) {
-      if (majorsList[i].score < majorsList[i + 1].score) {
-        return false; // 之前出现过后面大于前面的情况，后续都不推荐
+  const getRecommendFlags = (majorsList: any[]) => {
+    const flags: boolean[] = new Array(majorsList.length).fill(false);
+    let hasBreak = false;
+    for (let i = 0; i < majorsList.length - 1; i++) {
+      const currentScore = Number(majorsList[i].score);
+      const nextScore = Number(majorsList[i + 1].score);
+      if (hasBreak) continue;
+      if (currentScore >= nextScore) {
+        flags[i] = true;
+        flags[i + 1] = true;
+      } else {
+        hasBreak = true;
       }
     }
-    
-    // 当前分数大于等于下一个分数，且之前没有出现过后面大于前面的情况
-    return true;
+    return flags;
   };
+
+  // 推荐标记数组
+  const recommendFlags = getRecommendFlags(majors);
+
+  // 找到最后一个推荐的索引
+  const lastRecommendIndex = recommendFlags.lastIndexOf(true);
 
   /**
    * 获取专业分数数据
@@ -436,7 +432,7 @@ const MajorPage: React.FC = () => {
               最爱专业
             </div>
             {/* 搜索结果提示 */}
-            {searchValue.trim() ? (
+            {/* {searchValue.trim() ? (
               <div style={{ fontSize: 14, color: '#666', fontWeight: 400 }}>
                 找到 {majors.length} 个专业
               </div>
@@ -445,7 +441,7 @@ const MajorPage: React.FC = () => {
                 已加载 {displayMajors.length} / {majors.length} 个专业
                 {hasMore && <span style={{ color: '#999' }}>，滚动加载更多...</span>}
               </div>
-            ) : null}
+            ) : null} */}
           </div>
           {/* 列表内容 */}
           <div>
@@ -469,82 +465,100 @@ const MajorPage: React.FC = () => {
               displayMajors.map((item: any, idx: number) => {
                 // 计算在完整列表中的索引
                 const fullListIndex = majors.findIndex((major: any) => major.majorCode === item.majorCode);
-                const isRecommendedMajor = isRecommended(fullListIndex, majors);
-                
+                const isRecommendedMajor = recommendFlags[fullListIndex];
+                // 判断是否需要插入分割线
+                const needDivider = lastRecommendIndex !== -1 && fullListIndex === lastRecommendIndex + 1;
                 return (
-                  <div
-                    key={item.majorCode}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '0 8px',
-                      height: 44,
-                      borderBottom: idx === displayMajors.length - 1 ? 'none' : '1px solid #f0f0f0',
-                      fontSize: 14,
-                      color: '#333',
-                      background: isRecommendedMajor ? '#fff7e6' : '#fff', // 推荐项背景色
-                      borderLeft: isRecommendedMajor ? '3px solid #fa8c16' : 'none', // 推荐项左边框
-                    }}
-                  >
+                  <React.Fragment key={item.majorCode}>
+                    {needDivider && (
+                      <div style={{
+                        margin: '16px 0',
+                        padding: '12px 24px',
+                        background: '#f8fafc',
+                        color: '#666',
+                        fontSize: 14,
+                        borderTop: '1px solid #e5e7eb',
+                        borderBottom: '1px solid #e5e7eb',
+                        textAlign: 'center',
+                        fontWeight: 500,
+                      }}>
+                        以下专业，根据院校招生简章选科要求，您暂时不可报考，规划长远发展时可作为参考。
+                      </div>
+                    )}
                     <div
-                      onClick={() =>
-                        navigator(
-                          `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&lexueScore=${item.lexueScore}&shanxueScore=${item.shanxueScore}&yanxueDeduction=${item.yanxueDeduction}&tiaozhanDeduction=${item.tiaozhanDeduction}`
-                        )
-                      }
-                      style={{ flex: 1, position: 'relative' }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '0 8px',
+                        height: 44,
+                        borderBottom: idx === displayMajors.length - 1 ? 'none' : '1px solid #f0f0f0',
+                        fontSize: 14,
+                        color: isRecommendedMajor ? '#333' : '#bbb', // 推荐深色，不推荐淡色
+                        background: isRecommendedMajor ? '#fff7e6' : '#f3f4f6', // 推荐橙色，不推荐灰色
+                        borderLeft: isRecommendedMajor ? '3px solid #fa8c16' : 'none', // 推荐左边框
+                        cursor: 'pointer',
+                      }}
                     >
-                      {/* 专业编号和名称 */}
-                      <span style={{ color: '#666', marginRight: 8 }}>{item.majorCode}</span>
-                      <span style={{ marginRight: 15 }} title={item.majorName}>
-                        {truncateMajorName(item.majorName)}
-                      </span>
-                      {/* 推荐标记 */}
-                      {isRecommendedMajor && (
+                      <div
+                        onClick={() =>
+                          navigator(
+                            `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&lexueScore=${item.lexueScore}&shanxueScore=${item.shanxueScore}&yanxueDeduction=${item.yanxueDeduction}&tiaozhanDeduction=${item.tiaozhanDeduction}`
+                          )
+                        }
+                        style={{ flex: 1, position: 'relative' }}
+                      >
+                        {/* 专业编号和名称 */}
+                        <span style={{ color: '#666', marginRight: 8 }}>{item.majorCode}</span>
+                        <span style={{ marginRight: 15 }} title={item.majorName}>
+                          {truncateMajorName(item.majorName)}
+                        </span>
+                        {/* 推荐标记 */}
+                        {/* {isRecommendedMajor && (
+                          <span
+                            style={{
+                              position: 'absolute',
+                              top: '8px',
+                              right: '8px',
+                              background: '#fa8c16',
+                              color: '#fff',
+                              fontSize: 10,
+                              padding: '2px 6px',
+                              borderRadius: 8,
+                              fontWeight: 'bold',
+                              zIndex: 1,
+                            }}
+                          >
+                            推荐
+                          </span>
+                        )} */}
+                        {/* 跳转箭头 */}
+                        <span style={{ color: '#bbb', fontSize: 18 }}>{'>'}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        {/* 热爱能量 */}
+                        <span style={{ color: '#333', fontSize: 15, marginRight: 8 }}>
+                          热爱能量{Math.ceil(item.score * 100)}分！
+                        </span>
+                        {/* 收藏按钮 */}
                         <span
                           style={{
-                            position: 'absolute',
-                            top: '8px',
-                            right: '8px',
-                            background: '#fa8c16',
-                            color: '#fff',
-                            fontSize: 10,
-                            padding: '2px 6px',
-                            borderRadius: 8,
-                            fontWeight: 'bold',
-                            zIndex: 1,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            minWidth: 40,
                           }}
+                          onClick={() => toggleFavorite(item.majorCode)}
                         >
-                          推荐
+                          {item.isFavorite ? (
+                            <StarFilled style={{ color: '#fadb14', fontSize: 20 }} />
+                          ) : (
+                            <StarOutlined style={{ color: '#ccc', fontSize: 20 }} />
+                          )}
+                          <span style={{ color: '#ccc', fontSize: 13, marginLeft: 2 }}>收藏</span>
                         </span>
-                      )}
-                      {/* 跳转箭头 */}
-                      <span style={{ color: '#bbb', fontSize: 18 }}>{'>'}</span>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      {/* 热爱能量 */}
-                      <span style={{ color: '#333', fontSize: 15, marginRight: 8 }}>
-                        热爱能量{Math.ceil(item.score * 100)}分！
-                      </span>
-                      {/* 收藏按钮 */}
-                      <span
-                        style={{
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          minWidth: 40,
-                        }}
-                        onClick={() => toggleFavorite(item.majorCode)}
-                      >
-                        {item.isFavorite ? (
-                          <StarFilled style={{ color: '#fadb14', fontSize: 20 }} />
-                        ) : (
-                          <StarOutlined style={{ color: '#ccc', fontSize: 20 }} />
-                        )}
-                        <span style={{ color: '#ccc', fontSize: 13, marginLeft: 2 }}>收藏</span>
-                      </span>
-                    </div>
-                  </div>
+                  </React.Fragment>
                 );
               })
             ) : searchValue.trim() ? (
