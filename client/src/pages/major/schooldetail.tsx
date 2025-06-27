@@ -10,7 +10,7 @@ import { getSchoolDetail } from '../../config';
  */
 const SchoolDetail: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const schoolCode = searchParams.get('code');
+  const schoolCode = searchParams.get('schoolCode');
   const schoolName = searchParams.get('schoolname');
   const navigator = useNavigate();
   const [schoolDetailInfo, setSchoolDetail] = useState(null);
@@ -125,7 +125,14 @@ const SchoolDetail: React.FC = () => {
             {/* 热爱专业 */}
             <div style={{ marginBottom: 24 }}>
               <div style={sectionTitleStyle}>热爱专业</div>
-              <div style={{ marginTop: 12 }}>
+              <div
+                style={{ marginTop: 12 }}
+                onClick={() =>
+                  navigator(
+                    `/major/loveMajorSchool?schoolName=${schoolName}&schoolCode=${schoolCode}`
+                  )
+                }
+              >
                 <div className="flex items-center justify-between  mb-2">
                   <span>1.+5%到-5%位次专业</span>
                   <span className="mr-2">{'>'}</span>

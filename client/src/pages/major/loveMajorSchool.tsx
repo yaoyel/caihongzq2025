@@ -8,45 +8,19 @@ import { getMajorDetail } from '../../config';
 /**
  * 主页面组件
  */
-const MajorSchools: React.FC = () => {
+const LoveMajorSchool: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const majorCode = searchParams.get('majorCode');
-  const majorName = searchParams.get('majorName');
+  const schoolName = searchParams.get('schoolName');
+  const schoolCode = searchParams.get('schoolCode');
   const type = searchParams.get('type');
-  console.log(majorCode, majorName, type, 'majorCode, majorName, type');
+  
   //+5--5
   const [tuijianSchools1, setTuijianSchools1] = useState([]);
   //-15- -5
   const [tuijianSchools2, setTuijianSchools2] = useState([]);
   //5--10
   const [tuijianSchools3, setTuijianSchools3] = useState([]);
-  useEffect(() => {
-    const fetchMajorDetail = async () => {
-      try {
-        if (!majorCode) {
-          console.error('未找到专业代码');
-          return;
-        }
-
-        const detailResponse = await getMajorDetail(majorCode);
-
-        if (detailResponse && detailResponse.code === 200) {
-          if (detailResponse.data) {
-            if (detailResponse.data.schools) {
-              setTuijianSchools1(detailResponse.data.schools.filter((s) => s.group === 2));
-              setTuijianSchools2(detailResponse.data.schools.filter((s) => s.group === 3));
-              setTuijianSchools3(detailResponse.data.schools.filter((s) => s.group === 1));
-            }
-          }
-        }
-      } catch (error) {
-        console.error('获取专业详细信息失败:', error);
-      } finally {
-      }
-    };
-
-    fetchMajorDetail();
-  }, [searchParams]);
+  useEffect(() => {}, []);
   const navigator = useNavigate();
 
   const renderSchool = (school) => {
@@ -56,7 +30,7 @@ const MajorSchools: React.FC = () => {
         <div
           className="flex items-center justify-between cursor-pointer"
           onClick={() =>
-            navigator(`/major/schooldetail?schoolCode=${school.code}&schoolname=${school.name}`)
+            navigator(`/major/schooldetail?code=${school.code}&schoolname=${school.name}`)
           }
         >
           <div className="flex items-center">
@@ -122,31 +96,31 @@ const MajorSchools: React.FC = () => {
   };
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 40 }}>
-      <Top title={`${majorCode ?? ''}${majorName ?? ''}`} onBack={() => navigator(-1)} />
+      <Top title={schoolName} onBack={() => navigator(-1)} />
       <div className="bg-[#f7f7fa] flex flex-col justify-center items-start p-3">
         {/* 页面主卡片 */}
         <Card className="rounded-2xl w-full max-w-xl shadow" bodyStyle={{ padding: '24px 16px' }}>
           <div className="text-lg font-bold mb-2 flex items-center">
             <span className="w-1.5 h-4 bg-blue-500 rounded-sm mr-2 inline-block" />
-            招生院校 {tuijianSchools1.length + tuijianSchools2.length + tuijianSchools3.length}所
+            热爱专业 {tuijianSchools1.length + tuijianSchools2.length + tuijianSchools3.length} 个
           </div>
 
           {tuijianSchools1.length > 0 &&
-            renderSchoolTop('比您高考分高5%到低5%位次段院校 (' + tuijianSchools1.length + '所)')}
+            renderSchoolTop('比您高考分高5%到低5%位次段专业 (' + tuijianSchools1.length + '个)')}
           {/* 院校招生信息列表 */}
           <div className="w-full max-w-xl">
             {/* 模拟院校数据 */}
             {tuijianSchools1.map((school) => renderSchool(school))}
           </div>
           {tuijianSchools2.length > 0 &&
-            renderSchoolTop('比您高考分低5%到15%位次段院校 (' + tuijianSchools2.length + '所)')}
+            renderSchoolTop('比您高考分低5%到15%位次段专业 (' + tuijianSchools2.length + '个)')}
           {/* 院校招生信息列表 */}
           <div className="w-full max-w-xl">
             {/* 模拟院校数据 */}
             {tuijianSchools2.map((school) => renderSchool(school))}
           </div>
           {tuijianSchools3.length > 0 &&
-            renderSchoolTop('比您高考分高5%到10%位次段院校(' + tuijianSchools3.length + '所)')}
+            renderSchoolTop('比您高考分高5%到10%位次段专业 (' + tuijianSchools3.length + '个)')}
           {/* 院校招生信息列表 */}
           <div className="w-full max-w-xl">
             {/* 模拟院校数据 */}
@@ -160,4 +134,4 @@ const MajorSchools: React.FC = () => {
   );
 };
 
-export default MajorSchools;
+export default LoveMajorSchool;

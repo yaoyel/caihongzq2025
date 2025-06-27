@@ -10,8 +10,6 @@ import { getMajorDetail, getScalesByElementsWithAnswers } from '../../config';
 import trait_icon from '../../public/trait_icon.png';
 import './list.css'; // 假设复用专业列表样式，可根据需要自定义
 
-import { color } from 'echarts';
-
 const StudyTrait: React.FC = () => {
   const userStr = localStorage.getItem('new-user');
   const [searchParams] = useSearchParams();
@@ -20,6 +18,7 @@ const StudyTrait: React.FC = () => {
   const [modalSelects, setModalSelects] = useState<any[]>([]);
   const [elementList, setElementList] = useState<any[]>([]);
   const [majorDetail, setMajorDetail] = useState<any>(null);
+  const [expandedTexts, setExpandedTexts] = useState<{ [key: string]: boolean }>({});
   const majorCode = searchParams.get('majorCode');
   const majorName = searchParams.get('majorName');
   const majorType = searchParams.get('type');
@@ -158,6 +157,26 @@ const StudyTrait: React.FC = () => {
     }
   };
 
+  // 处理文本展开/收起
+  const handleTextToggle = (traitId: string) => {
+    setExpandedTexts((prev) => ({
+      ...prev,
+      [traitId]: !prev[traitId],
+    }));
+  };
+
+  // 截取前30个字符
+  const getFirstThirtyChars = (text: string) => {
+    if (!text) return '';
+    return text.length > 30 ? text.substring(0, 30) : text;
+  };
+
+  // 检查文本是否超过30个字符
+  const isTextLongerThanThirtyChars = (text: string) => {
+    if (!text) return false;
+    return text.length > 30;
+  };
+
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 40 }}>
       <Top title={`${majorCode ?? ''}${majorName ?? ''}`} onBack={() => navigator(-1)} />
@@ -218,7 +237,26 @@ const StudyTrait: React.FC = () => {
                       <div className="text-gray-700 text-sm mt-1">
                         <div>
                           1. 主动行为：
-                          {majorType === 'yanxue' ? trait.element.status : trait.theoryBasis}
+                          {(() => {
+                            const text = trait.element.status;
+                            const isExpanded = expandedTexts[trait.id];
+                            const isLong = isTextLongerThanThirtyChars(text);
+
+                            return (
+                              <span>
+                                {isExpanded ? text : getFirstThirtyChars(text)}
+                                {isLong && !isExpanded && '...'}
+                                {isLong && (
+                                  <button
+                                    onClick={() => handleTextToggle(trait.id)}
+                                    className="text-blue-500 ml-1 underline "
+                                  >
+                                    {isExpanded ? '收起' : '展开'}
+                                  </button>
+                                )}
+                              </span>
+                            );
+                          })()}
                         </div>
                         <div className="mt-1">
                           2. 我的自评：{getMyScore(trait.element.id)}
@@ -284,7 +322,7 @@ const StudyTrait: React.FC = () => {
           {/* 温馨提醒 */}
           <div className="p-3 text-xs text-gray-700 mt-2 ">
             <span className="font-bold text-blue-500 mr-1">温馨提醒：</span>
-            "热爱度"分值受自我认知深入程度影响，特质研究也将持续深入，结果仅供参考，请结合实际情况综合考量。
+            &ldquo;热爱度&rdquo;分值受自我认知深入程度影响，特质研究也将持续深入，结果仅供参考，请结合实际情况综合考量。
           </div>
         </Card>
       </div>
