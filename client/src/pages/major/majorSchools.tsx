@@ -132,14 +132,14 @@ const MajorSchools: React.FC = () => {
           </div>
 
           {tuijianSchools1.length > 0 &&
-            renderSchoolTop('比您高考分高5%到低5%位次段院校 (' + tuijianSchools1.length + '所)')}
+            renderSchoolTop('比您高考分低5%到高5%位次段院校 (' + tuijianSchools1.length + '所)')}
           {/* 院校招生信息列表 */}
           <div className="w-full max-w-xl">
             {/* 模拟院校数据 */}
             {tuijianSchools1.map((school) => renderSchool(school))}
           </div>
           {tuijianSchools2.length > 0 &&
-            renderSchoolTop('比您高考分低5%到15%位次段院校 (' + tuijianSchools2.length + '所)')}
+            renderSchoolTop('比您高考分低15%到5%位次段院校 (' + tuijianSchools2.length + '所)')}
           {/* 院校招生信息列表 */}
           <div className="w-full max-w-xl">
             {/* 模拟院校数据 */}

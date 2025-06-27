@@ -254,7 +254,7 @@ const MajorLoveDetail: React.FC = () => {
             </div>
             <div className="divide-y">
               <CardItem
-                text={'1.+5%到-5%位次院校 (' + tuijianSchools1.length + ')所'}
+                text={'1.-5%到+5%位次院校 (' + tuijianSchools1.length + ')所'}
                 onClick={() => {
                   navigator(
                     `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
@@ -263,7 +263,7 @@ const MajorLoveDetail: React.FC = () => {
               />
 
               <CardItem
-                text={'2.-5% 到-15%位次院校 (' + tuijianSchools2.length + ')所'}
+                text={'2.-15% 到-5%位次院校 (' + tuijianSchools2.length + ')所'}
                 onClick={() => {
                   navigator(
                     `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`

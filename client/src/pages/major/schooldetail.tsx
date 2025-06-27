@@ -134,11 +134,11 @@ const SchoolDetail: React.FC = () => {
                 }
               >
                 <div className="flex items-center justify-between  mb-2">
-                  <span>1.+5%到-5%位次专业</span>
+                  <span>1.-5%到+5%位次专业</span>
                   <span className="mr-2">{'>'}</span>
                 </div>
                 <div className=" flex items-center justify-between mb-2">
-                  <span>2.-5% 到-15%位次专业</span>
+                  <span>2.-15% 到-5%位次专业</span>
                   <span className="mr-2">{'>'}</span>
                 </div>
                 <div className=" flex items-center justify-between mb-2">

@@ -13,7 +13,7 @@ const LoveMajorSchool: React.FC = () => {
   const schoolName = searchParams.get('schoolName');
   const schoolCode = searchParams.get('schoolCode');
   const type = searchParams.get('type');
-  
+
   //+5--5
   const [tuijianSchools1, setTuijianSchools1] = useState([]);
   //-15- -5
@@ -106,14 +106,14 @@ const LoveMajorSchool: React.FC = () => {
           </div>
 
           {tuijianSchools1.length > 0 &&
-            renderSchoolTop('比您高考分高5%到低5%位次段专业 (' + tuijianSchools1.length + '个)')}
+            renderSchoolTop('比您高考分低5%到高5%位次段专业 (' + tuijianSchools1.length + '个)')}
           {/* 院校招生信息列表 */}
           <div className="w-full max-w-xl">
             {/* 模拟院校数据 */}
             {tuijianSchools1.map((school) => renderSchool(school))}
           </div>
           {tuijianSchools2.length > 0 &&
-            renderSchoolTop('比您高考分低5%到15%位次段专业 (' + tuijianSchools2.length + '个)')}
+            renderSchoolTop('比您高考分低15%到5%位次段专业 (' + tuijianSchools2.length + '个)')}
           {/* 院校招生信息列表 */}
           <div className="w-full max-w-xl">
             {/* 模拟院校数据 */}
