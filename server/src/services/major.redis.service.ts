@@ -98,6 +98,7 @@ export class MajorRedisService {
       // 使用RedisModule获取所有可能的组合
       const patterns = RedisModule.getMatchingPatterns(subjectType, secondSubjects);
       
+      console.log(patterns);
       // 给每个组合添加前缀
       const redisKeys = patterns.map(pattern => `major_scores:${code}_${province}_${pattern}`);
       
@@ -473,6 +474,89 @@ export class MajorRedisService {
     } catch (error) {
       console.error('解析位次数据出错：', error);
       return 0;
+    }
+  }
+
+  /**
+   * 批量获取专业详细信息
+   * @param codes 专业代码数组
+   * @param page 页码（从1开始）
+   * @param pageSize 每页数量（默认10）
+   * @returns 包含分页数据和总数的对象
+   */
+  async getMajorDetails(
+    codes: string[],
+    page: number = 1,
+    pageSize: number = 10
+  ): Promise<{
+    total: number;
+    data: any[];
+    currentPage: number;
+    totalPages: number;
+  }> {
+    try {
+      // 参数验证
+      if (!Array.isArray(codes) || codes.length === 0) {
+        return {
+          total: 0,
+          data: [],
+          currentPage: page,
+          totalPages: 0
+        };
+      }
+
+      // 计算分页参数
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedCodes = codes.slice(startIndex, endIndex);
+
+      // 使用multi进行批量查询
+      const multi = this.redisClient.multi();
+      
+      // 为每个专业代码构建Redis键并添加到查询中
+      for (const code of paginatedCodes) {
+        const redisKey = `major_detail:${code}`;
+        multi.get(redisKey);
+      }
+      
+      // 执行批量查询
+      const results = await multi.exec();
+      if (!results) {
+        return {
+          total: codes.length,
+          data: [],
+          currentPage: page,
+          totalPages: Math.ceil(codes.length / pageSize)
+        };
+      }
+
+      // 处理查询结果
+      const data = results
+        .map((result, index) => {
+          if (!result) return null;
+          try {
+            const parsed = JSON.parse(result as string);
+            return {
+              ...parsed,
+              code: paginatedCodes[index] // 添加专业代码到返回数据中
+            };
+          } catch (e) {
+            console.error(`解析专业数据失败: ${paginatedCodes[index]}`, e);
+            return null;
+          }
+        })
+        .filter(item => item !== null);
+
+      return {
+        total: codes.length,
+        data,
+        currentPage: page,
+        totalPages: Math.ceil(codes.length / pageSize)
+      };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      console.error('批量获取专业信息失败:', errorMessage);
+      throw new Error(`批量获取专业信息失败: ${errorMessage}`);
     }
   }
 }
