@@ -112,7 +112,7 @@ const App: React.FC = () => {
               user.id ?? user.data.id
             );
             if (scaleResponse && scaleResponse.code === 200) {
-              let list = [];
+              const list = [];
               scaleResponse.data.map((item: any) => {
                 if (item.options && item.options.length > 0) {
                   list.push({

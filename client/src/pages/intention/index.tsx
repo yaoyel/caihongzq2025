@@ -1,68 +1,99 @@
 import React, { useEffect } from 'react';
-import { Card, Spin } from 'antd';
-import { LoadingOutlined, ToolOutlined } from '@ant-design/icons';
 import BottomNav from '../comm/bottom';
-import StartWelcomePage from '../comm/startWelcome';
 import Top from '../comm/top';
+import { useNavigate } from 'react-router-dom';
 
 const EducationalPage: React.FC = () => {
+  const navigate = useNavigate();
   useEffect(() => {
     // 页面初始化逻辑
   }, []);
-  const scaleAnswerCount = localStorage.getItem('scaleAnswerCount');
-  console.log(scaleAnswerCount, 'scaleAnswerCount');
-  if (scaleAnswerCount && Number(scaleAnswerCount) !== 168) {
-    return (
-      <>
-        <StartWelcomePage />
-        <BottomNav selectedIndex={2} />
-      </>
-    );
-  }
 
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 40 }}>
-      <Top title="意向选择" onBack={() => window.history.back()} />
-      <div className="bg-[#f7f7fa] flex justify-center items-start p-3 min-h-screen">
-        {/* 页面主卡片 */}
-        <Card
-          className="rounded-2xl w-full max-w-xl shadow-lg"
-          bodyStyle={{ padding: '32px 24px' }}
-        >
-          {/* 开发中提示内容 */}
-          <div className="text-center py-8">
-            {/* 图标区域 */}
-            <div className="mb-6">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full mb-4">
-                <ToolOutlined className="text-3xl text-blue-600" />
-              </div>
+      <Top title="意向专业" onBack={() => window.history.back()} />
+      <div className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3 min-h-screen">
+        <div className="w-full max-w-xl bg-white rounded-2xl shadow p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center text-[18px] font-bold text-gray-900">
+              意向专业
+              <span className="ml-2 text-gray-400 text-base font-normal">收藏专业</span>
             </div>
+            <div className="text-blue-600 text-[22px] font-bold">共20个</div>
+          </div>
+        </div>
 
-            {/* 标题 */}
-            <h2 className="text-xl font-semibold text-gray-800 mb-3">功能开发中</h2>
-
-            {/* 描述文字 */}
-            <p className="text-gray-600 mb-6 leading-relaxed">
-              意向选择功能正在精心开发中，
-              <br />
-              我们将为您提供最优质的意向推荐服务
-            </p>
-
-            {/* 加载动画 */}
-            <div className="flex items-center justify-center space-x-2 text-blue-600">
-              <Spin indicator={<LoadingOutlined style={{ fontSize: 16 }} spin />} />
-              <span className="text-sm">开发进度 75%</span>
+        <div className="w-full max-w-xl bg-white rounded-2xl shadow mt-3">
+          <div className="flex items-center justify-between bg-[#dee9fd] rounded-t-xl p-4 px-4 py-3 mb-3">
+            <div className="flex items-center">
+              <span className="text-blue-600 text-lg font-bold mr-2">0002</span>
+              <span className="text-blue-700 text-lg font-bold">逻辑学</span>
+              <span className="ml-2 text-gray-400">&gt;</span>
             </div>
-
-            {/* 预计上线时间 */}
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-700">
-                <span className="font-medium">预计上线时间：</span>
-                2025年6月底
-              </p>
+            <div className="flex items-center">
+              <span className="text-gray-900 font-bold mr-1">热爱能量</span>
+              <span className="text-blue-700 font-bold text-lg">98分！</span>
             </div>
           </div>
-        </Card>
+          <div className="space-y-1 p-3">
+            <div
+              className="flex items-center justify-between text-base"
+              onClick={() => {
+                navigate('/intention/intentiondetail');
+              }}
+            >
+              <div>
+                <span className="text-green-600">（-5%）</span>
+                <span className="text-gray-900"> 到 </span>
+                <span className="text-red-600">+5%</span>
+                <span className="text-gray-900">位次段院校</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-gray-900 mr-2">2所</span>
+                <a className="text-blue-600" href="#">
+                  更多
+                </a>
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-base">
+              <div>
+                <span className="text-green-600">（-15%）</span>
+                <span className="text-gray-900"> 到 </span>
+                <span className="text-green-600">（-5%）</span>
+                <span className="text-gray-900">位次段院校</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-gray-900 mr-2">20所</span>
+                <a className="text-blue-600" href="#">
+                  更多
+                </a>
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-base">
+              <div>
+                <span className="text-red-600">（+5%到+10%）</span>
+                <span className="text-gray-900">位次段院校</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-gray-900 mr-2">28所</span>
+                <a className="text-blue-600" href="#">
+                  更多
+                </a>
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-base">
+              <div>
+                <span className="text-gray-900">【其他位次段院校】</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-gray-900 mr-2">20所</span>
+                <a className="text-blue-600" href="#">
+                  更多
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       {/* 底部导航 */}
       <BottomNav

@@ -6,8 +6,8 @@ import intention_blue from '../../public/intention_blue.png';
 import intention_grey from '../../public/intention_grey.png';
 import major_blue from '../../public/major_blue.png';
 import major_grey from '../../public/major_grey.png';
-import school_blue from '../../public/school_blue.png';
-import school_grey from '../../public/school_grey.png';
+import selfAssessmentBlue from '../../public/self-assessment-blue.svg';
+import selfAssessmentGrey from '../../public/self-assessment-grey.svg';
 
 /**
  * 底部导航栏组件
@@ -16,9 +16,9 @@ import school_grey from '../../public/school_grey.png';
  */
 const navItems = [
   {
-    label: '院校',
-    blueIcon: school_blue,
-    greyIcon: school_grey,
+    label: '自评',
+    blueIcon: selfAssessmentBlue,
+    greyIcon: selfAssessmentGrey,
   },
   {
     label: '专业',
@@ -67,7 +67,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ selectedIndex }) => {
         let path = '';
         switch (idx) {
           case 0:
-            path = '/educational';
+            path = '/selfassessment';
             break;
           case 1:
             path = '/major/list';

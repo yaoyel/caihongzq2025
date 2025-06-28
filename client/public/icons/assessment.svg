@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 问卷/评估表主体 -->
+  <path d="M3 3H21V21H3V3Z" stroke="white" stroke-width="2"/>
+  <!-- 标题栏 -->
+  <path d="M3 3H21V7H3V3Z" stroke="white" stroke-width="2"/>
+  <!-- 标题文字线 -->
+  <path d="M6 5H18" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <!-- 问题行 -->
+  <path d="M6 10H18" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <path d="M6 13H18" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <path d="M6 16H18" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <!-- 选项圆圈 -->
+  <circle cx="8" cy="10" r="1" stroke="white" stroke-width="2"/>
+  <circle cx="8" cy="13" r="1" stroke="white" stroke-width="2"/>
+  <circle cx="8" cy="16" r="1" stroke="white" stroke-width="2"/>
+  <!-- 评估笔/勾选标记 -->
+  <path d="M16 9L18 11L20 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg> 

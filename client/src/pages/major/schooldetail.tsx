@@ -65,12 +65,17 @@ const SchoolDetail: React.FC = () => {
   const getSchoolHtml = (schoolBrief: string) => {
     if (schoolBrief) {
       schoolBrief = schoolBrief.replace(/'/g, '"');
-      const seniorTalkList = JSON.parse(schoolBrief);
-      let html = '';
-      for (const [key, value] of Object.entries(seniorTalkList)) {
-        html += `<p class="text-gray-700 leading-relaxed mb-4">${value}</p>`;
+      try {
+        const seniorTalkList = JSON.parse(schoolBrief);
+        let html = '';
+        for (const [key, value] of Object.entries(seniorTalkList)) {
+          html += `<p class="text-gray-700 leading-relaxed mb-4">${value}</p>`;
+        }
+        return html;
+      } catch (error) {
+        console.error('解析院校简介失败:', error);
+        return schoolBrief;
       }
-      return html;
     } else {
       return '';
     }

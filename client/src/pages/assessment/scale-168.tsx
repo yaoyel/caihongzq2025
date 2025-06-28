@@ -994,7 +994,7 @@ const Scale168Assessment: React.FC = () => {
                 setIsNicknameModalVisible(true);
               }}
             />
-            <StyledHomeButton icon={<HomeOutlined />} onClick={() => navigate('/basicInfo')} />
+            <StyledHomeButton icon={<HomeOutlined />} onClick={() => navigate('/selfassessment')} />
           </TitleRow>
           <ResponsiveSteps
             current={dimensions.indexOf(currentDimension)}

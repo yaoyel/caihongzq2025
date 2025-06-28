@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import Top from '../comm/top';
-import { Card } from 'antd';
+import { Card, Spin } from 'antd';
 import BottomNav from '../comm/bottom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getMajorDetail } from '../../config';
@@ -13,6 +13,7 @@ const MajorSchools: React.FC = () => {
   const majorCode = searchParams.get('majorCode');
   const majorName = searchParams.get('majorName');
   const type = searchParams.get('type');
+  const [loading, setLoading] = useState(true); // 添加加载状态
   console.log(majorCode, majorName, type, 'majorCode, majorName, type');
   //+5--5
   const [tuijianSchools1, setTuijianSchools1] = useState([]);
@@ -24,6 +25,7 @@ const MajorSchools: React.FC = () => {
   const [tuijianSchools4, setTuijianSchools4] = useState([]);
   useEffect(() => {
     const fetchMajorDetail = async () => {
+      setLoading(true); // 开始加载时设置loading为true
       try {
         if (!majorCode) {
           console.error('未找到专业代码');
@@ -45,6 +47,7 @@ const MajorSchools: React.FC = () => {
       } catch (error) {
         console.error('获取专业详细信息失败:', error);
       } finally {
+        setLoading(false); // 无论成功失败都设置loading为false
       }
     };
 
@@ -55,9 +58,9 @@ const MajorSchools: React.FC = () => {
   const getHistoryScore = (historyScores) => {
     let htmlTemp = '';
     if (historyScores && historyScores.length > 0) {
-      historyScores?.map((item, i) => {
+      historyScores?.map((item) => {
         htmlTemp += `<div>${item.tuition}  ${item.planMajorName}</div>`;
-        item.historyScore?.map((hs, ihs) => {
+        item.historyScore?.map((hs) => {
           for (const [key, value] of Object.entries(hs)) {
             const valueTemp = value.split(',');
             htmlTemp += `<div  className="flex justify-between text-sm text-gray-700" style="display:flex;justify-content:space-between;"><span className="w-14 mr-2">${key}</span><span className="w-14 mr-2">${valueTemp && valueTemp.length > 2 ? valueTemp[0] + '分' : ''}</span>
@@ -69,6 +72,7 @@ const MajorSchools: React.FC = () => {
     }
     return htmlTemp;
   };
+
   const renderSchool = (school) => {
     return (
       <div key={school.name} className="py-1 border-b last:border-b-0">
@@ -130,45 +134,57 @@ const MajorSchools: React.FC = () => {
       </div>
     );
   };
+
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 40 }}>
       <Top title={`${majorCode ?? ''}${majorName ?? ''}`} onBack={() => navigator(-1)} />
       <div className="bg-[#f7f7fa] flex flex-col justify-center items-start p-3">
         {/* 页面主卡片 */}
         <Card className="rounded-2xl w-full max-w-xl shadow" bodyStyle={{ padding: '24px 16px' }}>
-          <div className="text-lg font-bold mb-2 flex items-center">
-            <span className="w-1.5 h-4 bg-blue-500 rounded-sm mr-2 inline-block" />
-            招生院校 {tuijianSchools1.length + tuijianSchools2.length + tuijianSchools3.length}所
-          </div>
+          {loading ? (
+            // 加载中状态
+            <div className="flex flex-col items-center justify-center py-8">
+              <Spin size="large" />
+              <div className="mt-4 text-gray-600">正在加载院校信息...</div>
+            </div>
+          ) : (
+            // 数据加载完成后的内容
+            <>
+              <div className="text-lg font-bold mb-2 flex items-center">
+                <span className="w-1.5 h-4 bg-blue-500 rounded-sm mr-2 inline-block" />
+                招生院校 {tuijianSchools1.length + tuijianSchools2.length + tuijianSchools3.length}所
+              </div>
 
-          {tuijianSchools1.length > 0 &&
-            renderSchoolTop('比您高考分低5%到高5%位次段院校 (' + tuijianSchools1.length + '所)')}
-          {/* 院校招生信息列表 */}
-          <div className="w-full max-w-xl">
-            {/* 模拟院校数据 */}
-            {tuijianSchools1.map((school) => renderSchool(school))}
-          </div>
-          {tuijianSchools2.length > 0 &&
-            renderSchoolTop('比您高考分低15%到5%位次段院校 (' + tuijianSchools2.length + '所)')}
-          {/* 院校招生信息列表 */}
-          <div className="w-full max-w-xl">
-            {/* 模拟院校数据 */}
-            {tuijianSchools2.map((school) => renderSchool(school))}
-          </div>
-          {tuijianSchools3.length > 0 &&
-            renderSchoolTop('比您高考分高5%到10%位次段院校(' + tuijianSchools3.length + '所)')}
-          {/* 院校招生信息列表 */}
-          <div className="w-full max-w-xl">
-            {/* 模拟院校数据 */}
-            {tuijianSchools3.map((school) => renderSchool(school))}
-          </div>
-          {tuijianSchools4.length > 0 &&
-            renderSchoolTop('其他位次段院校(' + tuijianSchools4.length + '所)')}
-          {/* 院校招生信息列表 */}
-          <div className="w-full max-w-xl">
-            {/* 模拟院校数据 */}
-            {tuijianSchools4.map((school) => renderSchool(school))}
-          </div>
+              {tuijianSchools1.length > 0 &&
+                renderSchoolTop('比您高考分低5%到高5%位次段院校 (' + tuijianSchools1.length + '所)')}
+              {/* 院校招生信息列表 */}
+              <div className="w-full max-w-xl">
+                {/* 模拟院校数据 */}
+                {tuijianSchools1.map((school) => renderSchool(school))}
+              </div>
+              {tuijianSchools2.length > 0 &&
+                renderSchoolTop('比您高考分低15%到5%位次段院校 (' + tuijianSchools2.length + '所)')}
+              {/* 院校招生信息列表 */}
+              <div className="w-full max-w-xl">
+                {/* 模拟院校数据 */}
+                {tuijianSchools2.map((school) => renderSchool(school))}
+              </div>
+              {tuijianSchools3.length > 0 &&
+                renderSchoolTop('比您高考分高5%到10%位次段院校(' + tuijianSchools3.length + '所)')}
+              {/* 院校招生信息列表 */}
+              <div className="w-full max-w-xl">
+                {/* 模拟院校数据 */}
+                {tuijianSchools3.map((school) => renderSchool(school))}
+              </div>
+              {tuijianSchools4.length > 0 &&
+                renderSchoolTop('其他位次段院校(' + tuijianSchools4.length + '所)')}
+              {/* 院校招生信息列表 */}
+              <div className="w-full max-w-xl">
+                {/* 模拟院校数据 */}
+                {tuijianSchools4.map((school) => renderSchool(school))}
+              </div>
+            </>
+          )}
         </Card>
       </div>
       {/* 底部导航 */}

@@ -20,12 +20,13 @@ import MajorList from './pages/major/list';
 import MajorLoveDetail from './pages/major/majorLoveDetail';
 import MajorJobIntro from './pages/major/majorJobIntro';
 import StudyTrait from './pages/major/studyTrait';
-import EduDefault from './pages/educational';
+import Selfassessment from './pages/selfassessment';
 import Intention from './pages/intention';
 import Volunteer from './pages/volunteer';
 import MajorSchools from './pages/major/majorSchools';
 import SchoolDetail from './pages/major/schooldetail';
 import LoveMajorSchool from './pages/major/loveMajorSchool';
+import IntentionDetail from './pages/intention/intentiondetail';
 import { handleWechatCallback, getCurrentUser } from './config';
 const App: React.FC = () => {
   const navigate = useNavigate();
@@ -47,12 +48,7 @@ const App: React.FC = () => {
             localStorage.setItem('new-user', JSON.stringify(result.data.user));
 
             console.log('登录成功:', result.data.user);
-            //获取已答题数量
-            const user = await getCurrentUser();
-            if (user.code == 200 && user.data) {
-              localStorage.setItem('scaleAnswerCount', JSON.stringify(user.data.scaleAnswerCount));
-            }
-            console.log(localStorage.getItem('scaleAnswerCount'));
+
             // 从URL参数中获取目标页面，如果没有则默认跳转到home
             const targetPath = urlParams.get('redirect') || urlParams.get('path') || '/basicInfo';
             navigate(targetPath);
@@ -64,8 +60,7 @@ const App: React.FC = () => {
         }
       }
     };
-
-    if (code) {
+    if (code && (!token || !userStr)) {
       handleCallback();
     }
   }, [navigate]);
@@ -110,12 +105,13 @@ const App: React.FC = () => {
       <Route path="/major/majorlovedetail" element={<MajorLoveDetail />} />
       <Route path="/major/majorjobintro" element={<MajorJobIntro />} />
       <Route path="/major/studyTrait" element={<StudyTrait />} />
-      <Route path="/educational" element={<EduDefault />} />
+      <Route path="/selfassessment" element={<Selfassessment />} />
       <Route path="/intention" element={<Intention />} />
       <Route path="/volunteer" element={<Volunteer />} />
       <Route path="/major/majorSchools" element={<MajorSchools />} />
       <Route path="/major/schooldetail" element={<SchoolDetail />} />
       <Route path="/major/loveMajorSchool" element={<LoveMajorSchool />} />
+      <Route path="/intention/intentiondetail" element={<IntentionDetail />} />
     </Routes>
   );
 };

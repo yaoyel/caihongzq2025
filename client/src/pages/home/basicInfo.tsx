@@ -80,9 +80,10 @@ const BasicInfo: React.FC = () => {
   const [score, setScore] = useState('');
   const [rank, setRank] = useState('');
   const [showProvincePicker, setShowProvincePicker] = useState(false);
+  const [scaleAnswerCount, setScaleAnswerCount] = useState(false);
   const userStr = localStorage.getItem('new-user');
   console.log(userStr);
-  const scaleAnswerCount = localStorage.getItem('scaleAnswerCount');
+
   useEffect(() => {
     const getUserInfo = async () => {
       const user = await getCurrentUser();
@@ -105,6 +106,15 @@ const BasicInfo: React.FC = () => {
       }
     };
     getUserInfo();
+
+    //获取已答题数量
+    const getScaleAnswerCount = async () => {
+      const user = await getCurrentUser();
+      if (user.code == 200 && user.data) {
+        setScaleAnswerCount(user.data.scaleAnswerCount);
+      }
+    };
+    getScaleAnswerCount();
   }, []);
 
   const updateProfile = async () => {
@@ -200,7 +210,7 @@ const BasicInfo: React.FC = () => {
               navigator('/major/list');
             },
             onCancel: () => {
-              navigator('/assessment/scale168');
+              navigator('/selfassessment');
             },
           });
         }

@@ -4,16 +4,18 @@ import { Input, Button, Modal, message, Spin } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { SearchOutlined, StarOutlined, StarFilled } from '@ant-design/icons';
 import BottomNav from '../comm/bottom';
-import StartWelcomePage from '../comm/startWelcome';
 import { getUserMajorScores, callWechatPay } from '../../config';
+import {
+  toggleMajorIntention,
+  cancelMajorIntention,
+  getMajorIntentions,
+} from '../../config/volunteer';
 import './list.css'; // 可根据需要自定义样式
 
 /**
  * 最爱专业页面组件
  */
 const MajorPage: React.FC = () => {
-  const scaleAnswerCount = localStorage.getItem('scaleAnswerCount');
-  console.log(scaleAnswerCount, 'scaleAnswerCount');
   const navigator = useNavigate();
   // 原始专业列表数据
   const [originalMajors, setOriginalMajors] = useState<any[]>([]);
@@ -30,6 +32,8 @@ const MajorPage: React.FC = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
+  // 收藏专业列表
+  const [majorIntentions, setMajorIntentions] = useState<any[]>([]);
 
   // 计算当前实际要渲染的专业数据
   const displayMajors = majors.slice(0, currentPage * pageSize);
@@ -125,6 +129,16 @@ const MajorPage: React.FC = () => {
 
   useEffect(() => {
     fetchMajorScores();
+
+    // 获取收藏专业列表
+    const getMajorIntentionList = async () => {
+      const response = await getMajorIntentions();
+      if (response && response.code === 200) {
+        setMajorIntentions(response.data);
+        console.log('收藏专业列表', response.data);
+      }
+    };
+    getMajorIntentionList();
   }, []);
 
   // 修改分页判断逻辑
@@ -286,19 +300,34 @@ const MajorPage: React.FC = () => {
   /**
    * 切换收藏状态
    */
-  const toggleFavorite = (id: number) => {
-    // 同时更新原始数据和当前显示数据
-    setOriginalMajors((prev: any) =>
-      prev.map((item: any) =>
-        item.majorCode === id ? { ...item, isFavorite: !item.isFavorite } : item
-      )
-    );
+  const toggleFavorite = async (majorCode: number, addOrCancel: boolean = true) => {
+    // // 同时更新原始数据和当前显示数据
+    // setOriginalMajors((prev: any) =>
+    //   prev.map((item: any) =>
+    //     item.majorCode === id ? { ...item, isFavorite: !item.isFavorite } : item
+    //   )
+    // );
 
-    setMajors((prev: any) =>
-      prev.map((item: any) =>
-        item.majorCode === id ? { ...item, isFavorite: !item.isFavorite } : item
-      )
-    );
+    // setMajors((prev: any) =>
+    //   prev.map((item: any) =>
+    //     item.majorCode === id ? { ...item, isFavorite: !item.isFavorite } : item
+    //   )
+    // );
+    try {
+      if (addOrCancel) {
+        const response = await toggleMajorIntention(majorCode);
+        if (response && response.code === 200) {
+          console.log('收藏成功');
+        }
+      } else {
+        const response = await cancelMajorIntention(majorCode);
+        if (response && response.code === 200) {
+          console.log('取消收藏成功');
+        }
+      }
+    } catch (error) {
+      console.error('切换收藏状态失败:', error);
+    }
   };
 
   /**
@@ -331,14 +360,6 @@ const MajorPage: React.FC = () => {
     if (!name) return '';
     return name.length > 6 ? name.substring(0, 6) + '...' : name;
   };
-  if (scaleAnswerCount && Number(scaleAnswerCount) !== 168) {
-    return (
-      <>
-        <StartWelcomePage />
-        <BottomNav selectedIndex={1} />
-      </>
-    );
-  }
 
   return (
     <div className="page-bg text-gray-900">

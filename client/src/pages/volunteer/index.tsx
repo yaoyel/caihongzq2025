@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Card, Spin } from 'antd';
 import { LoadingOutlined, ToolOutlined } from '@ant-design/icons';
 import BottomNav from '../comm/bottom';
-import StartWelcomePage from '../comm/startWelcome';
+import StartWelcomePage from '../selfassessment/startWelcome';
 import Top from '../comm/top';
 
 const EducationalPage: React.FC = () => {
@@ -21,47 +21,74 @@ const EducationalPage: React.FC = () => {
   }
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 40 }}>
-      <Top title="志愿选择" onBack={() => window.history.back()} />
-      <div className="bg-[#f7f7fa] flex justify-center items-start p-3 min-h-screen">
-        {/* 页面主卡片 */}
-        <Card
-          className="rounded-2xl w-full max-w-xl shadow-lg"
-          bodyStyle={{ padding: '32px 24px' }}
-        >
-          {/* 开发中提示内容 */}
-          <div className="text-center py-8">
-            {/* 图标区域 */}
-            <div className="mb-6">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full mb-4">
-                <ToolOutlined className="text-3xl text-blue-600" />
-              </div>
+      <Top title="备选志愿" onBack={() => window.history.back()} />
+      <div className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3 min-h-screen">
+        <div className="w-full max-w-xl bg-white rounded-2xl shadow p-3">
+          <div className="flex items-center justify-start">
+            <div className="flex items-center text-[18px] font-bold text-gray-900">备选志愿</div>
+            <div className="text-blue-600 text-[22px] font-bold">100个</div>
+          </div>
+        </div>
+
+        <div className="w-full max-w-xl bg-white rounded-2xl shadow mt-3 p-4">
+          {/* 学校与基本信息 */}
+          <div className="flex items-center justify-between border-b pb-2">
+            <div className="flex items-center space-x-2">
+              <span className="text-[18px] font-bold text-gray-900">北京大学</span>
+              <span className="bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded">985</span>
+              <span className="bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded">211</span>
+              <span className="bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded">双一流</span>
             </div>
+            {/* 右侧预留空白或可加图标 */}
+          </div>
 
-            {/* 标题 */}
-            <h2 className="text-xl font-semibold text-gray-800 mb-3">功能开发中</h2>
-
-            {/* 描述文字 */}
-            <p className="text-gray-600 mb-6 leading-relaxed">
-              志愿选择功能正在精心开发中，
-              <br />
-              我们将为您提供最优质的志愿推荐服务
-            </p>
-
-            {/* 加载动画 */}
-            <div className="flex items-center justify-center space-x-2 text-blue-600">
-              <Spin indicator={<LoadingOutlined style={{ fontSize: 16 }} spin />} />
-              <span className="text-sm">开发进度 75%</span>
+          {/* 专业与热爱能量 */}
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center">
+              <span className="text-blue-700 font-bold text-[16px] mr-2">0002 逻辑学</span>
             </div>
-
-            {/* 预计上线时间 */}
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-700">
-                <span className="font-medium">预计上线时间：</span>
-                2025年6月底
-              </p>
+            <div className="flex items-center space-x-2">
+              <span className="text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded text-xs font-bold">热爱能量98分！</span>
+              <button className="bg-green-500 text-white text-xs px-3 py-1 rounded">入选</button>
             </div>
           </div>
-        </Card>
+
+          {/* 历年分数表格 */}
+          <div className="mt-3">
+            <div className="flex text-gray-500 text-xs border-b pb-1">
+              <div className="w-1/5">年份</div>
+              <div className="w-1/5">最低分</div>
+              <div className="w-1/5">最低位次</div>
+              <div className="w-1/5">录取</div>
+              <div className="w-1/5"></div>
+            </div>
+            {/* 表格数据 */}
+            <div className="flex text-gray-900 text-sm py-1 border-b">
+              <div className="w-1/5">2024</div>
+              <div className="w-1/5">638</div>
+              <div className="w-1/5">51</div>
+              <div className="w-1/5">50人</div>
+              <div className="w-1/5"></div>
+            </div>
+            <div className="flex text-gray-900 text-sm py-1 border-b">
+              <div className="w-1/5">2023</div>
+              <div className="w-1/5">638</div>
+              <div className="w-1/5">51</div>
+              <div className="w-1/5">30人</div>
+              <div className="w-1/5"></div>
+            </div>
+            <div className="flex text-gray-900 text-sm py-1">
+              <div className="w-1/5">2022</div>
+              <div className="w-1/5">638</div>
+              <div className="w-1/5">51</div>
+              <div className="w-1/5">40人</div>
+              <div className="w-1/5"></div>
+            </div>
+          </div>
+
+          {/* 点击展开 */}
+          <div className="mt-2 text-blue-600 text-xs cursor-pointer">点击展开</div>
+        </div>
       </div>
       {/* 底部导航 */}
       <BottomNav
