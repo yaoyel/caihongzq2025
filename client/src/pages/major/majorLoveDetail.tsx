@@ -1,7 +1,5 @@
-// @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import { Card, Button } from 'antd';
-import { Dialog } from 'antd-mobile';
+import { Card, Button, message } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { StarOutlined, StarFilled, RightOutlined } from '@ant-design/icons';
 import './list.css'; // 可根据需要自定义样式
@@ -19,25 +17,25 @@ const MajorLoveDetail: React.FC = () => {
   const navigator = useNavigate();
   const majorCode = searchParams.get('majorCode');
   const score = searchParams.get('score');
+  const [majorDetail, setMajorDetail] = useState<any>(null);
   const majorName = searchParams.get('majorName');
-  const lexueScore = searchParams.get('lexueScore');
-  const shanxueScore = searchParams.get('shanxueScore');
-  const yanxueDeduction = searchParams.get('yanxueDeduction');
-  const tiaozhanDeduction = searchParams.get('tiaozhanDeduction');
+
   const isFavorite = searchParams.get('isFavorite');
   console.log(isFavorite, 'isFavorite');
-  const [majorDetail, setMajorDetail] = useState<any>(null);
-  // 收藏状态（静态展示，可后续接入逻辑）
-  const [collected, setCollected] = React.useState(isFavorite === 'true');
 
-  //+5--5
-  const [tuijianSchools1, setTuijianSchools1] = useState([]);
-  //-15- -5
-  const [tuijianSchools2, setTuijianSchools2] = useState([]);
-  //5--10
-  const [tuijianSchools3, setTuijianSchools3] = useState([]);
-  //其他位次院校
-  const [tuijianSchools4, setTuijianSchools4] = useState([]);
+  // 收藏状态（静态展示，可后续接入逻辑）
+  const [collected, setCollected] = useState(isFavorite === 'true');
+
+  /**
+   * 处理返回按钮点击
+   */
+  const handleBack = () => {
+    // 确保滚动位置数据存在，这样列表页就知道是从详情页返回的
+    if (!sessionStorage.getItem('major-list-scroll-position')) {
+      sessionStorage.setItem('major-list-scroll-position', '0');
+    }
+    navigator(-1);
+  };
 
   /**
    * 切换收藏状态
@@ -47,13 +45,13 @@ const MajorLoveDetail: React.FC = () => {
       let response;
       if (collected) {
         // 当前已收藏，执行取消收藏
-        response = await cancelMajorIntention(majorCode);
+        response = await cancelMajorIntention(majorCode || '');
         if (response && response.code === 200) {
           setCollected(!collected);
         }
       } else {
         // 当前未收藏，执行收藏
-        response = await toggleMajorIntention(majorCode);
+        response = await toggleMajorIntention(majorCode || '');
         if (response && response.code === 200) {
           setCollected(!collected);
         }
@@ -74,21 +72,14 @@ const MajorLoveDetail: React.FC = () => {
 
         const detailResponse = await getMajorDetail(majorCode);
 
-        if (detailResponse && detailResponse.code === 200) {
-          if (detailResponse.data) {
-            console.log(detailResponse.data);
-            setMajorDetail(detailResponse.data);
-            if (detailResponse.data.schools) {
-              setTuijianSchools1(detailResponse.data.schools.filter((s) => s.group === 2));
-              setTuijianSchools2(detailResponse.data.schools.filter((s) => s.group === 3));
-              setTuijianSchools3(detailResponse.data.schools.filter((s) => s.group === 1));
-              setTuijianSchools4(detailResponse.data.schools.filter((s) => s.group === 0));
-            }
+        if (detailResponse && (detailResponse as any).code === 200) {
+          if ((detailResponse as any).data) {
+            setMajorDetail((detailResponse as any).data);
+            console.log((detailResponse as any).data);
           }
         }
       } catch (error) {
         console.error('获取专业详细信息失败:', error);
-      } finally {
       }
     };
 
@@ -97,7 +88,7 @@ const MajorLoveDetail: React.FC = () => {
 
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 40 }}>
-      <Top title="最爱专业" onBack={() => navigator(-1)} />
+      <Top title="最爱专业" onBack={handleBack} />
       <div className="bg-[#f7f7fa] flex justify-center items-start p-3">
         {/* 外层大卡片 */}
         <Card className="rounded-2xl w-full max-w-xl shadow" bodyStyle={{ padding: '24px 16px' }}>
@@ -141,7 +132,9 @@ const MajorLoveDetail: React.FC = () => {
             </div>
             <div className="divide-y">
               <CardItem
-                text={'乐学特质' + Math.ceil(Number(lexueScore || '0') * 100) + '分'}
+                text={
+                  '乐学特质' + Math.ceil(Number(majorDetail?.major?.lexueScore || '0') * 100) + '分'
+                }
                 onClick={() =>
                   navigator(
                     `/major/studyTrait?type=lexue&majorCode=${majorCode}&majorName=${majorName}`
@@ -149,7 +142,11 @@ const MajorLoveDetail: React.FC = () => {
                 }
               />
               <CardItem
-                text={'善学特质' + Math.ceil(Number(shanxueScore || '0') * 100) + '分'}
+                text={
+                  '善学特质' +
+                  Math.ceil(Number(majorDetail?.major?.shanxueScore || '0') * 100) +
+                  '分'
+                }
                 onClick={() =>
                   navigator(
                     `/major/studyTrait?type=shanxue&majorCode=${majorCode}&majorName=${majorName}`
@@ -157,7 +154,11 @@ const MajorLoveDetail: React.FC = () => {
                 }
               />
               <CardItem
-                text={'厌学特质' + Math.ceil(Number(yanxueDeduction || '0') * 100) + '分'}
+                text={
+                  '厌学特质' +
+                  Math.ceil(Number(majorDetail?.major?.yanxueDeduction || '0') * 100) +
+                  '分'
+                }
                 onClick={() =>
                   navigator(
                     `/major/studyTrait?type=yanxue&majorCode=${majorCode}&majorName=${majorName}`
@@ -165,7 +166,11 @@ const MajorLoveDetail: React.FC = () => {
                 }
               />
               <CardItem
-                text={'阻学特质' + Math.ceil(Number(tiaozhanDeduction || '0') * 100) + '分'}
+                text={
+                  '阻学特质' +
+                  Math.ceil(Number(majorDetail?.major?.tiaozhanDeduction || '0') * 100) +
+                  '分'
+                }
                 onClick={() =>
                   navigator(
                     `/major/studyTrait?type=tiaozhan&majorCode=${majorCode}&majorName=${majorName}`
@@ -202,18 +207,26 @@ const MajorLoveDetail: React.FC = () => {
                 }
               />
               <CardItem
-                text="2.学什么？"
+                text="2.培养目标"
                 onClick={() =>
                   navigator(
-                    `/major/majorjobintro?type=major&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    `/major/majorjobintro?type=target&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
                   )
                 }
               />
               <CardItem
-                text="3.学长说"
+                text="3.主要课程"
                 onClick={() =>
                   navigator(
-                    `/major/majorjobintro?type=major&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    `/major/majorjobintro?type=course&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                  )
+                }
+              />
+              <CardItem
+                text="4.就业方向"
+                onClick={() =>
+                  navigator(
+                    `/major/majorjobintro?type=job&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
                   )
                 }
               />
@@ -230,7 +243,7 @@ const MajorLoveDetail: React.FC = () => {
               className="flex items-center mb-2 pb-2 border-b border-solid border-[#e5e6eb]"
               onClick={() =>
                 navigator(
-                  `/major/majorjobintro?type=job&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                  `/major/majorjobintro?type=career&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
                 )
               }
             >
@@ -239,18 +252,18 @@ const MajorLoveDetail: React.FC = () => {
             </div>
             <div className="divide-y">
               <CardItem
-                text="1.就业去向"
+                text="1.职业规划"
                 onClick={() =>
                   navigator(
-                    `/major/majorjobintro?type=job&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    `/major/majorjobintro?type=career&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
                   )
                 }
               />
               <CardItem
-                text="2.薪酬水平"
+                text="2.薪资水平"
                 onClick={() =>
                   navigator(
-                    `/major/majorjobintro?type=job&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    `/major/majorjobintro?type=salary&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
                   )
                 }
               />
@@ -258,7 +271,7 @@ const MajorLoveDetail: React.FC = () => {
                 text="3.发展前景"
                 onClick={() =>
                   navigator(
-                    `/major/majorjobintro?type=job&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    `/major/majorjobintro?type=prospect&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
                   )
                 }
               />
@@ -271,73 +284,50 @@ const MajorLoveDetail: React.FC = () => {
             bodyStyle={{ padding: '16px' }}
             bordered={true}
           >
-            <div className="flex items-center mb-2 pb-2 border-b border-solid border-[#e5e6eb]">
+            <div
+              className="flex items-center mb-2 pb-2 border-b border-solid border-[#e5e6eb]"
+              onClick={() =>
+                navigator(
+                  `/major/majorschools?majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                )
+              }
+            >
               <img src={zhaoshengyuanxiao} alt="招生院校" className="w-7 h-7 mr-2" />
               <span className="text-[#2d6cf6] font-bold text-base">招生院校</span>
-              <span className="text-[#2d6cf6] font-bold ml-2">
-                {tuijianSchools1.length + tuijianSchools2.length + tuijianSchools3.length}所
-              </span>
             </div>
             <div className="divide-y">
               <CardItem
-                text={'1.-5%到+5%位次院校 (' + tuijianSchools1.length + ')所'}
-                onClick={() => {
-                  tuijianSchools1.length > 0 &&
-                    navigator(
-                      `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
-                    );
-                }}
-              />
-
-              <CardItem
-                text={'2.-15% 到-5%位次院校 (' + tuijianSchools2.length + ')所'}
-                onClick={() => {
-                  tuijianSchools2.length > 0 &&
-                    navigator(
-                      `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
-                    );
-                }}
+                text="1.推荐院校"
+                onClick={() =>
+                  navigator(
+                    `/major/majorschools?majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                  )
+                }
               />
               <CardItem
-                text={'3.+5%到+10%位次院校 (' + tuijianSchools3.length + ')所'}
-                onClick={() => {
-                  tuijianSchools3.length > 0 &&
-                    navigator(
-                      `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
-                    );
-                }}
-              />
-              <CardItem
-                text={'3.其他位次院校 (' + tuijianSchools4.length + ')所'}
-                onClick={() => {
-                  tuijianSchools4.length > 0 &&
-                    navigator(
-                      `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
-                    );
-                }}
+                text="2.院校详情"
+                onClick={() =>
+                  navigator(
+                    `/major/majorschools?majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                  )
+                }
               />
             </div>
           </Card>
         </Card>
-        {/* 底部导航 */}
-        <BottomNav selectedIndex={1} />
       </div>
+      <BottomNav selectedIndex={1} />
     </div>
   );
 };
 
-/**
- * 卡片列表项组件
- * @param text 列表项文本
- * @param onClick 点击事件处理函数
- */
 const CardItem: React.FC<{ text: string; onClick?: () => void }> = ({ text, onClick }) => (
   <div
-    className="flex items-center justify-between py-2 px-1 cursor-pointer hover:bg-gray-50"
+    className="flex items-center justify-between py-3 cursor-pointer hover:bg-gray-50 transition-colors"
     onClick={onClick}
   >
-    <span className="text-[#3b3b3b] text-sm">{text}</span>
-    <RightOutlined className="text-[#bdbdbd] text-base" />
+    <span className="text-gray-700">{text}</span>
+    <RightOutlined className="text-gray-400" />
   </div>
 );
 

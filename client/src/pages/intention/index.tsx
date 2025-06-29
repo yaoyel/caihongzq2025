@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { getMajorIntentions } from '../../config/volunteer';
 
 const EducationalPage: React.FC = () => {
-  const navigate = useNavigate();
+  const navigator = useNavigate();
   const [majorIntentions, setMajorIntentions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true); // 添加加载状态
 
@@ -83,7 +83,15 @@ const EducationalPage: React.FC = () => {
           majorIntentions.length > 0 &&
           majorIntentions.map((item) => (
             <div key={item.majorCode} className="w-full max-w-xl bg-white rounded-2xl shadow mt-3">
-              <div className="flex items-center justify-between bg-[#dee9fd] rounded-t-xl p-4 px-4 py-3 mb-3">
+              <div
+                className="flex items-center justify-between bg-[#dee9fd] rounded-t-xl p-4 px-4 py-3 mb-3"
+                onClick={() => {
+                  navigator(
+                    `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isFavorite=true`,
+                    { replace: false } // 不使用 replace，保持正常的导航历史
+                  );
+                }}
+              >
                 <div className="flex items-center">
                   <span className="text-blue-600 text-lg font-bold mr-2">{item.majorCode}</span>
                   <span className="text-blue-700 text-lg font-bold">{item.majorName}</span>
