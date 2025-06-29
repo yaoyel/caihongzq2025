@@ -12,6 +12,7 @@ import zhaoshengyuanxiao from '../../public/zhaoshengyuanxiao.png';
 import BottomNav from '../comm/bottom';
 import { getMajorDetail } from '../../config';
 import Top from '../comm/top';
+import { toggleMajorIntention, cancelMajorIntention } from '../../config/volunteer';
 
 const MajorLoveDetail: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -23,9 +24,11 @@ const MajorLoveDetail: React.FC = () => {
   const shanxueScore = searchParams.get('shanxueScore');
   const yanxueDeduction = searchParams.get('yanxueDeduction');
   const tiaozhanDeduction = searchParams.get('tiaozhanDeduction');
+  const isFavorite = searchParams.get('isFavorite');
+  console.log(isFavorite, 'isFavorite');
   const [majorDetail, setMajorDetail] = useState<any>(null);
   // 收藏状态（静态展示，可后续接入逻辑）
-  const [collected, setCollected] = React.useState(false);
+  const [collected, setCollected] = React.useState(isFavorite === 'true');
 
   //+5--5
   const [tuijianSchools1, setTuijianSchools1] = useState([]);
@@ -36,9 +39,29 @@ const MajorLoveDetail: React.FC = () => {
   //其他位次院校
   const [tuijianSchools4, setTuijianSchools4] = useState([]);
 
-  // 切换收藏状态
-  const handleCollect = () => {
-    setCollected(!collected);
+  /**
+   * 切换收藏状态
+   */
+  const handleCollect = async () => {
+    try {
+      let response;
+      if (collected) {
+        // 当前已收藏，执行取消收藏
+        response = await cancelMajorIntention(majorCode);
+        if (response && response.code === 200) {
+          setCollected(!collected);
+        }
+      } else {
+        // 当前未收藏，执行收藏
+        response = await toggleMajorIntention(majorCode);
+        if (response && response.code === 200) {
+          setCollected(!collected);
+        }
+      }
+    } catch (error) {
+      console.error('切换收藏状态失败:', error);
+      message.error('操作失败，请重试');
+    }
   };
 
   useEffect(() => {
@@ -96,14 +119,14 @@ const MajorLoveDetail: React.FC = () => {
               type="text"
               icon={
                 collected ? (
-                  <StarFilled className="text-[#bdbdbd] text-xl" />
+                  <StarFilled className="text-[#fadb14] text-xl" />
                 ) : (
-                  <StarOutlined className="text-[#bdbdbd] text-xl" />
+                  <StarOutlined className="text-[#ccc] text-xl" />
                 )
               }
               onClick={handleCollect}
             >
-              <span className="text-[#bdbdbd] ml-1">收藏</span>
+              <span className={collected ? 'text-[#fadb14]' : 'text-[#ccc]'}>收藏</span>
             </Button>
           </div>
 

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Input, Button, Modal, message, Spin } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { SearchOutlined, StarOutlined, StarFilled } from '@ant-design/icons';
@@ -41,33 +41,19 @@ const MajorPage: React.FC = () => {
   // 在组件内添加ref
   const listAreaRef = useRef<HTMLDivElement>(null);
 
+  // 使用 useMemo 优化收藏状态匹配，避免重复计算
+  const favoriteMajorCodes = useMemo(() => {
+    return new Set(majorIntentions.map((item: any) => String(item.majorCode)));
+  }, [majorIntentions]);
+
   /**
-   * 计算推荐标记数组，当前项分数大于等于下一个项分数则推荐，否则break后续都不推荐
-   * @param majorsList 专业列表
-   * @returns 推荐标记数组
+   * 检查专业是否已收藏
+   * @param majorCode 专业代码
+   * @returns 是否已收藏
    */
-  const getRecommendFlags = (majorsList: any[]) => {
-    const flags: boolean[] = new Array(majorsList.length).fill(false);
-    let hasBreak = false;
-    for (let i = 0; i < majorsList.length - 1; i++) {
-      const currentScore = Number(majorsList[i].score);
-      const nextScore = Number(majorsList[i + 1].score);
-      if (hasBreak) continue;
-      if (currentScore >= nextScore) {
-        flags[i] = true;
-        flags[i + 1] = true;
-      } else {
-        hasBreak = true;
-      }
-    }
-    return flags;
+  const isMajorFavorite = (majorCode: number | string): boolean => {
+    return favoriteMajorCodes.has(String(majorCode));
   };
-
-  // 推荐标记数组
-  const recommendFlags = getRecommendFlags(majors);
-
-  // 找到最后一个推荐的索引
-  const lastRecommendIndex = recommendFlags.lastIndexOf(true);
 
   /**
    * 获取专业分数数据
@@ -127,18 +113,24 @@ const MajorPage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchMajorScores();
-
-    // 获取收藏专业列表
-    const getMajorIntentionList = async () => {
+  /**
+   * 获取收藏专业列表
+   */
+  const fetchMajorIntentions = async () => {
+    try {
       const response = await getMajorIntentions();
       if (response && response.code === 200) {
-        setMajorIntentions(response.data);
+        setMajorIntentions(response.data || []);
         console.log('收藏专业列表', response.data);
       }
-    };
-    getMajorIntentionList();
+    } catch (error) {
+      console.error('获取收藏专业列表失败:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchMajorScores();
+    fetchMajorIntentions();
   }, []);
 
   // 修改分页判断逻辑
@@ -300,33 +292,31 @@ const MajorPage: React.FC = () => {
   /**
    * 切换收藏状态
    */
-  const toggleFavorite = async (majorCode: number, addOrCancel: boolean = true) => {
-    // // 同时更新原始数据和当前显示数据
-    // setOriginalMajors((prev: any) =>
-    //   prev.map((item: any) =>
-    //     item.majorCode === id ? { ...item, isFavorite: !item.isFavorite } : item
-    //   )
-    // );
-
-    // setMajors((prev: any) =>
-    //   prev.map((item: any) =>
-    //     item.majorCode === id ? { ...item, isFavorite: !item.isFavorite } : item
-    //   )
-    // );
+  const toggleFavorite = async (majorCode: number) => {
     try {
-      if (addOrCancel) {
-        const response = await toggleMajorIntention(majorCode);
+      const isCurrentlyFavorite = isMajorFavorite(majorCode);
+
+      let response;
+      if (isCurrentlyFavorite) {
+        // 当前已收藏，执行取消收藏
+        response = await cancelMajorIntention(majorCode);
         if (response && response.code === 200) {
-          console.log('收藏成功');
+          message.success('取消收藏成功');
+          // 重新获取收藏列表以更新状态
+          await fetchMajorIntentions();
         }
       } else {
-        const response = await cancelMajorIntention(majorCode);
+        // 当前未收藏，执行收藏
+        response = await toggleMajorIntention(majorCode);
         if (response && response.code === 200) {
-          console.log('取消收藏成功');
+          message.success('收藏成功');
+          // 重新获取收藏列表以更新状态
+          await fetchMajorIntentions();
         }
       }
     } catch (error) {
       console.error('切换收藏状态失败:', error);
+      message.error('操作失败，请重试');
     }
   };
 
@@ -349,6 +339,7 @@ const MajorPage: React.FC = () => {
    */
   const handleRefresh = () => {
     fetchMajorScores();
+    fetchMajorIntentions();
   };
 
   /**
@@ -481,119 +472,69 @@ const MajorPage: React.FC = () => {
               </div>
             ) : majors.length > 0 ? (
               displayMajors.map((item: any, idx: number) => {
-                // 计算在完整列表中的索引
-                const fullListIndex = majors.findIndex(
-                  (major: any) => major.majorCode === item.majorCode
-                );
-                const isRecommendedMajor = recommendFlags[fullListIndex];
-                // 判断是否需要插入分割线
-                const needDivider =
-                  lastRecommendIndex !== -1 && fullListIndex === lastRecommendIndex + 1;
+                // 检查当前专业是否已收藏
+                const isFavorite = isMajorFavorite(item.majorCode);
+
                 return (
-                  <React.Fragment key={item.majorCode}>
-                    {needDivider && (
-                      <div
-                        style={{
-                          margin: '16px 0',
-                          padding: '12px 24px',
-                          background: '#f8fafc',
-                          color: '#666',
-                          fontSize: 14,
-                          borderTop: '1px solid #e5e7eb',
-                          borderBottom: '1px solid #e5e7eb',
-                          textAlign: 'center',
-                          fontWeight: 500,
-                        }}
-                      >
-                        以下专业，根据院校招生简章选科要求，您暂时不可报考，规划长远发展时可作为参考。
-                      </div>
-                    )}
+                  <div
+                    key={item.majorCode}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '0 8px',
+                      height: 44,
+                      borderBottom:
+                        idx === displayMajors.length - 1 ? 'none' : '1px solid #f0f0f0',
+                      fontSize: 14,
+                      color: '#333',
+                      background: '#fff',
+                      cursor: 'pointer',
+                    }}
+                  >
                     <div
+                      onClick={() =>
+                        navigator(
+                          `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&lexueScore=${item.lexueScore}&shanxueScore=${item.shanxueScore}&yanxueDeduction=${item.yanxueDeduction}&tiaozhanDeduction=${item.tiaozhanDeduction}&isFavorite=${isFavorite}`
+                        )
+                      }
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '0 8px',
-                        height: 44,
-                        borderBottom:
-                          idx === displayMajors.length - 1 ? 'none' : '1px solid #f0f0f0',
-                        fontSize: 14,
-                        color: isRecommendedMajor ? '#333' : '#bbb', // 推荐深色，不推荐淡色
-                        background: isRecommendedMajor ? '#fff7e6' : '#f3f4f6', // 推荐橙色，不推荐灰色
-                        borderLeft: isRecommendedMajor ? '3px solid #fa8c16' : 'none', // 推荐左边框
+                        flex: 1,
+                        position: 'relative',
                         cursor: 'pointer',
                       }}
                     >
-                      <div
-                        onClick={
-                          isRecommendedMajor
-                            ? () =>
-                                navigator(
-                                  `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&lexueScore=${item.lexueScore}&shanxueScore=${item.shanxueScore}&yanxueDeduction=${item.yanxueDeduction}&tiaozhanDeduction=${item.tiaozhanDeduction}`
-                                )
-                            : undefined
-                        }
-                        style={{
-                          flex: 1,
-                          position: 'relative',
-                          cursor: isRecommendedMajor ? 'pointer' : 'not-allowed',
-                          pointerEvents: isRecommendedMajor ? 'auto' : 'none',
-                        }}
-                        aria-disabled={!isRecommendedMajor}
-                      >
-                        {/* 专业编号和名称 */}
-                        <span style={{ color: '#666', marginRight: 8 }}>{item.majorCode}</span>
-                        <span style={{ marginRight: 15 }} title={item.majorName}>
-                          {truncateMajorName(item.majorName)}
-                        </span>
-                        {/* 推荐标记 */}
-                        {/* {isRecommendedMajor && (
-                          <span
-                            style={{
-                              position: 'absolute',
-                              top: '8px',
-                              right: '8px',
-                              background: '#fa8c16',
-                              color: '#fff',
-                              fontSize: 10,
-                              padding: '2px 6px',
-                              borderRadius: 8,
-                              fontWeight: 'bold',
-                              zIndex: 1,
-                            }}
-                          >
-                            推荐
-                          </span>
-                        )} */}
-                        {/* 跳转箭头 */}
-                        {isRecommendedMajor && (
-                          <span style={{ color: '#bbb', fontSize: 18 }}>{'>'}</span>
-                        )}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        {/* 热爱能量 */}
-                        <span style={{ color: '#333', fontSize: 15, marginRight: 8 }}>
-                          热爱能量{Math.ceil(item.score * 100)}分！
-                        </span>
-                        {/* 收藏按钮 */}
-                        <span
-                          style={{
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            minWidth: 40,
-                          }}
-                          onClick={() => toggleFavorite(item.majorCode)}
-                        >
-                          {item.isFavorite ? (
-                            <StarFilled style={{ color: '#fadb14', fontSize: 20 }} />
-                          ) : (
-                            <StarOutlined style={{ color: '#ccc', fontSize: 20 }} />
-                          )}
-                          <span style={{ color: '#ccc', fontSize: 13, marginLeft: 2 }}>收藏</span>
-                        </span>
-                      </div>
+                      {/* 专业编号和名称 */}
+                      <span style={{ color: '#666', marginRight: 8 }}>{item.majorCode}</span>
+                      <span style={{ marginRight: 15 }} title={item.majorName}>
+                        {truncateMajorName(item.majorName)}
+                      </span>
+                      {/* 跳转箭头 */}
+                      <span style={{ color: '#bbb', fontSize: 18 }}>{'>'}</span>
                     </div>
-                  </React.Fragment>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      {/* 热爱能量 */}
+                      <span style={{ color: '#333', fontSize: 15, marginRight: 8 }}>
+                        热爱能量{Math.ceil(item.score * 100)}分！
+                      </span>
+                      {/* 收藏按钮 */}
+                      <span
+                        style={{
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          minWidth: 40,
+                        }}
+                        onClick={() => toggleFavorite(item.majorCode)}
+                      >
+                        {isFavorite ? (
+                          <StarFilled style={{ color: '#fadb14', fontSize: 20 }} />
+                        ) : (
+                          <StarOutlined style={{ color: '#ccc', fontSize: 20 }} />
+                        )}
+                        <span style={{ color: '#ccc', fontSize: 13, marginLeft: 2 }}>收藏</span>
+                      </span>
+                    </div>
+                  </div>
                 );
               })
             ) : searchValue.trim() ? (

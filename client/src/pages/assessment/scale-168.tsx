@@ -1008,7 +1008,7 @@ const Scale168Assessment: React.FC = () => {
 
           <StyledCard
             title={
-              <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+              <Space style={{ width: '100%', justifyContent: 'space-between',display:"flex",flexDirection:"column" }}>
                 <Space>
                   <Text style={{ color: getCurrentCategoryColor() }}>
                     {categories.find((c) => c.type === currentCategory)?.title} - {currentDimension}
@@ -1028,7 +1028,11 @@ const Scale168Assessment: React.FC = () => {
                 <Progress
                   percent={Math.round(progress)}
                   format={() => (
-                    <span style={{ color: '#fa8c16', fontWeight: 'bold' }}>
+                    <span style={{ 
+                      color: '#fa8c16', 
+                      fontWeight: 'bold',
+                      whiteSpace: 'nowrap'
+                    }}>
                       总进度 {Math.round(progress)}%
                     </span>
                   )}
