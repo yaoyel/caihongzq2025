@@ -113,7 +113,7 @@ export class SchoolRedisService {
       // 计算与用户位次的差异百分比
       let rankDiffPercentage = 0;
       if (rank > 0 && avgRank > 0) {
-        rankDiffPercentage = ((avgRank - rank) / rank) * 100;
+        rankDiffPercentage =  ((rank - avgRank) / rank) * 100;
       }
       
       // 确定分组

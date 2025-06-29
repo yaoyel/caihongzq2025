@@ -22,6 +22,9 @@ import { MajorElementAnalysis } from './entities/MajorAnalysis';
 import { SchoolDetail } from './entities/SchoolDetail'; 
 import { Order } from './entities/Order';   
 import { MajorHistoryScore } from './entities/MajorHistoryScore';
+import { Intention } from './entities/Intention';
+import { Alternative } from './entities/Alternative';
+
 // 加载环境变量
 config();
 
@@ -60,7 +63,9 @@ export const AppDataSource = new DataSource({
         MajorElementAnalysis,
         SchoolDetail,
         Order,
-        MajorHistoryScore
+        MajorHistoryScore,
+        Intention,
+        Alternative
     ],
     migrations: [
       //  __dirname + '/migrations/*.ts'  // 使用绝对路径

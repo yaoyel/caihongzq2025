@@ -9,7 +9,7 @@ import { useContainer as typeormUseContainer } from 'typeorm';
 import { initializeDataSource } from './data-source';
 import { logger } from './config/logger';
 import wechatRouter from './routes/wechat';
-import { DataSource } from 'typeorm';
+import { DataSource } from 'typeorm';   
 import RedisModule from './redis/redis.module'; 
 
 // 导入所有控制器
