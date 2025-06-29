@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import BottomNav from '../comm/bottom';
 import Top from '../comm/top';

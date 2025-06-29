@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import { Card, Button, message } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';

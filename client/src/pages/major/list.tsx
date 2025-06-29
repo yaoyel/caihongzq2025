@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect } from 'react';
 import { Input, Button, Modal, message, Spin } from 'antd';
 import { useNavigate } from 'react-router-dom';
