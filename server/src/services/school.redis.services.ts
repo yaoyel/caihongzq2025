@@ -56,36 +56,46 @@ export class SchoolRedisService {
    * @param historyScore 历年分数数据
    * @returns number 平均位次
    */
-  private static getAverageRank(historyScore: any): number {
+  // 同major.redis.service.ts中的getAverageRank方法，必须统一
+  public static getAverageRank(historyScore: string | null): number {
     try {
       if (!historyScore) return 0;
       
-      // 如果是字符串，尝试解析为对象
-      const scores = typeof historyScore === 'string' 
+      // 解析JSON字符串为数组（如果已经是数组则直接使用）
+      const scoresArray = typeof historyScore === 'string' 
         ? JSON.parse(historyScore)
         : historyScore;
-
-      if (!Array.isArray(scores) || scores.length === 0) return 0;
-
-      // 遍历所有年份的记录，找到最新的有效位次
-      for (const score of scores) {
-        const year = Object.keys(score)[0];
-        const scoreStr = score[year];
         
-        // 如果分数字符串无效，继续下一条记录
-        if (!scoreStr || scoreStr === '-,-,-') continue;
-
-        // 分割分数字符串，获取位次（位次在第二个位置）
-        const [, rank] = scoreStr.split(',');
-        const parsedRank = parseInt(rank, 10);
-
-        // 如果解析出有效的位次，直接返回
-        if (!isNaN(parsedRank) && parsedRank > 0) {
-          return parsedRank;
+      // 确保是数组
+      if (!Array.isArray(scoresArray)) return 0;
+      
+      // 收集所有有效的位次数据
+      const ranks: number[] = [];
+      
+      // 遍历每年的数据
+      scoresArray.forEach((item: { [key: string]: string }) => {
+        const year = Object.keys(item)[0];
+        const scoreStr = item[year];
+        
+        if (scoreStr && scoreStr !== '-,-,-') {
+          // 分割字符串，获取第二个值（位次）
+          const [, rank] = scoreStr.split(',');
+          const parsedRank = parseFloat(rank);
+          
+          // 如果是有效的数字就添加到数组中
+          if (!isNaN(parsedRank)) {
+            ranks.push(parsedRank);
+          }
         }
-      }
-
-      return 0;
+      });
+      
+      // 如果没有有效的位次数据，返回0
+      if (ranks.length === 0) return 0;
+      
+      // 计算平均值
+      const sum = ranks.reduce((acc, curr) => acc + curr, 0);
+      return Math.round(sum / ranks.length);
+      
     } catch (error) {
       console.error('解析位次数据出错：', error);
       return 0;

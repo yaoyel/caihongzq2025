@@ -105,12 +105,12 @@ export class MajorController {
         return { code: 401, message: '未获取到用户信息' };
     }
 
-    const userId = ctx.state.user.userId;
-    const user = await this.userService.findOne(userId); 
+      const userId = ctx.state.user.userId;
+      const user = await this.userService.findOne(userId); 
 
-    if (!user) {
-      throw new Error('用户不存在');
-    }
+      if (!user) {
+        throw new Error('用户不存在');
+      }
 
       // 从Redis服务获取原始数据
       const rawData = await this.majorRedisService.getMajorDetail(code);
@@ -120,10 +120,21 @@ export class MajorController {
         return {};
       }  
       
+      // 获取用户的专业热爱值
+      const scores = await this.majorScoreService.calculateMajorScoresByCode(userId.toString(), [code]);
+      if (scores.length !== 0) {
+              // 将专业分数信息添加到rawData中
+       rawData.major.score = scores[0].score;
+       rawData.major.lexueScore = scores[0].lexueScore;
+       rawData.major.shanxueScore = scores[0].shanxueScore;
+       rawData.major.yanxueDeduction = scores[0].yanxueDeduction;
+       rawData.major.tiaozhanDeduction = scores[0].tiaozhanDeduction;
+      } 
       
+
       // 根据用户信息，从redis中查询专业对应的分数
       const historyScore = await this.majorRedisService.getMajorScores(code, user!.province || '北京', user!.preferredSubjects || '综合', user!.secondarySubjects || '');
-
+ 
       const rank = user.rank;
 
       // 将历年分数数据添加到对应的学校对象中，并按位次分组排序
@@ -137,6 +148,7 @@ export class MajorController {
         return defaultViewModel;
       }
       
+      // 同school.redis.services.ts中的getAverageRank方法，必须统一
       if (Array.isArray(rawData.schools) && Array.isArray(historyScore)) {
         rawData.schools = rawData.schools.map((school: { id: number } & SchoolViewModel) => {
           const schoolScores = historyScore.filter(score => score.schoolMajorId === school.id);
@@ -244,13 +256,8 @@ export class MajorController {
       const matchingScores = majorScores.filter(score => matchingMajorCodeSet.has(score.majorCode));
       const nonMatchingScores = majorScores.filter(score => !matchingMajorCodeSet.has(score.majorCode));
 
-      // 对匹配的专业按分数和潜力值排序
-      const sortedMatchingScores = matchingScores.sort((a, b) => {
-        if (b.score !== a.score) {
-          return b.score - a.score;
-        }
-        return b.potentialScore - a.potentialScore;
-      });
+      // 对匹配的专业按分数排序
+      const sortedMatchingScores = matchingScores.sort((a, b) => b.score - a.score);
 
       // 对不匹配的专业按分数排序
       const sortedNonMatchingScores = nonMatchingScores.sort((a, b) => b.score - a.score);

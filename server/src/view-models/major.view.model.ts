@@ -89,11 +89,18 @@ export class BaseMajorDetailViewModel {
  * 继承基础视图模型，添加关联信息
  */
 export class MajorDetailViewModel extends BaseMajorDetailViewModel {
+
   major: {
     name: string;
     code: string;
     eduLevel: string;
     level: 1 | 2 | 3;
+    score?: number;
+    lexueScore?: number;
+    shanxueScore?: number;
+    yanxueDeduction?: number;
+    tiaozhanDeduction?: number;
+
   };
   schools: ExtendedSchoolViewModel[];
   majorElementAnalyses: Array<{
@@ -142,12 +149,17 @@ export function toMajorDetailViewModel(data: any): MajorDetailViewModel | undefi
 
   // 创建完整视图模型
   return {
-    ...baseViewModel,
+    ...baseViewModel, 
     major: {
       name: data.major.name,
       code: data.major.code,
       eduLevel: data.major.eduLevel,
       level: data.major.level,
+      score: data.major.score,
+      lexueScore: data.major.lexueScore,
+      shanxueScore: data.major.shanxueScore,
+      yanxueDeduction: data.major.yanxueDeduction,
+      tiaozhanDeduction: data.major.tiaozhanDeduction,
     },
     schools: Array.isArray(data.schools) ? data.schools.map((school: any) => ({
       code: school.code,
