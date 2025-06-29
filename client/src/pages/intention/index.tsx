@@ -17,8 +17,10 @@ const EducationalPage: React.FC = () => {
       setLoading(true);
       const response = await getMajorIntentions();
       if (response && response.code === 200) {
+        const dataIntentions = response.data || [];
+        dataIntentions.sort((a: any, b: any) => b.score - a.score);
         //response.data || []
-        setMajorIntentions(response.data || []);
+        setMajorIntentions(dataIntentions);
         console.log('收藏专业列表', response.data);
       }
     } catch (error) {

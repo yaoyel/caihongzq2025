@@ -145,18 +145,28 @@ export const getMajorIntentions = async (): Promise<MajorIntentionsResponse> => 
 
 // 备选志愿接口类型定义
 interface MajorAlternativeItem {
+  id?: number;
   majorCode: string;
   majorName: string;
   schoolCode: string;
   schoolName: string;
-  priority: number;
+  priority?: number;
   createdAt: string;
+  score?: number;
+  selected?: boolean;
+  historyScore?: any;
+  group?: number;
 }
 
 interface MajorAlternativesResponse {
   code: number;
   message: string;
-  data: MajorAlternativeItem[];
+  data: {
+    total: number;
+    data: MajorAlternativeItem[];
+    currentPage: number;
+    totalPages: number;
+  };
 }
 
 /**
