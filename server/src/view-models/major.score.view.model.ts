@@ -21,11 +21,7 @@ export interface MajorScoreViewModel {
    * 匹配得分
    */
   score: number;
-
-  /**
-   * 潜力值得分
-   */
-  potentialScore: number;
+ 
 }
 
 /**
