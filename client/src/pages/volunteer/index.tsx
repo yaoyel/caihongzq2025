@@ -434,8 +434,9 @@ const EducationalPage: React.FC = () => {
                     key={items.group + 'group'}
                     className="w-full max-w-xl bg-white rounded-2xl shadow mt-3 p-4"
                   >
-                    <div className="text-blue-600 text-[18px] font-bold border-b pb-2 mb-2">
-                      【{groupNames[items.group]}】
+                    <div className=" text-[16px] font-bold border-b pb-2 mb-2">
+                      【{groupNames[items.group]}】 {items.result.length}个 &nbsp;{' '}
+                      {(items.result.length / alternativesCount) * 100} %
                     </div>
                     {displaySchools.map((schoolGroup) => (
                       <div key={schoolGroup.schoolCode} className="mb-4">
@@ -464,7 +465,12 @@ const EducationalPage: React.FC = () => {
                               <div className="flex items-center">
                                 <span
                                   className={`text-blue-700 font-bold text-[16px] mr-2 ${item.majorName.length > 8 ? 'cursor-pointer hover:text-blue-800' : ''}`}
-                                  onClick={() => handleMajorNameClick(item.majorName)}
+                                  onClick={() => {
+                                    navigate(
+                                      `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isFavorite=true`,
+                                      { replace: false } // 不使用 replace，保持正常的导航历史
+                                    );
+                                  }}
                                 >
                                   {item.majorCode}{' '}
                                   {item.majorName.length > 6
@@ -572,7 +578,7 @@ const EducationalPage: React.FC = () => {
                   >
                     <div className="text-[17px] font-bold mb-2">
                       【{groupNames[items.group]}】{selectedItems.length}个 &nbsp;
-                      {(selectedItems.length / alternativesCount) * 100}%
+                      {(selectedItems.length / selectedCount) * 100}%
                     </div>
                     {displaySchools.map((schoolGroup) => (
                       <div key={schoolGroup.schoolCode} className="mb-4">
@@ -601,7 +607,12 @@ const EducationalPage: React.FC = () => {
                               <div className="flex items-center">
                                 <span
                                   className={`text-blue-700 font-bold text-[16px] mr-2 ${item.majorName.length > 8 ? 'cursor-pointer hover:text-blue-800' : ''}`}
-                                  onClick={() => handleMajorNameClick(item.majorName)}
+                                  onClick={() => {
+                                    navigate(
+                                      `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isFavorite=true`,
+                                      { replace: false } // 不使用 replace，保持正常的导航历史
+                                    );
+                                  }}
                                 >
                                   {item.majorCode}{' '}
                                   {item.majorName.length > 6

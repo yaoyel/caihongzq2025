@@ -122,7 +122,7 @@ const MajorSchools: React.FC = () => {
     let htmlTemp = '';
     if (historyScores && historyScores.length > 0) {
       historyScores?.map((item) => {
-        htmlTemp += `<div>${item.tuition}  ${item.planMajorName}</div>`;
+        htmlTemp += `<div>学费 ${item.tuition} 元/年  ${item.planMajorName}</div>`;
         item.historyScore?.map((hs) => {
           for (const [key, value] of Object.entries(hs)) {
             const valueTemp = value.split(',');
