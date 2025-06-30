@@ -1,12 +1,14 @@
 // @ts-nocheck
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import BottomNav from '../comm/bottom';
+import { useNavigate } from 'react-router-dom';
 import Top from '../comm/top';
 import { useSearchParams } from 'react-router-dom';
 import { getMajorDetail } from '../../config';
 import { createMajorAlternative, getMajorAlternatives } from '../../config/volunteer';
 
 const EducationalDetailPage: React.FC = () => {
+  const navigator = useNavigate();
   const [searchParams] = useSearchParams();
   const majorCode = searchParams.get('majorCode');
   const majorName = searchParams.get('majorName');
@@ -23,6 +25,54 @@ const EducationalDetailPage: React.FC = () => {
   // 添加备选状态管理
   const [alternativeStatus, setAlternativeStatus] = useState<{ [key: string]: boolean }>({});
   const [loadingStatus, setLoadingStatus] = useState<{ [key: string]: boolean }>({});
+
+  // 添加滚动容器引用
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // 生成页面唯一的存储键
+  const getScrollStorageKey = useCallback(() => {
+    return `scroll_position_${majorCode}_${groupNum}`;
+  }, [majorCode, groupNum]);
+
+  // 保存滚动位置到localStorage
+  const saveScrollPosition = useCallback(() => {
+    if (scrollContainerRef.current) {
+      const scrollTop = scrollContainerRef.current.scrollTop;
+      const storageKey = getScrollStorageKey();
+      localStorage.setItem(storageKey, scrollTop.toString());
+    }
+  }, [getScrollStorageKey]);
+
+  // 从localStorage恢复滚动位置
+  const restoreScrollPosition = useCallback(() => {
+    if (scrollContainerRef.current) {
+      const storageKey = getScrollStorageKey();
+      const savedScrollTop = localStorage.getItem(storageKey);
+      if (savedScrollTop) {
+        // 使用setTimeout确保DOM已完全渲染
+        setTimeout(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = parseInt(savedScrollTop, 10);
+          }
+        }, 100);
+      }
+    }
+  }, [getScrollStorageKey]);
+
+  // 滚动事件处理函数（使用节流优化性能）
+  const handleScroll = useCallback(() => {
+    // 使用requestAnimationFrame进行节流
+    if (!handleScroll.ticking) {
+      handleScroll.ticking = true;
+      requestAnimationFrame(() => {
+        saveScrollPosition();
+        handleScroll.ticking = false;
+      });
+    }
+  }, [saveScrollPosition]);
+
+  // 初始化ticking属性
+  handleScroll.ticking = false;
 
   useEffect(() => {
     // 页面初始化逻辑
@@ -70,6 +120,40 @@ const EducationalDetailPage: React.FC = () => {
 
     initializePage();
   }, [majorCode, groupNum]);
+
+  // 监听滚动事件
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll);
+
+      // 恢复滚动位置
+      restoreScrollPosition();
+
+      return () => {
+        scrollContainer.removeEventListener('scroll', handleScroll);
+      };
+    }
+  }, [handleScroll, restoreScrollPosition]);
+
+  // 页面卸载和浏览器回退时保存滚动位置
+  useEffect(() => {
+    const saveOnPopState = () => {
+      saveScrollPosition();
+    };
+    window.addEventListener('popstate', saveOnPopState);
+    return () => {
+      saveScrollPosition();
+      window.removeEventListener('popstate', saveOnPopState);
+    };
+  }, [saveScrollPosition]);
+
+  // 数据渲染后恢复滚动条位置
+  useEffect(() => {
+    if (tuijianSchools && tuijianSchools.length > 0) {
+      restoreScrollPosition();
+    }
+  }, [tuijianSchools, restoreScrollPosition]);
 
   // 处理备选按钮点击
   const handleAlternativeClick = async (school: any) => {
@@ -141,9 +225,16 @@ const EducationalDetailPage: React.FC = () => {
   };
 
   return (
-    <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 40 }}>
+    <div
+      className="page-bg-hasTop text-gray-900"
+      style={{ marginTop: 40, height: 'calc(100vh - 40px)', overflow: 'hidden' }}
+    >
       <Top title="意向专业" onBack={() => window.history.back()} />
-      <div className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3 min-h-screen">
+      <div
+        ref={scrollContainerRef}
+        className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3"
+        style={{ height: 'calc(100vh - 120px)', overflowY: 'auto' }}
+      >
         <div className="w-full max-w-xl bg-white rounded-2xl shadow p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center text-[18px] font-bold text-gray-900">
@@ -153,7 +244,15 @@ const EducationalDetailPage: React.FC = () => {
         </div>
 
         <div className="w-full max-w-xl bg-white rounded-2xl shadow mt-3">
-          <div className="flex items-center justify-between bg-[#dee9fd] rounded-t-xl p-4 px-4 py-3 mb-3">
+          <div
+            className="flex items-center justify-between bg-[#dee9fd] rounded-t-xl p-4 px-4 py-3 mb-3"
+            onClick={() => {
+              navigator(
+                `/major/majorlovedetail?majorCode=${majorCode}&&majorName=${majorName}&score=${score}&isFavorite=true`,
+                { replace: false } // 不使用 replace，保持正常的导航历史
+              );
+            }}
+          >
             <div className="flex items-center">
               <span className="text-blue-600 text-lg font-bold mr-2">{majorCode}</span>
               <span className="text-blue-700 text-lg font-bold">{majorName}</span>
@@ -188,7 +287,16 @@ const EducationalDetailPage: React.FC = () => {
                   {/* 院校头部 */}
                   <div className="flex items-center justify-between py-2 ">
                     <div className="flex items-center space-x-2 ">
-                      <span className="text-blue-600 text-lg font-bold">{school.name}</span>
+                      <span
+                        className="text-blue-600 text-lg font-bold"
+                        onClick={() => {
+                          navigator(
+                            `/major/schooldetail?schoolCode=${school.code}&schoolname=${school.name}`
+                          );
+                        }}
+                      >
+                        {school.name}
+                      </span>
                       <span
                         key={school.name + school.nature}
                         className="text-blue-600 text-sm font-bold mr-2"

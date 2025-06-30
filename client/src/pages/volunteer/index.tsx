@@ -436,7 +436,7 @@ const EducationalPage: React.FC = () => {
                   >
                     <div className=" text-[16px] font-bold border-b pb-2 mb-2">
                       【{groupNames[items.group]}】 {items.result.length}个 &nbsp;{' '}
-                      {(items.result.length / alternativesCount) * 100} %
+                      {Math.ceil((items.result.length / alternativesCount) * 100)} %
                     </div>
                     {displaySchools.map((schoolGroup) => (
                       <div key={schoolGroup.schoolCode} className="mb-4">
@@ -578,7 +578,7 @@ const EducationalPage: React.FC = () => {
                   >
                     <div className="text-[17px] font-bold mb-2">
                       【{groupNames[items.group]}】{selectedItems.length}个 &nbsp;
-                      {(selectedItems.length / selectedCount) * 100}%
+                      {Math.ceil((selectedItems.length / selectedCount) * 100)}%
                     </div>
                     {displaySchools.map((schoolGroup) => (
                       <div key={schoolGroup.schoolCode} className="mb-4">

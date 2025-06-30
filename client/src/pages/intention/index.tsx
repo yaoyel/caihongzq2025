@@ -115,9 +115,8 @@ const EducationalPage: React.FC = () => {
                   </div>
                   <div className="flex items-center">
                     <span className="text-gray-900 mr-2">{item.group2}所</span>
-                    <a
+                    <span
                       className={item.group2 > 0 ? 'text-blue-600' : ''}
-                      href="#"
                       onClick={() => {
                         item.group2 > 0 &&
                         navigator(
@@ -131,7 +130,7 @@ const EducationalPage: React.FC = () => {
                       }}
                     >
                       更多
-                    </a>
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-base">
@@ -143,9 +142,8 @@ const EducationalPage: React.FC = () => {
                   </div>
                   <div className="flex items-center">
                     <span className="text-gray-900 mr-2">{item.group3}所</span>
-                    <a
+                    <span
                       className={item.group3 > 0 ? 'text-blue-600' : ''}
-                      href="#"
                       onClick={() => {
                         item.group3 > 0 &&
                         navigator(
@@ -159,7 +157,7 @@ const EducationalPage: React.FC = () => {
                       }}
                     >
                       更多
-                    </a>
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-base">
@@ -169,9 +167,8 @@ const EducationalPage: React.FC = () => {
                   </div>
                   <div className="flex items-center">
                     <span className="text-gray-900 mr-2">{item.group1}所</span>
-                    <a
+                    <span
                       className={item.group1 > 0 ? 'text-blue-600' : ''}
-                      href="#"
                       onClick={() => {
                         item.group1 > 0 &&
                         navigator(
@@ -185,7 +182,7 @@ const EducationalPage: React.FC = () => {
                       }}
                     >
                       更多
-                    </a>
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-base">
@@ -194,9 +191,8 @@ const EducationalPage: React.FC = () => {
                   </div>
                   <div className="flex items-center">
                     <span className="text-gray-900 mr-2">{item.group0}所</span>
-                    <a
+                    <span
                       className={item.group0 > 0 ? 'text-blue-600' : ''}
-                      href="#"
                       onClick={() => {
                         item.group0 > 0 &&
                         navigator(
@@ -210,7 +206,7 @@ const EducationalPage: React.FC = () => {
                       }}
                     >
                       更多
-                    </a>
+                    </span>
                   </div>
                 </div>
               </div>
