@@ -47,7 +47,7 @@ const EducationalPage: React.FC = () => {
         </p>
       </div>
       <button
-        onClick={() => navigate('/major/list')}
+        onClick={() => navigator('/major/list')}
         className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
       >
         去专业页面收藏
@@ -120,7 +120,7 @@ const EducationalPage: React.FC = () => {
                       href="#"
                       onClick={() => {
                         item.group2 > 0 &&
-                          navigate(
+                        navigator(
                             '/intention/intentiondetail?majorCode=' +
                               item.majorCode +
                               '&groupNum=2&majorName=' +
@@ -148,7 +148,7 @@ const EducationalPage: React.FC = () => {
                       href="#"
                       onClick={() => {
                         item.group3 > 0 &&
-                          navigate(
+                        navigator(
                             '/intention/intentiondetail?majorCode=' +
                               item.majorCode +
                               '&groupNum=3&majorName=' +
@@ -174,7 +174,7 @@ const EducationalPage: React.FC = () => {
                       href="#"
                       onClick={() => {
                         item.group1 > 0 &&
-                          navigate(
+                        navigator(
                             '/intention/intentiondetail?majorCode=' +
                               item.majorCode +
                               '&groupNum=1&majorName=' +
@@ -199,7 +199,7 @@ const EducationalPage: React.FC = () => {
                       href="#"
                       onClick={() => {
                         item.group0 > 0 &&
-                          navigate(
+                        navigator(
                             '/intention/intentiondetail?majorCode=' +
                               item.majorCode +
                               '&groupNum=0&majorName=' +
