@@ -2,6 +2,7 @@ import { Service } from 'typedi';
 import RedisModule from '../redis/redis.module';
 import { RedisClientType } from 'redis';
 import { MajorHistoryScore } from '../entities/MajorHistoryScore';  
+import { getAverageRank } from '../common/utils';
 /**
  * 专业信息Redis服务
  */
@@ -110,11 +111,10 @@ export class MajorRedisService {
         const finalKey = batch ? `${redisKey}_${batch}` : redisKey;
         multi.zRange(finalKey, start, end, { REV: true });
       }
-      
+  
       // 执行批量查询
       const results = await multi.exec();
-      if (!results) return [];
-      
+      if (!results) return []; 
       // 合并所有查询结果
       const allData = results
         .filter(result => Array.isArray(result) && result.length > 0)
@@ -125,8 +125,8 @@ export class MajorRedisService {
             // batch: batch || '所有批次'
           }))
         );
-      
-        return allData;
+        return allData; 
+
       // // 按2024年分数排序
       // return allData.sort((a: MajorHistoryScore, b: MajorHistoryScore) => {
       //   const scoreA = this.get2024Score(a.historyScore as unknown as string);
@@ -433,48 +433,7 @@ export class MajorRedisService {
    * @returns 位次平均值，如果没有则返回0
    */
   public getAverageRank(historyScore: string | null): number {
-    try {
-      if (!historyScore) return 0;
-      
-      // 解析JSON字符串为数组（如果已经是数组则直接使用）
-      const scoresArray = typeof historyScore === 'string' 
-        ? JSON.parse(historyScore)
-        : historyScore;
-        
-      // 确保是数组
-      if (!Array.isArray(scoresArray)) return 0;
-      
-      // 收集所有有效的位次数据
-      const ranks: number[] = [];
-      
-      // 遍历每年的数据
-      scoresArray.forEach((item: { [key: string]: string }) => {
-        const year = Object.keys(item)[0];
-        const scoreStr = item[year];
-        
-        if (scoreStr && scoreStr !== '-,-,-') {
-          // 分割字符串，获取第二个值（位次）
-          const [, rank] = scoreStr.split(',');
-          const parsedRank = parseFloat(rank);
-          
-          // 如果是有效的数字就添加到数组中
-          if (!isNaN(parsedRank)) {
-            ranks.push(parsedRank);
-          }
-        }
-      });
-      
-      // 如果没有有效的位次数据，返回0
-      if (ranks.length === 0) return 0;
-      
-      // 计算平均值
-      const sum = ranks.reduce((acc, curr) => acc + curr, 0);
-      return Math.round(sum / ranks.length);
-      
-    } catch (error) {
-      console.error('解析位次数据出错：', error);
-      return 0;
-    }
+    return getAverageRank(historyScore);
   }
 
   /**

@@ -107,15 +107,15 @@ export class MajorScoreService {
           ts.major_code,
           ROUND(MAX(CASE WHEN ts.type = 'tiaozhan' AND ts.type_score > 0 THEN 
             CASE 
-              WHEN ts.potential_conversion_value = 'medium' THEN ts.type_ratio * 0.5 * 0.25 *0.5
-              WHEN ts.potential_conversion_value = 'low' THEN ts.type_ratio * 0.25 * 0.5
+              WHEN ts.potential_conversion_value = 'medium' THEN ts.type_ratio * 0.5 * 0.25
+              WHEN ts.potential_conversion_value = 'low' THEN ts.type_ratio * 0.25
               ELSE 0 
             END 
           ELSE 0 END),2) ::NUMERIC as tiaozhan_deduction,
          ROUND( MAX(CASE WHEN ts.type = 'yanxue' AND ts.type_score > 0 THEN 
             CASE 
-              WHEN ts.potential_conversion_value = 'medium' THEN ts.type_ratio * 0.5 * 0.25 * 0.5 
-              WHEN ts.potential_conversion_value = 'low' THEN ts.type_ratio *0.25 * 0.5
+              WHEN ts.potential_conversion_value = 'medium' THEN ts.type_ratio * 0.5 * 0.25
+              WHEN ts.potential_conversion_value = 'low' THEN ts.type_ratio *0.25
               ELSE 0 
             END 
           ELSE 0 END),2) :: NUMERIC  as yanxue_deduction
@@ -225,15 +225,15 @@ export class MajorScoreService {
           ts.major_code,
           ROUND(MAX(CASE WHEN ts.type = 'tiaozhan' AND ts.type_score > 0 THEN 
             CASE 
-              WHEN ts.potential_conversion_value = 'medium' THEN ts.type_ratio * 0.5 * 0.25 * 0.5
-              WHEN ts.potential_conversion_value = 'low' THEN ts.type_ratio * 0.25 * 0.5
+              WHEN ts.potential_conversion_value = 'medium' THEN ts.type_ratio * 0.5 * 0.25
+              WHEN ts.potential_conversion_value = 'low' THEN ts.type_ratio * 0.25
               ELSE 0 
             END 
           ELSE 0 END),2) ::NUMERIC as tiaozhan_deduction,
          ROUND( MAX(CASE WHEN ts.type = 'yanxue' AND ts.type_score > 0 THEN 
             CASE 
-              WHEN ts.potential_conversion_value = 'medium' THEN ts.type_ratio * 0.5 * 0.25 * 0.5 
-              WHEN ts.potential_conversion_value = 'low' THEN ts.type_ratio * 0.25 * 0.5
+              WHEN ts.potential_conversion_value = 'medium' THEN ts.type_ratio * 0.5 * 0.25
+              WHEN ts.potential_conversion_value = 'low' THEN ts.type_ratio * 0.25
               ELSE 0 
             END 
           ELSE 0 END),2) :: NUMERIC  as yanxue_deduction
