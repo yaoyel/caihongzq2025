@@ -188,7 +188,7 @@ export function toMajorDetailViewModel(data: any): MajorDetailViewModel | undefi
             studyPeriod: score.studyPeriod,
             tuition: score.tuition,
             historyScore: score.historyScore,
-            year: score.year
+            // year: score.year
           }))
         : []
     })) : [],
