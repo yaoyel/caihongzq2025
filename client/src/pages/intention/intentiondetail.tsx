@@ -210,7 +210,7 @@ const EducationalDetailPage: React.FC = () => {
     let htmlTemp = '';
     if (historyScores && historyScores.length > 0) {
       historyScores?.map((item) => {
-        htmlTemp += `<div>学费：${item.tuition}/年  专业：${item.planMajorName}  选科：${item.subjectType}+${item.subjectSelection}</div>`;
+        htmlTemp += `<div  style="display:flex;justify-content:space-between;"><span>学费：${item.tuition}元/年</span>  <span>专业：${item.planMajorName}</span>  <span>选科：${item.subjectType}+${item.subjectSelection}</span></div>`;
         item.historyScore?.map((hs) => {
           for (const [key, value] of Object.entries(hs)) {
             const valueTemp = value.split(',');
