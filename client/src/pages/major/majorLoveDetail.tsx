@@ -75,7 +75,14 @@ const MajorLoveDetail: React.FC = () => {
 
         if (detailResponse && (detailResponse as any).code === 200) {
           if ((detailResponse as any).data) {
-            setMajorDetail((detailResponse as any).data);
+            const majorDetailData = {
+              ...(detailResponse as any).data,
+              tuijianSchools1: (detailResponse as any).data.tuijianSchools1,
+              tuijianSchools2: (detailResponse as any).data.tuijianSchools2,
+              tuijianSchools3: (detailResponse as any).data.tuijianSchools3,
+              tuijianSchools4: (detailResponse as any).data.tuijianSchools4,
+            };
+            setMajorDetail(majorDetailData);
             console.log((detailResponse as any).data);
           }
         }
@@ -295,23 +302,63 @@ const MajorLoveDetail: React.FC = () => {
             >
               <img src={zhaoshengyuanxiao} alt="招生院校" className="w-7 h-7 mr-2" />
               <span className="text-[#2d6cf6] font-bold text-base">招生院校</span>
+              <span className="text-[#2d6cf6] font-bold ml-2">
+                {majorDetail?.schools?.filter((s) => s.group !== 0).length}所
+              </span>
             </div>
             <div className="divide-y">
               <CardItem
-                text="1.推荐院校"
-                onClick={() =>
-                  navigator(
-                    `/major/majorschools?majorCode=${majorCode}&majorName=${majorName}&score=${score}`
-                  )
+                text={
+                  '1.-5%到+5%位次院校 (' +
+                  majorDetail?.schools?.filter((s) => s.group === 2).length +
+                  ')所'
                 }
+                onClick={() => {
+                  majorDetail?.schools?.filter((s) => s.group === 2).length > 0 &&
+                    navigator(
+                      `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    );
+                }}
+              />
+
+              <CardItem
+                text={
+                  '2.-15% 到-5%位次院校 (' +
+                  majorDetail?.schools?.filter((s) => s.group === 3).length +
+                  ')所'
+                }
+                onClick={() => {
+                  majorDetail?.schools?.filter((s) => s.group === 3).length > 0 &&
+                    navigator(
+                      `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    );
+                }}
               />
               <CardItem
-                text="2.院校详情"
-                onClick={() =>
-                  navigator(
-                    `/major/majorschools?majorCode=${majorCode}&majorName=${majorName}&score=${score}`
-                  )
+                text={
+                  '3.+5%到+10%位次院校 (' +
+                  majorDetail?.schools?.filter((s) => s.group === 1).length +
+                  ')所'
                 }
+                onClick={() => {
+                  majorDetail?.schools?.filter((s) => s.group === 1).length > 0 &&
+                    navigator(
+                      `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    );
+                }}
+              />
+              <CardItem
+                text={
+                  '4.其他位次院校 (' +
+                  majorDetail?.schools?.filter((s) => s.group === 0).length +
+                  ')所'
+                }
+                onClick={() => {
+                  majorDetail?.schools?.filter((s) => s.group === 0).length > 0 &&
+                    navigator(
+                      `/major/majorSchools?type=schools&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    );
+                }}
               />
             </div>
           </Card>
