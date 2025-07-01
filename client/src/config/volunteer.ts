@@ -41,6 +41,8 @@ export const api = {
     selectAlternative: (alternativeId: string) => `/majors/alternative/${alternativeId}/select`,
     // 取消志愿接口
     unselectAlternative: (alternativeId: string) => `/majors/alternative/${alternativeId}/unselect`,
+    // 取消备注接口
+    cancelAlternative: (alternativeId: string) => `/majors/alternative/${alternativeId}`,
   },
 };
 
@@ -289,6 +291,26 @@ export const unselectAlternative = async (alternativeId: string): Promise<Altern
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(error.response?.data?.message || '取消志愿失败');
+    }
+    throw error;
+  }
+};
+
+/**
+ * 取消备注（删除备选志愿）
+ * @param alternativeId 备选志愿ID
+ * @returns Promise<AlternativeActionResponse>
+ */
+export const cancelAlternative = async (alternativeId: string): Promise<AlternativeActionResponse> => {
+  try {
+    const response = await axios.delete<AlternativeActionResponse>(
+      getApiUrl(api.endpoints.cancelAlternative(alternativeId)),
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '取消备注失败');
     }
     throw error;
   }

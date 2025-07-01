@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Top from '../comm/top';
 import { useSearchParams } from 'react-router-dom';
 import { getMajorDetail } from '../../config';
-import { createMajorAlternative, getMajorAlternatives } from '../../config/volunteer';
+import { createMajorAlternative, getMajorAlternatives, cancelAlternative } from '../../config/volunteer';
 
 const EducationalDetailPage: React.FC = () => {
   const navigator = useNavigate();
@@ -22,9 +22,11 @@ const EducationalDetailPage: React.FC = () => {
   ];
 
   const [tuijianSchools, setTuijianSchools] = useState([]);
-  // 添加备选状态管理
-  const [alternativeStatus, setAlternativeStatus] = useState<{ [key: string]: boolean }>({});
+  // 添加备选状态管理，存储备选志愿的ID
+  const [alternativeStatus, setAlternativeStatus] = useState<{ [key: string]: { isAlternative: boolean; id?: string } }>({});
   const [loadingStatus, setLoadingStatus] = useState<{ [key: string]: boolean }>({});
+  // 添加搜索状态
+  const [searchKeyword, setSearchKeyword] = useState('');
 
   // 添加滚动容器引用
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -74,6 +76,14 @@ const EducationalDetailPage: React.FC = () => {
   // 初始化ticking属性
   handleScroll.ticking = false;
 
+  // 过滤学校列表的函数
+  const filteredSchools = tuijianSchools.filter((school) => {
+    if (!searchKeyword.trim()) {
+      return true;
+    }
+    return school.name.toLowerCase().includes(searchKeyword.toLowerCase());
+  });
+
   useEffect(() => {
     // 页面初始化逻辑
     const initializePage = async () => {
@@ -101,13 +111,13 @@ const EducationalDetailPage: React.FC = () => {
         // 处理已备选志愿数据
         if (alternativesResponse && alternativesResponse.code === 200) {
           const alternatives = alternativesResponse.data?.data || [];
-          const alternativeMap: { [key: string]: boolean } = {};
+          const alternativeMap: { [key: string]: { isAlternative: boolean; id?: string } } = {};
 
           // 构建已备选学校的映射
           alternatives.forEach((item: any) => {
             if (item.majorCode === majorCode) {
               const schoolKey = `${item.schoolCode}_${item.majorCode}`;
-              alternativeMap[schoolKey] = true;
+              alternativeMap[schoolKey] = { isAlternative: true, id: item.id };
             }
           });
 
@@ -158,6 +168,7 @@ const EducationalDetailPage: React.FC = () => {
   // 处理备选按钮点击
   const handleAlternativeClick = async (school: any) => {
     const schoolKey = `${school.code}_${majorCode}`;
+    const currentStatus = alternativeStatus[schoolKey];
 
     // 如果正在加载中，直接返回
     if (loadingStatus[schoolKey]) {
@@ -168,38 +179,57 @@ const EducationalDetailPage: React.FC = () => {
       // 设置加载状态
       setLoadingStatus((prev) => ({ ...prev, [schoolKey]: true }));
 
-      // 准备历史分数数据
-      const historyScoreData =
-        school.historyScores?.map((item: any) => {
-          const scoreData: { [key: string]: string } = {};
-          item.historyScore?.forEach((hs: any) => {
-            for (const [key, value] of Object.entries(hs)) {
-              scoreData[key] = value as string;
-            }
-          });
-          return scoreData;
-        }) || [];
-
-      // 调用创建备选志愿接口
-      const response = await createMajorAlternative({
-        majorCode: majorCode!,
-        majorName: majorName!,
-        schoolCode: school.code,
-        schoolName: school.name,
-        schoolFeature: school.features || '',
-        historyScore: historyScoreData,
-        group: groupNum,
-      });
-
-      if (response && response.code === 200) {
-        // 更新备选状态
-        setAlternativeStatus((prev) => ({ ...prev, [schoolKey]: true }));
+      if (currentStatus?.isAlternative && currentStatus.id) {
+        // 如果已经备选，则取消备选
+        const response = await cancelAlternative(currentStatus.id);
+        
+        if (response && response.code === 200) {
+          // 更新备选状态
+          setAlternativeStatus((prev) => ({ ...prev, [schoolKey]: { isAlternative: false, id: undefined } }));
+        } else {
+          alert(response.message || '取消备选志愿失败');
+        }
       } else {
-        alert(response.message || '添加备选志愿失败');
+        // 如果未备选，则添加备选
+        // 准备历史分数数据
+        const historyScoreData =
+          school.historyScores?.map((item: any) => {
+            const scoreData: { [key: string]: string } = {};
+            item.historyScore?.forEach((hs: any) => {
+              for (const [key, value] of Object.entries(hs)) {
+                scoreData[key] = value as string;
+              }
+            });
+            return scoreData;
+          }) || [];
+
+        // 调用创建备选志愿接口
+        const response = await createMajorAlternative({
+          majorCode: majorCode!,
+          majorName: majorName!,
+          schoolCode: school.code,
+          schoolName: school.name,
+          schoolFeature: school.features || '',
+          historyScore: historyScoreData,
+          group: groupNum,
+        });
+
+        if (response && response.code === 200) {
+          // 更新备选状态
+          setAlternativeStatus((prev) => ({ 
+            ...prev, 
+            [schoolKey]: { 
+              isAlternative: true, 
+              id: response.data?.id 
+            } 
+          }));
+        } else {
+          alert(response.message || '添加备选志愿失败');
+        }
       }
     } catch (error) {
-      console.error('添加备选志愿失败:', error);
-      alert(error instanceof Error ? error.message : '添加备选志愿失败');
+      console.error('备选志愿操作失败:', error);
+      alert(error instanceof Error ? error.message : '备选志愿操作失败');
     } finally {
       // 清除加载状态
       setLoadingStatus((prev) => ({ ...prev, [schoolKey]: false }));
@@ -271,12 +301,23 @@ const EducationalDetailPage: React.FC = () => {
                 【<span className="text-gray-900"> {groupNames[groupNum]} </span>】
               </div>
               <div className="flex items-center ml-5">
-                <span className="text-gray-900 mr-2">{tuijianSchools.length}所</span>
+                <span className="text-gray-900 mr-2">{filteredSchools.length}所</span>
               </div>
             </div>
-            {tuijianSchools.map((school) => {
+            
+            {/* 搜索框 */}
+            <div className="mb-3">
+              <input
+                type="text"
+                placeholder="搜索学校名称..."
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            {filteredSchools.map((school) => {
               const schoolKey = `${school.code}_${majorCode}`;
-              const isAlternative = alternativeStatus[schoolKey];
+              const isAlternative = alternativeStatus[schoolKey]?.isAlternative || false;
               const isLoading = loadingStatus[schoolKey];
 
               return (
@@ -319,15 +360,15 @@ const EducationalDetailPage: React.FC = () => {
                     <button
                       className={`px-3 py-1 rounded ${
                         isAlternative
-                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          ? 'bg-red-500 text-white hover:bg-red-600'
                           : isLoading
                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             : 'bg-green-500 text-white hover:bg-green-600'
                       }`}
                       onClick={() => handleAlternativeClick(school)}
-                      disabled={isAlternative || isLoading}
+                      disabled={isLoading}
                     >
-                      {isLoading ? '添加中...' : isAlternative ? '已备选' : '备选'}
+                      {isLoading ? '处理中...' : isAlternative ? '撤选' : '备选'}
                     </button>
                   </div>
                   {/* 表格内容 */}
