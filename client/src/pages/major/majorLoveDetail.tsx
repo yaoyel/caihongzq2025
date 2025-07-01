@@ -215,26 +215,18 @@ const MajorLoveDetail: React.FC = () => {
                 }
               />
               <CardItem
-                text="2.培养目标"
+                text="2.学什么？"
                 onClick={() =>
                   navigator(
-                    `/major/majorjobintro?type=target&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    `/major/majorjobintro?type=major&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
                   )
                 }
               />
               <CardItem
-                text="3.主要课程"
+                text="3.学长说"
                 onClick={() =>
                   navigator(
-                    `/major/majorjobintro?type=course&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
-                  )
-                }
-              />
-              <CardItem
-                text="4.就业方向"
-                onClick={() =>
-                  navigator(
-                    `/major/majorjobintro?type=job&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    `/major/majorjobintro?type=major&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
                   )
                 }
               />
@@ -260,7 +252,7 @@ const MajorLoveDetail: React.FC = () => {
             </div>
             <div className="divide-y">
               <CardItem
-                text="1.职业规划"
+                text="1.就业去向"
                 onClick={() =>
                   navigator(
                     `/major/majorjobintro?type=career&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
