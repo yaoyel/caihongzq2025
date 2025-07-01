@@ -17,6 +17,7 @@ import './list.css'; // 可根据需要自定义样式
  */
 const useScrollPosition = (ref: React.RefObject<HTMLDivElement>) => {
   const STORAGE_KEY = 'major-list-scroll-position';
+  const CLICKED_MAJOR_CODE_KEY = 'major-list-clicked-major-code';
 
   // 保存滚动位置到 sessionStorage
   const saveScrollPosition = useCallback(() => {
@@ -26,17 +27,43 @@ const useScrollPosition = (ref: React.RefObject<HTMLDivElement>) => {
     }
   }, [ref]);
 
-  // 从 sessionStorage 恢复滚动位置
-  const restoreScrollPosition = useCallback(() => {
-    const savedPosition = sessionStorage.getItem(STORAGE_KEY);
+  // 保存点击的专业代码
+  const saveClickedMajorCode = useCallback((majorCode: string) => {
+    sessionStorage.setItem(CLICKED_MAJOR_CODE_KEY, majorCode);
+  }, []);
 
-    if (ref.current && savedPosition) {
-      const scrollTop = parseInt(savedPosition, 10);
+  // 从 sessionStorage 恢复滚动位置，通过定位到点击的专业来避免分割线影响
+  const restoreScrollPosition = useCallback((majors: any[]) => {
+    const clickedMajorCode = sessionStorage.getItem(CLICKED_MAJOR_CODE_KEY);
 
+    if (ref.current && clickedMajorCode && majors.length > 0) {
       // 使用 requestAnimationFrame 确保 DOM 已渲染
       requestAnimationFrame(() => {
         if (ref.current) {
-          ref.current.scrollTop = scrollTop;
+          // 查找点击的专业在DOM中的位置
+          const majorElements = ref.current.querySelectorAll('[data-major-code]');
+          let targetElement: Element | null = null;
+          
+          majorElements.forEach(element => {
+            if (element.getAttribute('data-major-code') === clickedMajorCode) {
+              targetElement = element;
+            }
+          });
+
+          if (targetElement) {
+            // 滚动到点击的专业位置
+            targetElement.scrollIntoView({ 
+              behavior: 'auto', 
+              block: 'center' 
+            });
+          } else {
+            // 如果找不到元素，使用保存的滚动位置作为备选
+            const savedPosition = sessionStorage.getItem(STORAGE_KEY);
+            if (savedPosition) {
+              const scrollTop = parseInt(savedPosition, 10);
+              ref.current.scrollTop = scrollTop;
+            }
+          }
         }
       });
     }
@@ -45,9 +72,10 @@ const useScrollPosition = (ref: React.RefObject<HTMLDivElement>) => {
   // 清除保存的滚动位置
   const clearScrollPosition = useCallback(() => {
     sessionStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(CLICKED_MAJOR_CODE_KEY);
   }, []);
 
-  return { saveScrollPosition, restoreScrollPosition, clearScrollPosition };
+  return { saveScrollPosition, saveClickedMajorCode, restoreScrollPosition, clearScrollPosition };
 };
 
 /**
@@ -136,8 +164,36 @@ const MajorPage: React.FC = () => {
   // 在组件内添加ref
   const listAreaRef = useRef<HTMLDivElement>(null);
 
+  /**
+   * 计算推荐标记数组，当前项分数大于等于下一个项分数则推荐，否则break后续都不推荐
+   * @param majorsList 专业列表
+   * @returns 推荐标记数组
+   */
+  const getRecommendFlags = (majorsList: any[]) => {
+    const flags: boolean[] = new Array(majorsList.length).fill(false);
+    let hasBreak = false;
+    for (let i = 0; i < majorsList.length - 1; i++) {
+      const currentScore = Number(majorsList[i].score);
+      const nextScore = Number(majorsList[i + 1].score);
+      if (hasBreak) continue;
+      if (currentScore >= nextScore) {
+        flags[i] = true;
+        flags[i + 1] = true;
+      } else {
+        hasBreak = true;
+      }
+    }
+    return flags;
+  };
+
+  // 推荐标记数组
+  const recommendFlags = getRecommendFlags(majors);
+
+  // 找到最后一个推荐的索引
+  const lastRecommendIndex = recommendFlags.lastIndexOf(true);
+
   // 使用自定义 Hook
-  const { saveScrollPosition, restoreScrollPosition, clearScrollPosition } =
+  const { saveScrollPosition, saveClickedMajorCode, restoreScrollPosition, clearScrollPosition } =
     useScrollPosition(listAreaRef);
   const { clickedMajorCode, handleMajorClick } = useClickState();
 
@@ -177,8 +233,13 @@ const MajorPage: React.FC = () => {
 
           // 在数据设置完成后立即恢复滚动位置
           setTimeout(() => {
-            restoreScrollPosition();
-          }, 50);
+            restoreScrollPosition(parsedData);
+          }, 500);
+
+          // 再次尝试，确保分割线完全渲染
+          setTimeout(() => {
+            restoreScrollPosition(parsedData);
+          }, 1000);
 
           return;
         } catch (error) {
@@ -248,13 +309,13 @@ const MajorPage: React.FC = () => {
   /**
    * 获取收藏专业列表
    */
-  const fetchMajorIntentions = useCallback(async () => {
+  const fetchMajorIntentions = useCallback(async (forceRefresh = false) => {
     // 检查是否有缓存的收藏数据
     const cachedIntentions = sessionStorage.getItem('major-list-cached-intentions');
     const isFromDetail = sessionStorage.getItem('major-list-scroll-position') !== null;
 
-    // 如果是从详情页返回且有缓存数据，直接使用缓存
-    if (isFromDetail && cachedIntentions) {
+    // 如果是从详情页返回且有缓存数据，且不是强制刷新，则直接使用缓存
+    if (isFromDetail && cachedIntentions && !forceRefresh) {
       try {
         const parsedIntentions = JSON.parse(cachedIntentions);
         setMajorIntentions(parsedIntentions);
@@ -295,7 +356,10 @@ const MajorPage: React.FC = () => {
     if (isFromDetail && isInitialized && majors.length > 0 && !loading) {
       // 确保滚动容器存在且有内容
       if (listAreaRef.current && listAreaRef.current.scrollHeight > 0) {
-        restoreScrollPosition();
+        // 增加延迟，确保分割线等动态内容完全渲染
+        setTimeout(() => {
+          restoreScrollPosition(majors);
+        }, 500);
       }
     }
   }, [majors.length, isInitialized, loading, restoreScrollPosition]);
@@ -308,11 +372,69 @@ const MajorPage: React.FC = () => {
       // 延迟恢复滚动位置，确保所有内容都已渲染
       const timer = setTimeout(() => {
         if (listAreaRef.current && listAreaRef.current.scrollHeight > 0) {
-          restoreScrollPosition();
+          restoreScrollPosition(majors);
         }
-      }, 100);
+      }, 500);
 
-      return () => clearTimeout(timer);
+      // 再次尝试，确保分割线完全渲染
+      const timer2 = setTimeout(() => {
+        if (listAreaRef.current && listAreaRef.current.scrollHeight > 0) {
+          restoreScrollPosition(majors);
+        }
+      }, 1000);
+
+      // 第三次尝试，确保所有内容完全稳定
+      const timer3 = setTimeout(() => {
+        if (listAreaRef.current && listAreaRef.current.scrollHeight > 0) {
+          restoreScrollPosition(majors);
+        }
+      }, 1500);
+
+      // 第四次尝试，确保完全渲染
+      const timer4 = setTimeout(() => {
+        if (listAreaRef.current && listAreaRef.current.scrollHeight > 0) {
+          restoreScrollPosition(majors);
+        }
+      }, 2000);
+
+      // 使用 MutationObserver 监听DOM变化，确保分割线渲染完成
+      const observer = new MutationObserver((mutations) => {
+        // 检查是否有分割线相关的DOM变化
+        const hasDividerChanges = mutations.some(mutation => 
+          mutation.type === 'childList' && 
+          mutation.addedNodes.length > 0 &&
+          Array.from(mutation.addedNodes).some(node => 
+            node.nodeType === Node.ELEMENT_NODE &&
+            (node as Element).textContent?.includes('暂时不可报考')
+          )
+        );
+
+        if (hasDividerChanges) {
+          // 分割线已渲染，再次恢复滚动位置
+          setTimeout(() => {
+            if (listAreaRef.current && listAreaRef.current.scrollHeight > 0) {
+              restoreScrollPosition(majors);
+            }
+          }, 200);
+        }
+      });
+
+      // 开始监听DOM变化
+      if (listAreaRef.current) {
+        observer.observe(listAreaRef.current, {
+          childList: true,
+          subtree: true,
+          characterData: true
+        });
+      }
+
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(timer2);
+        clearTimeout(timer3);
+        clearTimeout(timer4);
+        observer.disconnect();
+      };
     }
   }, [majors.length, isInitialized, loading, restoreScrollPosition]);
 
@@ -322,11 +444,19 @@ const MajorPage: React.FC = () => {
       if (!document.hidden) {
         const isFromDetail = sessionStorage.getItem('major-list-scroll-position') !== null;
         if (isFromDetail && isInitialized && majors.length > 0) {
+          // 增加延迟，确保分割线等动态内容完全渲染
           setTimeout(() => {
             if (listAreaRef.current && listAreaRef.current.scrollHeight > 0) {
-              restoreScrollPosition();
+              restoreScrollPosition(majors);
             }
-          }, 100);
+          }, 500);
+          
+          // 再次尝试，确保完全渲染
+          setTimeout(() => {
+            if (listAreaRef.current && listAreaRef.current.scrollHeight > 0) {
+              restoreScrollPosition(majors);
+            }
+          }, 1000);
         }
       }
     };
@@ -521,7 +651,7 @@ const MajorPage: React.FC = () => {
           if (response && response.code === 200) {
             message.success('取消收藏成功');
             // 重新获取收藏列表以更新状态
-            await fetchMajorIntentions();
+            await fetchMajorIntentions(true);
           }
         } else {
           // 当前未收藏，执行收藏
@@ -529,7 +659,7 @@ const MajorPage: React.FC = () => {
           if (response && response.code === 200) {
             message.success('收藏成功');
             // 重新获取收藏列表以更新状态
-            await fetchMajorIntentions();
+            await fetchMajorIntentions(true);
           }
         }
       } catch (error) {
@@ -561,6 +691,9 @@ const MajorPage: React.FC = () => {
     (item: any, isFavorite: boolean) => {
       // 保存当前滚动位置
       saveScrollPosition();
+      
+      // 保存点击的专业代码
+      saveClickedMajorCode(String(item.majorCode));
 
       // 设置点击状态
       handleMajorClick(String(item.majorCode));
@@ -572,7 +705,7 @@ const MajorPage: React.FC = () => {
         { replace: false } // 不使用 replace，保持正常的导航历史，但通过 isInitialized 避免重新加载
       );
     },
-    [saveScrollPosition, handleMajorClick, navigator]
+    [saveScrollPosition, saveClickedMajorCode, handleMajorClick, navigator]
   );
 
   /**
@@ -585,7 +718,7 @@ const MajorPage: React.FC = () => {
     sessionStorage.removeItem('major-list-cached-intentions');
     sessionStorage.removeItem('major-list-clicked-code'); // 清除点击状态
     fetchMajorScores();
-    fetchMajorIntentions();
+    fetchMajorIntentions(true); // 强制刷新收藏数据
   }, [fetchMajorScores, fetchMajorIntentions, clearScrollPosition]);
 
   /**
@@ -710,66 +843,102 @@ const MajorPage: React.FC = () => {
                 // 检查当前专业是否已收藏
                 const isFavorite = isMajorFavorite(item.majorCode);
                 const isClicked = clickedMajorCode === String(item.majorCode);
-
+                // 计算在完整列表中的索引
+                const fullListIndex = majors.findIndex(
+                  (major: any) => major.majorCode === item.majorCode
+                );
+                const isRecommendedMajor = recommendFlags[fullListIndex];
+                // 判断是否需要插入分割线
+                const needDivider =
+                  lastRecommendIndex !== -1 && fullListIndex === lastRecommendIndex + 1;
                 return (
-                  <div
-                    key={item.majorCode}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '0 8px',
-                      height: 44,
-                      borderBottom: idx === displayMajors.length - 1 ? 'none' : '1px solid #f0f0f0',
-                      fontSize: 14,
-                      color: '#333',
-                      background: isClicked ? '#e6f7ff' : '#fff', // 更明显的蓝色背景
-                      borderLeft: isClicked ? '4px solid #1890ff' : 'none', // 左侧蓝色边框
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease', // 添加过渡动画
-                      boxShadow: isClicked ? '0 2px 8px rgba(24, 144, 255, 0.15)' : 'none', // 点击时的阴影效果
-                      transform: isClicked ? 'translateX(2px)' : 'translateX(0)', // 轻微向右移动
-                    }}
-                  >
+                  <React.Fragment key={item.majorCode}>
+                    {needDivider && (
+                      <div
+                        style={{
+                          margin: '16px 0',
+                          padding: '12px 24px',
+                          background: '#f8fafc',
+                          color: '#666',
+                          fontSize: 14,
+                          borderTop: '1px solid #e5e7eb',
+                          borderBottom: '1px solid #e5e7eb',
+                          textAlign: 'center',
+                          fontWeight: 500,
+                        }}
+                      >
+                        以下专业，根据院校招生简章选科要求，您暂时不可报考，规划长远发展时可作为参考。
+                      </div>
+                    )}
                     <div
-                      onClick={() => handleMajorItemClick(item, isFavorite)}
+                      key={item.majorCode}
+                      data-major-code={item.majorCode}
                       style={{
-                        flex: 1,
-                        position: 'relative',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '0 8px',
+                        height: 44,
+                        borderBottom:
+                          idx === displayMajors.length - 1 ? 'none' : '1px solid #f0f0f0',
+                        fontSize: 14,
                         cursor: 'pointer',
+                        transition: 'all 0.3s ease', // 添加过渡动画
+                        boxShadow: isClicked ? '0 2px 8px rgba(24, 144, 255, 0.15)' : 'none', // 点击时的阴影效果
+                        transform: isClicked ? 'translateX(2px)' : 'translateX(0)', // 轻微向右移动
+                        color: isRecommendedMajor ? '#333' : '#bbb', // 推荐深色，不推荐淡色
+                        background: isClicked
+                          ? '#e6f7ff'
+                          : isRecommendedMajor
+                            ? '#fff7e6'
+                            : '#f3f4f6', // 推荐橙色，不推荐灰色
+                        borderLeft: isClicked
+                          ? '4px solid #1890ff'
+                          : isRecommendedMajor
+                            ? '3px solid #fa8c16'
+                            : 'none', // 推荐左边框
                       }}
                     >
-                      {/* 专业编号和名称 */}
-                      <span style={{ color: '#666', marginRight: 8 }}>{item.majorCode}</span>
-                      <span style={{ marginRight: 15 }} title={item.majorName}>
-                        {truncateMajorName(item.majorName)}
-                      </span>
-                      {/* 跳转箭头 */}
-                      <span style={{ color: '#bbb', fontSize: 18 }}>{'>'}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      {/* 热爱能量 */}
-                      <span style={{ color: '#333', fontSize: 15, marginRight: 8 }}>
-                        热爱能量{Math.ceil(item.score * 100)}分！
-                      </span>
-                      {/* 收藏按钮 */}
-                      <span
+                      <div
+                        onClick={() => handleMajorItemClick(item, isFavorite)}
                         style={{
+                          flex: 1,
+                          position: 'relative',
                           cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          minWidth: 40,
                         }}
-                        onClick={() => toggleFavorite(item.majorCode)}
                       >
-                        {isFavorite ? (
-                          <StarFilled style={{ color: '#fadb14', fontSize: 20 }} />
-                        ) : (
-                          <StarOutlined style={{ color: '#ccc', fontSize: 20 }} />
-                        )}
-                        <span style={{ color: '#ccc', fontSize: 13, marginLeft: 2 }}>收藏</span>
-                      </span>
+                        {/* 专业编号和名称 */}
+                        <span style={{ color: '#666', marginRight: 8 }}>{item.majorCode}</span>
+                        <span style={{ marginRight: 15 }} title={item.majorName}>
+                          {truncateMajorName(item.majorName)}
+                        </span>
+                        {/* 跳转箭头 */}
+                        <span style={{ color: '#bbb', fontSize: 18 }}>{'>'}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        {/* 热爱能量 */}
+                        <span style={{ color: '#333', fontSize: 15, marginRight: 8 }}>
+                          热爱能量{Math.ceil(item.score * 100)}分！
+                        </span>
+                        {/* 收藏按钮 */}
+                        <span
+                          style={{
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            minWidth: 40,
+                          }}
+                          onClick={() => toggleFavorite(item.majorCode)}
+                        >
+                          {isFavorite ? (
+                            <StarFilled style={{ color: '#fadb14', fontSize: 20 }} />
+                          ) : (
+                            <StarOutlined style={{ color: '#ccc', fontSize: 20 }} />
+                          )}
+                          <span style={{ color: '#ccc', fontSize: 13, marginLeft: 2 }}>收藏</span>
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  </React.Fragment>
                 );
               })
             ) : searchValue.trim() ? (
