@@ -841,4 +841,44 @@ export class MajorController {
       throw new Error(`获取备选方案列表失败: ${message}`);
     }
   }
+
+  /**
+   * 删除指定的备选方案
+   * @param id 备选方案ID
+   * @param ctx 上下文对象，包含用户信息
+   * @returns 删除操作是否成功
+   */
+  @Delete('/alternative/:id')
+  async deleteAlternative(
+    @Param('id') id: number,
+    @Ctx() ctx: { state: { user?: { userId: number } } }
+  ): Promise<{ success: boolean }> {
+    try {
+      if (!ctx.state.user?.userId) {
+        throw new Error('未获取到用户信息');
+      }
+
+      // 获取备选方案
+      const alternativeRepository = AppDataSource.getRepository(Alternative);
+      const alternative = await alternativeRepository.findOne({
+        where: {
+          id: id,
+          userId: ctx.state.user.userId
+        }
+      });
+
+      if (!alternative) {
+        throw new Error('未找到该备选方案');
+      }
+
+      // 删除备选方案
+      await alternativeRepository.remove(alternative);
+
+      return { success: true };
+
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '未知错误';
+      throw new Error(`删除备选方案失败: ${message}`);
+    }
+  }
 }
