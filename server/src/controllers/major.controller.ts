@@ -768,7 +768,7 @@ export class MajorController {
     @Ctx() ctx: { state: { user?: { userId: number } } },
     @QueryParam('selected') selected?: boolean,
     @QueryParam('page') page: number = 1,
-    @QueryParam('pageSize') pageSize: number = 10
+    @QueryParam('pageSize') pageSize: number = 100
   ): Promise<{
     total: number;
     data: AlternativeViewModel[];
@@ -807,7 +807,7 @@ export class MajorController {
         .skip((page - 1) * pageSize)
         .take(pageSize)
         .getMany();
-
+ 
       // 获取所有专业代码
       const majorCodes = alternatives.map(alternative => alternative.majorCode);
 
