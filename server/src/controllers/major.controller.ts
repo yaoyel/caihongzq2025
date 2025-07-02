@@ -782,8 +782,8 @@ export class MajorController {
 
       // 验证分页参数
       if (page < 1) page = 1;
-      if (pageSize < 1) pageSize = 10;
-      if (pageSize > 50) pageSize = 50; // 限制最大每页数量
+      if (pageSize < 1) pageSize = 100;
+      if (pageSize > 100) pageSize = 100; // 限制最大每页数量
 
       // 构建查询
       const alternativeRepository = AppDataSource.getRepository(Alternative);

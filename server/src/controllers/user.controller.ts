@@ -3,6 +3,7 @@ import { OpenAPI } from 'routing-controllers-openapi';
 import { Service } from 'typedi';
 import { UserService } from '../services/user.service';
 import { UserViewModel } from '../view-models/user.view.model';
+import { JwtUtil } from '../utils/jwt';
 
 @JsonController('/users')
 @Service()
@@ -171,6 +172,50 @@ export class UserController {
             return  updatedUser ;
         } catch (error) {
             throw new Error(`更新用户信息失败: ${error instanceof Error ? error.message : '未知错误'}`);
+        }
+    }
+
+    /**
+     * 生成用户的JWT令牌
+     * @param userId 用户ID
+     * @returns 包含token的响应对象
+     */
+    @Post('/generateToken')
+    @OpenAPI({ summary: '生成用户的JWT令牌' })
+    async generateToken(@Body() userData: { userId: number }) {
+        try {
+            const { userId } = userData;
+            
+            // 验证用户是否存在
+            const user = await this.userService.findOne(userId);
+            if (!user) {
+                return { code: 404, message: '用户不存在' };
+            }
+
+            // 生成JWT token
+            const token = JwtUtil.generateToken({
+                userId: user.id,
+                nickname: user.nickname,
+                avatarUrl: user.avatarUrl
+            });
+
+            return {
+             
+                    token,
+                    user: {
+                        id: user.id,
+                        nickname: user.nickname,
+                        avatarUrl: user.avatarUrl
+                    }
+                
+                
+            };
+        } catch (error) {
+            console.error('生成token失败:', error);
+            return {
+                code: 500,
+                message: `生成token失败: ${error instanceof Error ? error.message : '未知错误'}`
+            };
         }
     }
 }
