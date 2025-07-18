@@ -81,7 +81,7 @@ const StyledMainLayout = styled(Layout)<{ collapsed?: boolean }>`
 const ToggleButton = styled(Button)<{ $collapsed: boolean }>`
   position: fixed;
   left: 16px;
-  top: 16px;
+  top: 41px;
   z-index: 1001;
   display: none;
   background: transparent;
