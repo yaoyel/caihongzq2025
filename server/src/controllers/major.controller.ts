@@ -768,7 +768,7 @@ export class MajorController {
     @Ctx() ctx: { state: { user?: { userId: number } } },
     @QueryParam('selected') selected?: boolean,
     @QueryParam('page') page: number = 1,
-    @QueryParam('pageSize') pageSize: number = 10
+    @QueryParam('pageSize') pageSize: number = 100
   ): Promise<{
     total: number;
     data: AlternativeViewModel[];
@@ -782,8 +782,8 @@ export class MajorController {
 
       // 验证分页参数
       if (page < 1) page = 1;
-      if (pageSize < 1) pageSize = 10;
-      if (pageSize > 50) pageSize = 50; // 限制最大每页数量
+      if (pageSize < 1) pageSize = 100;
+      if (pageSize > 100) pageSize = 100; // 限制最大每页数量
 
       // 构建查询
       const alternativeRepository = AppDataSource.getRepository(Alternative);
@@ -807,7 +807,7 @@ export class MajorController {
         .skip((page - 1) * pageSize)
         .take(pageSize)
         .getMany();
-
+ 
       // 获取所有专业代码
       const majorCodes = alternatives.map(alternative => alternative.majorCode);
 

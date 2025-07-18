@@ -99,7 +99,6 @@ export class MajorRedisService {
       // 使用RedisModule获取所有可能的组合
       const patterns = RedisModule.getMatchingPatterns(subjectType, secondSubjects);
       
-      console.log(patterns);
       // 给每个组合添加前缀
       const redisKeys = patterns.map(pattern => `major_scores:${code}_${province}_${pattern}`);
       
