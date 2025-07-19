@@ -16,7 +16,7 @@
 
 /* 卡片样式 */
 .major-list-card-area{
-  height: calc(100vh - 148px);
+  height: calc(100vh - 217px);
   overflow: hidden;
   overflow-y: auto;
 }
@@ -35,6 +35,12 @@
   font-size: 16px;
   color: #333;
   padding: 0 16px;
+}
+.major-list-item-content{
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  gap: 15px;
 }
 
 /* 蓝色序号样式 */

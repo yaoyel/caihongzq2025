@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect } from 'react';
-import { Input, Button, Modal, message, Spin } from 'antd';
+import { Input, Button, Modal, message, Spin, Tabs, Checkbox } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { SearchOutlined, StarOutlined, StarFilled } from '@ant-design/icons';
 import BottomNav from '../comm/bottom';
@@ -33,41 +33,44 @@ const useScrollPosition = (ref: React.RefObject<HTMLDivElement>) => {
   }, []);
 
   // 从 sessionStorage 恢复滚动位置，通过定位到点击的专业来避免分割线影响
-  const restoreScrollPosition = useCallback((majors: any[]) => {
-    const clickedMajorCode = sessionStorage.getItem(CLICKED_MAJOR_CODE_KEY);
+  const restoreScrollPosition = useCallback(
+    (majors: any[]) => {
+      const clickedMajorCode = sessionStorage.getItem(CLICKED_MAJOR_CODE_KEY);
 
-    if (ref.current && clickedMajorCode && majors.length > 0) {
-      // 使用 requestAnimationFrame 确保 DOM 已渲染
-      requestAnimationFrame(() => {
-        if (ref.current) {
-          // 查找点击的专业在DOM中的位置
-          const majorElements = ref.current.querySelectorAll('[data-major-code]');
-          let targetElement: Element | null = null;
-          
-          majorElements.forEach(element => {
-            if (element.getAttribute('data-major-code') === clickedMajorCode) {
-              targetElement = element;
-            }
-          });
+      if (ref.current && clickedMajorCode && majors.length > 0) {
+        // 使用 requestAnimationFrame 确保 DOM 已渲染
+        requestAnimationFrame(() => {
+          if (ref.current) {
+            // 查找点击的专业在DOM中的位置
+            const majorElements = ref.current.querySelectorAll('[data-major-code]');
+            let targetElement: Element | null = null;
 
-          if (targetElement) {
-            // 滚动到点击的专业位置
-            targetElement.scrollIntoView({ 
-              behavior: 'auto', 
-              block: 'center' 
+            majorElements.forEach((element) => {
+              if (element.getAttribute('data-major-code') === clickedMajorCode) {
+                targetElement = element;
+              }
             });
-          } else {
-            // 如果找不到元素，使用保存的滚动位置作为备选
-            const savedPosition = sessionStorage.getItem(STORAGE_KEY);
-            if (savedPosition) {
-              const scrollTop = parseInt(savedPosition, 10);
-              ref.current.scrollTop = scrollTop;
+
+            if (targetElement) {
+              // 滚动到点击的专业位置
+              targetElement.scrollIntoView({
+                behavior: 'auto',
+                block: 'center',
+              });
+            } else {
+              // 如果找不到元素，使用保存的滚动位置作为备选
+              const savedPosition = sessionStorage.getItem(STORAGE_KEY);
+              if (savedPosition) {
+                const scrollTop = parseInt(savedPosition, 10);
+                ref.current.scrollTop = scrollTop;
+              }
             }
           }
-        }
-      });
-    }
-  }, [ref]);
+        });
+      }
+    },
+    [ref]
+  );
 
   // 清除保存的滚动位置
   const clearScrollPosition = useCallback(() => {
@@ -157,6 +160,19 @@ const MajorPage: React.FC = () => {
   const [majorIntentions, setMajorIntentions] = useState<any[]>([]);
   // 标记是否已经初始化过数据
   const [isInitialized, setIsInitialized] = useState(false);
+  // 提示弹窗状态
+  const [isTipModalVisible, setIsTipModalVisible] = useState(false);
+  // 用户选择状态
+  const [userChoices, setUserChoices] = useState({
+    choice1: false,
+    choice2: false,
+  });
+  // 选项卡状态 - 控制最爱专业显示方式
+  const [activeTab, setActiveTab] = useState<'development' | 'passion' | 'opportunity'>(
+    'development'
+  );
+  // 子选项卡状态 - 控制学习特质显示方式
+  const [activeSubTab, setActiveSubTab] = useState<'le' | 'shan' | 'yan' | 'zu'>('le');
 
   // 计算当前实际要渲染的专业数据
   const displayMajors = majors.slice(0, currentPage * pageSize);
@@ -349,6 +365,31 @@ const MajorPage: React.FC = () => {
     }
   }, [fetchMajorScores, fetchMajorIntentions, isInitialized]);
 
+  // 检查是否需要显示提示弹窗
+  useEffect(() => {
+    if (isInitialized && !loading && majors.length > 0) {
+      // 检查是否设置了永远不显示
+      const neverShow = localStorage.getItem('major-list-tip-never-show');
+      if (neverShow === 'true') {
+        return;
+      }
+
+      // 检查今天是否已经显示过
+      const today = new Date().toDateString();
+      const lastShownDate = localStorage.getItem('major-list-tip-last-shown');
+      if (lastShownDate === today) {
+        return;
+      }
+
+      // 显示弹窗
+      const timer = setTimeout(() => {
+        setIsTipModalVisible(true);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialized, loading, majors.length]);
+
   // 使用 useLayoutEffect 确保在 DOM 更新后立即恢复滚动位置
   useLayoutEffect(() => {
     const isFromDetail = sessionStorage.getItem('major-list-scroll-position') !== null;
@@ -400,13 +441,15 @@ const MajorPage: React.FC = () => {
       // 使用 MutationObserver 监听DOM变化，确保分割线渲染完成
       const observer = new MutationObserver((mutations) => {
         // 检查是否有分割线相关的DOM变化
-        const hasDividerChanges = mutations.some(mutation => 
-          mutation.type === 'childList' && 
-          mutation.addedNodes.length > 0 &&
-          Array.from(mutation.addedNodes).some(node => 
-            node.nodeType === Node.ELEMENT_NODE &&
-            (node as Element).textContent?.includes('暂时不可报考')
-          )
+        const hasDividerChanges = mutations.some(
+          (mutation) =>
+            mutation.type === 'childList' &&
+            mutation.addedNodes.length > 0 &&
+            Array.from(mutation.addedNodes).some(
+              (node) =>
+                node.nodeType === Node.ELEMENT_NODE &&
+                (node as Element).textContent?.includes('暂时不可报考')
+            )
         );
 
         if (hasDividerChanges) {
@@ -424,7 +467,7 @@ const MajorPage: React.FC = () => {
         observer.observe(listAreaRef.current, {
           childList: true,
           subtree: true,
-          characterData: true
+          characterData: true,
         });
       }
 
@@ -450,7 +493,7 @@ const MajorPage: React.FC = () => {
               restoreScrollPosition(majors);
             }
           }, 500);
-          
+
           // 再次尝试，确保完全渲染
           setTimeout(() => {
             if (listAreaRef.current && listAreaRef.current.scrollHeight > 0) {
@@ -691,7 +734,7 @@ const MajorPage: React.FC = () => {
     (item: any, isFavorite: boolean) => {
       // 保存当前滚动位置
       saveScrollPosition();
-      
+
       // 保存点击的专业代码
       saveClickedMajorCode(String(item.majorCode));
 
@@ -729,6 +772,64 @@ const MajorPage: React.FC = () => {
   const truncateMajorName = useCallback((name: string) => {
     if (!name) return '';
     return name.length > 6 ? name.substring(0, 6) + '...' : name;
+  }, []);
+
+  /**
+   * 根据当前选项卡获取分数显示文本
+   * @param score 分数
+   * @returns 显示文本
+   */
+  const getScoreDisplayText = useCallback(
+    (score: number) => {
+      const scoreValue = Math.ceil(score * 100);
+      switch (activeTab) {
+        case 'development':
+          return `发展潜能${scoreValue}分！`;
+        case 'passion':
+          return `热爱能量${scoreValue}分！`;
+        case 'opportunity':
+          return `机遇指数${scoreValue}分！`;
+        default:
+          return `发展潜能${scoreValue}分！`;
+      }
+    },
+    [activeTab]
+  );
+
+  /**
+   * 处理用户选择变化
+   */
+  const handleChoiceChange = useCallback((choice: 'choice1' | 'choice2', checked: boolean) => {
+    setUserChoices((prev) => ({
+      ...prev,
+      [choice]: checked,
+    }));
+  }, []);
+
+  /**
+   * 处理提示弹窗确认
+   */
+  const handleTipModalConfirm = useCallback(() => {
+    // 根据用户选择设置不同的存储策略
+    if (userChoices.choice1) {
+      // 今天不显示
+      const today = new Date().toDateString();
+      localStorage.setItem('major-list-tip-last-shown', today);
+    }
+
+    if (userChoices.choice2) {
+      // 以后都不显示
+      localStorage.setItem('major-list-tip-never-show', 'true');
+    }
+
+    setIsTipModalVisible(false);
+  }, [userChoices]);
+
+  /**
+   * 处理提示弹窗关闭
+   */
+  const handleTipModalClose = useCallback(() => {
+    setIsTipModalVisible(false);
   }, []);
 
   return (
@@ -779,11 +880,114 @@ const MajorPage: React.FC = () => {
       {/* 为固定搜索栏留出空间 */}
       <div style={{ height: '68px' }}></div>
 
+      {/* 为固定选项卡区域留出空间 */}
+      <div style={{ height: activeTab === 'passion' ? '95px' : '55px' }}></div>
+      {/* 选项卡区域 */}
+      <div
+        style={{
+          position: 'fixed',
+          top: '68px',
+          left: 0,
+          right: 0,
+          zIndex: 999,
+          background: '#fff',
+          borderBottom: '1px solid #f0f0f0',
+          padding: '12px 16px 8px 16px',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            background: '#f5f5f5',
+            borderRadius: '20px',
+            padding: '4px',
+            gap: '4px',
+          }}
+        >
+          {[
+            { key: 'development', label: '发展潜能', icon: '🚀', color: '#2563eb' },
+            { key: 'passion', label: '热爱能量', icon: '❤️', color: '#dc2626' },
+            { key: 'opportunity', label: '机遇指数', icon: '⭐', color: '#059669' },
+          ].map((tab) => (
+            <div
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key as any)}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '8px 12px',
+                borderRadius: '16px',
+                fontSize: '14px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                background: activeTab === tab.key ? tab.color : 'transparent',
+                color: activeTab === tab.key ? '#fff' : '#666',
+                boxShadow: activeTab === tab.key ? `0 2px 8px ${tab.color}40` : 'none',
+                transform: activeTab === tab.key ? 'scale(1.02)' : 'scale(1)',
+              }}
+            >
+              <span style={{ marginRight: '4px', fontSize: '16px' }}>{tab.icon}</span>
+              {tab.label}
+            </div>
+          ))}
+        </div>
+
+        {/* 热爱能量子选项卡 */}
+        {activeTab === 'passion' && (
+          <div
+            style={{
+              display: 'flex',
+              background: '#fef2f2',
+              borderRadius: '16px',
+              padding: '4px',
+              gap: '4px',
+              marginTop: '8px',
+            }}
+          >
+            {[
+              { key: 'le', label: '乐学', color: '#52c41a' },
+              { key: 'shan', label: '善学', color: '#1890ff' },
+              { key: 'yan', label: '厌学', color: '#fa8c16' },
+              { key: 'zu', label: '阻学', color: '#f5222d' },
+            ].map((subTab) => (
+              <div
+                key={subTab.key}
+                onClick={() => setActiveSubTab(subTab.key as any)}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '6px 8px',
+                  borderRadius: '12px',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  background: activeSubTab === subTab.key ? subTab.color : 'transparent',
+                  color: activeSubTab === subTab.key ? '#fff' : '#666',
+                  boxShadow: activeSubTab === subTab.key ? `0 2px 6px ${subTab.color}40` : 'none',
+                  transform: activeSubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
+                }}
+              >
+                {subTab.label}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* 滚动容器 */}
       <div
         className="major-list-card-area"
         ref={listAreaRef}
-        style={{ height: 'calc(100vh - 148px)', overflow: 'auto' }}
+        style={{
+          height: activeTab === 'passion' ? 'calc(100vh - 240px)' : 'calc(100vh - 200px)',
+          overflow: 'auto',
+        }}
       >
         {/* 专业列表卡片 */}
         <div
@@ -797,7 +1001,7 @@ const MajorPage: React.FC = () => {
           }}
         >
           {/* 标题 */}
-          <div
+          {/* <div
             style={{
               fontWeight: 700,
               fontSize: 20,
@@ -819,7 +1023,7 @@ const MajorPage: React.FC = () => {
               />
               最爱专业
             </div>
-          </div>
+          </div> */}
           {/* 列表内容 */}
           <div>
             {loading ? (
@@ -876,66 +1080,203 @@ const MajorPage: React.FC = () => {
                       style={{
                         display: 'flex',
                         alignItems: 'center',
+                        flexDirection: 'column',
                         padding: '0 8px',
-                        height: 44,
+                        marginBottom: '8px',
+                        minHeight: 80,
                         borderBottom:
                           idx === displayMajors.length - 1 ? 'none' : '1px solid #f0f0f0',
                         fontSize: 14,
                         cursor: 'pointer',
                         transition: 'all 0.3s ease', // 添加过渡动画
-                        boxShadow: isClicked ? '0 2px 8px rgba(24, 144, 255, 0.15)' : 'none', // 点击时的阴影效果
-                        transform: isClicked ? 'translateX(2px)' : 'translateX(0)', // 轻微向右移动
+                        boxShadow:
+                          isClicked && activeTab !== 'passion'
+                            ? '0 2px 8px rgba(24, 144, 255, 0.15)'
+                            : 'none', // 点击时的阴影效果
+                        transform:
+                          isClicked && activeTab !== 'passion'
+                            ? 'translateX(2px)'
+                            : 'translateX(0)', // 轻微向右移动
                         color: isRecommendedMajor ? '#333' : '#bbb', // 推荐深色，不推荐淡色
-                        background: isClicked
-                          ? '#e6f7ff'
-                          : isRecommendedMajor
-                            ? '#fff7e6'
-                            : '#f3f4f6', // 推荐橙色，不推荐灰色
-                        borderLeft: isClicked
-                          ? '4px solid #1890ff'
-                          : isRecommendedMajor
-                            ? '3px solid #fa8c16'
-                            : 'none', // 推荐左边框
+                        background:
+                          isClicked && activeTab !== 'passion'
+                            ? (() => {
+                                switch (activeTab) {
+                                  case 'development':
+                                    return '#dbeafe';
+                                  case 'passion':
+                                    return '#fee2e2';
+                                  case 'opportunity':
+                                    return '#d1fae5';
+                                  default:
+                                    return '#e6f7ff';
+                                }
+                              })()
+                            : isRecommendedMajor
+                              ? (() => {
+                                  switch (activeTab) {
+                                    case 'development':
+                                      return '#eff6ff';
+                                    case 'passion':
+                                      return '#fef2f2';
+                                    case 'opportunity':
+                                      return '#f0fdf4';
+                                    default:
+                                      return '#fff7e6';
+                                  }
+                                })()
+                              : '#f3f4f6', // 不推荐灰色
+                        borderLeft:
+                          isClicked && activeTab !== 'passion'
+                            ? (() => {
+                                switch (activeTab) {
+                                  case 'development':
+                                    return '4px solid #2563eb';
+                                  case 'passion':
+                                    return '4px solid #dc2626';
+                                  case 'opportunity':
+                                    return '4px solid #059669';
+                                  default:
+                                    return '4px solid #1890ff';
+                                }
+                              })()
+                            : isRecommendedMajor
+                              ? (() => {
+                                  switch (activeTab) {
+                                    case 'development':
+                                      return '3px solid #2563eb';
+                                    case 'passion':
+                                      return '3px solid #dc2626';
+                                    case 'opportunity':
+                                      return '3px solid #059669';
+                                    default:
+                                      return '3px solid #fa8c16';
+                                  }
+                                })()
+                              : 'none', // 不推荐无边框
                       }}
                     >
                       <div
-                        onClick={() => handleMajorItemClick(item, isFavorite)}
                         style={{
-                          flex: 1,
-                          position: 'relative',
-                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'left',
+                          width: '100%',
                         }}
                       >
-                        {/* 专业编号和名称 */}
-                        <span style={{ color: '#666', marginRight: 8 }}>{item.majorCode}</span>
-                        <span style={{ marginRight: 15 }} title={item.majorName}>
-                          {truncateMajorName(item.majorName)}
-                        </span>
-                        {/* 跳转箭头 */}
-                        <span style={{ color: '#bbb', fontSize: 18 }}>{'>'}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        {/* 热爱能量 */}
-                        <span style={{ color: '#333', fontSize: 15, marginRight: 8 }}>
-                          热爱能量{Math.ceil(item.score * 100)}分！
-                        </span>
-                        {/* 收藏按钮 */}
-                        <span
+                        <div
+                          onClick={() => handleMajorItemClick(item, isFavorite)}
                           style={{
+                            flex: 1,
+                            position: 'relative',
                             cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            minWidth: 40,
+                            fontWeight: 500,
+                            fontSize: 15,
                           }}
-                          onClick={() => toggleFavorite(item.majorCode)}
                         >
-                          {isFavorite ? (
-                            <StarFilled style={{ color: '#fadb14', fontSize: 20 }} />
-                          ) : (
-                            <StarOutlined style={{ color: '#ccc', fontSize: 20 }} />
+                          {/* 专业编号和名称 */}
+                          {activeTab !== 'passion' && (
+                            <span style={{ color: '#666', marginRight: 8 }}>{item.majorCode}</span>
                           )}
-                          <span style={{ color: '#ccc', fontSize: 13, marginLeft: 2 }}>收藏</span>
-                        </span>
+                          <span style={{ marginRight: 15 }} title={item.majorName}>
+                            {truncateMajorName(item.majorName)}
+                          </span>
+                          {/* 跳转箭头 */}
+                          <span style={{ color: '#bbb', fontSize: 18 }}>{'>'}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          {/* 分数显示 */}
+                          <span
+                            style={{
+                              color: (() => {
+                                switch (activeTab) {
+                                  case 'development':
+                                    return '#2563eb';
+                                  case 'passion':
+                                    return '#dc2626';
+                                  case 'opportunity':
+                                    return '#059669';
+                                  default:
+                                    return '#333';
+                                }
+                              })(),
+                              fontSize: 15,
+                              marginRight: 8,
+                              fontWeight: 500,
+                            }}
+                          >
+                            {getScoreDisplayText(item.score)}
+                          </span>
+                          {/* 收藏按钮 */}
+                          <span
+                            style={{
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              minWidth: 40,
+                            }}
+                            onClick={() => toggleFavorite(item.majorCode)}
+                          >
+                            {isFavorite ? (
+                              <StarFilled style={{ color: '#fadb14', fontSize: 20 }} />
+                            ) : (
+                              <StarOutlined style={{ color: '#ccc', fontSize: 20 }} />
+                            )}
+                            <span style={{ fontSize: 13, marginLeft: 2 }}>收藏</span>
+                          </span>
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          width: '100%',
+                          padding: '8px 0',
+                          gap: '6px',
+                        }}
+                      >
+                        {/* 专业描述 */}
+                        {activeTab === 'development' && (
+                          <div className="major-list-item-content">
+                            逻辑学是&ldquo;思维的体操&rdquo; {'>'}
+                          </div>
+                        )}
+
+                        {/* 学习特质评分 */}
+                        {activeTab !== 'opportunity' && (
+                          <div className="major-list-item-content">
+                            <span style={{ color: '#52c41a', fontWeight: 500 }}>乐学60分{'>'}</span>
+                            <span style={{ color: '#1890ff', fontWeight: 500 }}>善学70分{'>'}</span>
+                            <span style={{ color: '#fa8c16', fontWeight: 500 }}>厌学30分{'>'}</span>
+                            <span style={{ color: '#f5222d', fontWeight: 500 }}>阻学2分{'>'}</span>
+                          </div>
+                        )}
+
+                        {/* 发展评分 */}
+                        {activeTab !== 'passion' && (
+                          <>
+                            <div className="major-list-item-content">
+                              <span style={{ color: '#722ed1', fontWeight: 500 }}>
+                                学业发展65分{'>'}
+                              </span>
+                              <span style={{ color: '#13c2c2', fontWeight: 500 }}>
+                                职业回报80分{'>'}
+                              </span>
+                            </div>
+                            <div className="major-list-item-content">
+                              <span style={{ color: '#eb2f96', fontWeight: 500 }}>
+                                产业前景75分 {'>'}
+                              </span>
+                              <span style={{ color: '#fa541c', fontWeight: 500 }}>
+                                成长空间80分{'>'}
+                              </span>
+                            </div>
+                          </>
+                        )}
+
+                        {/* 招生院校 */}
+                        {activeTab === 'development' && (
+                          <div className="major-list-item-content">招生院校 58所 {'>'}</div>
+                        )}
                       </div>
                     </div>
                   </React.Fragment>
@@ -1026,6 +1367,7 @@ const MajorPage: React.FC = () => {
 
       {/* 底部导航 */}
       <BottomNav selectedIndex={1} />
+
       {/* 支付弹窗 */}
       <Modal
         title="解锁完整分析报告"
@@ -1036,10 +1378,45 @@ const MajorPage: React.FC = () => {
       >
         <div className="py-6">
           <div className="text-center mb-6">
-            <div className="text-2xl font-semibold text-gray-800 mb-2">亲友特惠</div>
-            <div className="text-4xl font-bold text-red-500 mb-2">¥1</div>
-            <div className="text-gray-500 text-sm mb-4">原价 ¥298</div>
-            <div className="text-sm text-gray-600 mb-4">解锁全部 845 个本科专业热爱能量值</div>
+            <div className="text-2xl font-semibold text-gray-800 mb-4">
+              选择最爱专业与理想院校，发现热爱！
+            </div>
+
+            {/* 功能介绍 */}
+            <div className="space-y-3 mb-6 text-left">
+              <div className="flex items-center space-x-2">
+                <span className="text-blue-500 font-semibold" style={{ width: '50px' }}>
+                  自评：
+                </span>
+                <span className="text-gray-700">168座&ldquo;心桥&rdquo;，多维度走进内心世界</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-green-500 font-semibold" style={{ width: '50px' }}>
+                  专业：
+                </span>
+                <span className="text-gray-700">
+                  所有1914个大学专业，结合现在与未来，看见&ldquo;最爱&rdquo;！
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-purple-500 font-semibold" style={{ width: '50px' }}>
+                  意向：
+                </span>
+                <span className="text-gray-700">多层次筛选，让选择更贴近&ldquo;热爱&rdquo;！</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-orange-500 font-semibold" style={{ width: '50px' }}>
+                  志愿：
+                </span>
+                <span className="text-gray-700">多方位对比，发现&ldquo;至爱理想&rdquo;！</span>
+              </div>
+            </div>
+
+            {/* 价格信息 */}
+            <div className="bg-gradient-to-r from-red-50 to-orange-50 p-4 rounded-lg border border-red-200">
+              <div className="text-3xl font-bold text-red-500 mb-1">¥88</div>
+              <div className="text-red-600 font-semibold text-sm">亲友价！</div>
+            </div>
           </div>
           <Button
             type="primary"
@@ -1050,6 +1427,129 @@ const MajorPage: React.FC = () => {
           >
             {payLoading ? '支付中...' : '立即支付'}
           </Button>
+        </div>
+      </Modal>
+
+      {/* 提示弹窗 */}
+      <Modal
+        title={
+          <div
+            style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}
+          >
+            💡 使用提示
+          </div>
+        }
+        open={isTipModalVisible}
+        onCancel={handleTipModalClose}
+        footer={null}
+        width={400}
+        centered
+        className="rounded-2xl"
+        style={{ top: '20%' }}
+      >
+        <div style={{ padding: '20px 0' }}>
+          <Tabs
+            defaultActiveKey="1"
+            items={[
+              {
+                key: '1',
+                label: '收藏功能',
+                children: (
+                  <div
+                    style={{
+                      padding: '16px 0',
+                      lineHeight: '1.8',
+                      fontSize: '14px',
+                      color: '#333',
+                    }}
+                  >
+                    <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#2563eb' }}>
+                      1. &ldquo;点亮&rdquo;收藏，喜欢专业会自动进入&ldquo;意向&rdquo;频道备选
+                    </div>
+                    <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#2563eb' }}>
+                      2. 所有字段均可点击查看详情
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                key: '2',
+                label: '专业分析',
+                children: (
+                  <div
+                    style={{
+                      padding: '16px 0',
+                      lineHeight: '1.8',
+                      fontSize: '14px',
+                      color: '#333',
+                    }}
+                  >
+                    <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#2563eb' }}>
+                      3.
+                      建议特别关注&ldquo;乐学/善学/厌学/阻学特质&rdquo;，了解为什么自己可能喜欢与擅长该专业
+                    </div>
+                    <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#2563eb' }}>
+                      4.
+                      请详细了解学业发展、职业回报、产业前景、成长空间等&ldquo;外部机遇&rdquo;相关内容，基于更全面的评估，决定是否&ldquo;收藏&rdquo;为意向专业
+                    </div>
+                  </div>
+                ),
+              },
+            ]}
+            style={{ marginTop: '8px' }}
+          />
+
+          {/* 底部复选框选项 */}
+          <div
+            style={{
+              marginTop: '20px',
+              padding: '16px 20px',
+              background: '#f8f9fa',
+              borderRadius: '8px',
+              border: '1px solid #e9ecef',
+            }}
+          >
+            <div
+              style={{ marginBottom: '12px', fontSize: '14px', fontWeight: 'bold', color: '#333' }}
+            >
+              请选择您的偏好（可多选）：
+            </div>
+            <div style={{ marginBottom: '8px' }}>
+              <Checkbox
+                checked={userChoices.choice1}
+                onChange={(e) => handleChoiceChange('choice1', e.target.checked)}
+                style={{ fontSize: '13px' }}
+              >
+                今天不显示此提示
+              </Checkbox>
+            </div>
+            <div>
+              <Checkbox
+                checked={userChoices.choice2}
+                onChange={(e) => handleChoiceChange('choice2', e.target.checked)}
+                style={{ fontSize: '13px' }}
+              >
+                以后都不显示此提示
+              </Checkbox>
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: '20px' }}>
+            <Button
+              type="primary"
+              onClick={handleTipModalConfirm}
+              style={{
+                background: '#2563eb',
+                border: 'none',
+                borderRadius: '20px',
+                height: '40px',
+                width: '120px',
+                fontSize: '16px',
+              }}
+            >
+              我知道了
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>
