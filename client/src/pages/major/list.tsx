@@ -173,6 +173,8 @@ const MajorPage: React.FC = () => {
   );
   // 子选项卡状态 - 控制学习特质显示方式
   const [activeSubTab, setActiveSubTab] = useState<'le' | 'shan' | 'yan' | 'zu'>('le');
+  // 机遇指数子选项卡状态 - 控制机遇指数显示方式
+  const [activeOpportunitySubTab, setActiveOpportunitySubTab] = useState<'academic' | 'career' | 'industry' | 'growth'>('academic');
 
   // 计算当前实际要渲染的专业数据
   const displayMajors = majors.slice(0, currentPage * pageSize);
@@ -881,7 +883,7 @@ const MajorPage: React.FC = () => {
       <div style={{ height: '68px' }}></div>
 
       {/* 为固定选项卡区域留出空间 */}
-      <div style={{ height: activeTab === 'passion' ? '95px' : '55px' }}></div>
+      <div style={{ height: (activeTab === 'passion' || activeTab === 'opportunity') ? '95px' : '55px' }}></div>
       {/* 选项卡区域 */}
       <div
         style={{
@@ -978,6 +980,50 @@ const MajorPage: React.FC = () => {
             ))}
           </div>
         )}
+
+        {/* 机遇指数子选项卡 */}
+        {activeTab === 'opportunity' && (
+          <div
+            style={{
+              display: 'flex',
+              background: '#f0fdf4',
+              borderRadius: '16px',
+              padding: '4px',
+              gap: '4px',
+              marginTop: '8px',
+            }}
+          >
+            {[
+              { key: 'academic', label: '学业发展', color: '#722ed1' },
+              { key: 'career', label: '职业回报', color: '#13c2c2' },
+              { key: 'industry', label: '产业前景', color: '#eb2f96' },
+              { key: 'growth', label: '成长空间', color: '#fa541c' },
+            ].map((subTab) => (
+              <div
+                key={subTab.key}
+                onClick={() => setActiveOpportunitySubTab(subTab.key as any)}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '6px 8px',
+                  borderRadius: '12px',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  background: activeOpportunitySubTab === subTab.key ? subTab.color : 'transparent',
+                  color: activeOpportunitySubTab === subTab.key ? '#fff' : '#666',
+                  boxShadow: activeOpportunitySubTab === subTab.key ? `0 2px 6px ${subTab.color}40` : 'none',
+                  transform: activeOpportunitySubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
+                }}
+              >
+                {subTab.label}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 滚动容器 */}
@@ -985,7 +1031,7 @@ const MajorPage: React.FC = () => {
         className="major-list-card-area"
         ref={listAreaRef}
         style={{
-          height: activeTab === 'passion' ? 'calc(100vh - 240px)' : 'calc(100vh - 200px)',
+          height: (activeTab === 'passion' || activeTab === 'opportunity') ? 'calc(100vh - 240px)' : 'calc(100vh - 200px)',
           overflow: 'auto',
         }}
       >
@@ -1090,16 +1136,16 @@ const MajorPage: React.FC = () => {
                         cursor: 'pointer',
                         transition: 'all 0.3s ease', // 添加过渡动画
                         boxShadow:
-                          isClicked && activeTab !== 'passion'
+                          isClicked && activeTab !== 'passion' && activeTab !== 'opportunity'
                             ? '0 2px 8px rgba(24, 144, 255, 0.15)'
                             : 'none', // 点击时的阴影效果
                         transform:
-                          isClicked && activeTab !== 'passion'
+                          isClicked && activeTab !== 'passion' && activeTab !== 'opportunity'
                             ? 'translateX(2px)'
                             : 'translateX(0)', // 轻微向右移动
                         color: isRecommendedMajor ? '#333' : '#bbb', // 推荐深色，不推荐淡色
                         background:
-                          isClicked && activeTab !== 'passion'
+                          isClicked && activeTab !== 'passion' && activeTab !== 'opportunity'
                             ? (() => {
                                 switch (activeTab) {
                                   case 'development':
@@ -1127,7 +1173,7 @@ const MajorPage: React.FC = () => {
                                 })()
                               : '#f3f4f6', // 不推荐灰色
                         borderLeft:
-                          isClicked && activeTab !== 'passion'
+                          isClicked && activeTab !== 'passion' && activeTab !== 'opportunity'
                             ? (() => {
                                 switch (activeTab) {
                                   case 'development':
@@ -1174,7 +1220,7 @@ const MajorPage: React.FC = () => {
                           }}
                         >
                           {/* 专业编号和名称 */}
-                          {activeTab !== 'passion' && (
+                          {activeTab !== 'passion' && activeTab !== 'opportunity' && (
                             <span style={{ color: '#666', marginRight: 8 }}>{item.majorCode}</span>
                           )}
                           <span style={{ marginRight: 15 }} title={item.majorName}>
@@ -1252,7 +1298,7 @@ const MajorPage: React.FC = () => {
                         )}
 
                         {/* 发展评分 */}
-                        {activeTab !== 'passion' && (
+                        {activeTab !== 'passion' && activeTab !== 'opportunity' && (
                           <>
                             <div className="major-list-item-content">
                               <span style={{ color: '#722ed1', fontWeight: 500 }}>
