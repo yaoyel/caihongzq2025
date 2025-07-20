@@ -24,6 +24,8 @@ export interface MajorScore {
   industryProspectsScore: number | null;
   // 新增字段：学校专业数量
   schoolCount: number;
+  // 新增字段：发展潜力得分
+  developmentPotential: number;
 }
 
 /**
@@ -165,7 +167,7 @@ export class MajorScoreService {
         ds.tiaozhan_deduction as "tiaozhanDeduction",
         ROUND(
           CAST(
-             COALESCE(ss.lexue_score,0) +  COALESCE(ss.shanxue_score,0) - (COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0))
+             COALESCE(ss.lexue_score,0) +  COALESCE(ss.shanxue_score,0) - (COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0))  
           AS NUMERIC),
           2
         )::NUMERIC as score,
@@ -177,7 +179,13 @@ export class MajorScoreService {
         ss.career_development_score as "careerDevelopmentScore",
         ss.growth_potential_score as "growthPotentialScore",
         ss.industry_prospects_score as "industryProspectsScore",
-        COALESCE(smc.school_majors_count, 0) as "schoolCount"
+        COALESCE(smc.school_majors_count, 0) as "schoolCount",
+        ROUND(
+          CAST(
+            (COALESCE(ss.lexue_score,0) + COALESCE(ss.shanxue_score,0) - (COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0))  + COALESCE(ss.opportunity_score, 0) / 100) / 2
+          AS NUMERIC),
+          2
+        )::NUMERIC * 100 as "developmentPotential"
       FROM study_scores ss
       JOIN deduction_scores ds ON ds.major_code = ss.major_code
       LEFT JOIN school_majors_count smc ON smc.major_code = ss.major_code
@@ -330,7 +338,13 @@ export class MajorScoreService {
         ss.career_development_score as "careerDevelopmentScore",
         ss.growth_potential_score as "growthPotentialScore",
         ss.industry_prospects_score as "industryProspectsScore",
-        COALESCE(smc.school_majors_count, 0) as "schoolCount"
+        COALESCE(smc.school_majors_count, 0) as "schoolCount",
+        ROUND(
+          CAST(
+            (COALESCE(ss.lexue_score,0) + COALESCE(ss.shanxue_score,0) - (COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0)) + COALESCE(ss.opportunity_score, 0) / 100) / 2
+          AS NUMERIC),
+          2
+        )::NUMERIC  * 100  as "developmentPotential"
       FROM study_scores ss
       JOIN deduction_scores ds ON ds.major_code = ss.major_code
       LEFT JOIN school_majors_count smc ON smc.major_code = ss.major_code

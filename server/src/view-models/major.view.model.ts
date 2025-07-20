@@ -92,6 +92,9 @@ export class BaseMajorDetailViewModel {
   /** 行业前景分数 */
   industryProspectsScore: number | null;
   
+  /** 发展潜力分数 */
+  developmentPotential: string;
+  
   /** 学业发展标签 */
   academicDevelopmentTag: string | null;
   
@@ -172,7 +175,7 @@ export class MajorDetailViewModel extends BaseMajorDetailViewModel {
 }
 
 export function toMajorDetailViewModel(data: any): MajorDetailViewModel | undefined {
-  if (!data || !data.major) return undefined;
+  if (!data || !data.major) return undefined;  
   
   // 创建基础视图模型部分
   const baseViewModel: BaseMajorDetailViewModel = {
@@ -187,6 +190,7 @@ export function toMajorDetailViewModel(data: any): MajorDetailViewModel | undefi
     careerDevelopmentScore: data.careerDevelopmentScore,
     growthPotentialScore: data.growthPotentialScore,
     industryProspectsScore: data.industryProspectsScore,
+    developmentPotential: ((Number(data.major?.score || 0) * 100 + Number(data.opportunityScore || 0)) / 2).toFixed(2),
     academicDevelopmentTag: data.academicDevelopmentTag,
     careerDevelopmentTag: data.careerDevelopmentTag,
     growthPotentialTag: data.growthPotentialTag,

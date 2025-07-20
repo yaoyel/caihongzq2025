@@ -81,6 +81,7 @@ export class MajorController {
         careerDevelopmentScore: rawData.careerDevelopmentScore,
         growthPotentialScore: rawData.growthPotentialScore,
         industryProspectsScore: rawData.industryProspectsScore,
+        developmentPotential: ((Number(rawData.major?.score || 0) * 100 + Number(rawData.opportunityScore || 0)) / 2).toFixed(2),
         academicDevelopmentTag: rawData.academicDevelopmentTag,
         careerDevelopmentTag: rawData.careerDevelopmentTag,
         growthPotentialTag: rawData.growthPotentialTag,
@@ -146,7 +147,6 @@ export class MajorController {
 
       // 根据用户信息，从redis中查询专业对应的分数
       const historyScore = await this.majorRedisService.getMajorScores(code, user!.province || '北京', user!.preferredSubjects || '综合', user!.secondarySubjects || '');
-      console.log('historyScore', historyScore);
       const rank = user.rank;
 
       // 将历年分数数据添加到对应的学校对象中，并按位次分组排序
@@ -208,8 +208,8 @@ export class MajorController {
           
           return 0;
         });
-      };
-      
+      }; 
+     
       // 转换为视图模型
       const viewModel = toMajorDetailViewModel(rawData);
       if (!viewModel) {
