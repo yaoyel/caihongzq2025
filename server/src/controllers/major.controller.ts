@@ -75,9 +75,22 @@ export class MajorController {
         studyPeriod: rawData.studyPeriod,
         awardedDegree: rawData.awardedDegree,
         majorBrief: rawData.majorBrief,
+        majorKey: rawData.majorKey,
+        opportunityScore: rawData.opportunityScore,
+        academicDevelopmentScore: rawData.academicDevelopmentScore,
+        careerDevelopmentScore: rawData.careerDevelopmentScore,
+        growthPotentialScore: rawData.growthPotentialScore,
+        industryProspectsScore: rawData.industryProspectsScore,
+        academicDevelopmentTag: rawData.academicDevelopmentTag,
+        careerDevelopmentTag: rawData.careerDevelopmentTag,
+        growthPotentialTag: rawData.growthPotentialTag,
+        industryProspectsTag: rawData.industryProspectsTag,
         studyContent: rawData.studyContent,
         seniorTalk: rawData.seniorTalk,
+        academicDevelopment: rawData.academicDevelopment,
         careerDevelopment: rawData.careerDevelopment,
+        industryProspects: rawData.industryProspects,
+        growthPotential: rawData.growthPotential,
       };
 
       return briefInfo;
@@ -107,7 +120,6 @@ export class MajorController {
 
       const userId = ctx.state.user.userId;
       const user = await this.userService.findOne(userId); 
-
       if (!user) {
         throw new Error('用户不存在');
       }
@@ -134,7 +146,7 @@ export class MajorController {
 
       // 根据用户信息，从redis中查询专业对应的分数
       const historyScore = await this.majorRedisService.getMajorScores(code, user!.province || '北京', user!.preferredSubjects || '综合', user!.secondarySubjects || '');
- 
+      console.log('historyScore', historyScore);
       const rank = user.rank;
 
       // 将历年分数数据添加到对应的学校对象中，并按位次分组排序
@@ -163,11 +175,11 @@ export class MajorController {
           // 确定分组
           let group = 0; // 默认组（无分数或差异过大）
           if (avgRank > 0) { // 只对有位次的学校进行分组
-            if (rankDiffPercentage > 5 && rankDiffPercentage <= 10) {
+            if (rankDiffPercentage > 5 && rankDiffPercentage <= 30) {
               group = 1; // 5%到10%
-            } else if (rankDiffPercentage >= -5 && rankDiffPercentage <= 5) {
+            } else if (rankDiffPercentage >= -10 && rankDiffPercentage <= 5) {
               group = 2; // -5%到5%（最匹配）
-            } else if (rankDiffPercentage >= -15 && rankDiffPercentage < -5) {
+            } else if (rankDiffPercentage >= -30 && rankDiffPercentage < -10) {
               group = 3; // -5%到-15%
             }
           }
@@ -459,11 +471,11 @@ export class MajorController {
             const rankDiffPercentage = ((rank - avgRank) / rank) * 100;
             
             // 根据差异百分比分组
-            if (rankDiffPercentage > 5 && rankDiffPercentage <= 10) {
+            if (rankDiffPercentage > 5 && rankDiffPercentage <= 30) {
               group1Count++;
-            } else if (rankDiffPercentage >= -5 && rankDiffPercentage <= 5) {
+            } else if (rankDiffPercentage >= -10 && rankDiffPercentage <= 5) {
               group2Count++;
-            } else if (rankDiffPercentage >= -15 && rankDiffPercentage < -5) {
+            } else if (rankDiffPercentage >= -30 && rankDiffPercentage < -10) {
               group3Count++;
             } else {
               group0Count++;
