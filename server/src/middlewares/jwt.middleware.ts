@@ -12,10 +12,11 @@ export async function jwtMiddleware(ctx: Context, next: Next) {
             '/api/auth/wechat-login',
             '/api/health-check',
             '/api/user/login',
+            '/api/users/generateToken',
             '/api/wechat/qrcode',
             '/api/wechat/callback',
             '/api/wechat/check-login',
-           '/ api/wechat/check',
+           '/api/wechat/check',
            '/api/chat/stream' ,
            '/api/pay/notify',
            '/MP_verify_s4aW7Fr0j7gMb5cG.txt'

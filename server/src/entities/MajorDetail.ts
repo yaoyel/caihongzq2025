@@ -84,6 +84,101 @@ export class MajorDetail {
   })
   majorBrief: string | null;
   
+  @Column({
+    name: 'major_key',
+    type: 'varchar',
+    length: 128,
+    nullable: true,
+    comment: '专业关键词'
+  })
+  majorKey: string | null;
+
+
+  @Column({
+    name: 'opportunity_score',
+    type: 'decimal', 
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    comment: '机遇指数'
+  })
+  opportunityScore: number | null;
+
+  @Column({
+    name: 'academic_development_score',
+    type: 'decimal', 
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    comment: '学业发展'
+  })
+  academicDevelopmentScore: number | null;
+
+  @Column({
+    name: 'career_development_score',
+    type: 'decimal', 
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    comment: '职业发展'
+  })
+  careerDevelopmentScore: number | null;
+
+  @Column({
+    name: 'growth_potential_score',
+    type: 'decimal', 
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    comment: '成长潜力'
+  })
+  growthPotentialScore: number | null;
+
+  @Column({
+    name: 'industry_prospects_score',
+    type: 'decimal', 
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    comment: '行业前景'
+  })
+  industryProspectsScore: number | null;
+
+  @Column({
+    name: 'academic_development_tag',
+    type: 'varchar',
+    length: 128,
+    nullable: true,
+    comment: '学业发展标签'
+  })
+  academicDevelopmentTag: string | null;
+
+  @Column({
+    name: 'career_development_tag',
+    type: 'varchar',
+    length: 128,
+    nullable: true,
+    comment: '职业发展标签'
+  })
+  careerDevelopmentTag: string | null;
+
+  @Column({
+    name: 'growth_potential_tag',
+    type: 'varchar',
+    length: 128,
+    nullable: true,
+    comment: '成长潜力标签'
+  })
+  growthPotentialTag: string | null;
+
+  @Column({
+    name: 'industry_prospects_tag',
+    type: 'varchar',
+    length: 128,
+    nullable: true,
+    comment: '行业前景标签'
+  })
+  industryProspectsTag: string | null;
 
   @Column({
     name: 'study_content',
@@ -102,12 +197,36 @@ export class MajorDetail {
   seniorTalk: string | null;
 
   @Column({
+    name: 'academic_development',
+    type: 'text',
+    nullable: true,
+    comment: '学业发展'
+  })
+  academicDevelopment: string | null;
+  @Column({
     name: 'career_development',
     type: 'text',
     nullable: true,
     comment: '职业发展'
   })
   careerDevelopment: string | null;
+  @Column({
+    name: 'industry_prospects',
+    type: 'text',
+    nullable: true,
+    comment: '行业前景'
+  })
+  industryProspects: string | null;
+
+
+  @Column({
+    name: 'growth_potential',
+    type: 'text',
+    nullable: true,
+    comment: '成长潜力'
+  })
+  growthPotential: string | null;
+
   /**
    * 记录创建时间
    */

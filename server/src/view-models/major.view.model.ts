@@ -74,14 +74,56 @@ export class BaseMajorDetailViewModel {
   /** 专业简介 */
   majorBrief: string | null;
   
+  /** 专业关键词 */
+  majorKey: string | null;
+  
+  /** 机遇指数 */
+  opportunityScore: number | null;
+  
+  /** 学业发展分数 */
+  academicDevelopmentScore: number | null;
+  
+  /** 职业发展分数 */
+  careerDevelopmentScore: number | null;
+  
+  /** 成长潜力分数 */
+  growthPotentialScore: number | null;
+  
+  /** 行业前景分数 */
+  industryProspectsScore: number | null;
+  
+  /** 发展潜力分数 */
+  developmentPotential: string;
+  
+  /** 学业发展标签 */
+  academicDevelopmentTag: string | null;
+  
+  /** 职业发展标签 */
+  careerDevelopmentTag: string | null;
+  
+  /** 成长潜力标签 */
+  growthPotentialTag: string | null;
+  
+  /** 行业前景标签 */
+  industryProspectsTag: string | null;
+  
   /** 学习内容 */
   studyContent: string | null;
   
   /** 学长说 */
   seniorTalk: string | null;
   
+  /** 学业发展 */
+  academicDevelopment: string | null;
+  
   /** 职业发展 */
   careerDevelopment: string | null;
+  
+  /** 行业前景 */
+  industryProspects: string | null;
+  
+  /** 成长潜力 */
+  growthPotential: string | null;
 }
 
 /**
@@ -133,7 +175,7 @@ export class MajorDetailViewModel extends BaseMajorDetailViewModel {
 }
 
 export function toMajorDetailViewModel(data: any): MajorDetailViewModel | undefined {
-  if (!data || !data.major) return undefined;
+  if (!data || !data.major) return undefined;  
   
   // 创建基础视图模型部分
   const baseViewModel: BaseMajorDetailViewModel = {
@@ -142,9 +184,23 @@ export function toMajorDetailViewModel(data: any): MajorDetailViewModel | undefi
     studyPeriod: data.studyPeriod,
     awardedDegree: data.awardedDegree,
     majorBrief: data.majorBrief,
+    majorKey: data.majorKey,
+    opportunityScore: data.opportunityScore,
+    academicDevelopmentScore: data.academicDevelopmentScore,
+    careerDevelopmentScore: data.careerDevelopmentScore,
+    growthPotentialScore: data.growthPotentialScore,
+    industryProspectsScore: data.industryProspectsScore,
+    developmentPotential: ((Number(data.major?.score || 0) * 100 + Number(data.opportunityScore || 0)) / 2).toFixed(2),
+    academicDevelopmentTag: data.academicDevelopmentTag,
+    careerDevelopmentTag: data.careerDevelopmentTag,
+    growthPotentialTag: data.growthPotentialTag,
+    industryProspectsTag: data.industryProspectsTag,
     studyContent: data.studyContent,
     seniorTalk: data.seniorTalk,
+    academicDevelopment: data.academicDevelopment,
     careerDevelopment: data.careerDevelopment,
+    industryProspects: data.industryProspects,
+    growthPotential: data.growthPotential,
   };
 
   // 创建完整视图模型

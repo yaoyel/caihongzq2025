@@ -15,6 +15,17 @@ export interface MajorScore {
   score: number;
   lexueScore: number;
   shanxueScore: number;
+  // 新增字段：专业详情信息
+  majorBrief: string | null;
+  opportunityScore: number | null;
+  academicDevelopmentScore: number | null;
+  careerDevelopmentScore: number | null;
+  growthPotentialScore: number | null;
+  industryProspectsScore: number | null;
+  // 新增字段：学校专业数量
+  schoolCount: number;
+  // 新增字段：发展潜力得分
+  developmentPotential: number;
 }
 
 /**
@@ -46,9 +57,15 @@ export class MajorScoreService {
       ),
       major_base_data AS (
         SELECT 
-          md.code as major_code,
+          md.code as major_code, 
           m.name as major_name,
           m.edu_level as edu_level,
+          md.major_brief,
+          md.opportunity_score,
+          md.academic_development_score,
+          md.career_development_score,
+          md.growth_potential_score,
+          md.industry_prospects_score,
           mea.type,
           mea.potential_conversion_value,
           mea.weight,
@@ -62,13 +79,27 @@ export class MajorScoreService {
         INNER JOIN elements e ON e.id = mea.element_id
         INNER JOIN scales s ON s.element_id = e.id
         LEFT JOIN user_answers ua ON ua.scale_id = s.id
-        WHERE s.id > 112 AND m.edu_level = 'ben'
+        WHERE s.id > 112 AND m.edu_level = 'zhuan'
+      ),
+      school_majors_count AS (
+        SELECT 
+          md.code as major_code,
+          COUNT(sm.id) as school_majors_count
+        FROM major_details md
+        LEFT JOIN school_majors sm ON sm.major_code = md.code
+        GROUP BY md.code
       ),
       type_scores AS (
         SELECT 
           major_code,
           major_name,
           edu_level,
+          major_brief,
+          opportunity_score,
+          academic_development_score,
+          career_development_score,
+          growth_potential_score,
+          industry_prospects_score,
           type,
           potential_conversion_value,
           SUM(weighted_score) as type_score,
@@ -82,13 +113,19 @@ export class MajorScoreService {
             2
           )::NUMERIC as type_ratio
         FROM major_base_data
-        GROUP BY major_code, major_name, edu_level, type, potential_conversion_value
+        GROUP BY major_code, major_name, edu_level, major_brief, opportunity_score, academic_development_score, career_development_score, growth_potential_score, industry_prospects_score, type, potential_conversion_value
       ),
       study_scores AS (
         SELECT 
           major_code,
           major_name,
           edu_level,
+          major_brief,
+          opportunity_score,
+          academic_development_score,
+          career_development_score,
+          growth_potential_score,
+          industry_prospects_score,
           ROUND(
             CAST(SUM(CASE WHEN type = 'lexue' THEN weighted_score ELSE 0 END) AS NUMERIC) /
             NULLIF(CAST(SUM(CASE WHEN type = 'lexue' THEN total_possible_score ELSE 0 END) AS NUMERIC), 0) * 0.5,
@@ -100,7 +137,7 @@ export class MajorScoreService {
             2
           )::NUMERIC as shanxue_score 
         FROM major_base_data
-        GROUP BY major_code, major_name, edu_level
+        GROUP BY major_code, major_name, edu_level, major_brief, opportunity_score, academic_development_score, career_development_score, growth_potential_score, industry_prospects_score
       ),
       deduction_scores AS (
         SELECT 
@@ -130,14 +167,28 @@ export class MajorScoreService {
         ds.tiaozhan_deduction as "tiaozhanDeduction",
         ROUND(
           CAST(
-             COALESCE(ss.lexue_score,0) +  COALESCE(ss.shanxue_score,0) - (COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0))
+             COALESCE(ss.lexue_score,0) +  COALESCE(ss.shanxue_score,0) - (COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0))  
           AS NUMERIC),
           2
         )::NUMERIC as score,
         ss.lexue_score as "lexueScore",
-        ss.shanxue_score as "shanxueScore"
+        ss.shanxue_score as "shanxueScore",
+        ss.major_brief as "majorBrief",
+        ss.opportunity_score as "opportunityScore",
+        ss.academic_development_score as "academicDevelopmentScore",
+        ss.career_development_score as "careerDevelopmentScore",
+        ss.growth_potential_score as "growthPotentialScore",
+        ss.industry_prospects_score as "industryProspectsScore",
+        COALESCE(smc.school_majors_count, 0) as "schoolCount",
+        ROUND(
+          CAST(
+            (COALESCE(ss.lexue_score,0) + COALESCE(ss.shanxue_score,0) - (COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0))  + COALESCE(ss.opportunity_score, 0) / 100) / 2
+          AS NUMERIC),
+          2
+        )::NUMERIC * 100 as "developmentPotential"
       FROM study_scores ss
       JOIN deduction_scores ds ON ds.major_code = ss.major_code
+      LEFT JOIN school_majors_count smc ON smc.major_code = ss.major_code
       ORDER BY score DESC
     `, [userId]);
 
@@ -166,6 +217,12 @@ export class MajorScoreService {
           md.code as major_code,
           m.name as major_name,
           m.edu_level as edu_level,
+          md.major_brief,
+          md.opportunity_score,
+          md.academic_development_score,
+          md.career_development_score,
+          md.growth_potential_score,
+          md.industry_prospects_score,
           mea.type,
           mea.potential_conversion_value,
           mea.weight,
@@ -182,11 +239,26 @@ export class MajorScoreService {
         WHERE s.id > 112 
         AND md.code = ANY($2)
       ),
+      school_majors_count AS (
+        SELECT 
+          md.code as major_code,
+          COUNT(sm.id) as school_majors_count
+        FROM major_details md
+        LEFT JOIN school_majors sm ON sm.major_code = md.code
+        WHERE md.code = ANY($2)
+        GROUP BY md.code
+      ),
       type_scores AS (
         SELECT 
           major_code,
           major_name,
           edu_level,
+          major_brief,
+          opportunity_score,
+          academic_development_score,
+          career_development_score,
+          growth_potential_score,
+          industry_prospects_score,
           type,
           potential_conversion_value,
           SUM(weighted_score) as type_score,
@@ -200,13 +272,19 @@ export class MajorScoreService {
             2
           )::NUMERIC as type_ratio
         FROM major_base_data
-        GROUP BY major_code, major_name, edu_level, type, potential_conversion_value
+        GROUP BY major_code, major_name, edu_level, major_brief, opportunity_score, academic_development_score, career_development_score, growth_potential_score, industry_prospects_score, type, potential_conversion_value
       ),
       study_scores AS (
         SELECT 
           major_code,
           major_name,
           edu_level,
+          major_brief,
+          opportunity_score,
+          academic_development_score,
+          career_development_score,
+          growth_potential_score,
+          industry_prospects_score,
           ROUND(
             CAST(SUM(CASE WHEN type = 'lexue' THEN weighted_score ELSE 0 END) AS NUMERIC) /
             NULLIF(CAST(SUM(CASE WHEN type = 'lexue' THEN total_possible_score ELSE 0 END) AS NUMERIC), 0) * 0.5,
@@ -218,7 +296,7 @@ export class MajorScoreService {
             2
           )::NUMERIC as shanxue_score 
         FROM major_base_data
-        GROUP BY major_code, major_name, edu_level
+        GROUP BY major_code, major_name, edu_level, major_brief, opportunity_score, academic_development_score, career_development_score, growth_potential_score, industry_prospects_score
       ),
       deduction_scores AS (
         SELECT 
@@ -253,9 +331,23 @@ export class MajorScoreService {
           2
         )::NUMERIC as score,
         ss.lexue_score as "lexueScore",
-        ss.shanxue_score as "shanxueScore"
+        ss.shanxue_score as "shanxueScore",
+        ss.major_brief as "majorBrief",
+        ss.opportunity_score as "opportunityScore",
+        ss.academic_development_score as "academicDevelopmentScore",
+        ss.career_development_score as "careerDevelopmentScore",
+        ss.growth_potential_score as "growthPotentialScore",
+        ss.industry_prospects_score as "industryProspectsScore",
+        COALESCE(smc.school_majors_count, 0) as "schoolCount",
+        ROUND(
+          CAST(
+            (COALESCE(ss.lexue_score,0) + COALESCE(ss.shanxue_score,0) - (COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0)) + COALESCE(ss.opportunity_score, 0) / 100) / 2
+          AS NUMERIC),
+          2
+        )::NUMERIC  * 100  as "developmentPotential"
       FROM study_scores ss
       JOIN deduction_scores ds ON ds.major_code = ss.major_code
+      LEFT JOIN school_majors_count smc ON smc.major_code = ss.major_code
       ORDER BY score DESC
     `, [userId, majorCodes]);
 
