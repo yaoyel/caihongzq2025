@@ -249,21 +249,21 @@ const MajorSchools: React.FC = () => {
               </div>
 
               {tuijianSchools1.length > 0 &&
-                renderSchoolTop('比您高考分低5%到高5%位次段院校 (' + tuijianSchools1.length + '所)')}
+                renderSchoolTop('比您高考分低10%到高5%位次段院校 (' + tuijianSchools1.length + '所)')}
               {/* 院校招生信息列表 */}
               <div className="w-full max-w-xl">
                 {/* 模拟院校数据 */}
                 {tuijianSchools1.map((school) => renderSchool(school))}
               </div>
               {tuijianSchools2.length > 0 &&
-                renderSchoolTop('比您高考分低15%到5%位次段院校 (' + tuijianSchools2.length + '所)')}
+                renderSchoolTop('比您高考分低30%到10%位次段院校 (' + tuijianSchools2.length + '所)')}
               {/* 院校招生信息列表 */}
               <div className="w-full max-w-xl">
                 {/* 模拟院校数据 */}
                 {tuijianSchools2.map((school) => renderSchool(school))}
               </div>
               {tuijianSchools3.length > 0 &&
-                renderSchoolTop('比您高考分高5%到10%位次段院校(' + tuijianSchools3.length + '所)')}
+                renderSchoolTop('比您高考分高5%到30%位次段院校(' + tuijianSchools3.length + '所)')}
               {/* 院校招生信息列表 */}
               <div className="w-full max-w-xl">
                 {/* 模拟院校数据 */}

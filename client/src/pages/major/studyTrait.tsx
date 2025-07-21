@@ -127,20 +127,20 @@ const StudyTrait: React.FC = () => {
     switch (majorType) {
       case 'lexue':
         titleInfo.title = '乐学特质';
-        titleInfo.info = '内在开心体验带来持续动力，无需外部激励与压力，自主学习与自愿投入。';
+        titleInfo.info = '你可能因为这些特质爱上这个专业哦';
         break;
       case 'shanxue':
         titleInfo.title = '善学特质';
-        titleInfo.info = '无师自通的规律发现、不学就会的行为走向，自然而然学得更快更好更轻松。';
+        titleInfo.info = '你可能因为这些特质爱学得特别轻松';
         break;
       case 'yanxue':
         titleInfo.title = '厌学特质';
-        titleInfo.info = '开心体验持续无法得到满足，导致动力衰减与积极性下降。';
+        titleInfo.info = '你可能因为这些特质导致体验不佳';
         break;
       case 'tiaozhan':
         titleInfo.title = '阻学特质';
         titleInfo.info =
-          '信息收集/储存/处理/应用模式，与高频学习工作场景所需模式冲突，导致效率损耗与自我怀疑。';
+          '你可能因为这些特质导致效率低下';
         break;
     }
     return titleInfo;
