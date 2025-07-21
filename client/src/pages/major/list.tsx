@@ -143,7 +143,7 @@ const MajorPage: React.FC = () => {
 
   // 原始专业列表数据
   const [originalMajors, setOriginalMajors] = useState<any[]>([]);
-  // 当前显示的专业列表数据（经过搜索过滤）
+  // 当前显示的专业列表数据（经过搜索过滤和排序）
   const [majors, setMajors] = useState<any[]>([]);
   // 搜索框内容
   const [searchValue, setSearchValue] = useState('');
@@ -172,9 +172,11 @@ const MajorPage: React.FC = () => {
     'development'
   );
   // 子选项卡状态 - 控制学习特质显示方式
-  const [activeSubTab, setActiveSubTab] = useState<'le' | 'shan' | 'yan' | 'zu'>('le');
+  const [activeSubTab, setActiveSubTab] = useState<'le' | 'shan' | 'yan' | 'zu'>();
   // 机遇指数子选项卡状态 - 控制机遇指数显示方式
-  const [activeOpportunitySubTab, setActiveOpportunitySubTab] = useState<'academic' | 'career' | 'industry' | 'growth'>('academic');
+  const [activeOpportunitySubTab, setActiveOpportunitySubTab] = useState<
+    'academic' | 'career' | 'industry' | 'growth'
+  >();
 
   // 计算当前实际要渲染的专业数据
   const displayMajors = majors.slice(0, currentPage * pageSize);
@@ -221,6 +223,83 @@ const MajorPage: React.FC = () => {
   }, [majorIntentions]);
 
   /**
+   * 根据当前选项卡和子选项卡获取排序字段
+   * @returns 排序字段名
+   */
+  const getSortField = useCallback(() => {
+    // 如果选择了热爱能量的子选项卡
+    if (activeTab === 'passion' && activeSubTab) {
+      switch (activeSubTab) {
+        case 'le':
+          return 'lexueScore';
+        case 'shan':
+          return 'shanxueScore';
+        case 'yan':
+          return 'yanxueDeduction';
+        case 'zu':
+          return 'tiaozhanDeduction';
+        default:
+          return 'score';
+      }
+    }
+
+    // 如果选择了机遇指数的子选项卡
+    if (activeTab === 'opportunity' && activeOpportunitySubTab) {
+      switch (activeOpportunitySubTab) {
+        case 'academic':
+          return 'academicDevelopmentScore';
+        case 'career':
+          return 'careerDevelopmentScore';
+        case 'industry':
+          return 'industryProspectsScore';
+        case 'growth':
+          return 'growthPotentialScore';
+        default:
+          return 'opportunityScore';
+      }
+    }
+
+    // 主选项卡排序
+    switch (activeTab) {
+      case 'development':
+        return 'developmentPotential';
+      case 'passion':
+        return 'score';
+      case 'opportunity':
+        return 'opportunityScore';
+      default:
+        return 'developmentPotential';
+    }
+  }, [activeTab, activeSubTab, activeOpportunitySubTab]);
+
+  /**
+   * 对专业列表进行排序
+   * @param data 要排序的数据
+   * @returns 排序后的数据
+   */
+  const sortMajors = useCallback(
+    (data: any[]) => {
+      const sortField = getSortField();
+      return [...data].sort((a, b) => {
+        const aValue = Number(a[sortField] || 0);
+        const bValue = Number(b[sortField] || 0);
+
+        // 所有指标都按照倒序排序（分数越高越好）
+        return bValue - aValue;
+      });
+    },
+    [getSortField]
+  );
+
+  // 当选项卡或子选项卡切换时，重新排序数据
+  useEffect(() => {
+    if (originalMajors.length > 0) {
+      const sortedData = sortMajors(originalMajors);
+      setMajors(sortedData);
+    }
+  }, [activeTab, activeSubTab, activeOpportunitySubTab, originalMajors, sortMajors]);
+
+  /**
    * 检查专业是否已收藏
    * @param majorCode 专业代码
    * @returns 是否已收藏
@@ -246,17 +325,18 @@ const MajorPage: React.FC = () => {
         try {
           const parsedData = JSON.parse(cachedData);
           setOriginalMajors(parsedData);
-          setMajors(parsedData);
+          const sortedData = sortMajors(parsedData);
+          setMajors(sortedData);
           setLoading(false);
 
           // 在数据设置完成后立即恢复滚动位置
           setTimeout(() => {
-            restoreScrollPosition(parsedData);
+            restoreScrollPosition(sortedData);
           }, 500);
 
           // 再次尝试，确保分割线完全渲染
           setTimeout(() => {
-            restoreScrollPosition(parsedData);
+            restoreScrollPosition(sortedData);
           }, 1000);
 
           return;
@@ -295,12 +375,15 @@ const MajorPage: React.FC = () => {
 
           if (isLoadMore) {
             // 加载更多：追加数据
-            setOriginalMajors((prev) => [...prev, ...scores]);
-            setMajors((prev) => [...prev, ...scores]);
+            const newOriginalMajors = [...originalMajors, ...scores];
+            setOriginalMajors(newOriginalMajors);
+            const sortedData = sortMajors(newOriginalMajors);
+            setMajors(sortedData);
           } else {
-            // 首次加载：替换数据
+            // 首次加载：替换数据并排序
             setOriginalMajors(scores);
-            setMajors(scores);
+            const sortedData = sortMajors(scores);
+            setMajors(sortedData);
             // 缓存数据到 sessionStorage
             sessionStorage.setItem('major-list-cached-data', JSON.stringify(scores));
           }
@@ -602,11 +685,12 @@ const MajorPage: React.FC = () => {
       setCurrentPage(1);
       setHasMore(true);
 
-      // 实时搜索：根据输入内容过滤数据
+      // 实时搜索：根据输入内容过滤数据并排序
       const filteredData = filterMajors(value, originalMajors);
-      setMajors(filteredData);
+      const sortedData = sortMajors(filteredData);
+      setMajors(sortedData);
     },
-    [filterMajors, originalMajors]
+    [filterMajors, originalMajors, sortMajors]
   );
 
   const showModal = useCallback(() => {
@@ -678,8 +762,9 @@ const MajorPage: React.FC = () => {
     setSearchValue('');
     setCurrentPage(1);
     setHasMore(true);
-    setMajors(originalMajors); // 恢复显示所有专业
-  }, [originalMajors]);
+    const sortedData = sortMajors(originalMajors); // 恢复显示所有专业并排序
+    setMajors(sortedData);
+  }, [originalMajors, sortMajors]);
 
   /**
    * 切换收藏状态
@@ -721,13 +806,14 @@ const MajorPage: React.FC = () => {
   const handleSearch = useCallback(() => {
     // 搜索按钮点击时，重新执行搜索（虽然已经实时搜索了，这里可以添加额外逻辑）
     const filteredData = filterMajors(searchValue, originalMajors);
-    setMajors(filteredData);
+    const sortedData = sortMajors(filteredData);
+    setMajors(sortedData);
 
     // 可以在这里添加搜索提示
     if (searchValue.trim() && filteredData.length === 0) {
       message.info('未找到匹配的专业');
     }
-  }, [filterMajors, searchValue, originalMajors]);
+  }, [filterMajors, searchValue, originalMajors, sortMajors]);
 
   /**
    * 处理专业点击事件
@@ -773,29 +859,61 @@ const MajorPage: React.FC = () => {
    */
   const truncateMajorName = useCallback((name: string) => {
     if (!name) return '';
-    return name.length > 6 ? name.substring(0, 6) + '...' : name;
+    return name.length > 5 ? name.substring(0, 5) + '...' : name;
   }, []);
 
   /**
-   * 根据当前选项卡获取分数显示文本
-   * @param score 分数
+   * 根据当前选项卡和子选项卡获取分数显示文本
+   * @param item 专业数据项
    * @returns 显示文本
    */
   const getScoreDisplayText = useCallback(
-    (score: number) => {
-      const scoreValue = Math.ceil(score * 100);
+    (item: any) => {
+      // 如果选择了热爱能量的子选项卡
+      if (activeTab === 'passion' && activeSubTab) {
+        switch (activeSubTab) {
+          case 'le':
+            return `乐学${Math.ceil((item.lexueScore ?? 0) * 100)}分！`;
+          case 'shan':
+            return `善学${Math.ceil((item.shanxueScore ?? 0) * 100)}分！`;
+          case 'yan':
+            return `厌学${Math.ceil((item.yanxueDeduction ?? 0) * 100)}分！`;
+          case 'zu':
+            return `阻学${Math.ceil((item.tiaozhanDeduction ?? 0) * 100)}分！`;
+          default:
+            return `热爱能量${Math.ceil((item.score ?? 0) * 100)}分！`;
+        }
+      }
+
+      // 如果选择了机遇指数的子选项卡
+      if (activeTab === 'opportunity' && activeOpportunitySubTab) {
+        switch (activeOpportunitySubTab) {
+          case 'academic':
+            return `学业发展${Math.ceil(item.academicDevelopmentScore ?? 0)}分！`;
+          case 'career':
+            return `职业回报${Math.ceil(item.careerDevelopmentScore ?? 0)}分！`;
+          case 'industry':
+            return `产业前景${Math.ceil(item.industryProspectsScore ?? 0)}分！`;
+          case 'growth':
+            return `成长空间${Math.ceil(item.growthPotentialScore ?? 0)}分！`;
+          default:
+            return `机遇指数${Math.ceil(item.opportunityScore ?? 0)}分！`;
+        }
+      }
+
+      // 主选项卡显示
       switch (activeTab) {
         case 'development':
-          return `发展潜能${scoreValue}分！`;
+          return `发展潜能${Math.ceil(item.developmentPotential ?? 0)}分！`;
         case 'passion':
-          return `热爱能量${scoreValue}分！`;
+          return `热爱能量${Math.ceil(item.score ?? 0)}分！`;
         case 'opportunity':
-          return `机遇指数${scoreValue}分！`;
+          return `机遇指数${Math.ceil(item.opportunityScore ?? 0)}分！`;
         default:
-          return `发展潜能${scoreValue}分！`;
+          return `发展潜能${Math.ceil(item.developmentPotential ?? 0)}分！`;
       }
     },
-    [activeTab]
+    [activeTab, activeSubTab, activeOpportunitySubTab]
   );
 
   /**
@@ -832,6 +950,24 @@ const MajorPage: React.FC = () => {
    */
   const handleTipModalClose = useCallback(() => {
     setIsTipModalVisible(false);
+  }, []);
+
+  /**
+   * 计算分数
+   * @param score 分数
+   * @returns 计算后的分数
+   */
+  const getCalcScore = useCallback((score: number) => {
+    return Math.ceil(score);
+  }, []);
+
+  /**
+   * 计算分数
+   * @param score 分数
+   * @returns 计算后的分数
+   */
+  const getCalcScore100 = useCallback((score: number) => {
+    return Math.ceil(score * 100);
   }, []);
 
   return (
@@ -883,7 +1019,9 @@ const MajorPage: React.FC = () => {
       <div style={{ height: '68px' }}></div>
 
       {/* 为固定选项卡区域留出空间 */}
-      <div style={{ height: (activeTab === 'passion' || activeTab === 'opportunity') ? '95px' : '55px' }}></div>
+      <div
+        style={{ height: activeTab === 'passion' || activeTab === 'opportunity' ? '95px' : '55px' }}
+      ></div>
       {/* 选项卡区域 */}
       <div
         style={{
@@ -913,7 +1051,12 @@ const MajorPage: React.FC = () => {
           ].map((tab) => (
             <div
               key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
+              onClick={() => {
+                setActiveTab(tab.key as any);
+                // 切换主选项卡时重置子选项卡状态
+                setActiveSubTab(undefined);
+                setActiveOpportunitySubTab(undefined);
+              }}
               style={{
                 flex: 1,
                 display: 'flex',
@@ -1015,7 +1158,8 @@ const MajorPage: React.FC = () => {
                   transition: 'all 0.3s ease',
                   background: activeOpportunitySubTab === subTab.key ? subTab.color : 'transparent',
                   color: activeOpportunitySubTab === subTab.key ? '#fff' : '#666',
-                  boxShadow: activeOpportunitySubTab === subTab.key ? `0 2px 6px ${subTab.color}40` : 'none',
+                  boxShadow:
+                    activeOpportunitySubTab === subTab.key ? `0 2px 6px ${subTab.color}40` : 'none',
                   transform: activeOpportunitySubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
                 }}
               >
@@ -1031,7 +1175,10 @@ const MajorPage: React.FC = () => {
         className="major-list-card-area"
         ref={listAreaRef}
         style={{
-          height: (activeTab === 'passion' || activeTab === 'opportunity') ? 'calc(100vh - 240px)' : 'calc(100vh - 200px)',
+          height:
+            activeTab === 'passion' || activeTab === 'opportunity'
+              ? 'calc(100vh - 240px)'
+              : 'calc(100vh - 200px)',
           overflow: 'auto',
         }}
       >
@@ -1129,7 +1276,6 @@ const MajorPage: React.FC = () => {
                         flexDirection: 'column',
                         padding: '0 8px',
                         marginBottom: '8px',
-                        minHeight: 80,
                         borderBottom:
                           idx === displayMajors.length - 1 ? 'none' : '1px solid #f0f0f0',
                         fontSize: 14,
@@ -1250,7 +1396,7 @@ const MajorPage: React.FC = () => {
                               fontWeight: 500,
                             }}
                           >
-                            {getScoreDisplayText(item.score)}
+                            {getScoreDisplayText(item)}
                           </span>
                           {/* 收藏按钮 */}
                           <span
@@ -1282,46 +1428,88 @@ const MajorPage: React.FC = () => {
                       >
                         {/* 专业描述 */}
                         {activeTab === 'development' && (
-                          <div className="major-list-item-content">
-                            逻辑学是&ldquo;思维的体操&rdquo; {'>'}
+                          <div
+                            className="major-list-item-content"
+                            onClick={() => handleMajorItemClick(item, isFavorite)}
+                          >
+                            {item.majorName}是{item.majorBrief} {'>'}
                           </div>
                         )}
 
                         {/* 学习特质评分 */}
                         {activeTab !== 'opportunity' && (
-                          <div className="major-list-item-content">
-                            <span style={{ color: '#52c41a', fontWeight: 500 }}>乐学60分{'>'}</span>
-                            <span style={{ color: '#1890ff', fontWeight: 500 }}>善学70分{'>'}</span>
-                            <span style={{ color: '#fa8c16', fontWeight: 500 }}>厌学30分{'>'}</span>
-                            <span style={{ color: '#f5222d', fontWeight: 500 }}>阻学2分{'>'}</span>
+                          <div
+                            className="major-list-item-content"
+                            onClick={() => handleMajorItemClick(item, isFavorite)}
+                          >
+                            {(!activeSubTab || activeTab === 'development') && (
+                              <span style={{ color: '#52c41a', fontWeight: 500 }}>
+                                乐学{getCalcScore100(item.lexueScore)}分{'>'}
+                              </span>
+                            )}
+                            {(!activeSubTab || activeTab === 'development') && (
+                              <span style={{ color: '#1890ff', fontWeight: 500 }}>
+                                善学{getCalcScore100(item.shanxueScore)}分{'>'}
+                              </span>
+                            )}
+                            {(!activeSubTab || activeTab === 'development') && (
+                              <span style={{ color: '#fa8c16', fontWeight: 500 }}>
+                                厌学{getCalcScore100(item.yanxueDeduction)}分{'>'}
+                              </span>
+                            )}
+                            {(!activeSubTab || activeTab === 'development') && (
+                              <span style={{ color: '#f5222d', fontWeight: 500 }}>
+                                阻学{getCalcScore100(item.tiaozhanDeduction)}分{'>'}
+                              </span>
+                            )}
                           </div>
                         )}
 
                         {/* 发展评分 */}
-                        {activeTab !== 'passion' && activeTab !== 'opportunity' && (
+                        {activeTab !== 'passion' && (
                           <>
-                            <div className="major-list-item-content">
-                              <span style={{ color: '#722ed1', fontWeight: 500 }}>
-                                学业发展65分{'>'}
-                              </span>
-                              <span style={{ color: '#13c2c2', fontWeight: 500 }}>
-                                职业回报80分{'>'}
-                              </span>
+                            <div
+                              className="major-list-item-content"
+                              onClick={() => handleMajorItemClick(item, isFavorite)}
+                            >
+                              {(!activeOpportunitySubTab || activeTab === 'development') && (
+                                <span style={{ color: '#722ed1', fontWeight: 500 }}>
+                                  学业发展{getCalcScore(item.academicDevelopmentScore)}分{'>'}
+                                </span>
+                              )}
+                              {(!activeOpportunitySubTab || activeTab === 'development') && (
+                                <span style={{ color: '#13c2c2', fontWeight: 500 }}>
+                                  职业回报{getCalcScore(item.careerDevelopmentScore)}分{'>'}
+                                </span>
+                              )}
                             </div>
                             <div className="major-list-item-content">
-                              <span style={{ color: '#eb2f96', fontWeight: 500 }}>
-                                产业前景75分 {'>'}
-                              </span>
-                              <span style={{ color: '#fa541c', fontWeight: 500 }}>
-                                成长空间80分{'>'}
-                              </span>
+                              {(!activeOpportunitySubTab || activeTab === 'development') && (
+                                <span style={{ color: '#eb2f96', fontWeight: 500 }}>
+                                  产业前景{getCalcScore(item.industryProspectsScore)}分 {'>'}
+                                </span>
+                              )}
+                              {(!activeOpportunitySubTab || activeTab === 'development') && (
+                                <span style={{ color: '#fa541c', fontWeight: 500 }}>
+                                  成长空间{getCalcScore(item.growthPotentialScore)}分{'>'}
+                                </span>
+                              )}
                             </div>
                           </>
                         )}
 
                         {/* 招生院校 */}
                         {activeTab === 'development' && (
-                          <div className="major-list-item-content">招生院校 58所 {'>'}</div>
+                          <div
+                            className="major-list-item-content"
+                            onClick={() => {
+                              navigator(
+                                `/major/majorschools?majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}`
+                              );
+                            }}
+                          >
+                            招生院校{item.schoolCount}所 {'>'}
+                          </div>
                         )}
                       </div>
                     </div>

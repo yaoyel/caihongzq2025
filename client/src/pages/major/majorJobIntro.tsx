@@ -1,9 +1,9 @@
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import { Card, Divider } from 'antd';
+import { Card } from 'antd';
 import BottomNav from '../comm/bottom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getMajorDetail, getMajorBrief, getSchoolDetail } from '../../config';
+import { getMajorDetail } from '../../config';
 import Top from '../comm/top';
 
 const MajorJobIntro: React.FC = () => {
@@ -33,39 +33,86 @@ const MajorJobIntro: React.FC = () => {
         }
       } catch (error) {
         console.error('获取专业详细信息失败:', error);
-      } finally {
       }
     };
 
     fetchMajorDetail();
   }, [searchParams]);
 
-  const getMajorBriefHtml = (majorBrief: string, defaultStr: string, jobNum: number = 1) => {
-    if (majorBrief) {
-      majorBrief = majorBrief.replace(/'/g, '"');
-      const seniorTalkList = JSON.parse(majorBrief);
-      console.log(jobNum);
-      let html = '',
-        showNum = '',
-        index = 1;
-      for (const [key, value] of Object.entries(seniorTalkList)) {
-        if (majorType === 'major' || (majorType !== 'major' && index == jobNum)) {
-          if (majorType === 'major') {
-            showNum = index + '.';
-          } else {
-            showNum = '';
-          }
+  /**
+   * 递归处理嵌套的数据结构，生成HTML内容
+   * @param data 要处理的数据
+   * @param level 当前层级，用于缩进
+   * @returns 生成的HTML字符串
+   */
+  const processDataToHtml = (data: any, level: number = 0): string => {
+    if (typeof data === 'string') {
+      return data;
+    } else if (Array.isArray(data)) {
+      return data.map((item) => processDataToHtml(item, level + 1)).join('<br/>');
+    } else if (typeof data === 'object' && data !== null) {
+      let html = '';
+      for (const [key, value] of Object.entries(data)) {
+        const indent = '&nbsp;'.repeat(level * 2);
+        if (typeof value === 'string' || Array.isArray(value)) {
           html += `<div style="margin-bottom: 8px; line-height: 1.8;">
-                  <span style="color: #1677ff; font-weight: 600; margin-right: 4px;">${showNum}</span>
-                  <span style="color: #1677ff; font-weight: 500; font-size: 16px; margin-right: 8px;">${key}：</span>
-                  ${value}
-                </div>`;
+                    <span style="color: #1677ff; font-weight: 500; font-size: 16px; margin-right: 8px;">${indent}${key}：</span>
+                    ${processDataToHtml(value, level + 1)}
+                  </div>`;
+        } else if (typeof value === 'object' && value !== null) {
+          html += `<div style="margin-bottom: 8px; line-height: 1.8;">
+                    <span style="color: #1677ff; font-weight: 500; font-size: 16px; margin-right: 8px;">${indent}${key}：</span>
+                    ${processDataToHtml(value, level + 1)}
+                  </div>`;
         }
-
-        index++;
       }
-
       return html;
+    }
+    return String(data);
+  };
+
+  const getMajorBriefHtml = (
+    majorBrief: string,
+    defaultStr: string,
+    jobNum: number = 1,
+    targetField?: string
+  ) => {
+    if (majorBrief) {
+      try {
+        majorBrief = majorBrief.replace(/'/g, '"');
+        const seniorTalkList = JSON.parse(majorBrief);
+        console.log(seniorTalkList);
+        let html = '',
+          showNum = '',
+          index = 1;
+
+        for (const [key, value] of Object.entries(seniorTalkList)) {
+          // 如果是专业类型，显示所有内容；如果是职业类型，根据目标字段或索引显示
+          const shouldShow =
+            majorType === 'major' ||
+            (majorType !== 'major' && (targetField ? key === targetField : index === jobNum));
+
+          if (shouldShow) {
+            if (majorType === 'major') {
+              showNum = index + '.';
+            } else {
+              showNum = '';
+            }
+
+            html += `<div style="margin-bottom: 8px; line-height: 1.8;">
+                    <span style="color: #1677ff; font-weight: 600; margin-right: 4px;">${showNum}</span>
+                    <span style="color: #1677ff; font-weight: 500; font-size: 16px; margin-right: 8px;">${key}：</span>
+                    ${processDataToHtml(value)}
+                  </div>`;
+          }
+          index++;
+        }
+        console.log(html);
+        return html;
+      } catch (error) {
+        console.error('解析专业简介数据失败:', error);
+        return defaultStr;
+      }
     } else {
       return defaultStr;
     }
@@ -81,21 +128,6 @@ const MajorJobIntro: React.FC = () => {
     display: 'inline-block',
     marginBottom: 16,
     fontSize: 18,
-  };
-  const numberStyle: React.CSSProperties = {
-    color: '#1677ff',
-    fontWeight: 600,
-    marginRight: 4,
-  };
-  const subTitleStyle: React.CSSProperties = {
-    color: '#1677ff',
-    fontWeight: 500,
-    fontSize: 16,
-    marginRight: 8,
-  };
-  const listItemStyle: React.CSSProperties = {
-    marginBottom: 8,
-    lineHeight: 1.8,
   };
 
   return (
@@ -124,7 +156,7 @@ const MajorJobIntro: React.FC = () => {
             <div style={{ marginBottom: 24 }}>
               <div style={sectionTitleStyle}>
                 {' '}
-                {majorType === 'major' ? '专业一览' : '就业去向'}
+                {majorType === 'major' ? '做什么？' : '就业去向'}
               </div>
               <div
                 style={{ marginTop: 12 }}
@@ -155,21 +187,39 @@ const MajorJobIntro: React.FC = () => {
             {/* 学长学姐说 */}
             <div>
               <div style={sectionTitleStyle}>
-                {majorType === 'major' ? '学长说' : '发展前景'}
+                {majorType === 'major' ? '好升学么？' : '产业前景'}
               </div>
               <div
                 style={{ marginTop: 12 }}
                 dangerouslySetInnerHTML={{
                   __html: getMajorBriefHtml(
                     majorType === 'major'
-                      ? majorDetail?.seniorTalk
-                      : majorDetail?.careerDevelopment,
+                      ? majorDetail?.academicDevelopment
+                      : majorDetail?.industryProspects,
                     '正在搜集中...',
-                    majorType === 'major' ? 1 : 4
+                    majorType === 'major' ? 1 : 4,
+                    majorType === 'major' ? undefined : '行业前景'
                   ),
                 }}
               ></div>
-            </div>{' '}
+            </div>
+                         {/* 成长空间 */}
+             {majorType !== 'major' && (
+               <div>
+                 <div style={sectionTitleStyle}>成长空间</div>
+                 <div
+                   style={{ marginTop: 12 }}
+                   dangerouslySetInnerHTML={{
+                     __html: getMajorBriefHtml(
+                       majorDetail?.growthPotential,
+                       '正在搜集中...',
+                       majorType === 'major' ? 1 : 4,
+                       majorType === 'major' ? undefined : '横向发展可能'
+                     ),
+                   }}
+                 ></div>
+               </div>
+             )}
           </div>
         </Card>
       </div>

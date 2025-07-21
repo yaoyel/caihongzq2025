@@ -207,7 +207,7 @@ const MajorLoveDetail: React.FC = () => {
             </div>
             <div className="divide-y">
               <CardItem
-                text="1.专业一览"
+                text="1.做什么？"
                 onClick={() =>
                   navigator(
                     `/major/majorjobintro?type=major&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
@@ -223,7 +223,7 @@ const MajorLoveDetail: React.FC = () => {
                 }
               />
               <CardItem
-                text="3.学长说"
+                text={'3.好升学么？--' + Math.ceil(majorDetail?.academicDevelopmentScore) + '分'}
                 onClick={() =>
                   navigator(
                     `/major/majorjobintro?type=major&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
@@ -260,7 +260,7 @@ const MajorLoveDetail: React.FC = () => {
                 }
               />
               <CardItem
-                text="2.薪资水平"
+                text={'2.薪酬水平--' + Math.ceil(majorDetail?.careerDevelopmentScore) + '分'}
                 onClick={() =>
                   navigator(
                     `/major/majorjobintro?type=salary&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
@@ -268,7 +268,15 @@ const MajorLoveDetail: React.FC = () => {
                 }
               />
               <CardItem
-                text="3.发展前景"
+                text={'3.产业前景--' + Math.ceil(majorDetail?.industryProspectsScore) + '分'}
+                onClick={() =>
+                  navigator(
+                    `/major/majorjobintro?type=prospect&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                  )
+                }
+              />
+              <CardItem
+                text={'4.成长空间--' + Math.ceil(majorDetail?.growthPotentialScore) + '分'}
                 onClick={() =>
                   navigator(
                     `/major/majorjobintro?type=prospect&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
@@ -301,7 +309,7 @@ const MajorLoveDetail: React.FC = () => {
             <div className="divide-y">
               <CardItem
                 text={
-                  '1.-5%到+5%位次院校 (' +
+                  '1.-10%到+5%位次院校 (' +
                   majorDetail?.schools?.filter((s) => s.group === 2).length +
                   ')所'
                 }
@@ -315,7 +323,7 @@ const MajorLoveDetail: React.FC = () => {
 
               <CardItem
                 text={
-                  '2.-15% 到-5%位次院校 (' +
+                  '2.-30% 到-10%位次院校 (' +
                   majorDetail?.schools?.filter((s) => s.group === 3).length +
                   ')所'
                 }
@@ -328,7 +336,7 @@ const MajorLoveDetail: React.FC = () => {
               />
               <CardItem
                 text={
-                  '3.+5%到+10%位次院校 (' +
+                  '3.+5%到+30%位次院校 (' +
                   majorDetail?.schools?.filter((s) => s.group === 1).length +
                   ')所'
                 }

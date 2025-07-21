@@ -535,22 +535,23 @@ const LoginPage: React.FC = () => {
       }
     };
     //清除无效的认证信息
-    // localStorage.removeItem('new-token');
-    // localStorage.removeItem('new-user');
-    // localStorage.setItem(
-    //   'new-token',
-    //   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsIm5pY2tuYW1lIjoi5bqE5LquIiwiYXZhdGFyVXJsIjoiaHR0cHM6Ly90aGlyZHd4LnFsb2dvLmNuL21tb3Blbi92aV8zMi9EWUFJT2dxODNlcWljRkE4dWZyTDdqaGs0TFZxaWFIYjBmMHZ3MUM1ckpaa1dpYXM2eXdJaWI0WHNraWFvR0RyckRhN3hoMFp0dTZ4OHFxTExWemg3WW1CRWlidy8xMzIiLCJpYXQiOjE3NTA0ODI0MjIsImV4cCI6MTc1MzA3NDQyMn0.uO341iZXVY9LiHPki-Dj_fcisTkSDsPK7HOETLFtg4s'
-    // );
-    // localStorage.setItem(
-    //   'new-user',
-    //   JSON.stringify({
-    //     id: 8,
-    //     username: '',
-    //     nickname: '',
-    //     avatarUrl: '',
-    //     role: 'parent',
-    //   })
-    // );
+    localStorage.removeItem('new-token');
+    localStorage.removeItem('new-user');
+    localStorage.setItem(
+      'new-token',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsIm5pY2tuYW1lIjoi5bqE5LquIiwiYXZhdGFyVXJsIjoiaHR0cHM6Ly90aGlyZHd4LnFsb2dvLmNuL21tb3Blbi92aV8zMi9EWUFJT2dxODNlcWljRkE4dWZyTDdqaGs0TFZxaWFIYjBmMHZ3MUM1ckpaa1dpYXM2eXdJaWI0WHNraWFvR0RyckRhN3hoMFp0dTZ4OHFxTExWemg3WW1CRWlidy8xMzIiLCJpYXQiOjE3NTA5NDgwMjksImV4cCI6MTc1MzU0MDAyOX0.X9U1zYtQz8k9m14eSB4GkK778RSGACXBivIrAur4M1E'
+    );
+    localStorage.setItem(
+      'new-user',
+      JSON.stringify({
+        id: 6,
+        openid: 'oGTvY6Srf-aI_v5DDBkfpJlq6vrA',
+        username: '',
+        nickname: '',
+        avatarUrl: '',
+        role: 'parent',
+      })
+    );
 
     checkLocalAuth();
     setPolling(false);
