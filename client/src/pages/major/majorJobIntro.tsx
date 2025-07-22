@@ -13,6 +13,7 @@ const MajorJobIntro: React.FC = () => {
   const majorName = searchParams.get('majorName');
   const score = searchParams.get('score');
   const majorType = searchParams.get('type');
+  const anchor = searchParams.get('anchor'); // 获取锚点参数
   const [majorDetail, setMajorDetail] = useState<any>(null);
 
   useEffect(() => {
@@ -38,6 +39,34 @@ const MajorJobIntro: React.FC = () => {
 
     fetchMajorDetail();
   }, [searchParams]);
+
+  // 处理锚点定位
+  useEffect(() => {
+    if (anchor && majorDetail) {
+      // 延迟执行，确保DOM已渲染
+      setTimeout(() => {
+        let targetSection: HTMLElement | null = null;
+        
+        if (anchor === 'academic') {
+          targetSection = document.getElementById('academic-section');
+        } else if (anchor === 'growth') {
+          targetSection = document.getElementById('growth-section');
+        } else if (anchor === 'industry') {
+          // 产业前景部分在非专业模式下使用academic-section的ID
+          targetSection = document.getElementById('academic-section');
+        } else if (anchor === 'career') {
+          targetSection = document.getElementById('career-section');
+        }
+        
+        if (targetSection) {
+          targetSection.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
+        }
+      }, 500);
+    }
+  }, [anchor, majorDetail]);
 
   /**
    * 递归处理嵌套的数据结构，生成HTML内容
@@ -169,7 +198,7 @@ const MajorJobIntro: React.FC = () => {
               ></div>
             </div>
             {/* 学什么？ */}
-            <div style={{ marginBottom: 24 }}>
+            <div id="career-section" style={{ marginBottom: 24 }}>
               <div style={sectionTitleStyle}>{majorType === 'major' ? '学什么？' : '薪酬水平'}</div>
               <div
                 style={{ marginTop: 12 }}
@@ -185,7 +214,7 @@ const MajorJobIntro: React.FC = () => {
               ></div>
             </div>
             {/* 学长学姐说 */}
-            <div>
+            <div id="academic-section">
               <div style={sectionTitleStyle}>
                 {majorType === 'major' ? '好升学么？' : '产业前景'}
               </div>
@@ -205,7 +234,7 @@ const MajorJobIntro: React.FC = () => {
             </div>
                          {/* 成长空间 */}
              {majorType !== 'major' && (
-               <div>
+               <div id="growth-section">
                  <div style={sectionTitleStyle}>成长空间</div>
                  <div
                    style={{ marginTop: 12 }}

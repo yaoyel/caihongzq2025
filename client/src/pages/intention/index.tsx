@@ -119,9 +119,9 @@ const EducationalPage: React.FC = () => {
             }}
           >
             {[
-              { key: 'development', label: '发展潜能', icon: '🚀', color: '#2563eb' },
-              { key: 'passion', label: '热爱能量', icon: '❤️', color: '#dc2626' },
-              { key: 'opportunity', label: '机遇指数', icon: '⭐', color: '#059669' },
+              { key: 'development', label: '发展潜能', icon: '▲', color: '#2563eb' },
+              { key: 'passion', label: '热爱能量', icon: '♥', color: '#dc2626' },
+              { key: 'opportunity', label: '机遇指数', icon: '★', color: '#059669' },
             ].map((tab) => (
               <div
                 key={tab.key}
