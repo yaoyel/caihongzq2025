@@ -185,23 +185,15 @@ const MajorPage: React.FC = () => {
   const listAreaRef = useRef<HTMLDivElement>(null);
 
   /**
-   * 计算推荐标记数组，当前项分数大于等于下一个项分数则推荐，否则break后续都不推荐
+   * 计算推荐标记数组，基于isMatching字段判断是否可报考
    * @param majorsList 专业列表
    * @returns 推荐标记数组
    */
   const getRecommendFlags = (majorsList: any[]) => {
     const flags: boolean[] = new Array(majorsList.length).fill(false);
-    let hasBreak = false;
-    for (let i = 0; i < majorsList.length - 1; i++) {
-      const currentScore = Number(majorsList[i].score);
-      const nextScore = Number(majorsList[i + 1].score);
-      if (hasBreak) continue;
-      if (currentScore >= nextScore) {
-        flags[i] = true;
-        flags[i + 1] = true;
-      } else {
-        hasBreak = true;
-      }
+    for (let i = 0; i < majorsList.length; i++) {
+      // 如果isMatching为true，则标记为可报考
+      flags[i] = Boolean(majorsList[i].isMatching);
     }
     return flags;
   };
@@ -209,8 +201,8 @@ const MajorPage: React.FC = () => {
   // 推荐标记数组
   const recommendFlags = getRecommendFlags(majors);
 
-  // 找到最后一个推荐的索引
-  const lastRecommendIndex = recommendFlags.lastIndexOf(true);
+  // 找到第一个不可报考的索引（isMatching为false的第一个位置）
+  const firstNonMatchingIndex = recommendFlags.findIndex((flag) => !flag);
 
   // 使用自定义 Hook
   const { saveScrollPosition, saveClickedMajorCode, restoreScrollPosition, clearScrollPosition } =
@@ -281,10 +273,17 @@ const MajorPage: React.FC = () => {
     (data: any[]) => {
       const sortField = getSortField();
       return [...data].sort((a, b) => {
+        // 首先按照isMatching分组：可报考的在前，不可报考的在后
+        const aMatching = Boolean(a.isMatching);
+        const bMatching = Boolean(b.isMatching);
+
+        if (aMatching !== bMatching) {
+          return aMatching ? -1 : 1; // 可报考的排在前面
+        }
+
+        // 在相同分组内，按照分数倒序排序
         const aValue = Number(a[sortField] || 0);
         const bValue = Number(b[sortField] || 0);
-
-        // 所有指标都按照倒序排序（分数越高越好）
         return bValue - aValue;
       });
     },
@@ -1045,9 +1044,9 @@ const MajorPage: React.FC = () => {
           }}
         >
           {[
-            { key: 'development', label: '发展潜能', icon: '🚀', color: '#2563eb' },
-            { key: 'passion', label: '热爱能量', icon: '❤️', color: '#dc2626' },
-            { key: 'opportunity', label: '机遇指数', icon: '⭐', color: '#059669' },
+            { key: 'development', label: '发展潜能', icon: '▲', color: '#2563eb' },
+            { key: 'passion', label: '热爱能量', icon: '♥', color: '#dc2626' },
+            { key: 'opportunity', label: '机遇指数', icon: '★', color: '#059669' },
           ].map((tab) => (
             <div
               key={tab.key}
@@ -1247,7 +1246,7 @@ const MajorPage: React.FC = () => {
                 const isRecommendedMajor = recommendFlags[fullListIndex];
                 // 判断是否需要插入分割线
                 const needDivider =
-                  lastRecommendIndex !== -1 && fullListIndex === lastRecommendIndex + 1;
+                  firstNonMatchingIndex !== -1 && fullListIndex === firstNonMatchingIndex;
                 return (
                   <React.Fragment key={item.majorCode}>
                     {needDivider && (
@@ -1378,6 +1377,12 @@ const MajorPage: React.FC = () => {
                         <div style={{ display: 'flex', alignItems: 'center' }}>
                           {/* 分数显示 */}
                           <span
+                            onClick={() => {
+                              if (activeTab === 'development')
+                                navigator(
+                                  `/major/majorjobintro?type=major&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}`
+                                );
+                            }}
                             style={{
                               color: (() => {
                                 switch (activeTab) {
@@ -1430,7 +1435,11 @@ const MajorPage: React.FC = () => {
                         {activeTab === 'development' && (
                           <div
                             className="major-list-item-content"
-                            onClick={() => handleMajorItemClick(item, isFavorite)}
+                            onClick={() => {
+                              navigator(
+                                `/major/majorjobintro?type=major&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}`
+                              );
+                            }}
                           >
                             {item.majorName}是{item.majorBrief} {'>'}
                           </div>
@@ -1438,28 +1447,65 @@ const MajorPage: React.FC = () => {
 
                         {/* 学习特质评分 */}
                         {activeTab !== 'opportunity' && (
-                          <div
-                            className="major-list-item-content"
-                            onClick={() => handleMajorItemClick(item, isFavorite)}
-                          >
+                          <div className="major-list-item-content">
                             {(!activeSubTab || activeTab === 'development') && (
-                              <span style={{ color: '#52c41a', fontWeight: 500 }}>
-                                乐学{getCalcScore100(item.lexueScore)}分{'>'}
+                              <span
+                                onClick={() => {
+                                  navigator(
+                                    `/major/studyTrait?type=lexue&majorCode=${item.majorCode}&majorName=${item.majorName}`
+                                  );
+                                }}
+                              >
+                                乐学
+                                <span style={{ color: '#52c41a', fontWeight: 500 }}>
+                                  {getCalcScore100(item.lexueScore)}分
+                                </span>
+                                {'>'}
                               </span>
                             )}
                             {(!activeSubTab || activeTab === 'development') && (
-                              <span style={{ color: '#1890ff', fontWeight: 500 }}>
-                                善学{getCalcScore100(item.shanxueScore)}分{'>'}
+                              <span
+                                onClick={() => {
+                                  navigator(
+                                    `/major/studyTrait?type=shanxue&majorCode=${item.majorCode}&majorName=${item.majorName}`
+                                  );
+                                }}
+                              >
+                                善学
+                                <span style={{ color: '#1890ff', fontWeight: 500 }}>
+                                  {getCalcScore100(item.shanxueScore)}分
+                                </span>
+                                {'>'}
                               </span>
                             )}
                             {(!activeSubTab || activeTab === 'development') && (
-                              <span style={{ color: '#fa8c16', fontWeight: 500 }}>
-                                厌学{getCalcScore100(item.yanxueDeduction)}分{'>'}
+                              <span
+                                onClick={() => {
+                                  navigator(
+                                    `/major/studyTrait?type=yanxue&majorCode=${item.majorCode}&majorName=${item.majorName}`
+                                  );
+                                }}
+                              >
+                                厌学
+                                <span style={{ color: '#fa8c16', fontWeight: 500 }}>
+                                  {getCalcScore100(item.yanxueDeduction)}分
+                                </span>
+                                {'>'}
                               </span>
                             )}
                             {(!activeSubTab || activeTab === 'development') && (
-                              <span style={{ color: '#f5222d', fontWeight: 500 }}>
-                                阻学{getCalcScore100(item.tiaozhanDeduction)}分{'>'}
+                              <span
+                                onClick={() => {
+                                  navigator(
+                                    `/major/studyTrait?type=tiaozhan&majorCode=${item.majorCode}&majorName=${item.majorName}`
+                                  );
+                                }}
+                              >
+                                阻学
+                                <span style={{ color: '#f5222d', fontWeight: 500 }}>
+                                  {getCalcScore100(item.tiaozhanDeduction)}分
+                                </span>
+                                {'>'}
                               </span>
                             )}
                           </div>
@@ -1470,28 +1516,55 @@ const MajorPage: React.FC = () => {
                           <>
                             <div
                               className="major-list-item-content"
-                              onClick={() => handleMajorItemClick(item, isFavorite)}
+                              onClick={() => {
+                                navigator(
+                                  `/major/majorjobintro?type=academic&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}`
+                                );
+                              }}
                             >
                               {(!activeOpportunitySubTab || activeTab === 'development') && (
-                                <span style={{ color: '#722ed1', fontWeight: 500 }}>
-                                  学业发展{getCalcScore(item.academicDevelopmentScore)}分{'>'}
+                                <span>
+                                  学业发展
+                                  <span style={{ color: '#722ed1', fontWeight: 500 }}>
+                                    {getCalcScore(item.academicDevelopmentScore)}分
+                                  </span>
+                                  {'>'}
                                 </span>
                               )}
                               {(!activeOpportunitySubTab || activeTab === 'development') && (
-                                <span style={{ color: '#13c2c2', fontWeight: 500 }}>
-                                  职业回报{getCalcScore(item.careerDevelopmentScore)}分{'>'}
+                                <span>
+                                  职业回报
+                                  <span style={{ color: '#13c2c2', fontWeight: 500 }}>
+                                    {getCalcScore(item.careerDevelopmentScore)}分
+                                  </span>
+                                  {'>'}
                                 </span>
                               )}
                             </div>
-                            <div className="major-list-item-content">
+                            <div
+                              className="major-list-item-content"
+                              onClick={() =>
+                                navigator(
+                                  `/major/majorjobintro?type=industry&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}`
+                                )
+                              }
+                            >
                               {(!activeOpportunitySubTab || activeTab === 'development') && (
-                                <span style={{ color: '#eb2f96', fontWeight: 500 }}>
-                                  产业前景{getCalcScore(item.industryProspectsScore)}分 {'>'}
+                                <span>
+                                  产业前景
+                                  <span style={{ color: '#eb2f96', fontWeight: 500 }}>
+                                    {getCalcScore(item.industryProspectsScore)}分
+                                  </span>
+                                  {'>'}
                                 </span>
                               )}
                               {(!activeOpportunitySubTab || activeTab === 'development') && (
-                                <span style={{ color: '#fa541c', fontWeight: 500 }}>
-                                  成长空间{getCalcScore(item.growthPotentialScore)}分{'>'}
+                                <span>
+                                  成长空间
+                                  <span style={{ color: '#fa541c', fontWeight: 500 }}>
+                                    {getCalcScore(item.growthPotentialScore)}分
+                                  </span>
+                                  {'>'}
                                 </span>
                               )}
                             </div>

@@ -1,14 +1,26 @@
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
+import { Modal } from 'antd';
 import BottomNav from '../comm/bottom';
 import Top from '../comm/top';
 import { useNavigate } from 'react-router-dom';
-import { getMajorIntentions } from '../../config/volunteer';
+import { getMajorIntentions, cancelMajorIntention } from '../../config/volunteer';
 
 const EducationalPage: React.FC = () => {
   const navigator = useNavigate();
   const [majorIntentions, setMajorIntentions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true); // 添加加载状态
+
+  // 选项卡状态 - 控制最爱专业显示方式
+  const [activeTab, setActiveTab] = useState<'development' | 'passion' | 'opportunity'>(
+    'development'
+  );
+  // 子选项卡状态 - 控制学习特质显示方式
+  const [activeSubTab, setActiveSubTab] = useState<'le' | 'shan' | 'yan' | 'zu'>();
+  // 机遇指数子选项卡状态 - 控制机遇指数显示方式
+  const [activeOpportunitySubTab, setActiveOpportunitySubTab] = useState<
+    'academic' | 'career' | 'industry' | 'growth'
+  >();
 
   /**
    * 获取收藏专业列表
@@ -29,6 +41,32 @@ const EducationalPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  /**
+   * 移除收藏专业
+   */
+  const handleRemoveIntention = async (majorCode: string, majorName: string) => {
+    // 使用 Ant Design 确认框
+    Modal.confirm({
+      title: '确认移除',
+      content: `确定要移除专业"${majorName}"吗？`,
+      okText: '确定',
+      cancelText: '取消',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          const response = await cancelMajorIntention(majorCode);
+          if (response && response.code === 200) {
+            // 从本地状态中移除该专业
+            setMajorIntentions((prev) => prev.filter((item) => item.majorCode !== majorCode));
+            console.log(`已移除专业: ${majorName}`);
+          }
+        } catch (error) {
+          console.error('移除收藏专业失败:', error);
+        }
+      },
+    });
   };
 
   useEffect(() => {
@@ -69,6 +107,146 @@ const EducationalPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Tab 选项卡 */}
+        <div className="w-full max-w-xl bg-white rounded-2xl shadow p-3 mb-3">
+          <div
+            style={{
+              display: 'flex',
+              background: '#f5f5f5',
+              borderRadius: '20px',
+              padding: '4px',
+              gap: '4px',
+            }}
+          >
+            {[
+              { key: 'development', label: '发展潜能', icon: '🚀', color: '#2563eb' },
+              { key: 'passion', label: '热爱能量', icon: '❤️', color: '#dc2626' },
+              { key: 'opportunity', label: '机遇指数', icon: '⭐', color: '#059669' },
+            ].map((tab) => (
+              <div
+                key={tab.key}
+                onClick={() => {
+                  setActiveTab(tab.key as any);
+                  // 切换主选项卡时重置子选项卡状态
+                  setActiveSubTab(undefined);
+                  setActiveOpportunitySubTab(undefined);
+                }}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '8px 12px',
+                  borderRadius: '16px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  background: activeTab === tab.key ? tab.color : 'transparent',
+                  color: activeTab === tab.key ? '#fff' : '#666',
+                  boxShadow: activeTab === tab.key ? `0 2px 8px ${tab.color}40` : 'none',
+                  transform: activeTab === tab.key ? 'scale(1.02)' : 'scale(1)',
+                }}
+              >
+                <span style={{ marginRight: '4px', fontSize: '16px' }}>{tab.icon}</span>
+                {tab.label}
+              </div>
+            ))}
+          </div>
+
+          {/* 热爱能量子选项卡 */}
+          {activeTab === 'passion' && (
+            <div
+              style={{
+                display: 'flex',
+                background: '#fef2f2',
+                borderRadius: '16px',
+                padding: '4px',
+                gap: '4px',
+                marginTop: '8px',
+              }}
+            >
+              {[
+                { key: 'le', label: '乐学', color: '#52c41a' },
+                { key: 'shan', label: '善学', color: '#1890ff' },
+                { key: 'yan', label: '厌学', color: '#fa8c16' },
+                { key: 'zu', label: '阻学', color: '#f5222d' },
+              ].map((subTab) => (
+                <div
+                  key={subTab.key}
+                  onClick={() => setActiveSubTab(subTab.key as any)}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '6px 8px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    background: activeSubTab === subTab.key ? subTab.color : 'transparent',
+                    color: activeSubTab === subTab.key ? '#fff' : '#666',
+                    boxShadow: activeSubTab === subTab.key ? `0 2px 6px ${subTab.color}40` : 'none',
+                    transform: activeSubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
+                  }}
+                >
+                  {subTab.label}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 机遇指数子选项卡 */}
+          {activeTab === 'opportunity' && (
+            <div
+              style={{
+                display: 'flex',
+                background: '#f0fdf4',
+                borderRadius: '16px',
+                padding: '4px',
+                gap: '4px',
+                marginTop: '8px',
+              }}
+            >
+              {[
+                { key: 'academic', label: '学业发展', color: '#722ed1' },
+                { key: 'career', label: '职业回报', color: '#13c2c2' },
+                { key: 'industry', label: '产业前景', color: '#eb2f96' },
+                { key: 'growth', label: '成长空间', color: '#fa541c' },
+              ].map((subTab) => (
+                <div
+                  key={subTab.key}
+                  onClick={() => setActiveOpportunitySubTab(subTab.key as any)}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '6px 8px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    background:
+                      activeOpportunitySubTab === subTab.key ? subTab.color : 'transparent',
+                    color: activeOpportunitySubTab === subTab.key ? '#fff' : '#666',
+                    boxShadow:
+                      activeOpportunitySubTab === subTab.key
+                        ? `0 2px 6px ${subTab.color}40`
+                        : 'none',
+                    transform: activeOpportunitySubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
+                  }}
+                >
+                  {subTab.label}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* 加载状态 */}
         {loading && (
           <div className="w-full max-w-xl bg-white rounded-2xl shadow mt-3 p-6 text-center">
@@ -94,8 +272,15 @@ const EducationalPage: React.FC = () => {
                 }}
               >
                 <div className="flex items-center">
-                  <span className="text-blue-600 text-lg font-bold mr-2">{item.majorCode}</span>
-                  <span className="text-blue-700 text-lg font-bold">{item.majorName}</span>
+                  <span className="text-blue-600 text-sm font-bold mr-1">{item.majorCode}</span>
+                  <span
+                    className="text-blue-700 text-base font-bold max-w-[120px] truncate"
+                    title={item.majorName}
+                  >
+                    {item.majorName.length > 5
+                      ? `${item.majorName.substring(0, 5)}...`
+                      : item.majorName}
+                  </span>
                   <span className="ml-2 text-gray-400">&gt;</span>
                 </div>
                 <div className="flex items-center">
@@ -104,11 +289,24 @@ const EducationalPage: React.FC = () => {
                     {Math.ceil(item.score * 100)}分！
                   </span>
                 </div>
+                {/* 移除按钮 */}
+                <div className="flex justify-end ">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // 阻止事件冒泡，避免触发导航
+                      handleRemoveIntention(item.majorCode, item.majorName);
+                    }}
+                    className="text-red-500 text-sm px-3 py-1 rounded-lg border border-red-300 hover:bg-red-50 transition-colors"
+                  >
+                    移除
+                  </button>
+                </div>
               </div>
+
               <div className="space-y-1 p-3">
                 <div className="flex items-center justify-between text-base">
                   <div>
-                    <span className="text-green-600">（-5%）</span>
+                    <span className="text-green-600">（-10%）</span>
                     <span className="text-gray-900"> 到 </span>
                     <span className="text-red-600">（+5%）</span>
                     <span className="text-gray-900">位次段院校</span>
@@ -119,7 +317,7 @@ const EducationalPage: React.FC = () => {
                       className={item.group2 > 0 ? 'text-blue-600' : ''}
                       onClick={() => {
                         item.group2 > 0 &&
-                        navigator(
+                          navigator(
                             '/intention/intentiondetail?majorCode=' +
                               item.majorCode +
                               '&groupNum=2&majorName=' +
@@ -135,9 +333,9 @@ const EducationalPage: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between text-base">
                   <div>
-                    <span className="text-green-600">（-15%）</span>
+                    <span className="text-green-600">（-30%）</span>
                     <span className="text-gray-900"> 到 </span>
-                    <span className="text-green-600">（-5%）</span>
+                    <span className="text-green-600">（-10%）</span>
                     <span className="text-gray-900">位次段院校</span>
                   </div>
                   <div className="flex items-center">
@@ -146,7 +344,7 @@ const EducationalPage: React.FC = () => {
                       className={item.group3 > 0 ? 'text-blue-600' : ''}
                       onClick={() => {
                         item.group3 > 0 &&
-                        navigator(
+                          navigator(
                             '/intention/intentiondetail?majorCode=' +
                               item.majorCode +
                               '&groupNum=3&majorName=' +
@@ -162,7 +360,7 @@ const EducationalPage: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between text-base">
                   <div>
-                    <span className="text-red-600">（+5%到+10%）</span>
+                    <span className="text-red-600">（+5%到+30%）</span>
                     <span className="text-gray-900">位次段院校</span>
                   </div>
                   <div className="flex items-center">
@@ -171,7 +369,7 @@ const EducationalPage: React.FC = () => {
                       className={item.group1 > 0 ? 'text-blue-600' : ''}
                       onClick={() => {
                         item.group1 > 0 &&
-                        navigator(
+                          navigator(
                             '/intention/intentiondetail?majorCode=' +
                               item.majorCode +
                               '&groupNum=1&majorName=' +
@@ -195,7 +393,7 @@ const EducationalPage: React.FC = () => {
                       className={item.group0 > 0 ? 'text-blue-600' : ''}
                       onClick={() => {
                         item.group0 > 0 &&
-                        navigator(
+                          navigator(
                             '/intention/intentiondetail?majorCode=' +
                               item.majorCode +
                               '&groupNum=0&majorName=' +

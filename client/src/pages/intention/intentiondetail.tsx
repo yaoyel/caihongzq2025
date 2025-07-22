@@ -16,9 +16,9 @@ const EducationalDetailPage: React.FC = () => {
   const groupNum = Number(searchParams.get('groupNum'));
   const groupNames = [
     '其他位次段院校',
-    '（+5%）到（+10%）位次段院校',
-    '（-5%）到+（+5%）位次段院校',
-    '（-15%） 到 （-5%）位次段院校',
+    '（+5%）到（+30%）位次段院校',
+    '（-10%）到+（+5%）位次段院校',
+    '（-30%） 到 （-10%）位次段院校',
   ];
 
   const [tuijianSchools, setTuijianSchools] = useState([]);
