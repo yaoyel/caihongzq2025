@@ -21,6 +21,11 @@ export interface MajorScoreViewModel {
    * 匹配得分
    */
   score: number;
+
+  /**
+   * 是否与用户选科要求匹配
+   */
+  isMatching: boolean;
  
 }
 

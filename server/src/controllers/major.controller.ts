@@ -264,9 +264,15 @@ export class MajorController {
       // 计算所有专业的匹配得分
       const majorScores = await this.majorScoreService.calculateMajorScores(userId);
 
+      // 为每个专业添加匹配标记
+      const scoresWithMatchingFlag = majorScores.map(score => ({
+        ...score,
+        isMatching: matchingMajorCodeSet.has(score.majorCode)
+      }));
+
       // 将专业分为匹配和不匹配两组
-      const matchingScores = majorScores.filter(score => matchingMajorCodeSet.has(score.majorCode));
-      const nonMatchingScores = majorScores.filter(score => !matchingMajorCodeSet.has(score.majorCode));
+      const matchingScores = scoresWithMatchingFlag.filter(score => score.isMatching);
+      const nonMatchingScores = scoresWithMatchingFlag.filter(score => !score.isMatching);
 
       // 对匹配的专业按分数排序
       const sortedMatchingScores = matchingScores.sort((a, b) => b.score - a.score);

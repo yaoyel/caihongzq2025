@@ -26,6 +26,8 @@ export interface MajorScore {
   schoolCount: number;
   // 新增字段：发展潜力得分
   developmentPotential: number;
+  // 新增字段：是否与用户选科要求匹配
+  isMatching?: boolean;
 }
 
 /**
