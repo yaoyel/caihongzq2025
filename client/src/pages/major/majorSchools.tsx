@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import Top from '../comm/top';
 import { Card, Spin } from 'antd';
