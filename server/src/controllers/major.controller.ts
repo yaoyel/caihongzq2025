@@ -261,13 +261,17 @@ export class MajorController {
       // 创建匹配专业代码的Set，用于快速查找
       const matchingMajorCodeSet = new Set(matchingMajorCodes);
 
-      // 计算所有专业的匹配得分
+      // 计算所有专业的匹配得分， 并计算得分
       const majorScores = await this.majorScoreService.calculateMajorScores(userId);
 
       // 为每个专业添加匹配标记
       const scoresWithMatchingFlag = majorScores.map(score => ({
         ...score,
-        isMatching: matchingMajorCodeSet.has(score.majorCode)
+        isMatching: matchingMajorCodeSet.has(score.majorCode),
+        growthPotentialScore: (score.growthPotentialScore || 0) /2 + (score.score * 100 /2),
+        careerDevelopmentScore: (score.careerDevelopmentScore || 0) /2 + (score.score * 100 /2),
+        academicDevelopmentScore: (score.academicDevelopmentScore || 0) /2 + (score.lexueScore * 100 /4) + (score.shanxueScore * 100 /4),
+        industryProspectsScore: (score.industryProspectsScore || 0) /2 + ((score.growthPotentialScore || 0) /2 + (score.score * 100 /2)) /4 + ((score.careerDevelopmentScore || 0) /2 + (score.score * 100 /2)) /4,
       }));
 
       // 将专业分为匹配和不匹配两组

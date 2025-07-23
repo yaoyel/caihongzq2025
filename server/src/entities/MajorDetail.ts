@@ -182,11 +182,11 @@ export class MajorDetail {
 
   @Column({
     name: 'study_content',
-    type: 'text',
+    type: 'jsonb',
     nullable: true,
-    comment: '学习内容'
+    comment: '学习内容（JSON格式）'
   })
-  studyContent: string | null;
+  studyContent: any | null;
 
   @Column({
     name: 'senior_talk',
@@ -198,34 +198,34 @@ export class MajorDetail {
 
   @Column({
     name: 'academic_development',
-    type: 'text',
+    type: 'jsonb',
     nullable: true,
-    comment: '学业发展'
+    comment: '学业发展（JSON格式）'
   })
-  academicDevelopment: string | null;
+  academicDevelopment: any | null;
   @Column({
     name: 'career_development',
-    type: 'text',
+    type: 'jsonb',
     nullable: true,
-    comment: '职业发展'
+    comment: '职业发展（JSON格式）'
   })
-  careerDevelopment: string | null;
+  careerDevelopment: any | null;
   @Column({
     name: 'industry_prospects',
-    type: 'text',
+    type: 'jsonb',
     nullable: true,
-    comment: '行业前景'
+    comment: '行业前景（JSON格式）'
   })
-  industryProspects: string | null;
+  industryProspects: any | null;
 
 
   @Column({
     name: 'growth_potential',
-    type: 'text',
+    type: 'jsonb',
     nullable: true,
-    comment: '成长潜力'
+    comment: '成长潜力（JSON格式）'
   })
-  growthPotential: string | null;
+  growthPotential: any | null;
 
   /**
    * 记录创建时间
