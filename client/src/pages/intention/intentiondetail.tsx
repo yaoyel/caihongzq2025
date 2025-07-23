@@ -5,84 +5,244 @@ import { useNavigate } from 'react-router-dom';
 import Top from '../comm/top';
 import { useSearchParams } from 'react-router-dom';
 import { getMajorDetail } from '../../config';
-import { createMajorAlternative, getMajorAlternatives, cancelAlternative } from '../../config/volunteer';
+import {
+  createMajorAlternative,
+  getMajorAlternatives,
+  cancelAlternative,
+} from '../../config/volunteer';
+import { Modal, Button, Checkbox } from 'antd';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../store';
+import {
+  setExpandedGroups,
+  toggleGroupExpansion,
+  setAllGroupsExpanded,
+  saveScrollPosition,
+  setCurrentMajorInfo,
+  setSearchKeyword,
+  setAlternativeStatus,
+  updateAlternativeStatus,
+  updateLoadingStatus,
+} from '../../store/slices/intentionDetailSlice';
 
 const EducationalDetailPage: React.FC = () => {
+  const dispatch = useDispatch();
   const navigator = useNavigate();
   const [searchParams] = useSearchParams();
   const majorCode = searchParams.get('majorCode');
   const majorName = searchParams.get('majorName');
   const score = searchParams.get('score');
   const groupNum = Number(searchParams.get('groupNum'));
-  const groupNames = [
-    '其他位次段院校',
-    '（+5%）到（+10%）位次段院校',
-    '（-5%）到+（+5%）位次段院校',
-    '（-15%） 到 （-5%）位次段院校',
-  ];
+  
+  // 弹框相关状态
+  const [isTipModalVisible, setIsTipModalVisible] = useState(false);
+  const [userChoices, setUserChoices] = useState({
+    choice1: false,
+    choice2: false,
+  });
+
+  // 从 Redux 获取状态
+  const {
+    expandedGroups,
+    searchKeyword,
+    alternativeStatus,
+    loadingStatus,
+    scrollPositions,
+  } = useSelector((state: RootState) => state.intentionDetail);
+
+  // 定义位次段映射关系
+  const groupMapping = {
+    2: '（-10%）到+（+5%）位次段院校',
+    3: '（-30%） 到 （-10%）位次段院校',
+    1: '（+5%）到（+30%）位次段院校',
+    0: '其他位次段院校',
+  };
+
+  // 按照选中顺序定义位次段数组
+  const selectedGroups = [2, 3, 1, 0];
 
   const [tuijianSchools, setTuijianSchools] = useState([]);
-  // 添加备选状态管理，存储备选志愿的ID
-  const [alternativeStatus, setAlternativeStatus] = useState<{ [key: string]: { isAlternative: boolean; id?: string } }>({});
-  const [loadingStatus, setLoadingStatus] = useState<{ [key: string]: boolean }>({});
-  // 添加搜索状态
-  const [searchKeyword, setSearchKeyword] = useState('');
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // 添加滚动容器引用
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // 添加位次段引用映射
+  const groupRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+  // 添加防抖定时器引用
+  const scrollDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  // 添加用户滚动标志，防止自动滚动恢复干扰用户操作
+  const userScrollingRef = useRef(false);
+  // 添加自动滚动标志，防止用户滚动时触发自动滚动
+  const autoScrollingRef = useRef(false);
+  // 添加用户滚动防抖定时器
+  const userScrollDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 处理用户选择变化
+  const handleChoiceChange = useCallback((choice: 'choice1' | 'choice2', checked: boolean) => {
+    setUserChoices((prev) => ({
+      ...prev,
+      [choice]: checked,
+    }));
+  }, []);
+
+  // 处理提示弹窗确认
+  const handleTipModalConfirm = useCallback(() => {
+    // 根据用户选择设置不同的存储策略
+    if (userChoices.choice1) {
+      // 今天不显示
+      const today = new Date().toDateString();
+      localStorage.setItem('intention-detail-tip-last-shown', today);
+    }
+
+    if (userChoices.choice2) {
+      // 以后都不显示
+      localStorage.setItem('intention-detail-tip-never-show', 'true');
+    }
+
+    setIsTipModalVisible(false);
+  }, [userChoices]);
+
+  // 处理提示弹窗关闭
+  const handleTipModalClose = useCallback(() => {
+    setIsTipModalVisible(false);
+  }, []);
 
   // 生成页面唯一的存储键
   const getScrollStorageKey = useCallback(() => {
     return `scroll_position_${majorCode}_${groupNum}`;
   }, [majorCode, groupNum]);
 
-  // 保存滚动位置到localStorage
-  const saveScrollPosition = useCallback(() => {
+  // 保存滚动位置到 Redux
+  const saveScrollPositionToRedux = useCallback(() => {
     if (scrollContainerRef.current) {
       const scrollTop = scrollContainerRef.current.scrollTop;
       const storageKey = getScrollStorageKey();
-      localStorage.setItem(storageKey, scrollTop.toString());
+      dispatch(saveScrollPosition({ key: storageKey, position: scrollTop }));
     }
-  }, [getScrollStorageKey]);
+  }, [dispatch, getScrollStorageKey]);
 
-  // 从localStorage恢复滚动位置
+  // 从 Redux 恢复滚动位置
   const restoreScrollPosition = useCallback(() => {
-    if (scrollContainerRef.current) {
+    if (scrollContainerRef.current && isInitialized && !userScrollingRef.current) {
       const storageKey = getScrollStorageKey();
-      const savedScrollTop = localStorage.getItem(storageKey);
+      const savedScrollTop = scrollPositions[storageKey];
       if (savedScrollTop) {
+        // 标记正在自动滚动
+        autoScrollingRef.current = true;
+        
         // 使用setTimeout确保DOM已完全渲染
         setTimeout(() => {
           if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = parseInt(savedScrollTop, 10);
+            scrollContainerRef.current.scrollTop = savedScrollTop;
           }
+          // 延迟重置自动滚动标志
+          setTimeout(() => {
+            autoScrollingRef.current = false;
+          }, 100);
         }, 100);
       }
     }
-  }, [getScrollStorageKey]);
+  }, [scrollPositions, getScrollStorageKey, isInitialized]);
 
-  // 滚动事件处理函数（使用节流优化性能）
+  // 滚动事件处理函数（使用节流和防抖优化性能）
   const handleScroll = useCallback(() => {
+    // 如果正在自动滚动，不处理用户滚动事件
+    if (autoScrollingRef.current) {
+      return;
+    }
+
+    // 标记用户正在滚动
+    userScrollingRef.current = true;
+
+    // 清除之前的用户滚动防抖定时器
+    if (userScrollDebounceRef.current) {
+      clearTimeout(userScrollDebounceRef.current);
+    }
+
     // 使用requestAnimationFrame进行节流
     if (!handleScroll.ticking) {
       handleScroll.ticking = true;
       requestAnimationFrame(() => {
-        saveScrollPosition();
+        // 只有当滚动位置真正改变时才保存
+        if (scrollContainerRef.current && isInitialized) {
+          const currentScrollTop = scrollContainerRef.current.scrollTop;
+          const storageKey = getScrollStorageKey();
+          const lastSavedPosition = scrollPositions[storageKey];
+          
+          // 只有当滚动位置变化超过20px时才保存，减少频繁更新
+          if (Math.abs(currentScrollTop - (lastSavedPosition || 0)) > 20) {
+            // 清除之前的防抖定时器
+            if (scrollDebounceRef.current) {
+              clearTimeout(scrollDebounceRef.current);
+            }
+            
+            // 设置新的防抖定时器，延迟200ms保存
+            scrollDebounceRef.current = setTimeout(() => {
+              saveScrollPositionToRedux();
+            }, 200);
+          }
+        }
         handleScroll.ticking = false;
       });
     }
-  }, [saveScrollPosition]);
+
+    // 设置用户滚动防抖定时器，延迟300ms后重置用户滚动标志
+    userScrollDebounceRef.current = setTimeout(() => {
+      userScrollingRef.current = false;
+    }, 300);
+  }, [saveScrollPositionToRedux, scrollPositions, getScrollStorageKey, isInitialized]);
 
   // 初始化ticking属性
   handleScroll.ticking = false;
 
-  // 过滤学校列表的函数
-  const filteredSchools = tuijianSchools.filter((school) => {
-    if (!searchKeyword.trim()) {
-      return true;
+  // 滚动到指定位次段的函数
+  const scrollToGroup = useCallback((targetGroupNum: number) => {
+    const targetRef = groupRefs.current[targetGroupNum];
+    if (targetRef && scrollContainerRef.current && !userScrollingRef.current) {
+      // 标记正在自动滚动
+      autoScrollingRef.current = true;
+      
+      const containerTop = scrollContainerRef.current.getBoundingClientRect().top;
+      const targetTop = targetRef.getBoundingClientRect().top;
+      const scrollTop = scrollContainerRef.current.scrollTop + (targetTop - containerTop) - 20; // 减去20px的偏移
+
+      scrollContainerRef.current.scrollTo({
+        top: scrollTop,
+        behavior: 'smooth',
+      });
+
+      // 延迟重置自动滚动标志
+      setTimeout(() => {
+        autoScrollingRef.current = false;
+      }, 500);
     }
-    return school.name.toLowerCase().includes(searchKeyword.toLowerCase());
-  });
+  }, []);
+
+  // 切换位次段展开/收起状态
+  const handleToggleGroupExpansion = (groupNum: number) => {
+    dispatch(toggleGroupExpansion(groupNum));
+  };
+
+  // 全部展开或收起
+  const handleToggleAllGroups = () => {
+    const allExpanded = selectedGroups.every((group) => expandedGroups[group]);
+    dispatch(setAllGroupsExpanded(!allExpanded));
+  };
+
+  // 处理搜索关键词变化
+  const handleSearchKeywordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    dispatch(setSearchKeyword(e.target.value));
+  };
+
+  // 过滤学校列表的函数
+  const filterSchools = (schools: any[]) => {
+    return schools.filter((school) => {
+      if (!searchKeyword.trim()) {
+        return true;
+      }
+      return school.name.toLowerCase().includes(searchKeyword.toLowerCase());
+    });
+  };
 
   useEffect(() => {
     // 页面初始化逻辑
@@ -92,6 +252,9 @@ const EducationalDetailPage: React.FC = () => {
           console.error('未找到专业代码');
           return;
         }
+
+        // 设置当前专业信息到 Redux
+        dispatch(setCurrentMajorInfo({ majorCode, groupNum }));
 
         // 并行获取专业详情和已备选志愿
         const [detailResponse, alternativesResponse] = await Promise.all([
@@ -103,7 +266,8 @@ const EducationalDetailPage: React.FC = () => {
         if (detailResponse && detailResponse.code === 200) {
           if (detailResponse.data) {
             if (detailResponse.data.schools) {
-              setTuijianSchools(detailResponse.data.schools.filter((s) => s.group === groupNum));
+              // 获取所有位次段的院校数据
+              setTuijianSchools(detailResponse.data.schools);
             }
           }
         }
@@ -121,15 +285,51 @@ const EducationalDetailPage: React.FC = () => {
             }
           });
 
-          setAlternativeStatus(alternativeMap);
+          dispatch(setAlternativeStatus(alternativeMap));
         }
+
+        // 初始化位次段展开状态
+        const initialExpandedState: { [key: number]: boolean } = {};
+        selectedGroups.forEach((group) => {
+          // 默认展开传入的groupNum对应的位次段，其他收起
+          initialExpandedState[group] = group === groupNum;
+        });
+        dispatch(setExpandedGroups(initialExpandedState));
+        
+        // 标记初始化完成
+        setIsInitialized(true);
       } catch (error) {
         console.error('页面初始化失败:', error);
       }
     };
 
     initializePage();
-  }, [majorCode, groupNum]);
+  }, [majorCode, groupNum, dispatch]);
+
+  // 检查是否需要显示提示弹窗
+  useEffect(() => {
+    if (tuijianSchools && tuijianSchools.length > 0) {
+      // 检查是否设置了永远不显示
+      const neverShow = localStorage.getItem('intention-detail-tip-never-show');
+      if (neverShow === 'true') {
+        return;
+      }
+
+      // 检查今天是否已经显示过
+      const today = new Date().toDateString();
+      const lastShownDate = localStorage.getItem('intention-detail-tip-last-shown');
+      if (lastShownDate === today) {
+        return;
+      }
+
+      // 显示弹窗
+      const timer = setTimeout(() => {
+        setIsTipModalVisible(true);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [tuijianSchools.length]);
 
   // 监听滚动事件
   useEffect(() => {
@@ -137,33 +337,49 @@ const EducationalDetailPage: React.FC = () => {
     if (scrollContainer) {
       scrollContainer.addEventListener('scroll', handleScroll);
 
-      // 恢复滚动位置
-      restoreScrollPosition();
-
       return () => {
         scrollContainer.removeEventListener('scroll', handleScroll);
+        // 清理防抖定时器
+        if (scrollDebounceRef.current) {
+          clearTimeout(scrollDebounceRef.current);
+        }
+        // 清理用户滚动防抖定时器
+        if (userScrollDebounceRef.current) {
+          clearTimeout(userScrollDebounceRef.current);
+        }
       };
     }
-  }, [handleScroll, restoreScrollPosition]);
+  }, [handleScroll]);
 
   // 页面卸载和浏览器回退时保存滚动位置
   useEffect(() => {
     const saveOnPopState = () => {
-      saveScrollPosition();
+      saveScrollPositionToRedux();
     };
     window.addEventListener('popstate', saveOnPopState);
     return () => {
-      saveScrollPosition();
+      saveScrollPositionToRedux();
       window.removeEventListener('popstate', saveOnPopState);
     };
-  }, [saveScrollPosition]);
+  }, [saveScrollPositionToRedux]);
 
-  // 数据渲染后恢复滚动条位置
+  // 数据渲染后恢复滚动条位置或滚动到指定位次段
   useEffect(() => {
-    if (tuijianSchools && tuijianSchools.length > 0) {
-      restoreScrollPosition();
+    if (tuijianSchools && tuijianSchools.length > 0 && isInitialized && !userScrollingRef.current) {
+      // 如果有传入的groupNum，则滚动到对应位次段
+      if (groupNum !== null && groupNum !== undefined) {
+        // 延迟执行，确保DOM已渲染
+        setTimeout(() => {
+          scrollToGroup(groupNum);
+        }, 500);
+      } else {
+        // 否则恢复之前的滚动位置
+        setTimeout(() => {
+          restoreScrollPosition();
+        }, 300);
+      }
     }
-  }, [tuijianSchools, restoreScrollPosition]);
+  }, [tuijianSchools, restoreScrollPosition, scrollToGroup, groupNum, isInitialized]);
 
   // 处理备选按钮点击
   const handleAlternativeClick = async (school: any) => {
@@ -177,15 +393,18 @@ const EducationalDetailPage: React.FC = () => {
 
     try {
       // 设置加载状态
-      setLoadingStatus((prev) => ({ ...prev, [schoolKey]: true }));
+      dispatch(updateLoadingStatus({ key: schoolKey, loading: true }));
 
       if (currentStatus?.isAlternative && currentStatus.id) {
         // 如果已经备选，则取消备选
         const response = await cancelAlternative(currentStatus.id);
-        
+
         if (response && response.code === 200) {
           // 更新备选状态
-          setAlternativeStatus((prev) => ({ ...prev, [schoolKey]: { isAlternative: false, id: undefined } }));
+          dispatch(updateAlternativeStatus({
+            key: schoolKey,
+            status: { isAlternative: false, id: undefined },
+          }));
         } else {
           alert(response.message || '取消备选志愿失败');
         }
@@ -216,12 +435,12 @@ const EducationalDetailPage: React.FC = () => {
 
         if (response && response.code === 200) {
           // 更新备选状态
-          setAlternativeStatus((prev) => ({ 
-            ...prev, 
-            [schoolKey]: { 
-              isAlternative: true, 
-              id: response.data?.id 
-            } 
+          dispatch(updateAlternativeStatus({
+            key: schoolKey,
+            status: {
+              isAlternative: true,
+              id: response.data?.id,
+            },
           }));
         } else {
           alert(response.message || '添加备选志愿失败');
@@ -232,23 +451,99 @@ const EducationalDetailPage: React.FC = () => {
       alert(error instanceof Error ? error.message : '备选志愿操作失败');
     } finally {
       // 清除加载状态
-      setLoadingStatus((prev) => ({ ...prev, [schoolKey]: false }));
+      dispatch(updateLoadingStatus({ key: schoolKey, loading: false }));
     }
   };
 
   const getHistoryScore = (historyScores) => {
     let htmlTemp = '';
     if (historyScores && historyScores.length > 0) {
-      historyScores?.map((item) => {
-        htmlTemp += `<div  style="display:flex;justify-content:space-between;"><span>学费：${item.tuition}元/年</span>  <span>专业：${item.planMajorName}</span>  <span>选科：${item.subjectType}+${item.subjectSelection}</span></div>`;
-        item.historyScore?.map((hs) => {
-          for (const [key, value] of Object.entries(hs)) {
-            const valueTemp = value.split(',');
-            htmlTemp += `<div  className="flex justify-between text-sm text-gray-700" style="display:flex;justify-content:space-between;"><span className="w-14 mr-2">${key}</span><span className="w-14 mr-2">${valueTemp && valueTemp.length > 2 ? valueTemp[0] + '分' : ''}</span>
-              <span className="w-20 mr-2">第${valueTemp && valueTemp.length > 2 ? valueTemp[1] : ''}位次</span>
-              <span>招生${valueTemp && valueTemp.length > 2 ? valueTemp[2] : ''}名</span></div>`;
-          }
-        });
+      historyScores?.map((item, index) => {
+        // 添加分隔线（除了第一个）
+        if (index > 0) {
+          htmlTemp += `<div class="border-t border-gray-200 my-4"></div>`;
+        }
+        
+        // 基本信息卡片
+        htmlTemp += `
+          <div class="bg-gray-50 rounded-lg p-4 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+              <div class="flex items-center">
+                <span class="text-gray-500 mr-2">💰</span>
+                <span class="font-medium text-gray-700">学费：${item.tuition}元/年</span>
+              </div>
+              <div class="flex items-center">
+                <span class="text-gray-500 mr-2">🎓</span>
+                <span class="font-medium text-gray-700">专业：${item.planMajorName}</span>
+              </div>
+              <div class="flex items-center">
+                <span class="text-gray-500 mr-2">📚</span>
+                <span class="font-medium text-gray-700">选科：${item.subjectType}+${item.subjectSelection}</span>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        // 历史分数表格
+        if (item.historyScore && item.historyScore.length > 0) {
+          htmlTemp += `
+            <div class="bg-white border border-gray-200 rounded-lg overflow-hidden mb-4">
+              <div class="bg-blue-50 px-4 py-3 border-b border-gray-200">
+                <h4 class="text-sm font-semibold text-blue-800 flex items-center">
+                  <span class="mr-2">📊</span>
+                  历年录取分数
+                </h4>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">年份</th>
+                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">分数</th>
+                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">位次</th>
+                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">招生人数</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+          `;
+          
+          item.historyScore?.map((hs) => {
+            for (const [key, value] of Object.entries(hs)) {
+              const valueTemp = value.split(',');
+              const score = valueTemp && valueTemp.length > 2 ? valueTemp[0] : '';
+              const rank = valueTemp && valueTemp.length > 2 ? valueTemp[1] : '';
+              const count = valueTemp && valueTemp.length > 2 ? valueTemp[2] : '';
+              
+              htmlTemp += `
+                <tr class="hover:bg-gray-50 transition-colors duration-150">
+                  <td class="px-4 py-3 text-sm font-medium text-gray-900">${key}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      ${score}分
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-700">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      第${rank}位次
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-700">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      招生${count}名
+                    </span>
+                  </td>
+                </tr>
+              `;
+            }
+          });
+          
+          htmlTemp += `
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        }
       });
     }
     return htmlTemp;
@@ -265,17 +560,17 @@ const EducationalDetailPage: React.FC = () => {
         className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3"
         style={{ height: 'calc(100vh - 120px)', overflowY: 'auto' }}
       >
-        <div className="w-full max-w-xl bg-white rounded-2xl shadow p-3">
+        <div className="w-full max-w-xl bg-white rounded-2xl shadow p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center text-[18px] font-bold text-gray-900">
+            <div className="flex items-center text-xl font-bold text-gray-900">
               意向专业-招生院校
             </div>
           </div>
         </div>
 
-        <div className="w-full max-w-xl bg-white rounded-2xl shadow mt-3">
+        <div className="w-full max-w-xl bg-white rounded-2xl shadow mt-4">
           <div
-            className="flex items-center justify-between bg-[#dee9fd] rounded-t-xl p-4 px-4 py-3 mb-3"
+            className="flex items-center justify-between bg-[#dee9fd] rounded-t-xl p-4 mb-4"
             onClick={() => {
               navigator(
                 `/major/majorlovedetail?majorCode=${majorCode}&&majorName=${majorName}&score=${score}&isFavorite=true`,
@@ -284,98 +579,156 @@ const EducationalDetailPage: React.FC = () => {
             }}
           >
             <div className="flex items-center">
-              <span className="text-blue-600 text-lg font-bold mr-2">{majorCode}</span>
-              <span className="text-blue-700 text-lg font-bold">{majorName}</span>
+              <span className="text-blue-600 text-base font-bold mr-3">{majorCode}</span>
+              <span className="text-blue-700 text-base font-bold">
+                {majorName.length > 8 ? `${majorName.substring(0, 8)}...` : majorName}{' '}
+              </span>
               <span className="ml-2 text-gray-400">&gt;</span>
             </div>
             <div className="flex items-center">
-              <span className="text-gray-900 font-bold mr-1">热爱能量</span>
-              <span className="text-blue-700 font-bold text-lg">{Math.ceil(score * 100)}分！</span>
+              <span className="text-gray-900 font-bold mr-2">热爱能量</span>
+              <span className="text-blue-700 font-bold text-base">{Math.ceil(score * 100)}分！</span>
             </div>
           </div>
-          <div className="space-y-1 p-3">
+          <div className="space-y-2 p-4">
             {/* 院校信息块，严格还原设计图 */}
             {/* 第一个院校（未选中） */}
-            <div className="flex items-center justify-start font-bold  mb-3 text-base border-b border-solid border-gray-200 pb-2">
-              <div className="flex items-center">
-                【<span className="text-gray-900"> {groupNames[groupNum]} </span>】
-              </div>
-              <div className="flex items-center ml-5">
-                <span className="text-gray-900 mr-2">{filteredSchools.length}所</span>
-              </div>
-            </div>
-            
-            {/* 搜索框 */}
-            <div className="mb-3">
+            {/* 搜索框和操作按钮 */}
+            <div className="mb-4 flex gap-3">
               <input
                 type="text"
                 placeholder="搜索学校名称..."
                 value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={handleSearchKeywordChange}
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
+              <button
+                onClick={handleToggleAllGroups}
+                className="px-5 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+              >
+                {selectedGroups.every((group) => expandedGroups[group]) ? '全部收起' : '全部展开'}
+              </button>
             </div>
-            {filteredSchools.map((school) => {
-              const schoolKey = `${school.code}_${majorCode}`;
-              const isAlternative = alternativeStatus[schoolKey]?.isAlternative || false;
-              const isLoading = loadingStatus[schoolKey];
+
+            {/* 按位次段分组显示院校 */}
+            {selectedGroups.map((groupNum) => {
+              // 获取当前位次段的院校
+              const groupSchools = tuijianSchools.filter((school) => school.group === groupNum);
+              const filteredGroupSchools = filterSchools(groupSchools);
+
+              // 如果没有院校，不显示该位次段
+              if (filteredGroupSchools.length === 0) {
+                return null;
+              }
 
               return (
-                <div
-                  key={school.code}
-                  className="border-b border-solid border-gray-200 mb-3 overflow-hidden bg-white"
+                                <div 
+                  key={groupNum} 
+                  className="mb-5"
+                  ref={(el) => {
+                    groupRefs.current[groupNum] = el;
+                  }}
                 >
-                  {/* 院校头部 */}
-                  <div className="flex items-center justify-between py-2 ">
-                    <div className="flex items-center space-x-2 ">
-                      <span
-                        className="text-blue-600 text-lg font-bold"
-                        onClick={() => {
-                          navigator(
-                            `/major/schooldetail?schoolCode=${school.code}&schoolname=${school.name}`
-                          );
-                        }}
-                      >
-                        {school.name}
-                      </span>
-                      <span
-                        key={school.name + school.nature}
-                        className="text-blue-600 text-sm font-bold mr-2"
-                      >
-                        {school.nature === 'public' ? '公办' : '民办'}
-                      </span>
-                      <span
-                        key={school.name + school.provinceName}
-                        className="text-blue-600 text-sm font-bold mr-2"
-                      >
-                        {school.provinceName}
-                      </span>
-                      <span
-                        key={school.name + school.features}
-                        className="text-blue-600 text-sm font-bold mr-2"
-                      >
-                        {school.features}
-                      </span>
-                    </div>
-                    <button
-                      className={`px-3 py-1 rounded ${
-                        isAlternative
-                          ? 'bg-red-500 text-white hover:bg-red-600'
-                          : isLoading
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'bg-green-500 text-white hover:bg-green-600'
-                      }`}
-                      onClick={() => handleAlternativeClick(school)}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? '处理中...' : isAlternative ? '撤选' : '备选'}
-                    </button>
-                  </div>
-                  {/* 表格内容 */}
+                  {/* 位次段标题 */}
                   <div
-                    className="mt-2 pb-2  space-y-"
-                    dangerouslySetInnerHTML={{ __html: getHistoryScore(school?.historyScores) }}
-                  ></div>
+                    className={`flex items-center justify-between font-bold mb-4 text-sm border-b border-solid pb-3 ${
+                      groupNum === Number(searchParams.get('groupNum'))
+                        ? 'border-blue-500 bg-blue-50 rounded-lg p-3'
+                        : 'border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <button
+                        onClick={() => handleToggleGroupExpansion(groupNum)}
+                        className="mr-3 text-gray-500 hover:text-gray-700 transition-colors text-lg"
+                      >
+                        {expandedGroups[groupNum] ? '▼' : '▶'}
+                      </button>
+                      【<span className="text-gray-900"> {groupMapping[groupNum]} </span>】
+                    </div>
+                                          <div className="flex items-center">
+                        <span className="text-gray-600 text-sm mr-2">{filteredGroupSchools.length}所院校</span>
+                      </div>
+                  </div>
+
+                  {/* 该位次段的院校列表 */}
+                  {expandedGroups[groupNum] &&
+                    filteredGroupSchools.map((school) => {
+                      const schoolKey = `${school.code}_${majorCode}`;
+                      const isAlternative = alternativeStatus[schoolKey]?.isAlternative || false;
+                      const isLoading = loadingStatus[schoolKey];
+
+                                          return (
+                      <div
+                        key={school.code}
+                        className="border border-gray-200 mb-4 overflow-hidden bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
+                      >
+                        {/* 院校头部 */}
+                        <div className="p-4">
+                          {/* 学校名称和备选按钮行 */}
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex-1 min-w-0">
+                              <span
+                                className="text-blue-600 text-lg font-bold cursor-pointer hover:text-blue-700 transition-colors duration-200 truncate block"
+                                title={school.name}
+                                onClick={() => {
+                                  navigator(
+                                    `/major/schooldetail?schoolCode=${school.code}&schoolname=${school.name}`
+                                  );
+                                }}
+                              >
+                                {school.name.length > 10 ? `${school.name.substring(0, 10)}...` : school.name}
+                              </span>
+                            </div>
+                            <button
+                              className={`ml-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm ${
+                                isAlternative
+                                  ? 'bg-red-500 text-white hover:bg-red-600 hover:shadow-md'
+                                  : isLoading
+                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    : 'bg-green-500 text-white hover:bg-green-600 hover:shadow-md'
+                              }`}
+                              onClick={() => handleAlternativeClick(school)}
+                              disabled={isLoading}
+                            >
+                              {isLoading ? '处理中...' : isAlternative ? '撤选' : '备选'}
+                            </button>
+                          </div>
+                          
+                          {/* 学校标签行 */}
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            <span
+                              key={school.name + school.nature}
+                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
+                            >
+                              {school.nature === 'public' ? '公办' : '民办'}
+                            </span>
+                            <span
+                              key={school.name + school.provinceName}
+                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200"
+                            >
+                              {school.provinceName}
+                            </span>
+                            {school.features && (
+                              <span
+                                key={school.name + school.features}
+                                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                              >
+                                {school.features}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {/* 表格内容 */}
+                        <div
+                          className="px-4 pb-4 bg-gray-50 rounded-b-lg"
+                          dangerouslySetInnerHTML={{
+                            __html: getHistoryScore(school?.historyScores),
+                          }}
+                        ></div>
+                        </div>
+                      );
+                    })}
                 </div>
               );
             })}
@@ -389,6 +742,91 @@ const EducationalDetailPage: React.FC = () => {
           window.location.href = '/educational';
         }}
       />
+
+      {/* 提示弹窗 */}
+      <Modal
+        title={
+          <div
+            style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}
+          >
+            💡 使用提示
+          </div>
+        }
+        open={isTipModalVisible}
+        onCancel={handleTipModalClose}
+        footer={null}
+        width={400}
+        centered
+        className="rounded-2xl"
+        style={{ top: '20%' }}
+      >
+        <div style={{ padding: '20px 0' }}>
+          <div
+            style={{
+              padding: '16px 0',
+              lineHeight: '1.8',
+              fontSize: '14px',
+              color: '#333',
+            }}
+          >
+            <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#2563eb' }}>
+              请在意向专业所对应的院校中，点击&ldquo;备选&rdquo;，则相关院校会自动进入&ldquo;志愿&rdquo;频道，供进一步确认。
+            </div>
+          </div>
+
+          {/* 底部复选框选项 */}
+          <div
+            style={{
+              marginTop: '20px',
+              padding: '16px 20px',
+              background: '#f8f9fa',
+              borderRadius: '8px',
+              border: '1px solid #e9ecef',
+            }}
+          >
+            <div
+              style={{ marginBottom: '12px', fontSize: '14px', fontWeight: 'bold', color: '#333' }}
+            >
+              请选择您的偏好（可多选）：
+            </div>
+            <div style={{ marginBottom: '8px' }}>
+              <Checkbox
+                checked={userChoices.choice1}
+                onChange={(e) => handleChoiceChange('choice1', e.target.checked)}
+                style={{ fontSize: '13px' }}
+              >
+                今天不显示此提示
+              </Checkbox>
+            </div>
+            <div>
+              <Checkbox
+                checked={userChoices.choice2}
+                onChange={(e) => handleChoiceChange('choice2', e.target.checked)}
+                style={{ fontSize: '13px' }}
+              >
+                以后都不显示此提示
+              </Checkbox>
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: '20px' }}>
+            <Button
+              type="primary"
+              onClick={handleTipModalConfirm}
+              style={{
+                background: '#2563eb',
+                border: 'none',
+                borderRadius: '20px',
+                height: '40px',
+                width: '120px',
+                fontSize: '16px',
+              }}
+            >
+              我知道了
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

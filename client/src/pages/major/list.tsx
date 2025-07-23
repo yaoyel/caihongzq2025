@@ -3,6 +3,13 @@ import React, { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffe
 import { Input, Button, Modal, message, Spin, Tabs, Checkbox } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { SearchOutlined, StarOutlined, StarFilled } from '@ant-design/icons';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../store';
+import {
+  setActiveTab,
+  setActiveSubTab,
+  setActiveOpportunitySubTab,
+} from '../../store/slices/majorListSlice';
 import BottomNav from '../comm/bottom';
 import { getUserMajorScores, callWechatPay } from '../../config';
 import {
@@ -167,16 +174,11 @@ const MajorPage: React.FC = () => {
     choice1: false,
     choice2: false,
   });
-  // 选项卡状态 - 控制最爱专业显示方式
-  const [activeTab, setActiveTab] = useState<'development' | 'passion' | 'opportunity'>(
-    'development'
+  // 使用Redux管理tab状态
+  const dispatch = useDispatch();
+  const { activeTab, activeSubTab, activeOpportunitySubTab } = useSelector(
+    (state: RootState) => state.majorList
   );
-  // 子选项卡状态 - 控制学习特质显示方式
-  const [activeSubTab, setActiveSubTab] = useState<'le' | 'shan' | 'yan' | 'zu'>();
-  // 机遇指数子选项卡状态 - 控制机遇指数显示方式
-  const [activeOpportunitySubTab, setActiveOpportunitySubTab] = useState<
-    'academic' | 'career' | 'industry' | 'growth'
-  >();
 
   // 计算当前实际要渲染的专业数据
   const displayMajors = majors.slice(0, currentPage * pageSize);
@@ -185,23 +187,15 @@ const MajorPage: React.FC = () => {
   const listAreaRef = useRef<HTMLDivElement>(null);
 
   /**
-   * 计算推荐标记数组，当前项分数大于等于下一个项分数则推荐，否则break后续都不推荐
+   * 计算推荐标记数组，基于isMatching字段判断是否可报考
    * @param majorsList 专业列表
    * @returns 推荐标记数组
    */
   const getRecommendFlags = (majorsList: any[]) => {
     const flags: boolean[] = new Array(majorsList.length).fill(false);
-    let hasBreak = false;
-    for (let i = 0; i < majorsList.length - 1; i++) {
-      const currentScore = Number(majorsList[i].score);
-      const nextScore = Number(majorsList[i + 1].score);
-      if (hasBreak) continue;
-      if (currentScore >= nextScore) {
-        flags[i] = true;
-        flags[i + 1] = true;
-      } else {
-        hasBreak = true;
-      }
+    for (let i = 0; i < majorsList.length; i++) {
+      // 如果isMatching为true，则标记为可报考
+      flags[i] = Boolean(majorsList[i].isMatching);
     }
     return flags;
   };
@@ -209,8 +203,8 @@ const MajorPage: React.FC = () => {
   // 推荐标记数组
   const recommendFlags = getRecommendFlags(majors);
 
-  // 找到最后一个推荐的索引
-  const lastRecommendIndex = recommendFlags.lastIndexOf(true);
+  // 找到第一个不可报考的索引（isMatching为false的第一个位置）
+  const firstNonMatchingIndex = recommendFlags.findIndex((flag) => !flag);
 
   // 使用自定义 Hook
   const { saveScrollPosition, saveClickedMajorCode, restoreScrollPosition, clearScrollPosition } =
@@ -281,11 +275,24 @@ const MajorPage: React.FC = () => {
     (data: any[]) => {
       const sortField = getSortField();
       return [...data].sort((a, b) => {
+        // 首先按照isMatching分组：可报考的在前，不可报考的在后
+        const aMatching = Boolean(a.isMatching);
+        const bMatching = Boolean(b.isMatching);
+
+        if (aMatching !== bMatching) {
+          return aMatching ? -1 : 1; // 可报考的排在前面
+        }
+
+        // 在相同分组内，根据字段类型进行排序
         const aValue = Number(a[sortField] || 0);
         const bValue = Number(b[sortField] || 0);
 
-        // 所有指标都按照倒序排序（分数越高越好）
-        return bValue - aValue;
+        // 厌学和阻学字段使用正序排序（从低到高），其他字段使用倒序排序（从高到低）
+        if (sortField === 'yanxueDeduction' || sortField === 'tiaozhanDeduction') {
+          return aValue - bValue; // 从低到高排序
+        } else {
+          return bValue - aValue; // 从高到低排序
+        }
       });
     },
     [getSortField]
@@ -449,6 +456,27 @@ const MajorPage: React.FC = () => {
       setIsInitialized(true);
     }
   }, [fetchMajorScores, fetchMajorIntentions, isInitialized]);
+
+  // 恢复tab状态 - 从sessionStorage中恢复
+  useEffect(() => {
+    const savedTabState = sessionStorage.getItem('major-list-tab-state');
+    if (savedTabState) {
+      try {
+        const tabState = JSON.parse(savedTabState);
+        if (tabState.activeTab) {
+          dispatch(setActiveTab(tabState.activeTab));
+        }
+        if (tabState.activeSubTab) {
+          dispatch(setActiveSubTab(tabState.activeSubTab));
+        }
+        if (tabState.activeOpportunitySubTab) {
+          dispatch(setActiveOpportunitySubTab(tabState.activeOpportunitySubTab));
+        }
+      } catch (error) {
+        console.error('恢复tab状态失败:', error);
+      }
+    }
+  }, [dispatch]);
 
   // 检查是否需要显示提示弹窗
   useEffect(() => {
@@ -816,6 +844,31 @@ const MajorPage: React.FC = () => {
   }, [filterMajors, searchValue, originalMajors, sortMajors]);
 
   /**
+   * 保存当前tab状态到sessionStorage
+   */
+  const saveTabState = useCallback(() => {
+    sessionStorage.setItem(
+      'major-list-tab-state',
+      JSON.stringify({
+        activeTab,
+        activeSubTab,
+        activeOpportunitySubTab,
+      })
+    );
+  }, [activeTab, activeSubTab, activeOpportunitySubTab]);
+
+  /**
+   * 带状态保存的导航函数
+   */
+  const navigateWithState = useCallback(
+    (path: string) => {
+      saveTabState();
+      navigator(path);
+    },
+    [saveTabState, navigator]
+  );
+
+  /**
    * 处理专业点击事件
    */
   const handleMajorItemClick = useCallback(
@@ -829,14 +882,12 @@ const MajorPage: React.FC = () => {
       // 设置点击状态
       handleMajorClick(String(item.majorCode));
 
-      // 使用 replace 方法导航到详情页，这样返回时不会重新加载页面
-      // 但是保持导航历史，这样用户可以使用浏览器的后退按钮
-      navigator(
-        `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isFavorite=${isFavorite}`,
-        { replace: false } // 不使用 replace，保持正常的导航历史，但通过 isInitialized 避免重新加载
+      // 使用带状态保存的导航函数
+      navigateWithState(
+        `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isFavorite=${isFavorite}`
       );
     },
-    [saveScrollPosition, saveClickedMajorCode, handleMajorClick, navigator]
+    [saveScrollPosition, saveClickedMajorCode, handleMajorClick, navigateWithState]
   );
 
   /**
@@ -848,6 +899,7 @@ const MajorPage: React.FC = () => {
     sessionStorage.removeItem('major-list-cached-data');
     sessionStorage.removeItem('major-list-cached-intentions');
     sessionStorage.removeItem('major-list-clicked-code'); // 清除点击状态
+    sessionStorage.removeItem('major-list-tab-state'); // 清除tab状态
     fetchMajorScores();
     fetchMajorIntentions(true); // 强制刷新收藏数据
   }, [fetchMajorScores, fetchMajorIntentions, clearScrollPosition]);
@@ -873,15 +925,15 @@ const MajorPage: React.FC = () => {
       if (activeTab === 'passion' && activeSubTab) {
         switch (activeSubTab) {
           case 'le':
-            return `乐学${Math.ceil((item.lexueScore ?? 0) * 100)}分！`;
+            return { text: '乐学', score: Math.ceil((item.lexueScore ?? 0) * 100) + '分' };
           case 'shan':
-            return `善学${Math.ceil((item.shanxueScore ?? 0) * 100)}分！`;
+            return { text: '善学', score: Math.ceil((item.shanxueScore ?? 0) * 100) + '分' };
           case 'yan':
-            return `厌学${Math.ceil((item.yanxueDeduction ?? 0) * 100)}分！`;
+            return { text: '厌学', score: Math.ceil((item.yanxueDeduction ?? 0) * 100) + '分' };
           case 'zu':
-            return `阻学${Math.ceil((item.tiaozhanDeduction ?? 0) * 100)}分！`;
+            return { text: '阻学', score: Math.ceil((item.tiaozhanDeduction ?? 0) * 100) + '分' };
           default:
-            return `热爱能量${Math.ceil((item.score ?? 0) * 100)}分！`;
+            return { text: '热爱能量', score: Math.ceil(Number(item.score || '0') * 100) + '分' };
         }
       }
 
@@ -889,28 +941,31 @@ const MajorPage: React.FC = () => {
       if (activeTab === 'opportunity' && activeOpportunitySubTab) {
         switch (activeOpportunitySubTab) {
           case 'academic':
-            return `学业发展${Math.ceil(item.academicDevelopmentScore ?? 0)}分！`;
+            return {
+              text: '学业发展',
+              score: Math.ceil(item.academicDevelopmentScore ?? 0) + '分',
+            };
           case 'career':
-            return `职业回报${Math.ceil(item.careerDevelopmentScore ?? 0)}分！`;
+            return { text: '职业回报', score: Math.ceil(item.careerDevelopmentScore ?? 0) + '分' };
           case 'industry':
-            return `产业前景${Math.ceil(item.industryProspectsScore ?? 0)}分！`;
+            return { text: '产业前景', score: Math.ceil(item.industryProspectsScore ?? 0) + '分' };
           case 'growth':
-            return `成长空间${Math.ceil(item.growthPotentialScore ?? 0)}分！`;
+            return { text: '成长空间', score: Math.ceil(item.growthPotentialScore ?? 0) + '分' };
           default:
-            return `机遇指数${Math.ceil(item.opportunityScore ?? 0)}分！`;
+            return { text: '机遇指数', score: Math.ceil(item.opportunityScore ?? 0) + '分' };
         }
       }
 
       // 主选项卡显示
       switch (activeTab) {
         case 'development':
-          return `发展潜能${Math.ceil(item.developmentPotential ?? 0)}分！`;
+          return { text: '发展潜能', score: Math.ceil(item.developmentPotential ?? 0) + '分' };
         case 'passion':
-          return `热爱能量${Math.ceil(item.score ?? 0)}分！`;
+          return { text: '热爱能量', score: Math.ceil(Number(item.score || '0') * 100) + '分' };
         case 'opportunity':
-          return `机遇指数${Math.ceil(item.opportunityScore ?? 0)}分！`;
+          return { text: '机遇指数', score: Math.ceil(item.opportunityScore ?? 0) + '分' };
         default:
-          return `发展潜能${Math.ceil(item.developmentPotential ?? 0)}分！`;
+          return { text: '发展潜能', score: Math.ceil(item.developmentPotential ?? 0) + '分' };
       }
     },
     [activeTab, activeSubTab, activeOpportunitySubTab]
@@ -1045,17 +1100,14 @@ const MajorPage: React.FC = () => {
           }}
         >
           {[
-            { key: 'development', label: '发展潜能', icon: '🚀', color: '#2563eb' },
-            { key: 'passion', label: '热爱能量', icon: '❤️', color: '#dc2626' },
-            { key: 'opportunity', label: '机遇指数', icon: '⭐', color: '#059669' },
+            { key: 'development', label: '发展潜能', icon: '▲', color: '#2563eb' },
+            { key: 'passion', label: '热爱能量', icon: '♥', color: '#ff6b6b' },
+            { key: 'opportunity', label: '机遇指数', icon: '★', color: '#10b981' },
           ].map((tab) => (
             <div
               key={tab.key}
               onClick={() => {
-                setActiveTab(tab.key as any);
-                // 切换主选项卡时重置子选项卡状态
-                setActiveSubTab(undefined);
-                setActiveOpportunitySubTab(undefined);
+                dispatch(setActiveTab(tab.key as any));
               }}
               style={{
                 flex: 1,
@@ -1070,7 +1122,7 @@ const MajorPage: React.FC = () => {
                 transition: 'all 0.3s ease',
                 background: activeTab === tab.key ? tab.color : 'transparent',
                 color: activeTab === tab.key ? '#fff' : '#666',
-                boxShadow: activeTab === tab.key ? `0 2px 8px ${tab.color}40` : 'none',
+                boxShadow: activeTab === tab.key ? `0 2px 8px ${tab.color}30` : 'none',
                 transform: activeTab === tab.key ? 'scale(1.02)' : 'scale(1)',
               }}
             >
@@ -1085,7 +1137,7 @@ const MajorPage: React.FC = () => {
           <div
             style={{
               display: 'flex',
-              background: '#fef2f2',
+              background: '#fef7f7',
               borderRadius: '16px',
               padding: '4px',
               gap: '4px',
@@ -1096,11 +1148,11 @@ const MajorPage: React.FC = () => {
               { key: 'le', label: '乐学', color: '#52c41a' },
               { key: 'shan', label: '善学', color: '#1890ff' },
               { key: 'yan', label: '厌学', color: '#fa8c16' },
-              { key: 'zu', label: '阻学', color: '#f5222d' },
+              { key: 'zu', label: '阻学', color: '#ff7875' },
             ].map((subTab) => (
               <div
                 key={subTab.key}
-                onClick={() => setActiveSubTab(subTab.key as any)}
+                onClick={() => dispatch(setActiveSubTab(subTab.key as any))}
                 style={{
                   flex: 1,
                   display: 'flex',
@@ -1114,7 +1166,7 @@ const MajorPage: React.FC = () => {
                   transition: 'all 0.3s ease',
                   background: activeSubTab === subTab.key ? subTab.color : 'transparent',
                   color: activeSubTab === subTab.key ? '#fff' : '#666',
-                  boxShadow: activeSubTab === subTab.key ? `0 2px 6px ${subTab.color}40` : 'none',
+                  boxShadow: activeSubTab === subTab.key ? `0 2px 6px ${subTab.color}30` : 'none',
                   transform: activeSubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
                 }}
               >
@@ -1137,14 +1189,14 @@ const MajorPage: React.FC = () => {
             }}
           >
             {[
-              { key: 'academic', label: '学业发展', color: '#722ed1' },
-              { key: 'career', label: '职业回报', color: '#13c2c2' },
-              { key: 'industry', label: '产业前景', color: '#eb2f96' },
-              { key: 'growth', label: '成长空间', color: '#fa541c' },
+              { key: 'academic', label: '学业发展', color: '#8b5cf6' },
+              { key: 'career', label: '职业回报', color: '#06b6d4' },
+              { key: 'industry', label: '产业前景', color: '#ec4899' },
+              { key: 'growth', label: '成长空间', color: '#f97316' },
             ].map((subTab) => (
               <div
                 key={subTab.key}
-                onClick={() => setActiveOpportunitySubTab(subTab.key as any)}
+                onClick={() => dispatch(setActiveOpportunitySubTab(subTab.key as any))}
                 style={{
                   flex: 1,
                   display: 'flex',
@@ -1159,7 +1211,7 @@ const MajorPage: React.FC = () => {
                   background: activeOpportunitySubTab === subTab.key ? subTab.color : 'transparent',
                   color: activeOpportunitySubTab === subTab.key ? '#fff' : '#666',
                   boxShadow:
-                    activeOpportunitySubTab === subTab.key ? `0 2px 6px ${subTab.color}40` : 'none',
+                    activeOpportunitySubTab === subTab.key ? `0 2px 6px ${subTab.color}30` : 'none',
                   transform: activeOpportunitySubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
                 }}
               >
@@ -1247,7 +1299,7 @@ const MajorPage: React.FC = () => {
                 const isRecommendedMajor = recommendFlags[fullListIndex];
                 // 判断是否需要插入分割线
                 const needDivider =
-                  lastRecommendIndex !== -1 && fullListIndex === lastRecommendIndex + 1;
+                  firstNonMatchingIndex !== -1 && fullListIndex === firstNonMatchingIndex;
                 return (
                   <React.Fragment key={item.majorCode}>
                     {needDivider && (
@@ -1297,9 +1349,9 @@ const MajorPage: React.FC = () => {
                                   case 'development':
                                     return '#dbeafe';
                                   case 'passion':
-                                    return '#fee2e2';
+                                    return '#ffeaea';
                                   case 'opportunity':
-                                    return '#d1fae5';
+                                    return '#ecfdf5';
                                   default:
                                     return '#e6f7ff';
                                 }
@@ -1310,7 +1362,7 @@ const MajorPage: React.FC = () => {
                                     case 'development':
                                       return '#eff6ff';
                                     case 'passion':
-                                      return '#fef2f2';
+                                      return '#fef7f7';
                                     case 'opportunity':
                                       return '#f0fdf4';
                                     default:
@@ -1325,9 +1377,9 @@ const MajorPage: React.FC = () => {
                                   case 'development':
                                     return '4px solid #2563eb';
                                   case 'passion':
-                                    return '4px solid #dc2626';
+                                    return '4px solid #ff6b6b';
                                   case 'opportunity':
-                                    return '4px solid #059669';
+                                    return '4px solid #10b981';
                                   default:
                                     return '4px solid #1890ff';
                                 }
@@ -1338,9 +1390,9 @@ const MajorPage: React.FC = () => {
                                     case 'development':
                                       return '3px solid #2563eb';
                                     case 'passion':
-                                      return '3px solid #dc2626';
+                                      return '3px solid #ff6b6b';
                                     case 'opportunity':
-                                      return '3px solid #059669';
+                                      return '3px solid #10b981';
                                     default:
                                       return '3px solid #fa8c16';
                                   }
@@ -1376,17 +1428,34 @@ const MajorPage: React.FC = () => {
                           <span style={{ color: '#bbb', fontSize: 18 }}>{'>'}</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <span
+                            style={{ fontSize: 15, fontWeight: 500 }}
+                            onClick={() => {
+                              if (activeTab === 'development')
+                                navigateWithState(
+                                  `/major/majorjobintro?type=major&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}`
+                                );
+                            }}
+                          >
+                            {getScoreDisplayText(item).text}
+                          </span>
                           {/* 分数显示 */}
                           <span
+                            onClick={() => {
+                              if (activeTab === 'development')
+                                navigateWithState(
+                                  `/major/majorjobintro?type=major&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}`
+                                );
+                            }}
                             style={{
                               color: (() => {
                                 switch (activeTab) {
                                   case 'development':
                                     return '#2563eb';
                                   case 'passion':
-                                    return '#dc2626';
+                                    return '#ff6b6b';
                                   case 'opportunity':
-                                    return '#059669';
+                                    return '#10b981';
                                   default:
                                     return '#333';
                                 }
@@ -1396,7 +1465,7 @@ const MajorPage: React.FC = () => {
                               fontWeight: 500,
                             }}
                           >
-                            {getScoreDisplayText(item)}
+                            {getScoreDisplayText(item).score}
                           </span>
                           {/* 收藏按钮 */}
                           <span
@@ -1430,7 +1499,11 @@ const MajorPage: React.FC = () => {
                         {activeTab === 'development' && (
                           <div
                             className="major-list-item-content"
-                            onClick={() => handleMajorItemClick(item, isFavorite)}
+                            onClick={() => {
+                              navigateWithState(
+                                `/major/majorjobintro?type=major&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}`
+                              );
+                            }}
                           >
                             {item.majorName}是{item.majorBrief} {'>'}
                           </div>
@@ -1438,28 +1511,65 @@ const MajorPage: React.FC = () => {
 
                         {/* 学习特质评分 */}
                         {activeTab !== 'opportunity' && (
-                          <div
-                            className="major-list-item-content"
-                            onClick={() => handleMajorItemClick(item, isFavorite)}
-                          >
+                          <div className="major-list-item-content">
                             {(!activeSubTab || activeTab === 'development') && (
-                              <span style={{ color: '#52c41a', fontWeight: 500 }}>
-                                乐学{getCalcScore100(item.lexueScore)}分{'>'}
+                              <span
+                                onClick={() => {
+                                  navigateWithState(
+                                    `/major/studyTrait?type=lexue&majorCode=${item.majorCode}&majorName=${item.majorName}`
+                                  );
+                                }}
+                              >
+                                乐学
+                                <span style={{ color: '#52c41a', fontWeight: 500 }}>
+                                  {getCalcScore100(item.lexueScore)}分
+                                </span>
+                                {'>'}
                               </span>
                             )}
                             {(!activeSubTab || activeTab === 'development') && (
-                              <span style={{ color: '#1890ff', fontWeight: 500 }}>
-                                善学{getCalcScore100(item.shanxueScore)}分{'>'}
+                              <span
+                                onClick={() => {
+                                  navigateWithState(
+                                    `/major/studyTrait?type=shanxue&majorCode=${item.majorCode}&majorName=${item.majorName}`
+                                  );
+                                }}
+                              >
+                                善学
+                                <span style={{ color: '#1890ff', fontWeight: 500 }}>
+                                  {getCalcScore100(item.shanxueScore)}分
+                                </span>
+                                {'>'}
                               </span>
                             )}
                             {(!activeSubTab || activeTab === 'development') && (
-                              <span style={{ color: '#fa8c16', fontWeight: 500 }}>
-                                厌学{getCalcScore100(item.yanxueDeduction)}分{'>'}
+                              <span
+                                onClick={() => {
+                                  navigateWithState(
+                                    `/major/studyTrait?type=yanxue&majorCode=${item.majorCode}&majorName=${item.majorName}`
+                                  );
+                                }}
+                              >
+                                厌学
+                                <span style={{ color: '#fa8c16', fontWeight: 500 }}>
+                                  {getCalcScore100(item.yanxueDeduction)}分
+                                </span>
+                                {'>'}
                               </span>
                             )}
                             {(!activeSubTab || activeTab === 'development') && (
-                              <span style={{ color: '#f5222d', fontWeight: 500 }}>
-                                阻学{getCalcScore100(item.tiaozhanDeduction)}分{'>'}
+                              <span
+                                onClick={() => {
+                                  navigateWithState(
+                                    `/major/studyTrait?type=tiaozhan&majorCode=${item.majorCode}&majorName=${item.majorName}`
+                                  );
+                                }}
+                              >
+                                阻学
+                                <span style={{ color: '#ff7875', fontWeight: 500 }}>
+                                  {getCalcScore100(item.tiaozhanDeduction)}分
+                                </span>
+                                {'>'}
                               </span>
                             )}
                           </div>
@@ -1468,30 +1578,67 @@ const MajorPage: React.FC = () => {
                         {/* 发展评分 */}
                         {activeTab !== 'passion' && (
                           <>
-                            <div
-                              className="major-list-item-content"
-                              onClick={() => handleMajorItemClick(item, isFavorite)}
-                            >
+                            <div className="major-list-item-content">
                               {(!activeOpportunitySubTab || activeTab === 'development') && (
-                                <span style={{ color: '#722ed1', fontWeight: 500 }}>
-                                  学业发展{getCalcScore(item.academicDevelopmentScore)}分{'>'}
+                                <span
+                                  onClick={() => {
+                                    navigateWithState(
+                                      `/major/majorjobintro?type=major&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&anchor=academic`
+                                    );
+                                  }}
+                                >
+                                  学业发展
+                                  <span style={{ color: '#8b5cf6', fontWeight: 500 }}>
+                                    {getCalcScore(item.academicDevelopmentScore)}分
+                                  </span>
+                                  {'>'}
                                 </span>
                               )}
                               {(!activeOpportunitySubTab || activeTab === 'development') && (
-                                <span style={{ color: '#13c2c2', fontWeight: 500 }}>
-                                  职业回报{getCalcScore(item.careerDevelopmentScore)}分{'>'}
+                                <span
+                                  onClick={() => {
+                                    navigateWithState(
+                                      `/major/majorjobintro?type=academic&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&anchor=career`
+                                    );
+                                  }}
+                                >
+                                  职业回报
+                                  <span style={{ color: '#06b6d4', fontWeight: 500 }}>
+                                    {getCalcScore(item.careerDevelopmentScore)}分
+                                  </span>
+                                  {'>'}
                                 </span>
                               )}
                             </div>
                             <div className="major-list-item-content">
                               {(!activeOpportunitySubTab || activeTab === 'development') && (
-                                <span style={{ color: '#eb2f96', fontWeight: 500 }}>
-                                  产业前景{getCalcScore(item.industryProspectsScore)}分 {'>'}
+                                <span
+                                  onClick={() =>
+                                    navigateWithState(
+                                      `/major/majorjobintro?type=industry&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&anchor=industry`
+                                    )
+                                  }
+                                >
+                                  产业前景
+                                  <span style={{ color: '#ec4899', fontWeight: 500 }}>
+                                    {getCalcScore(item.industryProspectsScore)}分
+                                  </span>
+                                  {'>'}
                                 </span>
                               )}
                               {(!activeOpportunitySubTab || activeTab === 'development') && (
-                                <span style={{ color: '#fa541c', fontWeight: 500 }}>
-                                  成长空间{getCalcScore(item.growthPotentialScore)}分{'>'}
+                                <span
+                                  onClick={() =>
+                                    navigateWithState(
+                                      `/major/majorjobintro?type=industry&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&anchor=growth`
+                                    )
+                                  }
+                                >
+                                  成长空间
+                                  <span style={{ color: '#f97316', fontWeight: 500 }}>
+                                    {getCalcScore(item.growthPotentialScore)}分
+                                  </span>
+                                  {'>'}
                                 </span>
                               )}
                             </div>
@@ -1503,7 +1650,7 @@ const MajorPage: React.FC = () => {
                           <div
                             className="major-list-item-content"
                             onClick={() => {
-                              navigator(
+                              navigateWithState(
                                 `/major/majorschools?majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}`
                               );
                             }}
