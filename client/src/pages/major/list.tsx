@@ -5,7 +5,11 @@ import { useNavigate } from 'react-router-dom';
 import { SearchOutlined, StarOutlined, StarFilled } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
-import { setActiveTab, setActiveSubTab, setActiveOpportunitySubTab } from '../../store/slices/majorListSlice';
+import {
+  setActiveTab,
+  setActiveSubTab,
+  setActiveOpportunitySubTab,
+} from '../../store/slices/majorListSlice';
 import BottomNav from '../comm/bottom';
 import { getUserMajorScores, callWechatPay } from '../../config';
 import {
@@ -843,20 +847,26 @@ const MajorPage: React.FC = () => {
    * 保存当前tab状态到sessionStorage
    */
   const saveTabState = useCallback(() => {
-    sessionStorage.setItem('major-list-tab-state', JSON.stringify({
-      activeTab,
-      activeSubTab,
-      activeOpportunitySubTab
-    }));
+    sessionStorage.setItem(
+      'major-list-tab-state',
+      JSON.stringify({
+        activeTab,
+        activeSubTab,
+        activeOpportunitySubTab,
+      })
+    );
   }, [activeTab, activeSubTab, activeOpportunitySubTab]);
 
   /**
    * 带状态保存的导航函数
    */
-  const navigateWithState = useCallback((path: string) => {
-    saveTabState();
-    navigator(path);
-  }, [saveTabState, navigator]);
+  const navigateWithState = useCallback(
+    (path: string) => {
+      saveTabState();
+      navigator(path);
+    },
+    [saveTabState, navigator]
+  );
 
   /**
    * 处理专业点击事件
@@ -923,7 +933,7 @@ const MajorPage: React.FC = () => {
           case 'zu':
             return { text: '阻学', score: Math.ceil((item.tiaozhanDeduction ?? 0) * 100) + '分' };
           default:
-            return { text: '热爱能量', score: Math.ceil((item.score ?? 0) * 100) + '分' };
+            return { text: '热爱能量', score: Math.ceil(Number(item.score || '0') * 100) + '分' };
         }
       }
 
@@ -951,7 +961,7 @@ const MajorPage: React.FC = () => {
         case 'development':
           return { text: '发展潜能', score: Math.ceil(item.developmentPotential ?? 0) + '分' };
         case 'passion':
-          return { text: '热爱能量', score: Math.ceil(item.score ?? 0) + '分' };
+          return { text: '热爱能量', score: Math.ceil(Number(item.score || '0') * 100) + '分' };
         case 'opportunity':
           return { text: '机遇指数', score: Math.ceil(item.opportunityScore ?? 0) + '分' };
         default:
