@@ -40,6 +40,7 @@ const MajorJobIntro: React.FC = () => {
   // 处理锚点定位
   useEffect(() => {
     if (anchor && majorDetail) {
+      console.log('锚点定位触发:', anchor); // 调试信息
       // 延迟执行，确保DOM已渲染
       setTimeout(() => {
         let targetSection: HTMLElement | null = null;
@@ -53,15 +54,31 @@ const MajorJobIntro: React.FC = () => {
           targetSection = document.getElementById('academic-section');
         } else if (anchor === 'career') {
           targetSection = document.getElementById('career-section');
+        } else if (anchor === 'overview') {
+          targetSection = document.getElementById('overview-section');
         }
 
+        console.log('目标元素:', targetSection); // 调试信息
+
         if (targetSection) {
+          // 临时设置scroll-margin-top来控制偏移量
+          const originalScrollMargin = targetSection.style.scrollMarginTop;
+          targetSection.style.scrollMarginTop = '60px'; // 40px导航栏 + 20px额外偏移
+          
+          // 使用scrollIntoView方法
           targetSection.scrollIntoView({
             behavior: 'smooth',
             block: 'start',
           });
+          
+          // 滚动完成后恢复原始样式
+          setTimeout(() => {
+            targetSection.style.scrollMarginTop = originalScrollMargin;
+          }, 1000);
+        } else {
+          console.log('未找到目标元素，anchor:', anchor); // 调试信息
         }
-      }, 500);
+      }, 800); // 增加延迟时间
     }
   }, [anchor, majorDetail]);
 
@@ -188,7 +205,7 @@ const MajorJobIntro: React.FC = () => {
           </div>
           <div className="border border-solid border-[#e5e6eb] p-3">
             {/* 专业一览 */}
-            <div style={{ marginBottom: 24 }}>
+            <div id="overview-section" style={{ marginBottom: 24 }}>
               <div style={sectionTitleStyle}>
                 {' '}
                 {majorType === 'major' ? '做什么？' : '就业去向'}
