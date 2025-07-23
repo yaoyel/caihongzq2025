@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import { Modal } from 'antd';
 import BottomNav from '../comm/bottom';
@@ -21,6 +20,16 @@ const EducationalPage: React.FC = () => {
   const [activeOpportunitySubTab, setActiveOpportunitySubTab] = useState<
     'academic' | 'career' | 'industry' | 'growth'
   >();
+
+  // 统一的颜色主题 - 与 list.tsx 保持一致
+  const colorTheme = {
+    primary: '#2563eb', // 主蓝色
+    secondary: '#1d4ed8', // 深蓝色
+    light: '#dbeafe', // 浅蓝色背景
+    text: '#1e40af', // 蓝色文字
+    border: '#bfdbfe', // 蓝色边框
+    hover: '#1e3a8a', // 悬停蓝色
+  };
 
   /**
    * 获取收藏专业列表
@@ -120,8 +129,8 @@ const EducationalPage: React.FC = () => {
           >
             {[
               { key: 'development', label: '发展潜能', icon: '▲', color: '#2563eb' },
-              { key: 'passion', label: '热爱能量', icon: '♥', color: '#dc2626' },
-              { key: 'opportunity', label: '机遇指数', icon: '★', color: '#059669' },
+              { key: 'passion', label: '热爱能量', icon: '♥', color: '#ff6b6b' },
+              { key: 'opportunity', label: '机遇指数', icon: '★', color: '#10b981' },
             ].map((tab) => (
               <div
                 key={tab.key}
@@ -144,7 +153,7 @@ const EducationalPage: React.FC = () => {
                   transition: 'all 0.3s ease',
                   background: activeTab === tab.key ? tab.color : 'transparent',
                   color: activeTab === tab.key ? '#fff' : '#666',
-                  boxShadow: activeTab === tab.key ? `0 2px 8px ${tab.color}40` : 'none',
+                  boxShadow: activeTab === tab.key ? `0 2px 8px ${tab.color}30` : 'none',
                   transform: activeTab === tab.key ? 'scale(1.02)' : 'scale(1)',
                 }}
               >
@@ -157,21 +166,21 @@ const EducationalPage: React.FC = () => {
           {/* 热爱能量子选项卡 */}
           {activeTab === 'passion' && (
             <div
-              style={{
-                display: 'flex',
-                background: '#fef2f2',
-                borderRadius: '16px',
-                padding: '4px',
-                gap: '4px',
-                marginTop: '8px',
-              }}
-            >
-              {[
-                { key: 'le', label: '乐学', color: '#52c41a' },
-                { key: 'shan', label: '善学', color: '#1890ff' },
-                { key: 'yan', label: '厌学', color: '#fa8c16' },
-                { key: 'zu', label: '阻学', color: '#f5222d' },
-              ].map((subTab) => (
+                          style={{
+              display: 'flex',
+              background: '#fef7f7',
+              borderRadius: '16px',
+              padding: '4px',
+              gap: '4px',
+              marginTop: '8px',
+            }}
+          >
+            {[
+              { key: 'le', label: '乐学', color: '#52c41a' },
+              { key: 'shan', label: '善学', color: '#1890ff' },
+              { key: 'yan', label: '厌学', color: '#fa8c16' },
+              { key: 'zu', label: '阻学', color: '#ff7875' },
+            ].map((subTab) => (
                 <div
                   key={subTab.key}
                   onClick={() => setActiveSubTab(subTab.key as any)}
@@ -186,9 +195,9 @@ const EducationalPage: React.FC = () => {
                     fontWeight: 500,
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
-                    background: activeSubTab === subTab.key ? subTab.color : 'transparent',
-                    color: activeSubTab === subTab.key ? '#fff' : '#666',
-                    boxShadow: activeSubTab === subTab.key ? `0 2px 6px ${subTab.color}40` : 'none',
+                                      background: activeSubTab === subTab.key ? subTab.color : 'transparent',
+                  color: activeSubTab === subTab.key ? '#fff' : '#666',
+                  boxShadow: activeSubTab === subTab.key ? `0 2px 6px ${subTab.color}30` : 'none',
                     transform: activeSubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
                   }}
                 >
@@ -201,21 +210,21 @@ const EducationalPage: React.FC = () => {
           {/* 机遇指数子选项卡 */}
           {activeTab === 'opportunity' && (
             <div
-              style={{
-                display: 'flex',
-                background: '#f0fdf4',
-                borderRadius: '16px',
-                padding: '4px',
-                gap: '4px',
-                marginTop: '8px',
-              }}
-            >
-              {[
-                { key: 'academic', label: '学业发展', color: '#722ed1' },
-                { key: 'career', label: '职业回报', color: '#13c2c2' },
-                { key: 'industry', label: '产业前景', color: '#eb2f96' },
-                { key: 'growth', label: '成长空间', color: '#fa541c' },
-              ].map((subTab) => (
+                          style={{
+              display: 'flex',
+              background: '#f0fdf4',
+              borderRadius: '16px',
+              padding: '4px',
+              gap: '4px',
+              marginTop: '8px',
+            }}
+          >
+            {[
+              { key: 'academic', label: '学业发展', color: '#8b5cf6' },
+              { key: 'career', label: '职业回报', color: '#06b6d4' },
+              { key: 'industry', label: '产业前景', color: '#ec4899' },
+              { key: 'growth', label: '成长空间', color: '#f97316' },
+            ].map((subTab) => (
                 <div
                   key={subTab.key}
                   onClick={() => setActiveOpportunitySubTab(subTab.key as any)}
@@ -235,7 +244,7 @@ const EducationalPage: React.FC = () => {
                     color: activeOpportunitySubTab === subTab.key ? '#fff' : '#666',
                     boxShadow:
                       activeOpportunitySubTab === subTab.key
-                        ? `0 2px 6px ${subTab.color}40`
+                        ? `0 2px 6px ${subTab.color}30`
                         : 'none',
                     transform: activeOpportunitySubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
                   }}
@@ -263,7 +272,8 @@ const EducationalPage: React.FC = () => {
           majorIntentions.map((item) => (
             <div key={item.majorCode} className="w-full max-w-xl bg-white rounded-2xl shadow mt-3">
               <div
-                className="flex items-center justify-between bg-[#dee9fd] rounded-t-xl p-4 px-4 py-3 mb-3"
+                className="flex items-center justify-between rounded-t-xl p-4 px-4 py-3 mb-3"
+                style={{ backgroundColor: colorTheme.light }}
                 onClick={() => {
                   navigator(
                     `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isFavorite=true`,
@@ -272,9 +282,15 @@ const EducationalPage: React.FC = () => {
                 }}
               >
                 <div className="flex items-center">
-                  <span className="text-blue-600 text-sm font-bold mr-1">{item.majorCode}</span>
+                  <span 
+                    className="text-sm font-bold mr-1"
+                    style={{ color: colorTheme.text }}
+                  >
+                    {item.majorCode}
+                  </span>
                   <span
-                    className="text-blue-700 text-base font-bold max-w-[120px] truncate"
+                    className="text-base font-bold max-w-[120px] truncate"
+                    style={{ color: colorTheme.text }}
                     title={item.majorName}
                   >
                     {item.majorName.length > 5
@@ -285,7 +301,10 @@ const EducationalPage: React.FC = () => {
                 </div>
                 <div className="flex items-center">
                   <span className="text-gray-900 font-bold mr-1">热爱能量</span>
-                  <span className="text-blue-700 font-bold text-lg">
+                  <span 
+                    className="font-bold text-lg"
+                    style={{ color: colorTheme.text }}
+                  >
                     {Math.ceil(item.score * 100)}分！
                   </span>
                 </div>
@@ -296,7 +315,17 @@ const EducationalPage: React.FC = () => {
                       e.stopPropagation(); // 阻止事件冒泡，避免触发导航
                       handleRemoveIntention(item.majorCode, item.majorName);
                     }}
-                    className="text-red-500 text-sm px-3 py-1 rounded-lg border border-red-300 hover:bg-red-50 transition-colors"
+                    className="text-sm px-3 py-1 rounded-lg border transition-colors"
+                    style={{
+                      color: '#ef4444',
+                      borderColor: '#fecaca',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#fef2f2';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
                   >
                     移除
                   </button>
@@ -314,7 +343,11 @@ const EducationalPage: React.FC = () => {
                   <div className="flex items-center">
                     <span className="text-gray-900 mr-2">{item.group2}所</span>
                     <span
-                      className={item.group2 > 0 ? 'text-blue-600' : ''}
+                      className={item.group2 > 0 ? '' : ''}
+                      style={{
+                        color: item.group2 > 0 ? colorTheme.text : '#9ca3af',
+                        cursor: item.group2 > 0 ? 'pointer' : 'default',
+                      }}
                       onClick={() => {
                         item.group2 > 0 &&
                           navigator(
@@ -327,7 +360,7 @@ const EducationalPage: React.FC = () => {
                           );
                       }}
                     >
-                      更多
+                      查看
                     </span>
                   </div>
                 </div>
@@ -341,7 +374,11 @@ const EducationalPage: React.FC = () => {
                   <div className="flex items-center">
                     <span className="text-gray-900 mr-2">{item.group3}所</span>
                     <span
-                      className={item.group3 > 0 ? 'text-blue-600' : ''}
+                      className={item.group3 > 0 ? '' : ''}
+                      style={{
+                        color: item.group3 > 0 ? colorTheme.text : '#9ca3af',
+                        cursor: item.group3 > 0 ? 'pointer' : 'default',
+                      }}
                       onClick={() => {
                         item.group3 > 0 &&
                           navigator(
@@ -354,7 +391,7 @@ const EducationalPage: React.FC = () => {
                           );
                       }}
                     >
-                      更多
+                      查看
                     </span>
                   </div>
                 </div>
@@ -366,7 +403,11 @@ const EducationalPage: React.FC = () => {
                   <div className="flex items-center">
                     <span className="text-gray-900 mr-2">{item.group1}所</span>
                     <span
-                      className={item.group1 > 0 ? 'text-blue-600' : ''}
+                      className={item.group1 > 0 ? '' : ''}
+                      style={{
+                        color: item.group1 > 0 ? colorTheme.text : '#9ca3af',
+                        cursor: item.group1 > 0 ? 'pointer' : 'default',
+                      }}
                       onClick={() => {
                         item.group1 > 0 &&
                           navigator(
@@ -379,7 +420,7 @@ const EducationalPage: React.FC = () => {
                           );
                       }}
                     >
-                      更多
+                      查看
                     </span>
                   </div>
                 </div>
@@ -390,7 +431,11 @@ const EducationalPage: React.FC = () => {
                   <div className="flex items-center">
                     <span className="text-gray-900 mr-2">{item.group0}所</span>
                     <span
-                      className={item.group0 > 0 ? 'text-blue-600' : ''}
+                      className={item.group0 > 0 ? '' : ''}
+                      style={{
+                        color: item.group0 > 0 ? colorTheme.text : '#9ca3af',
+                        cursor: item.group0 > 0 ? 'pointer' : 'default',
+                      }}
                       onClick={() => {
                         item.group0 > 0 &&
                           navigator(
@@ -403,7 +448,7 @@ const EducationalPage: React.FC = () => {
                           );
                       }}
                     >
-                      更多
+                      查看
                     </span>
                   </div>
                 </div>
