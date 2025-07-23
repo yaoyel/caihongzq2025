@@ -163,6 +163,28 @@ interface MajorDetail {
   requirements: string;
   careerProspects: string;
   relatedMajors: string[];
+  // 新增字段，对应服务器端返回的数据
+  majorBrief?: string;
+  studyContent?: string;
+  academicDevelopment?: string;
+  careerDevelopment?: string;
+  industryProspects?: string;
+  growthPotential?: string;
+  seniorTalk?: string;
+  majorKey?: string;
+  opportunityScore?: number;
+  academicDevelopmentScore?: number;
+  careerDevelopmentScore?: number;
+  growthPotentialScore?: number;
+  industryProspectsScore?: number;
+  academicDevelopmentTag?: string;
+  careerDevelopmentTag?: string;
+  growthPotentialTag?: string;
+  industryProspectsTag?: string;
+  educationLevel?: string;
+  studyPeriod?: string;
+  awardedDegree?: string;
+  developmentPotential?: string;
 }
 
 interface MajorDetailResponse {
