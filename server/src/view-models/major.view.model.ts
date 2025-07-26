@@ -123,7 +123,7 @@ export class BaseMajorDetailViewModel {
   industryProspects: string | null;
   
   /** 成长潜力 */
-  growthPotential: string | null;
+  growthPotential: string | null; 
 }
 
 /**
@@ -230,11 +230,15 @@ export function toMajorDetailViewModel(data: any): MajorDetailViewModel | undefi
       features: school.features,
       provinceName: school.provinceName,
       cityName: school.cityName,
+      enrollmentRate: school.enrollmentRate || 0,
+      employmentRate: school.employmentRate || 0,
       rankingOfRK: school.rankingOfRK,
       rankingOfXYH: school.rankingOfXYH,
       group:school.group,
       averageRank:school.averageRank,
       rankDiffPercentage: school.rankDiffPercentage,
+      majorGroupId: school.majorGroupId || 0,
+      majorGroupName: school.majorGroupName || '',
       historyScores: Array.isArray(school.historyScores) 
         ? school.historyScores.map((score: any) => ({
             // schoolMajorId: score.schoolMajorId,

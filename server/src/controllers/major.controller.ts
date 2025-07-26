@@ -149,9 +149,33 @@ export class MajorController {
       const historyScore = await this.majorRedisService.getMajorScores(code, user!.province || '北京', user!.preferredSubjects || '综合', user!.secondarySubjects || '');
       const rank = user.rank;
 
+      // 调用 MajorRedisService 的方法获取招生计划
+      const enrollPlans = await this.majorRedisService.getEnrollPlans(
+        code,
+        user!.province || '北京',
+        2025,
+        '专科批',
+        '普通类',
+        user!.preferredSubjects || '综合',
+        user!.secondarySubjects?.split(',') || ['不限']
+      );
+
+      // 根据 enrollPlans 为 schools 添加 majorGroupId 和 majorGroupName
+      if (Array.isArray(rawData.schools) && Array.isArray(enrollPlans)) {
+        // 为每个学校添加 majorGroupId 和 majorGroupName
+        rawData.schools = rawData.schools.map((school: { id: number; schoolCode?: string } & SchoolViewModel) => {
+          // 在 enrollPlans 中查找对应的招生计划
+          const enrollPlan = enrollPlans.find(plan => plan.schoolCode === school.code);
+          return {
+            ...school,
+            majorGroupId: enrollPlan?.majorGroup || null,
+            majorGroupName: enrollPlan?.majorGroupName || null
+          };
+        });
+      }
+
       // 将历年分数数据添加到对应的学校对象中，并按位次分组排序
       if (!rank) {
-        console.warn('用户位次信息缺失，将按照默认顺序排序');
         // 转换为视图模型并返回
         const defaultViewModel = toMajorDetailViewModel(rawData);
         if (!defaultViewModel) {
@@ -861,6 +885,148 @@ export class MajorController {
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '未知错误';
       throw new Error(`获取备选方案列表失败: ${message}`);
+    }
+  }
+
+  /**
+   * 上移备选方案
+   * @param id 备选方案ID
+   * @param ctx 上下文对象，包含用户信息
+   * @returns 移动后的备选方案视图模型
+   */
+  @Post('/alternative/:id/move-up')
+  async moveAlternativeUp(
+    @Param('id') id: number,
+    @Ctx() ctx: { state: { user?: { userId: number } } }
+  ): Promise<AlternativeViewModel> {
+    try {
+      if (!ctx.state.user?.userId) {
+        throw new Error('未获取到用户信息');
+      }
+
+      const alternativeRepository = AppDataSource.getRepository(Alternative);
+      
+      // 获取要移动的备选方案
+      const currentAlternative = await alternativeRepository.findOne({
+        where: {
+          id: id,
+          userId: ctx.state.user.userId
+        }
+      });
+
+      if (!currentAlternative) {
+        throw new Error('未找到该备选方案');
+      }
+
+      // 获取用户的所有备选方案，按位置排序
+      const allAlternatives = await alternativeRepository.find({
+        where: { userId: ctx.state.user.userId },
+        order: { position: 'ASC' }
+      });
+
+      // 找到当前备选方案在列表中的索引
+      const currentIndex = allAlternatives.findIndex(alt => alt.id === id);
+      if (currentIndex <= 0) {
+        throw new Error('已经是第一个，无法上移');
+      }
+
+      // 获取上一个备选方案
+      const previousAlternative = allAlternatives[currentIndex - 1];
+      
+      // 交换位置
+      const tempPosition = currentAlternative.position;
+      currentAlternative.position = previousAlternative.position || 0;
+      previousAlternative.position = tempPosition || 0;
+
+      // 保存两个备选方案
+      await alternativeRepository.save([currentAlternative, previousAlternative]);
+
+      // 获取更新后的备选方案
+      const updatedAlternative = await alternativeRepository.findOne({
+        where: { id: id }
+      });
+
+      if (!updatedAlternative) {
+        throw new Error('更新备选方案失败');
+      }
+
+      // 转换为视图模型并返回
+      return toAlternativeViewModel(updatedAlternative);
+
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '未知错误';
+      throw new Error(`上移备选方案失败: ${message}`);
+    }
+  }
+
+  /**
+   * 下移备选方案
+   * @param id 备选方案ID
+   * @param ctx 上下文对象，包含用户信息
+   * @returns 移动后的备选方案视图模型
+   */
+  @Post('/alternative/:id/move-down')
+  async moveAlternativeDown(
+    @Param('id') id: number,
+    @Ctx() ctx: { state: { user?: { userId: number } } }
+  ): Promise<AlternativeViewModel> {
+    try {
+      if (!ctx.state.user?.userId) {
+        throw new Error('未获取到用户信息');
+      }
+
+      const alternativeRepository = AppDataSource.getRepository(Alternative);
+      
+      // 获取要移动的备选方案
+      const currentAlternative = await alternativeRepository.findOne({
+        where: {
+          id: id,
+          userId: ctx.state.user.userId
+        }
+      });
+
+      if (!currentAlternative) {
+        throw new Error('未找到该备选方案');
+      }
+
+      // 获取用户的所有备选方案，按位置排序
+      const allAlternatives = await alternativeRepository.find({
+        where: { userId: ctx.state.user.userId },
+        order: { position: 'ASC' }
+      });
+
+      // 找到当前备选方案在列表中的索引
+      const currentIndex = allAlternatives.findIndex(alt => alt.id === id);
+      if (currentIndex === -1 || currentIndex >= allAlternatives.length - 1) {
+        throw new Error('已经是最后一个，无法下移');
+      }
+
+      // 获取下一个备选方案
+      const nextAlternative = allAlternatives[currentIndex + 1];
+      
+      // 交换位置
+      const tempPosition = currentAlternative.position;
+      currentAlternative.position = nextAlternative.position || 0;
+      nextAlternative.position = tempPosition || 0;
+
+      // 保存两个备选方案
+      await alternativeRepository.save([currentAlternative, nextAlternative]);
+
+      // 获取更新后的备选方案
+      const updatedAlternative = await alternativeRepository.findOne({
+        where: { id: id }
+      });
+
+      if (!updatedAlternative) {
+        throw new Error('更新备选方案失败');
+      }
+
+      // 转换为视图模型并返回
+      return toAlternativeViewModel(updatedAlternative);
+
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '未知错误';
+      throw new Error(`下移备选方案失败: ${message}`);
     }
   }
 

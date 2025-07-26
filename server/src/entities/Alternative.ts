@@ -59,6 +59,14 @@ export class Alternative {
     @Column({ nullable: true, name: 'selected', type: 'boolean' })
     selected?: boolean;
 
+    @Column({ 
+        nullable: true, 
+        name: 'position', 
+        type: 'int', 
+        default: () => "EXTRACT(EPOCH FROM NOW())::INTEGER"
+    })
+    position?: number;
+
     @ManyToOne(() => User, user => user.alternatives)
     @JoinColumn({ name: 'user_id' })
     user: User;
