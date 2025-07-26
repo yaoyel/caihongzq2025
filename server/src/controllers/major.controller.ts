@@ -36,6 +36,38 @@ interface SchoolWithRank extends SchoolViewModel {
 }
 
 /**
+ * 从history_score中提取2024年的位次信息
+ * @param historyScore 历史分数数据
+ * @returns 2024年的位次，如果不存在或为空则返回null
+ */
+function extract2024Rank(historyScore: any): number | null {
+  if (!historyScore || !Array.isArray(historyScore)) {
+    return null;
+  }
+
+  // 查找2024年的数据
+  const year2024Data = historyScore.find((item: any) => item['2024']);
+  if (!year2024Data || !year2024Data['2024']) {
+    return null;
+  }
+
+  // 解析"分数,位次,招生人数"格式的数据
+  const parts = year2024Data['2024'].split(',');
+  if (parts.length < 2) {
+    return null;
+  }
+
+  const rankStr = parts[1].trim();
+  // 检查位次是否为空或"-"
+  if (!rankStr || rankStr === '-' || rankStr === '') {
+    return null;
+  }
+
+  const rank = parseInt(rankStr, 10);
+  return isNaN(rank) ? null : rank;
+}
+
+/**
  * 专业信息控制器
  */ 
 @JsonController('/majors')
@@ -660,6 +692,10 @@ export class MajorController {
       schoolCode: string;
       schoolName: string;
       schoolFeature: string;
+      enrollmentRate?: number;
+      employmentRate?: number;
+      majorGroupId?: number;
+      majorGroupName?: string;
       group: number;
       historyScore: object;
       selected?: boolean;
@@ -689,6 +725,20 @@ export class MajorController {
         throw new Error('已存在相同的专业和学校组合的备选方案');
       }
 
+      // 计算位次差值
+      let rankDiff = 0;
+      let rankDiffPer = 0;
+      
+      if (user.rank && user.rank > 0) {
+        const year2024Rank = extract2024Rank(body.historyScore);
+        if (year2024Rank !== null) {
+          // 计算位次差值（用户位次 - 2024年位次）
+          rankDiff = user.rank - year2024Rank;
+          // 计算位次差值百分比（差值 / 2024年位次）
+          rankDiffPer = year2024Rank > 0 ? (rankDiff / year2024Rank) * 100 : 0;
+        }
+      }
+
       // 创建新的备选方案实体
       const alternative = new Alternative();
       alternative.userId = ctx.state.user.userId;
@@ -700,6 +750,12 @@ export class MajorController {
       alternative.group = body.group;
       alternative.historyScore = body.historyScore;
       alternative.selected = body.selected || false;
+      alternative.enrollmentRate = body.enrollmentRate || 0;
+      alternative.employmentRate = body.employmentRate || 0;
+      alternative.majorGroupId = body.majorGroupId || 0;
+      alternative.majorGroupName = body.majorGroupName || '';
+      alternative.rankDiff = rankDiff;
+      alternative.rankDiffPer = rankDiffPer;
 
       // 保存备选方案
       const savedAlternative = await alternativeRepository.save(alternative);
@@ -831,6 +887,8 @@ export class MajorController {
       if (pageSize < 1) pageSize = 100;
       if (pageSize > 100) pageSize = 100; // 限制最大每页数量
 
+      const user = await this.userService.findOne(ctx.state.user.userId);
+      const rank = user?.rank || 0;
       // 构建查询
       const alternativeRepository = AppDataSource.getRepository(Alternative);
       const queryBuilder = alternativeRepository.createQueryBuilder('alternative')
@@ -853,6 +911,8 @@ export class MajorController {
         .skip((page - 1) * pageSize)
         .take(pageSize)
         .getMany();
+
+      
  
       // 获取所有专业代码
       const majorCodes = alternatives.map(alternative => alternative.majorCode);

@@ -12,6 +12,12 @@ export interface AlternativeViewModel {
   group: number;
   historyScore: object;
   selected?: boolean;
+  enrollmentRate?: number;
+  employmentRate?: number;
+  majorGroupId?: number;
+  majorGroupName?: string;
+  Rankdiff?: number;
+  RankdiffPer?: number; 
 }
 
 /**
@@ -29,7 +35,13 @@ export function toAlternativeViewModel(alternative: any): AlternativeViewModel {
     schoolFeature: alternative.schoolNature,
     group: alternative.group,
     historyScore: alternative.historyScore,
-    selected: alternative.selected
+    selected: alternative.selected,
+    enrollmentRate: alternative.enrollmentRate || 0,
+    employmentRate: alternative.employmentRate || 0,
+    majorGroupId: alternative.majorGroupId || 0,
+    majorGroupName: alternative.majorGroupName || '',
+    Rankdiff: alternative.rankDiff || 0,
+    RankdiffPer: alternative.rankDiffPer || 0
   };
 }
 
