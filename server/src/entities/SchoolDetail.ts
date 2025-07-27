@@ -172,7 +172,7 @@ export class SchoolDetail {
      * 关联的学校信息 (一对一关系)
      * 使用code和id字段建立关联
      */
-    @OneToOne(() => School)
+    @OneToOne(() => School, school => school.schoolDetail)
     @JoinColumn([
         { name: 'code', referencedColumnName: 'code' }   
     ])

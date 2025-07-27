@@ -41,7 +41,7 @@ export function toAlternativeViewModel(alternative: any): AlternativeViewModel {
     majorGroupId: alternative.majorGroupId || 0,
     majorGroupName: alternative.majorGroupName || '',
     Rankdiff: alternative.rankDiff || 0,
-    RankdiffPer: alternative.rankDiffPer || 0
+    RankdiffPer: Number((alternative.rankDiffPer || 0).toFixed(2))
   };
 }
 

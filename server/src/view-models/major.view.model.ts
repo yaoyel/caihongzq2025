@@ -176,11 +176,7 @@ export class MajorDetailViewModel extends BaseMajorDetailViewModel {
 
 export function toMajorDetailViewModel(data: any): MajorDetailViewModel | undefined {
   if (!data || !data.major) return undefined;  
-  const growthPotentialScore = (Number(data.growthPotentialScore || 0 )/ 2) +  (Number(data.major?.score* 100  || 0) /2);
-  const careerDevelopmentScore = (Number(data.careerDevelopmentScore || 0 )/ 2) + (Number(data.major?.score* 100  || 0) /2);
-  const academicDevelopmentScore = (Number(data.academicDevelopmentScore || 0 )/ 2) + ((Number(data.major?.lexueScore* 100  || 0) + Number(data.major?.shanxueScore* 100  || 0)) /4);
-  const industryProspectsScore = (Number(data.industryProspectsScore || 0 )/ 2) +  (growthPotentialScore +careerDevelopmentScore) /4;
-  // 创建基础视图模型部分
+ 
   const baseViewModel: BaseMajorDetailViewModel = {
     code: data.code,
     educationLevel: data.educationLevel,
@@ -189,11 +185,11 @@ export function toMajorDetailViewModel(data: any): MajorDetailViewModel | undefi
     majorBrief: data.majorBrief,
     majorKey: data.majorKey,
     opportunityScore: data.opportunityScore,
-    academicDevelopmentScore: academicDevelopmentScore,
-    careerDevelopmentScore: careerDevelopmentScore,
-    growthPotentialScore: growthPotentialScore,
-    industryProspectsScore:industryProspectsScore,
-    developmentPotential: ((Number(data.major?.score || 0) * 100 + Number(data.opportunityScore || 0)) / 2).toFixed(2),
+    academicDevelopmentScore: data.academicDevelopmentScore,
+    careerDevelopmentScore: data.careerDevelopmentScore,
+    growthPotentialScore: data.growthPotentialScore,
+    industryProspectsScore: data.industryProspectsScore,
+    developmentPotential:  data.developmentPotential,
     academicDevelopmentTag: data.academicDevelopmentTag ,
     careerDevelopmentTag: data.careerDevelopmentTag,
     growthPotentialTag: data.growthPotentialTag,

@@ -12,6 +12,7 @@ import { Intention } from '../entities/Intention';
 import { IntentionViewModel, toIntentionViewModels } from '../view-models/intention.view.model';
 import { Alternative } from '../entities/Alternative';
 import { AlternativeViewModel, toAlternativeViewModel } from '../view-models/altrmative.view.model';
+import { MajorGroupViewModel, toMajorGroupViewModels } from '../view-models/major.group.view,model';
 
 /**
  * 专业匹配结果接口
@@ -324,10 +325,10 @@ export class MajorController {
       const scoresWithMatchingFlag = majorScores.map(score => ({
         ...score,
         isMatching: matchingMajorCodeSet.has(score.majorCode),
-        growthPotentialScore: (score.growthPotentialScore || 0) /2 + (score.score * 100 /2),
-        careerDevelopmentScore: (score.careerDevelopmentScore || 0) /2 + (score.score * 100 /2),
-        academicDevelopmentScore: (score.academicDevelopmentScore || 0) /2 + (score.lexueScore * 100 /4) + (score.shanxueScore * 100 /4),
-        industryProspectsScore: (score.industryProspectsScore || 0) /2 + ((score.growthPotentialScore || 0) /2 + (score.score * 100 /2)) /4 + ((score.careerDevelopmentScore || 0) /2 + (score.score * 100 /2)) /4,
+        growthPotentialScore:  score.growthPotentialScore,
+        careerDevelopmentScore:  score.careerDevelopmentScore,
+        academicDevelopmentScore:  score.academicDevelopmentScore,
+        industryProspectsScore:  score.industryProspectsScore
       }));
 
       // 将专业分为匹配和不匹配两组
@@ -623,12 +624,37 @@ export class MajorController {
 
       // 构建专业分数映射
       const majorScores: Record<string, number> = {};
+      const majorScoreDetails: Record<string, {
+        lexueScore?: number;
+        shanxueScore?: number;
+        yanxueDeduction?: number;
+        tiaozhanDeduction?: number;
+        opportunityScore?: number;
+        academicDevelopmentScore?: number;
+        careerDevelopmentScore?: number;
+        growthPotentialScore?: number;
+        industryProspectsScore?: number;
+        developmentPotential?: number;
+      }> = {};
+      
       scores.forEach(score => {
         majorScores[score.majorCode] = score.score;
+        majorScoreDetails[score.majorCode] = {
+          lexueScore: score.lexueScore,
+          shanxueScore: score.shanxueScore,
+          yanxueDeduction: score.yanxueDeduction,
+          tiaozhanDeduction: score.tiaozhanDeduction,
+          opportunityScore: score.opportunityScore || undefined,
+          academicDevelopmentScore: score.academicDevelopmentScore || undefined,
+          careerDevelopmentScore: score.careerDevelopmentScore || undefined,
+          growthPotentialScore: score.growthPotentialScore || undefined,
+          industryProspectsScore: score.industryProspectsScore || undefined,
+          developmentPotential: score.developmentPotential
+        };
       });
 
       // 转换为视图模型并返回
-      return toIntentionViewModels(intentions, majorNames, majorScores);
+      return toIntentionViewModels(intentions, majorNames, majorScores, majorScoreDetails);
       
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '未知错误';
@@ -746,7 +772,8 @@ export class MajorController {
       alternative.majorName = body.majorName;
       alternative.schoolCode = body.schoolCode;
       alternative.schoolName = body.schoolName;
-      alternative.schoolFeature = body.schoolFeature;
+      // 处理字段名不匹配的问题，优先使用schoolFeature，如果没有则使用schoolfeature
+      alternative.schoolFeature = body.schoolFeature || '';
       alternative.group = body.group;
       alternative.historyScore = body.historyScore;
       alternative.selected = body.selected || false;
@@ -907,7 +934,7 @@ export class MajorController {
 
       // 获取当前页数据
       const alternatives = await queryBuilder
-        .orderBy('alternative.createdAt', 'DESC')
+        .orderBy('alternative.position', 'ASC')
         .skip((page - 1) * pageSize)
         .take(pageSize)
         .getMany();
@@ -1127,6 +1154,30 @@ export class MajorController {
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '未知错误';
       throw new Error(`删除备选方案失败: ${message}`);
+    }
+  }
+
+  /**
+   * 根据专业组ID获取专业组信息
+   * @param majorGroupId 专业组ID
+   * @returns 专业组信息列表
+   */
+  @Get('/group/:majorGroupId')
+  async getMajorGroupInfo(@Param('majorGroupId') majorGroupId: number): Promise< MajorGroupViewModel[]> {
+    try {
+      // 参数验证
+      if (!majorGroupId || majorGroupId <= 0) {
+        throw new Error('专业组ID必须为正整数');
+      }
+
+      // 调用Redis服务获取专业组信息
+      const majorGroupInfo = await this.majorRedisService.getMajorGroupInfo(majorGroupId);
+
+      return  toMajorGroupViewModels(majorGroupInfo);
+
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '未知错误';
+      throw new Error(`获取专业组信息失败: ${message}`);
     }
   }
 }
