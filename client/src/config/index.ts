@@ -83,7 +83,6 @@ export const getAuthHeaders = () => {
   const token = localStorage.getItem('new-token');
   if (!token) return {};
 
-  console.log('使用 token:', token);
   return {
     Authorization: `Bearer ${token}`,
   };

@@ -441,7 +441,6 @@ const MajorPage: React.FC = () => {
         setMajorIntentions(intentions);
         // 缓存收藏数据到 sessionStorage
         sessionStorage.setItem('major-list-cached-intentions', JSON.stringify(intentions));
-        console.log('收藏专业列表', intentions);
       }
     } catch (error) {
       console.error('获取收藏专业列表失败:', error);

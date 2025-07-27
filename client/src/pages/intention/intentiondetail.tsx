@@ -464,25 +464,6 @@ const EducationalDetailPage: React.FC = () => {
           htmlTemp += `<div class="border-t border-gray-200 my-4"></div>`;
         }
         
-        // 基本信息卡片
-        htmlTemp += `
-          <div class="bg-gray-50 rounded-lg p-4 mb-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-              <div class="flex items-center">
-                <span class="text-gray-500 mr-2">💰</span>
-                <span class="font-medium text-gray-700">学费：${item.tuition}元/年</span>
-              </div>
-              <div class="flex items-center">
-                <span class="text-gray-500 mr-2">🎓</span>
-                <span class="font-medium text-gray-700">专业：${item.planMajorName}</span>
-              </div>
-              <div class="flex items-center">
-                <span class="text-gray-500 mr-2">📚</span>
-                <span class="font-medium text-gray-700">选科：${item.subjectType}+${item.subjectSelection}</span>
-              </div>
-            </div>
-          </div>
-        `;
         
         // 历史分数表格
         if (item.historyScore && item.historyScore.length > 0) {
@@ -698,25 +679,41 @@ const EducationalDetailPage: React.FC = () => {
                           {/* 学校标签行 */}
                           <div className="flex flex-wrap gap-2 mb-3">
                             <span
-                              key={school.name + school.nature}
+                              key={school.name + '升学率'}
                               className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
                             >
-                              {school.nature === 'public' ? '公办' : '民办'}
+                              升学率90%
                             </span>
                             <span
-                              key={school.name + school.provinceName}
+                              key={school.name + '保研率'}
                               className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200"
                             >
-                              {school.provinceName}
+                              保研率50%
                             </span>
-                            {school.features && (
-                              <span
-                                key={school.name + school.features}
-                                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
-                              >
-                                {school.features}
-                              </span>
-                            )}
+                            <span
+                              key={school.name + '专业组'}
+                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                            >
+                              039专业组
+                            </span>
+                            <span
+                              key={school.name + '学制'}
+                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200"
+                            >
+                              学制4年
+                            </span>
+                            <span
+                              key={school.name + '学费'}
+                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200"
+                            >
+                              学费5800元/年
+                            </span>
+                            <span
+                              key={school.name + '公办'}
+                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200"
+                            >
+                              公办
+                            </span>
                           </div>
                         </div>
                         {/* 表格内容 */}
