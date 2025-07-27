@@ -130,6 +130,20 @@ export class SchoolDetail {
     };
 
     /**
+     * 升学率
+     * 表示学校学生继续深造的比例，以百分比形式存储
+     */
+    @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true, name: 'enrollment_rate' })
+    enrollmentRate: number;
+
+    /**
+     * 就业率
+     * 表示学校学生就业的比例，以百分比形式存储
+     */
+    @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true, name: 'employment_rate' })
+    employmentRate: number;
+
+    /**
      * 最后修改人
      */
     @Column({ type: 'jsonb', nullable: true, name: 'last_modified_by' ,select:false})
@@ -158,7 +172,7 @@ export class SchoolDetail {
      * 关联的学校信息 (一对一关系)
      * 使用code和id字段建立关联
      */
-    @OneToOne(() => School)
+    @OneToOne(() => School, school => school.schoolDetail)
     @JoinColumn([
         { name: 'code', referencedColumnName: 'code' }   
     ])

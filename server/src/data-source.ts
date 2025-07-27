@@ -24,7 +24,7 @@ import { Order } from './entities/Order';
 import { MajorHistoryScore } from './entities/MajorHistoryScore';
 import { Intention } from './entities/Intention';
 import { Alternative } from './entities/Alternative';
-
+import { EnrollPlans } from './entities/EnrollPlans';   
 // 加载环境变量
 config();
 
@@ -65,7 +65,8 @@ export const AppDataSource = new DataSource({
         Order,
         MajorHistoryScore,
         Intention,
-        Alternative
+        Alternative,
+        EnrollPlans
     ],
     migrations: [
       //  __dirname + '/migrations/*.ts'  // 使用绝对路径

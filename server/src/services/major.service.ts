@@ -177,17 +177,42 @@ export class MajorScoreService {
         ss.shanxue_score as "shanxueScore",
         ss.major_brief as "majorBrief",
         ss.opportunity_score as "opportunityScore",
-        ss.academic_development_score as "academicDevelopmentScore",
-        ss.career_development_score as "careerDevelopmentScore",
-        ss.growth_potential_score as "growthPotentialScore",
-        ss.industry_prospects_score as "industryProspectsScore",
+        ss.academic_development_score as "academicDevelopmentScoreOriginal",
+        ss.career_development_score as "careerDevelopmentScoreOriginal",
+        ss.growth_potential_score as "growthPotentialScoreOriginal",
+        ss.industry_prospects_score as "industryProspectsScoreOriginal",
         COALESCE(smc.school_majors_count, 0) as "schoolCount",
         ROUND(
           CAST(
             (COALESCE(ss.lexue_score,0) + COALESCE(ss.shanxue_score,0) - (COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0))  + COALESCE(ss.opportunity_score, 0) / 100) / 2
           AS NUMERIC),
           2
-        )::NUMERIC * 100 as "developmentPotential"
+        )::NUMERIC * 100 as "developmentPotential",
+        ROUND(
+          CAST(
+            (((COALESCE(ss.lexue_score,0) * 100 + COALESCE(ss.shanxue_score,0) * 100) /2 / 30 * 25 * 0.5)   + (COALESCE(ss.academic_development_score, 0) / 100  * 25 * 0.5)) 
+          AS NUMERIC),
+          2
+        )::NUMERIC   as "academicDevelopmentScore",
+        ROUND(
+          CAST(
+            ((COALESCE(ss.lexue_score,0)  + COALESCE(ss.shanxue_score,0)   - (COALESCE(ds.tiaozhan_deduction, 0)  + COALESCE(ds.yanxue_deduction, 0))) * 25 * 0.5  + COALESCE(ss.career_development_score, 0) / 100 * 25 * 0.5)  
+          AS NUMERIC),
+          2
+        )  as "careerDevelopmentScore",
+		    ROUND(
+          CAST(
+            ((COALESCE(ss.lexue_score,0)  + COALESCE(ss.shanxue_score,0)   - (COALESCE(ds.tiaozhan_deduction, 0)  + COALESCE(ds.yanxue_deduction, 0))) * 25 * 0.5  + COALESCE(ss.growth_potential_score, 0) / 100 * 25 * 0.5)  
+          AS NUMERIC),
+          2
+        )  as "industryProspectsScore",
+	      ROUND(
+          CAST(
+            (COALESCE(ss.career_development_score,0)  + COALESCE(ss.growth_potential_score,0)) /2/100 * 25 * 0.5  + COALESCE(ss.industry_prospects_score, 0) / 100 * 25 * 0.5
+          AS NUMERIC),
+          2
+          )  as "growthPotentialScore"
+		
       FROM study_scores ss
       JOIN deduction_scores ds ON ds.major_code = ss.major_code
       LEFT JOIN school_majors_count smc ON smc.major_code = ss.major_code
@@ -336,17 +361,42 @@ export class MajorScoreService {
         ss.shanxue_score as "shanxueScore",
         ss.major_brief as "majorBrief",
         ss.opportunity_score as "opportunityScore",
-        ss.academic_development_score as "academicDevelopmentScore",
-        ss.career_development_score as "careerDevelopmentScore",
-        ss.growth_potential_score as "growthPotentialScore",
-        ss.industry_prospects_score as "industryProspectsScore",
+        ss.academic_development_score as "academicDevelopmentScoreOriginal",
+        ss.career_development_score as "careerDevelopmentScoreOriginal",
+        ss.growth_potential_score as "growthPotentialScoreOriginal",
+        ss.industry_prospects_score as "industryProspectsScoreOriginal",
         COALESCE(smc.school_majors_count, 0) as "schoolCount",
         ROUND(
           CAST(
             (COALESCE(ss.lexue_score,0) + COALESCE(ss.shanxue_score,0) - (COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0)) + COALESCE(ss.opportunity_score, 0) / 100) / 2
           AS NUMERIC),
           2
-        )::NUMERIC  * 100  as "developmentPotential"
+        )::NUMERIC  * 100  as "developmentPotential",
+        ROUND(
+          CAST(
+            (((COALESCE(ss.lexue_score,0) * 100 + COALESCE(ss.shanxue_score,0) * 100) /2 / 30 * 25 * 0.5)   + (COALESCE(ss.academic_development_score, 0) / 100  * 25 * 0.5)) 
+          AS NUMERIC),
+          2
+        )::NUMERIC   as "academicDevelopmentScore",
+        ROUND(
+          CAST(
+            ((COALESCE(ss.lexue_score,0)  + COALESCE(ss.shanxue_score,0)   - (COALESCE(ds.tiaozhan_deduction, 0)  + COALESCE(ds.yanxue_deduction, 0))) * 25 * 0.5  + COALESCE(ss.career_development_score, 0) / 100 * 25 * 0.5)  
+          AS NUMERIC),
+          2
+        )  as "careerDevelopmentScore",
+		    ROUND(
+          CAST(
+            ((COALESCE(ss.lexue_score,0)  + COALESCE(ss.shanxue_score,0)   - (COALESCE(ds.tiaozhan_deduction, 0)  + COALESCE(ds.yanxue_deduction, 0))) * 25 * 0.5  + COALESCE(ss.growth_potential_score, 0) / 100 * 25 * 0.5)  
+          AS NUMERIC),
+          2
+        )  as "industryProspectsScore",
+	      ROUND(
+          CAST(
+            (COALESCE(ss.career_development_score,0)  + COALESCE(ss.growth_potential_score,0)) /2/100 * 25 * 0.5  + COALESCE(ss.industry_prospects_score, 0) / 100 * 25 * 0.5
+          AS NUMERIC),
+          2
+         )  as "growthPotentialScore"
+		
       FROM study_scores ss
       JOIN deduction_scores ds ON ds.major_code = ss.major_code
       LEFT JOIN school_majors_count smc ON smc.major_code = ss.major_code

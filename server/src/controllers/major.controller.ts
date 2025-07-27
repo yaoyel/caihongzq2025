@@ -12,6 +12,7 @@ import { Intention } from '../entities/Intention';
 import { IntentionViewModel, toIntentionViewModels } from '../view-models/intention.view.model';
 import { Alternative } from '../entities/Alternative';
 import { AlternativeViewModel, toAlternativeViewModel } from '../view-models/altrmative.view.model';
+import { MajorGroupViewModel, toMajorGroupViewModels } from '../view-models/major.group.view,model';
 
 /**
  * 专业匹配结果接口
@@ -33,6 +34,38 @@ interface SchoolWithRank extends SchoolViewModel {
   averageRank?: number;
   rankDiffPercentage?: number;
   group?: number;
+}
+
+/**
+ * 从history_score中提取2024年的位次信息
+ * @param historyScore 历史分数数据
+ * @returns 2024年的位次，如果不存在或为空则返回null
+ */
+function extract2024Rank(historyScore: any): number | null {
+  if (!historyScore || !Array.isArray(historyScore)) {
+    return null;
+  }
+
+  // 查找2024年的数据
+  const year2024Data = historyScore.find((item: any) => item['2024']);
+  if (!year2024Data || !year2024Data['2024']) {
+    return null;
+  }
+
+  // 解析"分数,位次,招生人数"格式的数据
+  const parts = year2024Data['2024'].split(',');
+  if (parts.length < 2) {
+    return null;
+  }
+
+  const rankStr = parts[1].trim();
+  // 检查位次是否为空或"-"
+  if (!rankStr || rankStr === '-' || rankStr === '') {
+    return null;
+  }
+
+  const rank = parseInt(rankStr, 10);
+  return isNaN(rank) ? null : rank;
 }
 
 /**
@@ -149,9 +182,33 @@ export class MajorController {
       const historyScore = await this.majorRedisService.getMajorScores(code, user!.province || '北京', user!.preferredSubjects || '综合', user!.secondarySubjects || '');
       const rank = user.rank;
 
+      // 调用 MajorRedisService 的方法获取招生计划
+      const enrollPlans = await this.majorRedisService.getEnrollPlans(
+        code,
+        user!.province || '北京',
+        2025,
+        '专科批',
+        '普通类',
+        user!.preferredSubjects || '综合',
+        user!.secondarySubjects?.split(',') || ['不限']
+      );
+
+      // 根据 enrollPlans 为 schools 添加 majorGroupId 和 majorGroupName
+      if (Array.isArray(rawData.schools) && Array.isArray(enrollPlans)) {
+        // 为每个学校添加 majorGroupId 和 majorGroupName
+        rawData.schools = rawData.schools.map((school: { id: number; schoolCode?: string } & SchoolViewModel) => {
+          // 在 enrollPlans 中查找对应的招生计划
+          const enrollPlan = enrollPlans.find(plan => plan.schoolCode === school.code);
+          return {
+            ...school,
+            majorGroupId: enrollPlan?.majorGroup || null,
+            majorGroupName: enrollPlan?.majorGroupName || null
+          };
+        });
+      }
+
       // 将历年分数数据添加到对应的学校对象中，并按位次分组排序
       if (!rank) {
-        console.warn('用户位次信息缺失，将按照默认顺序排序');
         // 转换为视图模型并返回
         const defaultViewModel = toMajorDetailViewModel(rawData);
         if (!defaultViewModel) {
@@ -268,10 +325,10 @@ export class MajorController {
       const scoresWithMatchingFlag = majorScores.map(score => ({
         ...score,
         isMatching: matchingMajorCodeSet.has(score.majorCode),
-        growthPotentialScore: (score.growthPotentialScore || 0) /2 + (score.score * 100 /2),
-        careerDevelopmentScore: (score.careerDevelopmentScore || 0) /2 + (score.score * 100 /2),
-        academicDevelopmentScore: (score.academicDevelopmentScore || 0) /2 + (score.lexueScore * 100 /4) + (score.shanxueScore * 100 /4),
-        industryProspectsScore: (score.industryProspectsScore || 0) /2 + ((score.growthPotentialScore || 0) /2 + (score.score * 100 /2)) /4 + ((score.careerDevelopmentScore || 0) /2 + (score.score * 100 /2)) /4,
+        growthPotentialScore:  score.growthPotentialScore,
+        careerDevelopmentScore:  score.careerDevelopmentScore,
+        academicDevelopmentScore:  score.academicDevelopmentScore,
+        industryProspectsScore:  score.industryProspectsScore
       }));
 
       // 将专业分为匹配和不匹配两组
@@ -567,12 +624,37 @@ export class MajorController {
 
       // 构建专业分数映射
       const majorScores: Record<string, number> = {};
+      const majorScoreDetails: Record<string, {
+        lexueScore?: number;
+        shanxueScore?: number;
+        yanxueDeduction?: number;
+        tiaozhanDeduction?: number;
+        opportunityScore?: number;
+        academicDevelopmentScore?: number;
+        careerDevelopmentScore?: number;
+        growthPotentialScore?: number;
+        industryProspectsScore?: number;
+        developmentPotential?: number;
+      }> = {};
+      
       scores.forEach(score => {
         majorScores[score.majorCode] = score.score;
+        majorScoreDetails[score.majorCode] = {
+          lexueScore: score.lexueScore,
+          shanxueScore: score.shanxueScore,
+          yanxueDeduction: score.yanxueDeduction,
+          tiaozhanDeduction: score.tiaozhanDeduction,
+          opportunityScore: score.opportunityScore || undefined,
+          academicDevelopmentScore: score.academicDevelopmentScore || undefined,
+          careerDevelopmentScore: score.careerDevelopmentScore || undefined,
+          growthPotentialScore: score.growthPotentialScore || undefined,
+          industryProspectsScore: score.industryProspectsScore || undefined,
+          developmentPotential: score.developmentPotential
+        };
       });
 
       // 转换为视图模型并返回
-      return toIntentionViewModels(intentions, majorNames, majorScores);
+      return toIntentionViewModels(intentions, majorNames, majorScores, majorScoreDetails);
       
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '未知错误';
@@ -636,6 +718,10 @@ export class MajorController {
       schoolCode: string;
       schoolName: string;
       schoolFeature: string;
+      enrollmentRate?: number;
+      employmentRate?: number;
+      majorGroupId?: number;
+      majorGroupName?: string;
       group: number;
       historyScore: object;
       selected?: boolean;
@@ -665,6 +751,20 @@ export class MajorController {
         throw new Error('已存在相同的专业和学校组合的备选方案');
       }
 
+      // 计算位次差值
+      let rankDiff = 0;
+      let rankDiffPer = 0;
+      
+      if (user.rank && user.rank > 0) {
+        const year2024Rank = extract2024Rank(body.historyScore);
+        if (year2024Rank !== null) {
+          // 计算位次差值（用户位次 - 2024年位次）
+          rankDiff = user.rank - year2024Rank;
+          // 计算位次差值百分比（差值 / 2024年位次）
+          rankDiffPer = year2024Rank > 0 ? (rankDiff / year2024Rank) * 100 : 0;
+        }
+      }
+
       // 创建新的备选方案实体
       const alternative = new Alternative();
       alternative.userId = ctx.state.user.userId;
@@ -672,10 +772,17 @@ export class MajorController {
       alternative.majorName = body.majorName;
       alternative.schoolCode = body.schoolCode;
       alternative.schoolName = body.schoolName;
-      alternative.schoolFeature = body.schoolFeature;
+      // 处理字段名不匹配的问题，优先使用schoolFeature，如果没有则使用schoolfeature
+      alternative.schoolFeature = body.schoolFeature || '';
       alternative.group = body.group;
       alternative.historyScore = body.historyScore;
       alternative.selected = body.selected || false;
+      alternative.enrollmentRate = body.enrollmentRate || 0;
+      alternative.employmentRate = body.employmentRate || 0;
+      alternative.majorGroupId = body.majorGroupId || 0;
+      alternative.majorGroupName = body.majorGroupName || '';
+      alternative.rankDiff = rankDiff;
+      alternative.rankDiffPer = rankDiffPer;
 
       // 保存备选方案
       const savedAlternative = await alternativeRepository.save(alternative);
@@ -807,6 +914,8 @@ export class MajorController {
       if (pageSize < 1) pageSize = 100;
       if (pageSize > 100) pageSize = 100; // 限制最大每页数量
 
+      const user = await this.userService.findOne(ctx.state.user.userId);
+      const rank = user?.rank || 0;
       // 构建查询
       const alternativeRepository = AppDataSource.getRepository(Alternative);
       const queryBuilder = alternativeRepository.createQueryBuilder('alternative')
@@ -825,10 +934,12 @@ export class MajorController {
 
       // 获取当前页数据
       const alternatives = await queryBuilder
-        .orderBy('alternative.createdAt', 'DESC')
+        .orderBy('alternative.position', 'ASC')
         .skip((page - 1) * pageSize)
         .take(pageSize)
         .getMany();
+
+      
  
       // 获取所有专业代码
       const majorCodes = alternatives.map(alternative => alternative.majorCode);
@@ -861,6 +972,148 @@ export class MajorController {
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '未知错误';
       throw new Error(`获取备选方案列表失败: ${message}`);
+    }
+  }
+
+  /**
+   * 上移备选方案
+   * @param id 备选方案ID
+   * @param ctx 上下文对象，包含用户信息
+   * @returns 移动后的备选方案视图模型
+   */
+  @Post('/alternative/:id/move-up')
+  async moveAlternativeUp(
+    @Param('id') id: number,
+    @Ctx() ctx: { state: { user?: { userId: number } } }
+  ): Promise<AlternativeViewModel> {
+    try {
+      if (!ctx.state.user?.userId) {
+        throw new Error('未获取到用户信息');
+      }
+
+      const alternativeRepository = AppDataSource.getRepository(Alternative);
+      
+      // 获取要移动的备选方案
+      const currentAlternative = await alternativeRepository.findOne({
+        where: {
+          id: id,
+          userId: ctx.state.user.userId
+        }
+      });
+
+      if (!currentAlternative) {
+        throw new Error('未找到该备选方案');
+      }
+
+      // 获取用户的所有备选方案，按位置排序
+      const allAlternatives = await alternativeRepository.find({
+        where: { userId: ctx.state.user.userId },
+        order: { position: 'ASC' }
+      });
+
+      // 找到当前备选方案在列表中的索引
+      const currentIndex = allAlternatives.findIndex(alt => alt.id === id);
+      if (currentIndex <= 0) {
+        throw new Error('已经是第一个，无法上移');
+      }
+
+      // 获取上一个备选方案
+      const previousAlternative = allAlternatives[currentIndex - 1];
+      
+      // 交换位置
+      const tempPosition = currentAlternative.position;
+      currentAlternative.position = previousAlternative.position || 0;
+      previousAlternative.position = tempPosition || 0;
+
+      // 保存两个备选方案
+      await alternativeRepository.save([currentAlternative, previousAlternative]);
+
+      // 获取更新后的备选方案
+      const updatedAlternative = await alternativeRepository.findOne({
+        where: { id: id }
+      });
+
+      if (!updatedAlternative) {
+        throw new Error('更新备选方案失败');
+      }
+
+      // 转换为视图模型并返回
+      return toAlternativeViewModel(updatedAlternative);
+
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '未知错误';
+      throw new Error(`上移备选方案失败: ${message}`);
+    }
+  }
+
+  /**
+   * 下移备选方案
+   * @param id 备选方案ID
+   * @param ctx 上下文对象，包含用户信息
+   * @returns 移动后的备选方案视图模型
+   */
+  @Post('/alternative/:id/move-down')
+  async moveAlternativeDown(
+    @Param('id') id: number,
+    @Ctx() ctx: { state: { user?: { userId: number } } }
+  ): Promise<AlternativeViewModel> {
+    try {
+      if (!ctx.state.user?.userId) {
+        throw new Error('未获取到用户信息');
+      }
+
+      const alternativeRepository = AppDataSource.getRepository(Alternative);
+      
+      // 获取要移动的备选方案
+      const currentAlternative = await alternativeRepository.findOne({
+        where: {
+          id: id,
+          userId: ctx.state.user.userId
+        }
+      });
+
+      if (!currentAlternative) {
+        throw new Error('未找到该备选方案');
+      }
+
+      // 获取用户的所有备选方案，按位置排序
+      const allAlternatives = await alternativeRepository.find({
+        where: { userId: ctx.state.user.userId },
+        order: { position: 'ASC' }
+      });
+
+      // 找到当前备选方案在列表中的索引
+      const currentIndex = allAlternatives.findIndex(alt => alt.id === id);
+      if (currentIndex === -1 || currentIndex >= allAlternatives.length - 1) {
+        throw new Error('已经是最后一个，无法下移');
+      }
+
+      // 获取下一个备选方案
+      const nextAlternative = allAlternatives[currentIndex + 1];
+      
+      // 交换位置
+      const tempPosition = currentAlternative.position;
+      currentAlternative.position = nextAlternative.position || 0;
+      nextAlternative.position = tempPosition || 0;
+
+      // 保存两个备选方案
+      await alternativeRepository.save([currentAlternative, nextAlternative]);
+
+      // 获取更新后的备选方案
+      const updatedAlternative = await alternativeRepository.findOne({
+        where: { id: id }
+      });
+
+      if (!updatedAlternative) {
+        throw new Error('更新备选方案失败');
+      }
+
+      // 转换为视图模型并返回
+      return toAlternativeViewModel(updatedAlternative);
+
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '未知错误';
+      throw new Error(`下移备选方案失败: ${message}`);
     }
   }
 
@@ -901,6 +1154,30 @@ export class MajorController {
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '未知错误';
       throw new Error(`删除备选方案失败: ${message}`);
+    }
+  }
+
+  /**
+   * 根据专业组ID获取专业组信息
+   * @param majorGroupId 专业组ID
+   * @returns 专业组信息列表
+   */
+  @Get('/group/:majorGroupId')
+  async getMajorGroupInfo(@Param('majorGroupId') majorGroupId: number): Promise< MajorGroupViewModel[]> {
+    try {
+      // 参数验证
+      if (!majorGroupId || majorGroupId <= 0) {
+        throw new Error('专业组ID必须为正整数');
+      }
+
+      // 调用Redis服务获取专业组信息
+      const majorGroupInfo = await this.majorRedisService.getMajorGroupInfo(majorGroupId);
+
+      return  toMajorGroupViewModels(majorGroupInfo);
+
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '未知错误';
+      throw new Error(`获取专业组信息失败: ${message}`);
     }
   }
 }

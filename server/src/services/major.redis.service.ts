@@ -97,7 +97,7 @@ export class MajorRedisService {
       const secondSubjects = secondarySelected.split(',').filter(Boolean);
       
       // 使用RedisModule获取所有可能的组合
-      const patterns = RedisModule.getMatchingPatterns(subjectType, secondSubjects);
+      const patterns = await RedisModule.getMatchingPatterns("major_scores",subjectType, secondSubjects);
       
       // 给每个组合添加前缀
       const redisKeys = patterns.map(pattern => `major_scores:${code}_${province}_${pattern}`);
@@ -257,7 +257,7 @@ export class MajorRedisService {
   ): Promise<Array<{majorCode: string, matchPattern: string, matchLevel: number}>> {
     try {
       // 使用 RedisModule 的方法获取匹配模式
-      const patterns = RedisModule.getMatchingPatterns(firstSubject, secondSubjects);
+      const patterns =await RedisModule.getMatchingPatterns("major_scores",firstSubject, secondSubjects);
       const matchingMajors = new Map<string, { matchPattern: string, matchLevel: number }>();
 
       // 使用 multi 批量查询
@@ -517,4 +517,185 @@ export class MajorRedisService {
       throw new Error(`批量获取专业信息失败: ${errorMessage}`);
     }
   }
+
+  /**
+   * 获取招生计划数据
+   * @param majorCode 专业代码
+   * @param province 省份
+   * @param year 年份
+   * @param batch 批次
+   * @param enrollType 考生类型
+   * @param preferredSubjects 首选科目
+   * @param secondarySubjects 次选科目数组
+   * @returns Promise<any[]> 招生计划列表
+   */
+  async getEnrollPlans(
+    majorCode: string,
+    province: string,
+    year: number,
+    batch: string,
+    enrollType: string,
+    preferredSubjects: string,
+    secondarySubjects: string[]
+  ): Promise<any[]> {
+    try {
+      // 使用 RedisModule 获取所有可能的匹配模式
+      const patterns = await RedisModule.getMatchingPatterns(
+        'enroll_plans',
+        preferredSubjects,
+        secondarySubjects
+      );
+
+      if (patterns.length === 0) {
+        console.log('未找到匹配的科目模式');
+        return [];
+      }
+
+      console.log(patterns);
+
+      // 构建所有可能的 Redis key
+      const redisKeys = patterns.map(pattern => 
+        `enroll_plans:${majorCode}_${province}_${year}_${batch}_${enrollType}_${pattern}`
+      );
+
+      console.log(`查询 ${redisKeys.length} 个匹配的招生计划键:`, redisKeys);
+
+      // 使用 multi 进行批量查询
+      const multi = this.redisClient.multi();
+      
+      // 为每个匹配的模式构建 Redis key 并添加到查询中
+      for (const redisKey of redisKeys) {
+        multi.hGetAll(redisKey);
+      }
+
+      // 执行批量查询
+      const results = await multi.exec();
+      if (!results) return [];
+
+      // 合并所有查询结果
+      const allEnrollPlans = results
+        .filter(result => result && typeof result === 'object' && Object.keys(result).length > 0)
+        .flatMap(result => {
+          if (typeof result === 'object' && result !== null) {
+            return Object.values(result).map(item => {
+              try {
+                return JSON.parse(item as string);
+              } catch (e) {
+                console.error('解析招生计划数据失败:', e);
+                return null;
+              }
+            }).filter(item => item !== null);
+          }
+          return [];
+        });
+
+      console.log(`成功获取 ${allEnrollPlans.length} 条招生计划数据`);
+      return allEnrollPlans;
+
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      console.error('获取招生计划数据失败:', errorMessage);
+      throw new Error(`获取招生计划数据失败: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * 根据专业组ID查询专业组信息
+   * @param majorGroupId 专业组ID
+   * @returns Promise<any[]> 专业组信息列表
+   */
+  async getMajorGroupInfo(majorGroupId: number): Promise<any[]> {
+    try {
+      // 构建Redis键名，使用与cache-enroll_plans.ts相同的命名规范
+      const redisKey = `enroll_plans_group:${majorGroupId}`;
+      
+      console.log(`查询专业组信息，Redis键: ${redisKey}`);
+      
+      // 使用List操作读取数据（与cache-enroll_plans.ts保持一致）
+      const data = await this.redisClient.lRange(redisKey, 0, -1);
+      
+      if (!data || data.length === 0) {
+        console.log(`专业组 ${majorGroupId} 没有找到数据`);
+        return [];
+      }
+  
+      // 转换为数组格式并解析JSON
+      const majorGroupInfo = data.map(item => {
+        try {
+          return JSON.parse(item);
+        } catch (e) {
+          console.error('解析专业组数据失败:', e);
+          return null;
+        }
+      }).filter(item => item !== null);
+
+      console.log(`成功获取专业组 ${majorGroupId} 的信息，共 ${majorGroupInfo.length} 条记录`);
+      return majorGroupInfo;
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      console.error('获取专业组信息失败:', errorMessage);
+      throw new Error(`获取专业组信息失败: ${errorMessage}`);
+    }
+  }  
+  /**
+   * 批量获取多个专业组的信息
+   * @param majorGroupIds 专业组ID数组
+   * @returns Promise<Map<number, any[]>> 专业组信息映射，key为专业组ID，value为信息数组
+   */
+  async getMultipleMajorGroupInfo(majorGroupIds: number[]): Promise<Map<number, any[]>> {
+    try {
+      if (!Array.isArray(majorGroupIds) || majorGroupIds.length === 0) {
+        return new Map();
+      }
+
+      // 使用multi进行批量查询
+      const multi = this.redisClient.multi();
+      
+      // 为每个专业组ID构建Redis键并添加到查询中
+      for (const majorGroupId of majorGroupIds) {
+        const redisKey = `enroll_plans_group:${majorGroupId}`;
+        multi.lRange(redisKey, 0, -1);
+      }
+      
+      // 执行批量查询
+      const results = await multi.exec();
+      if (!results) {
+        return new Map();
+      }
+
+      // 处理查询结果
+      const majorGroupInfoMap = new Map<number, any[]>();
+      
+      results.forEach((result, index) => {
+        const majorGroupId = majorGroupIds[index];
+        if (!result || !Array.isArray(result)) {
+          majorGroupInfoMap.set(majorGroupId, []);
+          return;
+        }
+
+        const majorGroupInfo = (result as string[])
+          .map(item => {
+            try {
+              return JSON.parse(item);
+            } catch (e) {
+              console.error(`解析专业组 ${majorGroupId} 数据失败:`, e);
+              return null;
+            }
+          })
+          .filter(item => item !== null);
+
+        majorGroupInfoMap.set(majorGroupId, majorGroupInfo);
+      });
+
+      console.log(`成功批量获取 ${majorGroupIds.length} 个专业组的信息`);
+      return majorGroupInfoMap;
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      console.error('批量获取专业组信息失败:', errorMessage);
+      throw new Error(`批量获取专业组信息失败: ${errorMessage}`);
+    }
+  }
+
 }

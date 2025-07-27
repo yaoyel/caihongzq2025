@@ -20,6 +20,17 @@ export interface IntentionViewModel {
   // updatedAt: Date;
   // 专业匹配总分
   score?: number;
+  lexueScore?: number;
+  shanxueScore?: number;
+  yanxueDeduction?: number;
+  tiaozhanDeduction?: number;
+  opportunityScore?: number;
+  academicDevelopmentScore?: number;
+  careerDevelopmentScore?: number;
+  growthPotentialScore?: number;
+  industryProspectsScore?: number;
+  developmentPotential?: number;
+
 }
 
 /**
@@ -27,12 +38,25 @@ export interface IntentionViewModel {
  * @param intention 意向实体
  * @param majorName 专业名称（可选）
  * @param matchScore 专业匹配总分（可选）
+ * @param scores 专业评分数据（可选）
  * @returns 意向视图模型
  */
 export function toIntentionViewModel(
   intention: Intention, 
   majorName?: string,
-  matchScore?: number
+  matchScore?: number,
+  scores?: {
+    lexueScore?: number;
+    shanxueScore?: number;
+    yanxueDeduction?: number;
+    tiaozhanDeduction?: number;
+    opportunityScore?: number;
+    academicDevelopmentScore?: number;
+    careerDevelopmentScore?: number;
+    growthPotentialScore?: number;
+    industryProspectsScore?: number;
+    developmentPotential?: number;
+  }
 ): IntentionViewModel {
   return {
     id: intention.id,
@@ -49,7 +73,17 @@ export function toIntentionViewModel(
     group3: intention.group3,
     // createdAt: intention.createdAt,
     // updatedAt: intention.updatedAt,
-    score: matchScore
+    score: matchScore,
+    lexueScore: scores?.lexueScore,
+    shanxueScore: scores?.shanxueScore,
+    yanxueDeduction: scores?.yanxueDeduction,
+    tiaozhanDeduction: scores?.tiaozhanDeduction,
+    opportunityScore: scores?.opportunityScore,
+    academicDevelopmentScore: scores?.academicDevelopmentScore,
+    careerDevelopmentScore: scores?.careerDevelopmentScore,
+    growthPotentialScore: scores?.growthPotentialScore,
+    industryProspectsScore: scores?.industryProspectsScore,
+    developmentPotential: scores?.developmentPotential
   };
 }
 
@@ -58,14 +92,32 @@ export function toIntentionViewModel(
  * @param intentions 意向实体数组
  * @param majorNames 专业代码到专业名称的映射
  * @param majorScores 专业代码到分数的映射
+ * @param majorScoreDetails 专业代码到详细评分数据的映射
  * @returns 意向视图模型数组
  */
 export function toIntentionViewModels(
   intentions: Intention[], 
   majorNames: Record<string, string> = {},
-  majorScores: Record<string, number> = {}
+  majorScores: Record<string, number> = {},
+  majorScoreDetails: Record<string, {
+    lexueScore?: number;
+    shanxueScore?: number;
+    yanxueDeduction?: number;
+    tiaozhanDeduction?: number;
+    opportunityScore?: number;
+    academicDevelopmentScore?: number;
+    careerDevelopmentScore?: number;
+    growthPotentialScore?: number;
+    industryProspectsScore?: number;
+    developmentPotential?: number;
+  }> = {}
 ): IntentionViewModel[] {
   return intentions.map(intention => 
-    toIntentionViewModel(intention, majorNames[intention.majorCode], majorScores[intention.majorCode])
+    toIntentionViewModel(
+      intention, 
+      majorNames[intention.majorCode], 
+      majorScores[intention.majorCode],
+      majorScoreDetails[intention.majorCode]
+    )
   );
 }
