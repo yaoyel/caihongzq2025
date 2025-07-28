@@ -1003,10 +1003,12 @@ export class MajorController {
         topDevelopmentMajors.map(major => major.majorCode)
       );
 
-      // 统计备选方案中属于前20%发展潜力专业的数量
-      const topDevelopmentCount = alternatives.filter(alternative => 
-        topDevelopmentMajorSet.has(alternative.majorCode)
-      ).length;
+      // 统计备选方案中属于前20%发展潜力专业的唯一专业代码数量
+      const topDevelopmentCount = new Set(
+        alternatives
+          .filter(alternative => topDevelopmentMajorSet.has(alternative.majorCode))
+          .map(alternative => alternative.majorCode)
+      ).size;
 
       return {
         total,
