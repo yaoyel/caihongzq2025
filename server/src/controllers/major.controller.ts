@@ -905,6 +905,7 @@ export class MajorController {
     currentPage: number;
     totalPages: number;
     volunteerCount: number;
+    topDevelopmentCount: number;
   }> {
     try {
       if (!ctx.state.user?.userId) {
@@ -992,12 +993,28 @@ export class MajorController {
         developmentPotential: majorScoreDetails[alternative.majorCode]?.developmentPotential || 0 
       }));
 
+      // 获取前20%发展潜力最高的专业
+      const topDevelopmentMajors = await this.majorScoreService.getTopDevelopmentPotentialMajors(
+        ctx.state.user.userId.toString()
+      );
+
+      // 创建前20%专业代码的Set，用于快速查找
+      const topDevelopmentMajorSet = new Set(
+        topDevelopmentMajors.map(major => major.majorCode)
+      );
+
+      // 统计备选方案中属于前20%发展潜力专业的数量
+      const topDevelopmentCount = alternatives.filter(alternative => 
+        topDevelopmentMajorSet.has(alternative.majorCode)
+      ).length;
+
       return {
         total,
         volunteerCount: volunteerCount,
         data: alternativeViewModels,
         currentPage: page,
-        totalPages
+        totalPages,
+        topDevelopmentCount
       };
 
     } catch (error: unknown) {
