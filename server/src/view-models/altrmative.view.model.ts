@@ -17,7 +17,9 @@ export interface AlternativeViewModel {
   majorGroupId?: number;
   majorGroupName?: string;
   Rankdiff?: number;
-  RankdiffPer?: number; 
+  RankdiffPer?: number;
+  score?: number;
+  developmentPotential?: number; 
 }
 
 /**
@@ -41,7 +43,9 @@ export function toAlternativeViewModel(alternative: any): AlternativeViewModel {
     majorGroupId: alternative.majorGroupId || 0,
     majorGroupName: alternative.majorGroupName || '',
     Rankdiff: alternative.rankDiff || 0,
-    RankdiffPer: Number((alternative.rankDiffPer || 0).toFixed(2))
+    RankdiffPer: Number((alternative.rankDiffPer || 0).toFixed(2)),
+    score: alternative.score || 0,
+    developmentPotential: alternative.developmentPotential || 0 
   };
 }
 
