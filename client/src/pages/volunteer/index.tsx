@@ -132,8 +132,6 @@ const EducationalPage: React.FC = () => {
   // 获取志愿数量配置
   const [volunteerCount, setVolunteerCount] = useState('6'); // 默认6个志愿
 
-
-
   // 添加预警弹窗相关状态
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [warningChoices, setWarningChoices] = useState({
@@ -438,8 +436,8 @@ const EducationalPage: React.FC = () => {
           if (activeTab === 'selected') {
             const allWillingnessData = data.flatMap((group) => group.result);
             // 按position字段排序，保持API返回的原始顺序
-            const sortedWillingnessData = allWillingnessData.sort((a, b) => 
-              (a.position || 0) - (b.position || 0)
+            const sortedWillingnessData = allWillingnessData.sort(
+              (a, b) => (a.position || 0) - (b.position || 0)
             );
             return [{ group: -1, result: sortedWillingnessData }];
           } else {
@@ -448,12 +446,12 @@ const EducationalPage: React.FC = () => {
           }
         }
         case 'major': {
-          // 按发展潜能倒序排序
-          const allMajorData = data.flatMap((group) => group.result);
-          const sortedMajorData = allMajorData.sort(
-            (a, b) => (b.developmentPotential || 0) - (a.developmentPotential || 0)
-          );
-          return [{ group: -1, result: sortedMajorData }];
+          // 按位次段分组，每个位次段内按发展潜能倒序排序
+          const groupedByRank = data.map((group) => ({
+            ...group,
+            result: group.result.sort((a, b) => (b.developmentPotential || 0) - (a.developmentPotential || 0))
+          }));
+          return groupedByRank;
         }
         case 'rankDiff': {
           // 按位次差从低到高排序
@@ -494,16 +492,16 @@ const EducationalPage: React.FC = () => {
   const handleMoveUp = async (item: AlternativeItem) => {
     // 只在入选志愿页面才允许手动排序
     if (activeTab !== 'selected') return;
-    
+
     const itemKey = `${item.schoolCode}_${item.majorCode}_moveUp`;
-    
+
     try {
       // 设置加载状态
       setLoadingStatus((prev) => ({ ...prev, [itemKey]: true }));
-      
+
       // 调用上移API
       const response = await moveUpAlternative(item.id);
-      
+
       if (response && response.code === 200) {
         // 获取当前显示的数据
         let currentData: AlternativeItem[];
@@ -512,24 +510,24 @@ const EducationalPage: React.FC = () => {
         } else {
           currentData = getFilteredData().flatMap((group) => group.result);
         }
-        
+
         const currentIndex = currentData.findIndex((i) => i.id === item.id);
-        
+
         if (currentIndex > 0) {
           const newData = [...currentData];
           [newData[currentIndex], newData[currentIndex - 1]] = [
             newData[currentIndex - 1],
             newData[currentIndex],
           ];
-          
+
           // 更新排序索引
           newData.forEach((item, index) => {
             item.sortIndex = index;
           });
-          
+
           setManualSortData(newData);
           setIsManualSortMode(true);
-          
+
           console.log('上移成功');
         }
       } else {
@@ -547,16 +545,16 @@ const EducationalPage: React.FC = () => {
   const handleMoveDown = async (item: AlternativeItem) => {
     // 只在入选志愿页面才允许手动排序
     if (activeTab !== 'selected') return;
-    
+
     const itemKey = `${item.schoolCode}_${item.majorCode}_moveDown`;
-    
+
     try {
       // 设置加载状态
       setLoadingStatus((prev) => ({ ...prev, [itemKey]: true }));
-      
+
       // 调用下移API
       const response = await moveDownAlternative(item.id);
-      
+
       if (response && response.code === 200) {
         // 获取当前显示的数据
         let currentData: AlternativeItem[];
@@ -565,24 +563,24 @@ const EducationalPage: React.FC = () => {
         } else {
           currentData = getFilteredData().flatMap((group) => group.result);
         }
-        
+
         const currentIndex = currentData.findIndex((i) => i.id === item.id);
-        
+
         if (currentIndex < currentData.length - 1) {
           const newData = [...currentData];
           [newData[currentIndex], newData[currentIndex + 1]] = [
             newData[currentIndex + 1],
             newData[currentIndex],
           ];
-          
+
           // 更新排序索引
           newData.forEach((item, index) => {
             item.sortIndex = index;
           });
-          
+
           setManualSortData(newData);
           setIsManualSortMode(true);
-          
+
           console.log('下移成功');
         }
       } else {
@@ -653,10 +651,10 @@ const EducationalPage: React.FC = () => {
               majorGroupName: item.majorGroupName,
               schoolCity: item.schoolCity,
               sortIndex: index, // 添加排序索引
-                              developmentPotential: item.developmentPotential || 0, // 发展潜能
-                position: item.position || 0, // 位置排序字段
-              })
-            );
+              developmentPotential: item.developmentPotential || 0, // 发展潜能
+              position: item.position || 0, // 位置排序字段
+            })
+          );
 
           const groupByCategory = (
             arr: AlternativeItem[],
@@ -1196,20 +1194,20 @@ const EducationalPage: React.FC = () => {
                     ? expandedAlternatives[items.group]
                     : expandedSelected[items.group];
                 const displaySchools =
-                  sortTab === 'group'
+                  sortTab === 'group' || sortTab === 'major'
                     ? isExpanded
                       ? schoolGroups
                       : schoolGroups.slice(0, 1)
                     : schoolGroups; // 按升学率和就业率排序时显示所有学校
-                const hasMoreSchools = schoolGroups.length > 1;
+                const hasMoreSchools = schoolGroups.length > 1 && (sortTab === 'group' || sortTab === 'major');
 
                 return (
                   <div
                     key={items.group + 'group'}
                     className="w-full max-w-xl bg-white rounded-2xl shadow mt-3 p-4"
                   >
-                    {/* 只在位次段排序时显示分组标题 */}
-                    {sortTab === 'group' && (
+                    {/* 在位次段排序和按专业排序时显示分组标题 */}
+                    {(sortTab === 'group' || sortTab === 'major') && (
                       <div className="text-[16px] font-bold border-b pb-2 mb-2">
                         【{groupNames[items.group]}】 {items.result.length}个 &nbsp;{' '}
                         {Math.ceil((items.result.length / currentCount) * 100)} %
@@ -1256,8 +1254,8 @@ const EducationalPage: React.FC = () => {
                                 </span>
                               </div>
                               <div className="flex items-center space-x-2">
-                                {/* 按自主意愿不显示 */}
-                                {activeTab !== 'selected' && sortTab === 'group' && (
+                                {/* 按自主意愿不显示，但在位次段和按专业排序时显示 */}
+                                {activeTab !== 'selected' && (sortTab === 'group' || sortTab === 'major') && (
                                   <span className="text-yellow-600 bg-yellow-100  py-0.5 rounded text-xs ">
                                     热爱能量{Math.ceil((item.score || 0) * 100)}分！
                                   </span>
@@ -1377,7 +1375,7 @@ const EducationalPage: React.FC = () => {
                               >
                                 {item.schoolNature === 'public' ? '公办' : '民办'}
                               </span>
-                              {item.enrollmentRate !== 0 && (
+                              {item.enrollmentRate !== 0 && sortTab !== 'enrollment' && (
                                 <span
                                   key={item.schoolName + '升学率'}
                                   className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
@@ -1385,14 +1383,14 @@ const EducationalPage: React.FC = () => {
                                   升学率{item.enrollmentRate}%
                                 </span>
                               )}
-                              {item.schoolLevel !== 'zhuan' && (
+                              {/* {item.schoolLevel !== 'zhuan' && (
                                 <span
                                   key={item.schoolName + '保研率'}
                                   className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200"
                                 >
                                   保研率{item.enrollmentRate}%
                                 </span>
-                              )}
+                              )} */}
                               {item.majorGroupId && (
                                 <span
                                   key={item.schoolName + '专业组'}
@@ -1465,14 +1463,13 @@ const EducationalPage: React.FC = () => {
                                 </button>
                               </div>
                             )}
-
                           </div>
                         ))}
                       </div>
                     ))}
 
-                    {/* 展开/收起按钮 - 当分组下有多个学校时显示，且只在位次段排序时显示 */}
-                    {hasMoreSchools && sortTab === 'group' && (
+                    {/* 展开/收起按钮 - 当分组下有多个学校时显示，且在位次段排序和按专业排序时显示 */}
+                    {hasMoreSchools && (sortTab === 'group' || sortTab === 'major') && (
                       <div className="mt-2 text-center">
                         <button
                           onClick={() =>
