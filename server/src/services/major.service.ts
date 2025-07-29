@@ -546,7 +546,7 @@ export class MajorScoreService {
       SELECT 
        
         ROUND(CAST((fs.academic_development_raw + fs.career_development_raw +
-	    	ROUND(COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)  + fs.growth_potential_raw) / 2 + fs.base_score * 100 / 2 AS NUMERIC))::NUMERIC as developmentPotential,
+	    	ROUND(COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)  + fs.growth_potential_raw) / 2 + fs.base_score * 100 / 2 AS NUMERIC))::NUMERIC as developmentPotential
         
         
       FROM final_scores fs 
