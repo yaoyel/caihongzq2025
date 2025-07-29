@@ -197,16 +197,16 @@ export class MajorScoreService {
         fs.lexue_score as "lexueScore",
         fs.shanxue_score as "shanxueScore", 
         fs.school_count as "schoolCount",
-        -- 计算行业前景得分（取整数）
+       -- 计算行业前景得分（取整数）
         ROUND((COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0)) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5) as "industryProspectsScore",
         -- 发展潜力得分（取整数）
-        ROUND(CAST(fs.academic_development_raw + fs.career_development_raw + 
-		ROUND(COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)
-		+ fs.growth_potential_raw AS NUMERIC))::NUMERIC as "opportunityScore",
+        ROUND(CAST(fs.academic_development_raw + fs.career_development_raw  +
+		    ROUND((COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0)) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)
+		        +  fs.growth_potential_raw AS NUMERIC))::NUMERIC as "opportunityScore",
         -- 机会得分（取整数）
         ROUND(CAST((fs.academic_development_raw + fs.career_development_raw +
-		ROUND(COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)  + fs.growth_potential_raw) / 2 + fs.base_score * 100 / 2 AS NUMERIC))::NUMERIC as "developmentPotential",
-        
+		    ROUND((COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0)) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)
+		   + fs.growth_potential_raw) / 2 + fs.base_score * 100 / 2 AS NUMERIC))::NUMERIC as "developmentPotential",       
         -- 各项得分（取整数）
         ROUND(CAST(fs.academic_development_raw AS NUMERIC))::NUMERIC as "academicDevelopmentScore",
         ROUND(CAST(fs.career_development_raw AS NUMERIC))::NUMERIC as "careerDevelopmentScore", 
@@ -376,16 +376,16 @@ export class MajorScoreService {
         fs.lexue_score as "lexueScore",
         fs.shanxue_score as "shanxueScore", 
         fs.school_count as "schoolCount",
-        -- 计算行业前景得分（取整数）
+      -- 计算行业前景得分（取整数）
         ROUND((COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0)) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5) as "industryProspectsScore",
         -- 发展潜力得分（取整数）
-        ROUND(CAST(fs.academic_development_raw + fs.career_development_raw + 
-		ROUND(COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)
-		+ fs.growth_potential_raw AS NUMERIC))::NUMERIC as "opportunityScore",
+        ROUND(CAST(fs.academic_development_raw + fs.career_development_raw  +
+		    ROUND((COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0)) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)
+		   +  fs.growth_potential_raw AS NUMERIC))::NUMERIC as "opportunityScore",
         -- 机会得分（取整数）
         ROUND(CAST((fs.academic_development_raw + fs.career_development_raw +
-		ROUND(COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)  + fs.growth_potential_raw) / 2 + fs.base_score * 100 / 2 AS NUMERIC))::NUMERIC as "developmentPotential",
-        
+	     	ROUND((COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0)) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)
+		    + fs.growth_potential_raw) / 2 + fs.base_score * 100 / 2 AS NUMERIC))::NUMERIC as "developmentPotential",        
         -- 各项得分（取整数）
         ROUND(CAST(fs.academic_development_raw AS NUMERIC))::NUMERIC as "academicDevelopmentScore",
         ROUND(CAST(fs.career_development_raw AS NUMERIC))::NUMERIC as "careerDevelopmentScore", 
@@ -545,9 +545,9 @@ export class MajorScoreService {
       )
       SELECT 
        
-        ROUND(CAST((fs.academic_development_raw + fs.career_development_raw +
-	    	ROUND(COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)  + fs.growth_potential_raw) / 2 + fs.base_score * 100 / 2 AS NUMERIC))::NUMERIC as developmentPotential,
-        
+         ROUND(CAST((fs.academic_development_raw + fs.career_development_raw +
+	     	ROUND((COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0)) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)
+		       + fs.growth_potential_raw) / 2 + fs.base_score * 100 / 2 AS NUMERIC))::NUMERIC as developmentPotential
         
       FROM final_scores fs 
       ORDER BY developmentPotential DESC
