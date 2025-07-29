@@ -171,24 +171,6 @@ const EducationalPage: React.FC = () => {
   );
 
   /**
-   * 计算分数
-   * @param score 分数
-   * @returns 计算后的分数
-   */
-  const getCalcScore = useCallback((score: number) => {
-    return Math.ceil(score);
-  }, []);
-
-  /**
-   * 计算分数（乘以100）
-   * @param score 分数
-   * @returns 计算后的分数
-   */
-  const getCalcScore100 = useCallback((score: number) => {
-    return Math.ceil(score * 100);
-  }, []);
-
-  /**
    * 获取收藏专业列表
    */
   const fetchMajorIntentions = async () => {
