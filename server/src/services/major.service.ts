@@ -48,7 +48,7 @@ export class MajorScoreService {
   async calculateMajorScores(userId: string): Promise<MajorScore[]> {
     // 使用原生SQL查询提升性能
     const result = await this.majorDetailRepository.query(`
-     WITH user_answers AS (
+      WITH user_answers AS (
         SELECT 
           s.id as scale_id,
           sa.score as score,
@@ -178,10 +178,9 @@ export class MajorScoreService {
           FLOOR(((COALESCE(ss.lexue_score, 0)  + COALESCE(ss.shanxue_score, 0) )  * 25 * 0.5) + (COALESCE(ss.academic_development_score, 0) / 100 * 25 * 0.5)) as academic_development_raw,
           -- 计算职业发展得分（取整数）
           FLOOR((COALESCE(ss.lexue_score, 0) + COALESCE(ss.shanxue_score, 0) - (COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0))) * 25 * 0.5 + COALESCE(ss.career_development_score, 0) / 100 * 25 * 0.5) as career_development_raw,
-          -- 计算行业前景得分（取整数）
-          FLOOR((COALESCE(ss.lexue_score, 0) + COALESCE(ss.shanxue_score, 0) - (COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0))) * 25 * 0.5 + COALESCE(ss.growth_potential_score, 0) / 100 * 25 * 0.5) as industry_prospects_raw,
+
           -- 计算成长潜力得分（取整数）
-          FLOOR((COALESCE(ss.career_development_score, 0) + COALESCE(ss.growth_potential_score, 0)) / 2 / 100 * 25 * 0.5 + COALESCE(ss.industry_prospects_score, 0) / 100 * 25 * 0.5) as growth_potential_raw
+          FLOOR((COALESCE(ss.lexue_score, 0) + COALESCE(ss.shanxue_score, 0) - (COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0))) * 25 * 0.5 + COALESCE(ss.growth_potential_score, 0) / 100 * 25 * 0.5) as growth_potential_raw
         FROM study_scores ss
         JOIN deduction_scores ds ON ds.major_code = ss.major_code
         LEFT JOIN school_majors_count smc ON smc.major_code = ss.major_code
@@ -196,15 +195,17 @@ export class MajorScoreService {
         fs.lexue_score as "lexueScore",
         fs.shanxue_score as "shanxueScore", 
         fs.school_count as "schoolCount",
+        -- 计算行业前景得分（取整数）
+        FLOOR((COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0)) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5) as "industryProspectsScore",
         -- 发展潜力得分（取整数）
-        FLOOR(CAST(fs.academic_development_raw + fs.career_development_raw + fs.industry_prospects_raw + fs.growth_potential_raw AS NUMERIC))::NUMERIC as "opportunityScore",
+        FLOOR(CAST(fs.academic_development_raw + fs.career_development_raw + FLOOR((COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0)) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)  + fs.growth_potential_raw AS NUMERIC))::NUMERIC as "opportunityScore",
         -- 机会得分（取整数）
-        FLOOR(CAST((fs.academic_development_raw + fs.career_development_raw + fs.industry_prospects_raw + fs.growth_potential_raw) / 2 + fs.base_score * 100 / 2 AS NUMERIC))::NUMERIC as "developmentPotential",
+        FLOOR(CAST((fs.academic_development_raw + fs.career_development_raw +FLOOR((COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0)) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)  + fs.growth_potential_raw) / 2 + fs.base_score * 100 / 2 AS NUMERIC))::NUMERIC as "developmentPotential",
         
         -- 各项得分（取整数）
         FLOOR(CAST(fs.academic_development_raw AS NUMERIC))::NUMERIC as "academicDevelopmentScore",
         FLOOR(CAST(fs.career_development_raw AS NUMERIC))::NUMERIC as "careerDevelopmentScore",
-        FLOOR(CAST(fs.industry_prospects_raw AS NUMERIC))::NUMERIC as "industryProspectsScore",
+      
         FLOOR(CAST(fs.growth_potential_raw AS NUMERIC))::NUMERIC as "growthPotentialScore"
       FROM final_scores fs
       ORDER BY score DESC
@@ -221,7 +222,7 @@ export class MajorScoreService {
    */
   async calculateMajorScoresByCode(userId: string, majorCodes: string[]): Promise<MajorScore[]> {
     const result = await this.majorDetailRepository.query(`
-   WITH user_answers AS (
+  WITH user_answers AS (
         SELECT 
           s.id as scale_id,
           sa.score as score,
@@ -261,7 +262,7 @@ export class MajorScoreService {
           COUNT(sm.id) as school_majors_count
         FROM major_details md
         LEFT JOIN school_majors sm ON sm.major_code = md.code
-		WHERE md.code = ANY($2)
+	    WHERE md.code = ANY($2)
         GROUP BY md.code
       ),
       type_scores AS (
@@ -352,10 +353,9 @@ export class MajorScoreService {
           FLOOR(((COALESCE(ss.lexue_score, 0)  + COALESCE(ss.shanxue_score, 0) )  * 25 * 0.5) + (COALESCE(ss.academic_development_score, 0) / 100 * 25 * 0.5)) as academic_development_raw,
           -- 计算职业发展得分（取整数）
           FLOOR((COALESCE(ss.lexue_score, 0) + COALESCE(ss.shanxue_score, 0) - (COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0))) * 25 * 0.5 + COALESCE(ss.career_development_score, 0) / 100 * 25 * 0.5) as career_development_raw,
-          -- 计算行业前景得分（取整数）
-          FLOOR((COALESCE(ss.lexue_score, 0) + COALESCE(ss.shanxue_score, 0) - (COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0))) * 25 * 0.5 + COALESCE(ss.growth_potential_score, 0) / 100 * 25 * 0.5) as industry_prospects_raw,
+
           -- 计算成长潜力得分（取整数）
-          FLOOR((COALESCE(ss.career_development_score, 0) + COALESCE(ss.growth_potential_score, 0)) / 2 / 100 * 25 * 0.5 + COALESCE(ss.industry_prospects_score, 0) / 100 * 25 * 0.5) as growth_potential_raw
+          FLOOR((COALESCE(ss.lexue_score, 0) + COALESCE(ss.shanxue_score, 0) - (COALESCE(ds.tiaozhan_deduction, 0) + COALESCE(ds.yanxue_deduction, 0))) * 25 * 0.5 + COALESCE(ss.growth_potential_score, 0) / 100 * 25 * 0.5) as growth_potential_raw
         FROM study_scores ss
         JOIN deduction_scores ds ON ds.major_code = ss.major_code
         LEFT JOIN school_majors_count smc ON smc.major_code = ss.major_code
@@ -370,15 +370,17 @@ export class MajorScoreService {
         fs.lexue_score as "lexueScore",
         fs.shanxue_score as "shanxueScore", 
         fs.school_count as "schoolCount",
+        -- 计算行业前景得分（取整数）
+        FLOOR((COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0)) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5) as "industryProspectsScore",
         -- 发展潜力得分（取整数）
-        FLOOR(CAST(fs.academic_development_raw + fs.career_development_raw + fs.industry_prospects_raw + fs.growth_potential_raw AS NUMERIC))::NUMERIC as "opportunityScore",
+        FLOOR(CAST(fs.academic_development_raw + fs.career_development_raw + FLOOR((COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0)) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)  + fs.growth_potential_raw AS NUMERIC))::NUMERIC as "opportunityScore",
         -- 机会得分（取整数）
-        FLOOR(CAST((fs.academic_development_raw + fs.career_development_raw + fs.industry_prospects_raw + fs.growth_potential_raw) / 2 + fs.base_score * 100 / 2 AS NUMERIC))::NUMERIC as "developmentPotential",
+        FLOOR(CAST((fs.academic_development_raw + fs.career_development_raw +FLOOR((COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0)) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)  + fs.growth_potential_raw) / 2 + fs.base_score * 100 / 2 AS NUMERIC))::NUMERIC as "developmentPotential",
         
         -- 各项得分（取整数）
         FLOOR(CAST(fs.academic_development_raw AS NUMERIC))::NUMERIC as "academicDevelopmentScore",
         FLOOR(CAST(fs.career_development_raw AS NUMERIC))::NUMERIC as "careerDevelopmentScore",
-        FLOOR(CAST(fs.industry_prospects_raw AS NUMERIC))::NUMERIC as "industryProspectsScore",
+      
         FLOOR(CAST(fs.growth_potential_raw AS NUMERIC))::NUMERIC as "growthPotentialScore"
       FROM final_scores fs
       ORDER BY score DESC
