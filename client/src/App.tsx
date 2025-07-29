@@ -60,7 +60,7 @@ const App: React.FC = () => {
         }
       }
     };
-    if (code && (!token || !userStr)) {
+    if (code) {
       handleCallback();
     }
   }, [navigate]);

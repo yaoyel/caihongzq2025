@@ -10,6 +10,8 @@ import {
   selectAlternative,
   cancelAlternative,
   getMajorGroup,
+  moveUpAlternative,
+  moveDownAlternative,
 } from '../../config/volunteer';
 
 // 定义备选志愿项的类型（扩展自 API 返回的数据）
@@ -37,6 +39,9 @@ interface AlternativeItem {
   majorGroupName?: string; // 专业组名称
   schoolCity?: string; // 学校所在城市
   sortIndex?: number; // 手动排序索引
+  developmentPotential?: number; // 发展潜能
+  topDevelopmentCount?: number; // 高发展潜能专业数量
+  position?: number; // 位置排序字段
 }
 
 // 定义分组后的备选志愿类型
@@ -123,6 +128,23 @@ const EducationalPage: React.FC = () => {
     majorGroupName: string;
     schoolName: string;
   } | null>(null);
+
+  // 获取志愿数量配置
+  const [volunteerCount, setVolunteerCount] = useState('6'); // 默认6个志愿
+
+
+
+  // 添加预警弹窗相关状态
+  const [showWarningModal, setShowWarningModal] = useState(false);
+  const [warningChoices, setWarningChoices] = useState({
+    todayNotShow: false,
+  });
+
+  // 添加高发展潜能预警相关状态
+  const [showTopDevelopmentWarningModal, setShowTopDevelopmentWarningModal] = useState(false);
+  const [topDevelopmentWarningChoices, setTopDevelopmentWarningChoices] = useState({
+    todayNotShow: false,
+  });
 
   // 添加手动排序相关状态
   const [manualSortData, setManualSortData] = useState<AlternativeItem[]>([]);
@@ -252,6 +274,56 @@ const EducationalPage: React.FC = () => {
     }));
   }, []);
 
+  // 处理预警弹窗选择变化
+  const handleWarningChoiceChange = useCallback((checked: boolean) => {
+    setWarningChoices((prev) => ({
+      ...prev,
+      todayNotShow: checked,
+    }));
+  }, []);
+
+  // 处理预警弹窗确认
+  const handleWarningModalConfirm = useCallback(() => {
+    // 根据用户选择设置存储策略
+    if (warningChoices.todayNotShow) {
+      // 今天不显示
+      const today = new Date().toDateString();
+      localStorage.setItem('volunteer-warning-last-shown', today);
+    }
+
+    setShowWarningModal(false);
+  }, [warningChoices]);
+
+  // 处理预警弹窗关闭
+  const handleWarningModalClose = useCallback(() => {
+    setShowWarningModal(false);
+  }, []);
+
+  // 处理高发展潜能预警弹窗选择变化
+  const handleTopDevelopmentWarningChoiceChange = useCallback((checked: boolean) => {
+    setTopDevelopmentWarningChoices((prev) => ({
+      ...prev,
+      todayNotShow: checked,
+    }));
+  }, []);
+
+  // 处理高发展潜能预警弹窗确认
+  const handleTopDevelopmentWarningModalConfirm = useCallback(() => {
+    // 根据用户选择设置存储策略
+    if (topDevelopmentWarningChoices.todayNotShow) {
+      // 今天不显示
+      const today = new Date().toDateString();
+      localStorage.setItem('volunteer-top-development-warning-last-shown', today);
+    }
+
+    setShowTopDevelopmentWarningModal(false);
+  }, [topDevelopmentWarningChoices]);
+
+  // 处理高发展潜能预警弹窗关闭
+  const handleTopDevelopmentWarningModalClose = useCallback(() => {
+    setShowTopDevelopmentWarningModal(false);
+  }, []);
+
   // 处理提示弹窗确认
   const handleTipModalConfirm = useCallback(() => {
     // 根据用户选择设置不同的存储策略
@@ -339,8 +411,8 @@ const EducationalPage: React.FC = () => {
   // 根据当前排序Tab对数据进行排序
   const getSortedData = useCallback(
     (data: GroupedAlternatives[]) => {
-      // 如果处于手动排序模式，直接返回手动排序数据
-      if (isManualSortMode && manualSortData.length > 0) {
+      // 如果处于手动排序模式且按自主意愿排序，直接返回手动排序数据
+      if (isManualSortMode && manualSortData.length > 0 && sortTab === 'willingness') {
         return [{ group: -1, result: manualSortData }];
       }
 
@@ -362,11 +434,12 @@ const EducationalPage: React.FC = () => {
           return [{ group: -1, result: sortedEmploymentData }];
         }
         case 'willingness': {
-          // 按自主意愿排序（热爱能量分数）- 只在入选志愿页面可用
+          // 按自主意愿排序 - 直接显示API返回的数据，不进行排序
           if (activeTab === 'selected') {
             const allWillingnessData = data.flatMap((group) => group.result);
-            const sortedWillingnessData = allWillingnessData.sort(
-              (a, b) => (b.score || 0) - (a.score || 0)
+            // 按position字段排序，保持API返回的原始顺序
+            const sortedWillingnessData = allWillingnessData.sort((a, b) => 
+              (a.position || 0) - (b.position || 0)
             );
             return [{ group: -1, result: sortedWillingnessData }];
           } else {
@@ -375,17 +448,20 @@ const EducationalPage: React.FC = () => {
           }
         }
         case 'major': {
-          // 按专业名称排序
+          // 按发展潜能倒序排序
           const allMajorData = data.flatMap((group) => group.result);
-          const sortedMajorData = allMajorData.sort((a, b) =>
-            a.majorName.localeCompare(b.majorName, 'zh-CN')
+          const sortedMajorData = allMajorData.sort(
+            (a, b) => (b.developmentPotential || 0) - (a.developmentPotential || 0)
           );
           return [{ group: -1, result: sortedMajorData }];
         }
         case 'rankDiff': {
-          // 按位次差排序（这里需要根据实际数据结构调整）
-          // 暂时按分组排序，后续可以根据实际位次差数据调整
-          return data;
+          // 按位次差从低到高排序
+          const allRankDiffData = data.flatMap((group) => group.result);
+          const sortedRankDiffData = allRankDiffData.sort(
+            (a, b) => (a.Rankdiff || 0) - (b.Rankdiff || 0)
+          );
+          return [{ group: -1, result: sortedRankDiffData }];
         }
         case 'group':
         default:
@@ -393,7 +469,7 @@ const EducationalPage: React.FC = () => {
           return data;
       }
     },
-    [sortTab, isManualSortMode, manualSortData, activeTab]
+    [sortTab, activeTab, isManualSortMode, manualSortData]
   );
 
   // 根据当前Tab过滤数据
@@ -406,7 +482,7 @@ const EducationalPage: React.FC = () => {
           result: group.result.filter((item) => item.selected),
         }))
         .filter((group) => group.result.length > 0);
-      
+
       return getSortedData(selectedData);
     } else {
       // 备选志愿页面显示所有备选志愿
@@ -415,59 +491,109 @@ const EducationalPage: React.FC = () => {
   }, [alternatives, activeTab, getSortedData]);
 
   // 处理手动排序相关函数
-  const handleMoveUp = (item: AlternativeItem) => {
+  const handleMoveUp = async (item: AlternativeItem) => {
     // 只在入选志愿页面才允许手动排序
     if (activeTab !== 'selected') return;
     
-    // 获取当前显示的数据
-    let currentData: AlternativeItem[];
-    if (isManualSortMode && manualSortData.length > 0) {
-      currentData = [...manualSortData];
-    } else {
-      currentData = getFilteredData().flatMap(group => group.result);
-    }
+    const itemKey = `${item.schoolCode}_${item.majorCode}_moveUp`;
     
-    const currentIndex = currentData.findIndex(i => i.id === item.id);
-    
-    if (currentIndex > 0) {
-      const newData = [...currentData];
-      [newData[currentIndex], newData[currentIndex - 1]] = [newData[currentIndex - 1], newData[currentIndex]];
+    try {
+      // 设置加载状态
+      setLoadingStatus((prev) => ({ ...prev, [itemKey]: true }));
       
-      // 更新排序索引
-      newData.forEach((item, index) => {
-        item.sortIndex = index;
-      });
+      // 调用上移API
+      const response = await moveUpAlternative(item.id);
       
-      setManualSortData(newData);
-      setIsManualSortMode(true);
+      if (response && response.code === 200) {
+        // 获取当前显示的数据
+        let currentData: AlternativeItem[];
+        if (isManualSortMode && manualSortData.length > 0) {
+          currentData = [...manualSortData];
+        } else {
+          currentData = getFilteredData().flatMap((group) => group.result);
+        }
+        
+        const currentIndex = currentData.findIndex((i) => i.id === item.id);
+        
+        if (currentIndex > 0) {
+          const newData = [...currentData];
+          [newData[currentIndex], newData[currentIndex - 1]] = [
+            newData[currentIndex - 1],
+            newData[currentIndex],
+          ];
+          
+          // 更新排序索引
+          newData.forEach((item, index) => {
+            item.sortIndex = index;
+          });
+          
+          setManualSortData(newData);
+          setIsManualSortMode(true);
+          
+          console.log('上移成功');
+        }
+      } else {
+        alert(response?.message || '上移失败');
+      }
+    } catch (error) {
+      console.error('上移失败:', error);
+      alert(error instanceof Error ? error.message : '上移失败');
+    } finally {
+      // 清除加载状态
+      setLoadingStatus((prev) => ({ ...prev, [itemKey]: false }));
     }
   };
 
-  const handleMoveDown = (item: AlternativeItem) => {
+  const handleMoveDown = async (item: AlternativeItem) => {
     // 只在入选志愿页面才允许手动排序
     if (activeTab !== 'selected') return;
     
-    // 获取当前显示的数据
-    let currentData: AlternativeItem[];
-    if (isManualSortMode && manualSortData.length > 0) {
-      currentData = [...manualSortData];
-    } else {
-      currentData = getFilteredData().flatMap(group => group.result);
-    }
+    const itemKey = `${item.schoolCode}_${item.majorCode}_moveDown`;
     
-    const currentIndex = currentData.findIndex(i => i.id === item.id);
-    
-    if (currentIndex < currentData.length - 1) {
-      const newData = [...currentData];
-      [newData[currentIndex], newData[currentIndex + 1]] = [newData[currentIndex + 1], newData[currentIndex]];
+    try {
+      // 设置加载状态
+      setLoadingStatus((prev) => ({ ...prev, [itemKey]: true }));
       
-      // 更新排序索引
-      newData.forEach((item, index) => {
-        item.sortIndex = index;
-      });
+      // 调用下移API
+      const response = await moveDownAlternative(item.id);
       
-      setManualSortData(newData);
-      setIsManualSortMode(true);
+      if (response && response.code === 200) {
+        // 获取当前显示的数据
+        let currentData: AlternativeItem[];
+        if (isManualSortMode && manualSortData.length > 0) {
+          currentData = [...manualSortData];
+        } else {
+          currentData = getFilteredData().flatMap((group) => group.result);
+        }
+        
+        const currentIndex = currentData.findIndex((i) => i.id === item.id);
+        
+        if (currentIndex < currentData.length - 1) {
+          const newData = [...currentData];
+          [newData[currentIndex], newData[currentIndex + 1]] = [
+            newData[currentIndex + 1],
+            newData[currentIndex],
+          ];
+          
+          // 更新排序索引
+          newData.forEach((item, index) => {
+            item.sortIndex = index;
+          });
+          
+          setManualSortData(newData);
+          setIsManualSortMode(true);
+          
+          console.log('下移成功');
+        }
+      } else {
+        alert(response?.message || '下移失败');
+      }
+    } catch (error) {
+      console.error('下移失败:', error);
+      alert(error instanceof Error ? error.message : '下移失败');
+    } finally {
+      // 清除加载状态
+      setLoadingStatus((prev) => ({ ...prev, [itemKey]: false }));
     }
   };
 
@@ -486,35 +612,51 @@ const EducationalPage: React.FC = () => {
 
         // 处理已备选志愿数据
         if (alternativesResponse && alternativesResponse.code === 200) {
-          // 服务器返回的数据结构是 { total, data, currentPage, totalPages }
+          // 服务器返回的数据结构是 { total, data, currentPage, totalPages, volunteerCount }
           const alternativesData = alternativesResponse.data.data || [];
+          // 从API响应中获取志愿数量配置
+          const apiVolunteerCount = alternativesResponse.data.volunteerCount;
+          if (apiVolunteerCount !== undefined) {
+            setVolunteerCount(apiVolunteerCount.toString());
+          }
+
+          // 从API响应中获取高发展潜能专业数量
+          const apiTopDevelopmentCount = alternativesResponse.data.topDevelopmentCount;
+          if (apiTopDevelopmentCount !== undefined) {
+            // 将topDevelopmentCount存储到localStorage中供后续使用
+            localStorage.setItem('topDevelopmentCount', apiTopDevelopmentCount.toString());
+          }
 
           // 将 API 返回的数据转换为我们的类型
-          const convertedData: AlternativeItem[] = alternativesData.map((item: any, index: number) => ({
-            id: item.id || `${item.schoolCode}_${item.majorCode}`,
-            majorCode: item.majorCode,
-            majorName: item.majorName,
-            schoolCode: item.schoolCode,
-            schoolName: item.schoolName,
-            priority: item.priority,
-            createdAt: item.createdAt,
-            score: item.score,
-            selected: item.selected || false,
-            historyScore: item.historyScore,
-            group: item.group,
-            enrollmentRate: item.enrollmentRate || 0,
-            employmentRate: item.employmentRate || 0,
-            Rankdiff: item.Rankdiff || 0, // 位次差
-            RankdiffPer: item.RankdiffPer || 0, // 位次差百分比
-            // 学校标签相关属性
-            schoolFeature: item.schoolFeature,
-            schoolNature: item.schoolNature,
-            schoolLevel: item.schoolLevel,
-            majorGroupId: item.majorGroupId,
-            majorGroupName: item.majorGroupName,
-            schoolCity: item.schoolCity,
-            sortIndex: index, // 添加排序索引
-          }));
+          const convertedData: AlternativeItem[] = alternativesData.map(
+            (item: any, index: number) => ({
+              id: item.id || `${item.schoolCode}_${item.majorCode}`,
+              majorCode: item.majorCode,
+              majorName: item.majorName,
+              schoolCode: item.schoolCode,
+              schoolName: item.schoolName,
+              priority: item.priority,
+              createdAt: item.createdAt,
+              score: item.score,
+              selected: item.selected || false,
+              historyScore: item.historyScore,
+              group: item.group,
+              enrollmentRate: item.enrollmentRate || 0,
+              employmentRate: item.employmentRate || 0,
+              Rankdiff: item.Rankdiff || 0, // 位次差
+              RankdiffPer: item.RankdiffPer || 0, // 位次差百分比
+              // 学校标签相关属性
+              schoolFeature: item.schoolFeature,
+              schoolNature: item.schoolNature,
+              schoolLevel: item.schoolLevel,
+              majorGroupId: item.majorGroupId,
+              majorGroupName: item.majorGroupName,
+              schoolCity: item.schoolCity,
+              sortIndex: index, // 添加排序索引
+                              developmentPotential: item.developmentPotential || 0, // 发展潜能
+                position: item.position || 0, // 位置排序字段
+              })
+            );
 
           const groupByCategory = (
             arr: AlternativeItem[],
@@ -590,6 +732,54 @@ const EducationalPage: React.FC = () => {
       }
     }
   }, []);
+
+  // 检查预警条件
+  useEffect(() => {
+    // 只在入选志愿页面且按自主意愿排序时检查
+    if (activeTab === 'selected' && sortTab === 'willingness') {
+      const requiredCount = parseInt(volunteerCount);
+      const currentCount = selectedCount;
+
+      if (currentCount < requiredCount) {
+        // 检查今天是否已经显示过预警
+        const today = new Date().toDateString();
+        const lastShownDate = localStorage.getItem('volunteer-warning-last-shown');
+
+        if (lastShownDate !== today) {
+          // 延迟显示预警弹窗
+          const timer = setTimeout(() => {
+            setShowWarningModal(true);
+          }, 1000);
+
+          return () => clearTimeout(timer);
+        }
+      }
+    }
+  }, [activeTab, sortTab, selectedCount, volunteerCount]);
+
+  // 检查高发展潜能预警条件
+  useEffect(() => {
+    // 只在入选志愿页面且按专业排序时检查
+    if (activeTab === 'selected' && sortTab === 'major') {
+      // 从localStorage获取API返回的高发展潜能专业数量
+      const apiTopDevelopmentCount = parseInt(localStorage.getItem('topDevelopmentCount') || '0');
+
+      if (apiTopDevelopmentCount < 3) {
+        // 检查今天是否已经显示过高发展潜能预警
+        const today = new Date().toDateString();
+        const lastShownDate = localStorage.getItem('volunteer-top-development-warning-last-shown');
+
+        if (lastShownDate !== today) {
+          // 延迟显示预警弹窗
+          const timer = setTimeout(() => {
+            setShowTopDevelopmentWarningModal(true);
+          }, 1000);
+
+          return () => clearTimeout(timer);
+        }
+      }
+    }
+  }, [activeTab, sortTab]);
 
   // 渲染空状态提示
   const renderEmptyState = () => (
@@ -941,17 +1131,8 @@ const EducationalPage: React.FC = () => {
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  按位次差
+                  按位次差(低→高)
                 </button>
-                {/* 重置手动排序按钮 */}
-                {sortTab === 'willingness' && isManualSortMode && (
-                  <button
-                    onClick={resetManualSort}
-                    className="px-4 py-2 rounded-lg text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition-all duration-200"
-                  >
-                    重置排序
-                  </button>
-                )}
               </>
             ) : (
               // 备选志愿的排序选项
@@ -1076,7 +1257,7 @@ const EducationalPage: React.FC = () => {
                               </div>
                               <div className="flex items-center space-x-2">
                                 {/* 按自主意愿不显示 */}
-                                {sortTab !== 'willingness' && (
+                                {activeTab !== 'selected' && sortTab === 'group' && (
                                   <span className="text-yellow-600 bg-yellow-100  py-0.5 rounded text-xs ">
                                     热爱能量{Math.ceil((item.score || 0) * 100)}分！
                                   </span>
@@ -1089,8 +1270,20 @@ const EducationalPage: React.FC = () => {
                                       : `就业率${item.employmentRate || 0}%`}
                                   </span>
                                 )}
+                                {/* 显示发展潜能值 */}
+                                {sortTab === 'major' && (
+                                  <span className="text-purple-600 bg-purple-100 px-2 py-0.5 rounded text-xs font-bold">
+                                    发展潜能{Math.ceil(item.developmentPotential || 0)}分
+                                  </span>
+                                )}
+                                {/* 显示位次差值 */}
+                                {sortTab === 'rankDiff' && (
+                                  <span className="text-orange-600 bg-orange-100 px-2 py-0.5 rounded text-xs font-bold">
+                                    位次差{item.Rankdiff || 0}
+                                  </span>
+                                )}
                                 {/* 显示自主意愿分数 */}
-                                {sortTab === 'willingness' && (
+                                {sortTab !== 'major' && activeTab === 'selected' && (
                                   <span className="px-2 py-0.5 rounded text-xs font-bold">
                                     较上年
                                     <span
@@ -1240,20 +1433,39 @@ const EducationalPage: React.FC = () => {
                               <div className="flex justify-center space-x-2 mt-3 mb-2">
                                 <button
                                   onClick={() => handleMoveUp(item)}
-                                  className="px-3 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition-colors"
+                                  disabled={
+                                    loadingStatus[`${item.schoolCode}_${item.majorCode}_moveUp`]
+                                  }
+                                  className={`px-3 py-1 rounded text-xs transition-colors ${
+                                    loadingStatus[`${item.schoolCode}_${item.majorCode}_moveUp`]
+                                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                                  }`}
                                   title="上移"
                                 >
-                                  ⬆️ 上移
+                                  {loadingStatus[`${item.schoolCode}_${item.majorCode}_moveUp`]
+                                    ? '处理中...'
+                                    : '⬆️ 上移'}
                                 </button>
                                 <button
                                   onClick={() => handleMoveDown(item)}
-                                  className="px-3 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition-colors"
+                                  disabled={
+                                    loadingStatus[`${item.schoolCode}_${item.majorCode}_moveDown`]
+                                  }
+                                  className={`px-3 py-1 rounded text-xs transition-colors ${
+                                    loadingStatus[`${item.schoolCode}_${item.majorCode}_moveDown`]
+                                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                                  }`}
                                   title="下移"
                                 >
-                                  ⬇️ 下移
+                                  {loadingStatus[`${item.schoolCode}_${item.majorCode}_moveDown`]
+                                    ? '处理中...'
+                                    : '⬇️ 下移'}
                                 </button>
                               </div>
                             )}
+
                           </div>
                         ))}
                       </div>
@@ -1691,6 +1903,163 @@ const EducationalPage: React.FC = () => {
               </div>
             </div>
           )}
+        </div>
+      </Modal>
+
+      {/* 预警弹窗 */}
+      <Modal
+        title={
+          <div
+            style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold', color: '#dc2626' }}
+          >
+            ⚠️ 志愿填报预警
+          </div>
+        }
+        open={showWarningModal}
+        onCancel={handleWarningModalClose}
+        footer={null}
+        width={400}
+        centered
+        className="rounded-2xl"
+        style={{ top: '20%' }}
+      >
+        <div style={{ padding: '20px 0' }}>
+          <div
+            style={{
+              padding: '16px 0',
+              lineHeight: '1.8',
+              fontSize: '14px',
+              color: '#333',
+            }}
+          >
+            <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#dc2626' }}>
+              预警：您合计需填报{volunteerCount}个志愿，已确定{selectedCount}个，尚需确认
+              {parseInt(volunteerCount) - selectedCount}个。
+            </div>
+            <div style={{ marginBottom: '12px', color: '#666' }}>
+              请及时补充入选志愿，确保志愿填报的完整性。
+            </div>
+          </div>
+
+          {/* 底部复选框选项 */}
+          <div
+            style={{
+              marginTop: '20px',
+              padding: '16px 20px',
+              background: '#f8f9fa',
+              borderRadius: '8px',
+              border: '1px solid #e9ecef',
+            }}
+          >
+            <div
+              style={{ marginBottom: '12px', fontSize: '14px', fontWeight: 'bold', color: '#333' }}
+            >
+              请选择您的偏好：
+            </div>
+            <div>
+              <Checkbox
+                checked={warningChoices.todayNotShow}
+                onChange={(e) => handleWarningChoiceChange(e.target.checked)}
+                style={{ fontSize: '13px' }}
+              >
+                今天不显示此预警
+              </Checkbox>
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: '20px' }}>
+            <Button
+              type="primary"
+              onClick={handleWarningModalConfirm}
+              style={{
+                background: '#dc2626',
+                border: 'none',
+                borderRadius: '20px',
+                height: '40px',
+                width: '120px',
+                fontSize: '16px',
+              }}
+            >
+              我知道了
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 高发展潜能预警弹窗 */}
+      <Modal
+        title={
+          <div
+            style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold', color: '#dc2626' }}
+          >
+            ⚠️ 高发展潜能专业预警
+          </div>
+        }
+        open={showTopDevelopmentWarningModal}
+        onCancel={handleTopDevelopmentWarningModalClose}
+        footer={null}
+        width={400}
+        centered
+        className="rounded-2xl"
+        style={{ top: '20%' }}
+      >
+        <div style={{ padding: '20px 0' }}>
+          <div
+            style={{
+              padding: '16px 0',
+              lineHeight: '1.8',
+              fontSize: '14px',
+              color: '#333',
+            }}
+          >
+            <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#dc2626' }}>预警：</div>
+            <div style={{ marginBottom: '12px', color: '#666', lineHeight: '1.6' }}>
+              1.志愿表中&ldquo;高发展潜能专业&rdquo;低于3个，建议增加，避免个别专业当年报考热度太高导致滑档；
+            </div>
+          </div>
+
+          {/* 底部复选框选项 */}
+          <div
+            style={{
+              marginTop: '20px',
+              padding: '16px 20px',
+              background: '#f8f9fa',
+              borderRadius: '8px',
+              border: '1px solid #e9ecef',
+            }}
+          >
+            <div
+              style={{ marginBottom: '12px', fontSize: '14px', fontWeight: 'bold', color: '#333' }}
+            >
+              请选择您的偏好：
+            </div>
+            <div>
+              <Checkbox
+                checked={topDevelopmentWarningChoices.todayNotShow}
+                onChange={(e) => handleTopDevelopmentWarningChoiceChange(e.target.checked)}
+                style={{ fontSize: '13px' }}
+              >
+                今天不显示此预警
+              </Checkbox>
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: '20px' }}>
+            <Button
+              type="primary"
+              onClick={handleTopDevelopmentWarningModalConfirm}
+              style={{
+                background: '#dc2626',
+                border: 'none',
+                borderRadius: '20px',
+                height: '40px',
+                width: '120px',
+                fontSize: '16px',
+              }}
+            >
+              我知道了
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>

@@ -183,6 +183,8 @@ interface MajorAlternativesResponse {
     data: MajorAlternativeItem[];
     currentPage: number;
     totalPages: number;
+    volunteerCount: number;
+    topDevelopmentCount: number;
   };
 }
 
