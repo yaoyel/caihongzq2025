@@ -520,7 +520,7 @@ export class MajorScoreService {
           ss.major_code,
           ss.major_name,
           ss.edu_level,  
-		  ss.major_brief, 
+		     ss.major_brief, 
           ss.academic_development_score,
           ss.career_development_score,
           ss.growth_potential_score,
@@ -544,7 +544,7 @@ export class MajorScoreService {
         LEFT JOIN school_majors_count smc ON smc.major_code = ss.major_code
       )
       SELECT 
-       
+         fs.major_code as "majorCode",
          ROUND(CAST((fs.academic_development_raw + fs.career_development_raw +
 	     	ROUND((COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0)) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)
 		       + fs.growth_potential_raw) / 2 + fs.base_score * 100 / 2 AS NUMERIC))::NUMERIC as developmentPotential
