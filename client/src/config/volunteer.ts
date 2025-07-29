@@ -43,6 +43,12 @@ export const api = {
     unselectAlternative: (alternativeId: string) => `/majors/alternative/${alternativeId}/unselect`,
     // 取消备注接口
     cancelAlternative: (alternativeId: string) => `/majors/alternative/${alternativeId}`,
+    // 上移志愿接口
+    moveUpAlternative: (alternativeId: string) => `/majors/alternative/${alternativeId}/move-up`,
+    // 下移志愿接口
+    moveDownAlternative: (alternativeId: string) => `/majors/alternative/${alternativeId}/move-down`,
+    // 查询专业组接口
+    majorGroup: (majorGroupId: string) => `/majors/group/${majorGroupId}`,
   },
 };
 
@@ -61,7 +67,6 @@ export const getAuthHeaders = () => {
   const token = localStorage.getItem('new-token');
   if (!token) return {};
 
-  console.log('使用 token:', token);
   return {
     Authorization: `Bearer ${token}`,
   };
@@ -118,6 +123,16 @@ interface MajorIntentionItem {
   group1?: number; // （+5%到+10%）位次段院校数量
   group2?: number; // （-5%）到+（+5%）位次段院校数量
   group3?: number; // （-15%） 到 （-5%）位次段院校数量
+  lexueScore?: string; // 乐学分数
+  shanxueScore?: string; // 善学分数
+  yanxueDeduction?: string; // 厌学扣分
+  tiaozhanDeduction?: string; // 挑战扣分
+  opportunityScore?: string; // 机会分数
+  academicDevelopmentScore?: string; // 学术发展分数
+  careerDevelopmentScore?: string; // 职业发展分数
+  growthPotentialScore?: string; // 成长潜力分数
+  industryProspectsScore?: string; // 行业前景分数
+  developmentPotential?: string; // 发展潜力
 }
 
 interface MajorIntentionsResponse {
@@ -168,6 +183,8 @@ interface MajorAlternativesResponse {
     data: MajorAlternativeItem[];
     currentPage: number;
     totalPages: number;
+    volunteerCount: number;
+    topDevelopmentCount: number;
   };
 }
 
@@ -311,6 +328,94 @@ export const cancelAlternative = async (alternativeId: string): Promise<Alternat
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(error.response?.data?.message || '取消备注失败');
+    }
+    throw error;
+  }
+};
+
+// 专业组信息接口类型定义
+interface MajorGroupItem {
+  schoolCode: string;
+  majorCode: string;
+  subjectType: string;
+  batch: string;
+  num: string;
+  enrollType: string;
+  studyPeriod: string;
+  province: string;
+  tuition: string;
+  remark: string;
+  majorGroup: number;
+  majorGroupInfo: string;
+  majorGroupName: string;
+  majorNameDetail: string;
+  majorName: string;
+  year: number;
+}
+
+interface MajorGroupResponse {
+  code: number;
+  message: string;
+  data: MajorGroupItem[];
+}
+
+/**
+ * 查询专业组信息
+ * @param majorGroupId 专业组ID
+ * @returns Promise<MajorGroupResponse>
+ */
+export const getMajorGroup = async (majorGroupId: string): Promise<MajorGroupResponse> => {
+  try {
+    const response = await axios.get<MajorGroupResponse>(
+      getApiUrl(api.endpoints.majorGroup(majorGroupId)),
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '查询专业组信息失败');
+    }
+    throw error;
+  }
+};
+
+/**
+ * 上移志愿
+ * @param alternativeId 备选志愿ID
+ * @returns Promise<AlternativeActionResponse>
+ */
+export const moveUpAlternative = async (alternativeId: string): Promise<AlternativeActionResponse> => {
+  try {
+    const response = await axios.post<AlternativeActionResponse>(
+      getApiUrl(api.endpoints.moveUpAlternative(alternativeId)),
+      {},
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '上移志愿失败');
+    }
+    throw error;
+  }
+};
+
+/**
+ * 下移志愿
+ * @param alternativeId 备选志愿ID
+ * @returns Promise<AlternativeActionResponse>
+ */
+export const moveDownAlternative = async (alternativeId: string): Promise<AlternativeActionResponse> => {
+  try {
+    const response = await axios.post<AlternativeActionResponse>(
+      getApiUrl(api.endpoints.moveDownAlternative(alternativeId)),
+      {},
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '下移志愿失败');
     }
     throw error;
   }

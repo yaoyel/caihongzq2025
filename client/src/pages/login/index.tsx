@@ -539,7 +539,7 @@ const LoginPage: React.FC = () => {
     // localStorage.removeItem('new-user');
     // localStorage.setItem(
     //   'new-token',
-    //   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsIm5pY2tuYW1lIjoi5bqE5LquIiwiYXZhdGFyVXJsIjoiaHR0cHM6Ly90aGlyZHd4LnFsb2dvLmNuL21tb3Blbi92aV8zMi9EWUFJT2dxODNlcWljRkE4dWZyTDdqaGs0TFZxaWFIYjBmMHZ3MUM1ckpaa1dpYXM2eXdJaWI0WHNraWFvR0RyckRhN3hoMFp0dTZ4OHFxTExWemg3WW1CRWlidy8xMzIiLCJpYXQiOjE3NTA5NDgwMjksImV4cCI6MTc1MzU0MDAyOX0.X9U1zYtQz8k9m14eSB4GkK778RSGACXBivIrAur4M1E'
+    //   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsIm5pY2tuYW1lIjoi5bqE5LquIiwiYXZhdGFyVXJsIjoiaHR0cHM6Ly90aGlyZHd4LnFsb2dvLmNuL21tb3Blbi92aV8zMi9EWUFJT2dxODNlcWljRkE4dWZyTDdqaGs0TFZxaWFIYjBmMHZ3MUM1ckpaa1dpYXM2eXdJaWI0WHNraWFvR0RyckRhN3hoMFp0dTZ4OHFxTExWemg3WW1CRWlidy8xMzIiLCJpYXQiOjE3NTM2MjExNjYsImV4cCI6MTc1NjIxMzE2Nn0.oXI6ZuO2Pd6-K37EdDx7bC5tMBeFdJ1ggMyRSQZ5srg'
     // );
     // localStorage.setItem(
     //   'new-user',

@@ -441,7 +441,6 @@ const MajorPage: React.FC = () => {
         setMajorIntentions(intentions);
         // 缓存收藏数据到 sessionStorage
         sessionStorage.setItem('major-list-cached-intentions', JSON.stringify(intentions));
-        console.log('收藏专业列表', intentions);
       }
     } catch (error) {
       console.error('获取收藏专业列表失败:', error);
@@ -1075,7 +1074,7 @@ const MajorPage: React.FC = () => {
 
       {/* 为固定选项卡区域留出空间 */}
       <div
-        style={{ height: activeTab === 'passion' || activeTab === 'opportunity' ? '95px' : '55px' }}
+        style={{ height: activeTab === 'passion' || activeTab === 'opportunity' ? '115px' : '55px' }}
       ></div>
       {/* 选项卡区域 */}
       <div
@@ -1116,8 +1115,8 @@ const MajorPage: React.FC = () => {
                 justifyContent: 'center',
                 padding: '8px 12px',
                 borderRadius: '16px',
-                fontSize: '14px',
-                fontWeight: 500,
+                fontSize: tab.key === 'development' ? '16px' : '14px', // 发展潜能字号大两号
+                fontWeight: tab.key === 'development' ? 600 : 500, // 发展潜能字重也稍微加粗
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
                 background: activeTab === tab.key ? tab.color : 'transparent',
@@ -1126,7 +1125,14 @@ const MajorPage: React.FC = () => {
                 transform: activeTab === tab.key ? 'scale(1.02)' : 'scale(1)',
               }}
             >
-              <span style={{ marginRight: '4px', fontSize: '16px' }}>{tab.icon}</span>
+              <span
+                style={{
+                  marginRight: '4px',
+                  fontSize: tab.key === 'development' ? '18px' : '16px',
+                }}
+              >
+                {tab.icon}
+              </span>
               {tab.label}
             </div>
           ))}
@@ -1134,91 +1140,223 @@ const MajorPage: React.FC = () => {
 
         {/* 热爱能量子选项卡 */}
         {activeTab === 'passion' && (
-          <div
-            style={{
-              display: 'flex',
-              background: '#fef7f7',
-              borderRadius: '16px',
-              padding: '4px',
-              gap: '4px',
-              marginTop: '8px',
-            }}
-          >
-            {[
-              { key: 'le', label: '乐学', color: '#52c41a' },
-              { key: 'shan', label: '善学', color: '#1890ff' },
-              { key: 'yan', label: '厌学', color: '#fa8c16' },
-              { key: 'zu', label: '阻学', color: '#ff7875' },
-            ].map((subTab) => (
+          <>
+            <div
+              style={{
+                display: 'flex',
+                background: '#fef7f7',
+                borderRadius: '16px',
+                padding: '4px',
+                gap: '4px',
+                marginTop: '8px',
+              }}
+            >
+              {[
+                { key: 'le', label: '乐学', color: '#52c41a' },
+                { key: 'shan', label: '善学', color: '#1890ff' },
+                { key: 'yan', label: '厌学', color: '#fa8c16' },
+                { key: 'zu', label: '阻学', color: '#ff7875' },
+              ].map((subTab) => (
+                <div
+                  key={subTab.key}
+                  onClick={() => dispatch(setActiveSubTab(subTab.key as any))}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '6px 8px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    background: activeSubTab === subTab.key ? subTab.color : 'transparent',
+                    color: activeSubTab === subTab.key ? '#fff' : '#666',
+                    boxShadow: activeSubTab === subTab.key ? `0 2px 6px ${subTab.color}30` : 'none',
+                    transform: activeSubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
+                  }}
+                >
+                  {subTab.label}
+                </div>
+              ))}
+            </div>
+            
+            {/* 子Tab说明文字 */}
+            {activeSubTab && (
               <div
-                key={subTab.key}
-                onClick={() => dispatch(setActiveSubTab(subTab.key as any))}
+                className="subtab-description"
                 style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '6px 8px',
+                  marginTop: '8px',
+                  padding: '10px 16px',
+                  background: (() => {
+                    switch (activeSubTab) {
+                      case 'le':
+                        return '#f6ffed';
+                      case 'shan':
+                        return '#e6f7ff';
+                      case 'yan':
+                        return '#fff7e6';
+                      case 'zu':
+                        return '#fff2f0';
+                      default:
+                        return '#f8f9fa';
+                    }
+                  })(),
                   borderRadius: '12px',
-                  fontSize: '12px',
+                  fontSize: '13px',
+                  color: (() => {
+                    switch (activeSubTab) {
+                      case 'le':
+                        return '#52c41a';
+                      case 'shan':
+                        return '#1890ff';
+                      case 'yan':
+                        return '#fa8c16';
+                      case 'zu':
+                        return '#ff7875';
+                      default:
+                        return '#666';
+                    }
+                  })(),
+                  textAlign: 'center',
+                  border: (() => {
+                    switch (activeSubTab) {
+                      case 'le':
+                        return '1px solid #b7eb8f';
+                      case 'shan':
+                        return '1px solid #91d5ff';
+                      case 'yan':
+                        return '1px solid #ffd591';
+                      case 'zu':
+                        return '1px solid #ffccc7';
+                      default:
+                        return '1px solid #e9ecef';
+                    }
+                  })(),
+                  lineHeight: '1.5',
                   fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  background: activeSubTab === subTab.key ? subTab.color : 'transparent',
-                  color: activeSubTab === subTab.key ? '#fff' : '#666',
-                  boxShadow: activeSubTab === subTab.key ? `0 2px 6px ${subTab.color}30` : 'none',
-                  transform: activeSubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
                 }}
               >
-                {subTab.label}
+                {activeSubTab === 'le' && '💚 内在开心体验带来持续动力'}
+                {activeSubTab === 'shan' && '💙 自然而然学得更快更好更轻松'}
+                {activeSubTab === 'yan' && '🟠 开心体验持续无法满足，导致动力衰减'}
+                {activeSubTab === 'zu' && '🔴 思维与行为模式冲突，导致效率损耗'}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
 
         {/* 机遇指数子选项卡 */}
         {activeTab === 'opportunity' && (
-          <div
-            style={{
-              display: 'flex',
-              background: '#f0fdf4',
-              borderRadius: '16px',
-              padding: '4px',
-              gap: '4px',
-              marginTop: '8px',
-            }}
-          >
-            {[
-              { key: 'academic', label: '学业发展', color: '#8b5cf6' },
-              { key: 'career', label: '职业回报', color: '#06b6d4' },
-              { key: 'industry', label: '产业前景', color: '#ec4899' },
-              { key: 'growth', label: '成长空间', color: '#f97316' },
-            ].map((subTab) => (
+          <>
+            <div
+              style={{
+                display: 'flex',
+                background: '#f0fdf4',
+                borderRadius: '16px',
+                padding: '4px',
+                gap: '4px',
+                marginTop: '8px',
+              }}
+            >
+              {[
+                { key: 'academic', label: '学业发展', color: '#8b5cf6' },
+                { key: 'career', label: '职业回报', color: '#06b6d4' },
+                { key: 'industry', label: '产业前景', color: '#ec4899' },
+                { key: 'growth', label: '成长空间', color: '#f97316' },
+              ].map((subTab) => (
+                <div
+                  key={subTab.key}
+                  onClick={() => dispatch(setActiveOpportunitySubTab(subTab.key as any))}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '6px 8px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    background: activeOpportunitySubTab === subTab.key ? subTab.color : 'transparent',
+                    color: activeOpportunitySubTab === subTab.key ? '#fff' : '#666',
+                    boxShadow:
+                      activeOpportunitySubTab === subTab.key ? `0 2px 6px ${subTab.color}30` : 'none',
+                    transform: activeOpportunitySubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
+                  }}
+                >
+                  {subTab.label}
+                </div>
+              ))}
+            </div>
+            
+            {/* 机遇指数子Tab说明文字 */}
+            {activeOpportunitySubTab && (
               <div
-                key={subTab.key}
-                onClick={() => dispatch(setActiveOpportunitySubTab(subTab.key as any))}
+                className="subtab-description"
                 style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '6px 8px',
+                  marginTop: '8px',
+                  padding: '10px 16px',
+                  background: (() => {
+                    switch (activeOpportunitySubTab) {
+                      case 'academic':
+                        return '#f3f0ff';
+                      case 'career':
+                        return '#e6fffb';
+                      case 'industry':
+                        return '#fdf2f8';
+                      case 'growth':
+                        return '#fff7ed';
+                      default:
+                        return '#f8f9fa';
+                    }
+                  })(),
                   borderRadius: '12px',
-                  fontSize: '12px',
+                  fontSize: '13px',
+                  color: (() => {
+                    switch (activeOpportunitySubTab) {
+                      case 'academic':
+                        return '#8b5cf6';
+                      case 'career':
+                        return '#06b6d4';
+                      case 'industry':
+                        return '#ec4899';
+                      case 'growth':
+                        return '#f97316';
+                      default:
+                        return '#666';
+                    }
+                  })(),
+                  textAlign: 'center',
+                  border: (() => {
+                    switch (activeOpportunitySubTab) {
+                      case 'academic':
+                        return '1px solid #c4b5fd';
+                      case 'career':
+                        return '1px solid #67e8f9';
+                      case 'industry':
+                        return '1px solid #f9a8d4';
+                      case 'growth':
+                        return '1px solid #fdba74';
+                      default:
+                        return '1px solid #e9ecef';
+                    }
+                  })(),
+                  lineHeight: '1.5',
                   fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  background: activeOpportunitySubTab === subTab.key ? subTab.color : 'transparent',
-                  color: activeOpportunitySubTab === subTab.key ? '#fff' : '#666',
-                  boxShadow:
-                    activeOpportunitySubTab === subTab.key ? `0 2px 6px ${subTab.color}30` : 'none',
-                  transform: activeOpportunitySubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
                 }}
               >
-                {subTab.label}
+                {activeOpportunitySubTab === 'academic' && '🎓 升学畅通程度'}
+                {activeOpportunitySubTab === 'career' && '💰 起薪与加薪幅度'}
+                {activeOpportunitySubTab === 'industry' && '📈 产业发展前景乐观度'}
+                {activeOpportunitySubTab === 'growth' && '🚀 升迁空间广阔度'}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
 
@@ -1511,73 +1649,103 @@ const MajorPage: React.FC = () => {
 
                         {/* 学习特质评分 */}
                         {activeTab !== 'opportunity' && (
-                          <div className="major-list-item-content">
-                            {(!activeSubTab || activeTab === 'development') && (
-                              <span
-                                onClick={() => {
-                                  navigateWithState(
-                                    `/major/studyTrait?type=lexue&majorCode=${item.majorCode}&majorName=${item.majorName}`
-                                  );
+                          <>
+                            {/* 热爱能量标识 */}
+                            {activeTab === 'development' && (
+                              <div
+                                style={{
+                                  fontSize: '12px',
+                                  color: '#333',
+                                  fontWeight: 600,
+                                  marginBottom: '4px',
+                                  paddingLeft: '4px',
                                 }}
                               >
-                                乐学
-                                <span style={{ color: '#52c41a', fontWeight: 500 }}>
-                                  {getCalcScore100(item.lexueScore)}分
-                                </span>
-                                {'>'}
-                              </span>
+                                ♥ 热爱能量
+                              </div>
                             )}
-                            {(!activeSubTab || activeTab === 'development') && (
-                              <span
-                                onClick={() => {
-                                  navigateWithState(
-                                    `/major/studyTrait?type=shanxue&majorCode=${item.majorCode}&majorName=${item.majorName}`
-                                  );
-                                }}
-                              >
-                                善学
-                                <span style={{ color: '#1890ff', fontWeight: 500 }}>
-                                  {getCalcScore100(item.shanxueScore)}分
+                            <div className="major-list-item-content">
+                              {(!activeSubTab || activeTab === 'development') && (
+                                <span
+                                  onClick={() => {
+                                    navigateWithState(
+                                      `/major/studyTrait?type=lexue&majorCode=${item.majorCode}&majorName=${item.majorName}`
+                                    );
+                                  }}
+                                >
+                                  乐学
+                                  <span style={{ color: '#52c41a', fontWeight: 500 }}>
+                                    {getCalcScore100(item.lexueScore)}分
+                                  </span>
+                                  {'>'}
                                 </span>
-                                {'>'}
-                              </span>
-                            )}
-                            {(!activeSubTab || activeTab === 'development') && (
-                              <span
-                                onClick={() => {
-                                  navigateWithState(
-                                    `/major/studyTrait?type=yanxue&majorCode=${item.majorCode}&majorName=${item.majorName}`
-                                  );
-                                }}
-                              >
-                                厌学
-                                <span style={{ color: '#fa8c16', fontWeight: 500 }}>
-                                  {getCalcScore100(item.yanxueDeduction)}分
+                              )}
+                              {(!activeSubTab || activeTab === 'development') && (
+                                <span
+                                  onClick={() => {
+                                    navigateWithState(
+                                      `/major/studyTrait?type=shanxue&majorCode=${item.majorCode}&majorName=${item.majorName}`
+                                    );
+                                  }}
+                                >
+                                  善学
+                                  <span style={{ color: '#1890ff', fontWeight: 500 }}>
+                                    {getCalcScore100(item.shanxueScore)}分
+                                  </span>
+                                  {'>'}
                                 </span>
-                                {'>'}
-                              </span>
-                            )}
-                            {(!activeSubTab || activeTab === 'development') && (
-                              <span
-                                onClick={() => {
-                                  navigateWithState(
-                                    `/major/studyTrait?type=tiaozhan&majorCode=${item.majorCode}&majorName=${item.majorName}`
-                                  );
-                                }}
-                              >
-                                阻学
-                                <span style={{ color: '#ff7875', fontWeight: 500 }}>
-                                  {getCalcScore100(item.tiaozhanDeduction)}分
+                              )}
+                              {(!activeSubTab || activeTab === 'development') && (
+                                <span
+                                  onClick={() => {
+                                    navigateWithState(
+                                      `/major/studyTrait?type=yanxue&majorCode=${item.majorCode}&majorName=${item.majorName}`
+                                    );
+                                  }}
+                                >
+                                  厌学
+                                  <span style={{ color: '#fa8c16', fontWeight: 500 }}>
+                                    {getCalcScore100(item.yanxueDeduction)}分
+                                  </span>
+                                  {'>'}
                                 </span>
-                                {'>'}
-                              </span>
-                            )}
-                          </div>
+                              )}
+                              {(!activeSubTab || activeTab === 'development') && (
+                                <span
+                                  onClick={() => {
+                                    navigateWithState(
+                                      `/major/studyTrait?type=tiaozhan&majorCode=${item.majorCode}&majorName=${item.majorName}`
+                                    );
+                                  }}
+                                >
+                                  阻学
+                                  <span style={{ color: '#ff7875', fontWeight: 500 }}>
+                                    {getCalcScore100(item.tiaozhanDeduction)}分
+                                  </span>
+                                  {'>'}
+                                </span>
+                              )}
+                            </div>
+                          </>
                         )}
 
                         {/* 发展评分 */}
                         {activeTab !== 'passion' && (
                           <>
+                            {/* 热爱能量标识 */}
+                            {activeTab === 'development' && (
+                              <div
+                                style={{
+                                  fontSize: '12px',
+                                  color: '#333',
+                                  fontWeight: 600,
+                                  marginBottom: '4px',
+                                  paddingLeft: '4px',
+                                }}
+                              >
+                                ★ 机遇指数
+                              </div>
+                            )}
                             <div className="major-list-item-content">
                               {(!activeOpportunitySubTab || activeTab === 'development') && (
                                 <span

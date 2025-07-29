@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Modal } from 'antd';
 import BottomNav from '../comm/bottom';
 import Top from '../comm/top';
@@ -32,6 +32,145 @@ const EducationalPage: React.FC = () => {
   };
 
   /**
+   * 根据当前选项卡和子选项卡获取排序字段
+   * @returns 排序字段名
+   */
+  const getSortField = useCallback(() => {
+    // 如果选择了热爱能量的子选项卡
+    if (activeTab === 'passion' && activeSubTab) {
+      switch (activeSubTab) {
+        case 'le':
+          return 'lexueScore';
+        case 'shan':
+          return 'shanxueScore';
+        case 'yan':
+          return 'yanxueDeduction';
+        case 'zu':
+          return 'tiaozhanDeduction';
+        default:
+          return 'score';
+      }
+    }
+
+    // 如果选择了机遇指数的子选项卡
+    if (activeTab === 'opportunity' && activeOpportunitySubTab) {
+      switch (activeOpportunitySubTab) {
+        case 'academic':
+          return 'academicDevelopmentScore';
+        case 'career':
+          return 'careerDevelopmentScore';
+        case 'industry':
+          return 'industryProspectsScore';
+        case 'growth':
+          return 'growthPotentialScore';
+        default:
+          return 'opportunityScore';
+      }
+    }
+
+    // 主选项卡排序
+    switch (activeTab) {
+      case 'development':
+        return 'developmentPotential';
+      case 'passion':
+        return 'score';
+      case 'opportunity':
+        return 'opportunityScore';
+      default:
+        return 'developmentPotential';
+    }
+  }, [activeTab, activeSubTab, activeOpportunitySubTab]);
+
+  /**
+   * 对专业列表进行排序
+   * @param data 要排序的数据
+   * @returns 排序后的数据
+   */
+  const sortMajors = useCallback(
+    (data: any[]) => {
+      const sortField = getSortField();
+      return [...data].sort((a, b) => {
+        // 首先按照isMatching分组：可报考的在前，不可报考的在后
+        const aMatching = Boolean(a.isMatching);
+        const bMatching = Boolean(b.isMatching);
+
+        if (aMatching !== bMatching) {
+          return aMatching ? -1 : 1; // 可报考的排在前面
+        }
+
+        // 在相同分组内，根据字段类型进行排序
+        const aValue = Number(a[sortField] || 0);
+        const bValue = Number(b[sortField] || 0);
+
+        // 厌学和阻学字段使用正序排序（从低到高），其他字段使用倒序排序（从高到低）
+        if (sortField === 'yanxueDeduction' || sortField === 'tiaozhanDeduction') {
+          return aValue - bValue; // 从低到高排序
+        } else {
+          return bValue - aValue; // 从高到低排序
+        }
+      });
+    },
+    [getSortField]
+  );
+
+  /**
+   * 根据当前选项卡和子选项卡获取分数显示文本
+   * @param item 专业数据项
+   * @returns 显示文本
+   */
+  const getScoreDisplayText = useCallback(
+    (item: any) => {
+      // 如果选择了热爱能量的子选项卡
+      if (activeTab === 'passion' && activeSubTab) {
+        switch (activeSubTab) {
+          case 'le':
+            return { text: '乐学', score: Math.ceil((item.lexueScore ?? 0) * 100) + '分' };
+          case 'shan':
+            return { text: '善学', score: Math.ceil((item.shanxueScore ?? 0) * 100) + '分' };
+          case 'yan':
+            return { text: '厌学', score: Math.ceil((item.yanxueDeduction ?? 0) * 100) + '分' };
+          case 'zu':
+            return { text: '阻学', score: Math.ceil((item.tiaozhanDeduction ?? 0) * 100) + '分' };
+          default:
+            return { text: '热爱能量', score: Math.ceil(Number(item.score || '0') * 100) + '分' };
+        }
+      }
+
+      // 如果选择了机遇指数的子选项卡
+      if (activeTab === 'opportunity' && activeOpportunitySubTab) {
+        switch (activeOpportunitySubTab) {
+          case 'academic':
+            return {
+              text: '学业发展',
+              score: Math.ceil(item.academicDevelopmentScore ?? 0) + '分',
+            };
+          case 'career':
+            return { text: '职业回报', score: Math.ceil(item.careerDevelopmentScore ?? 0) + '分' };
+          case 'industry':
+            return { text: '产业前景', score: Math.ceil(item.industryProspectsScore ?? 0) + '分' };
+          case 'growth':
+            return { text: '成长空间', score: Math.ceil(item.growthPotentialScore ?? 0) + '分' };
+          default:
+            return { text: '机遇指数', score: Math.ceil(item.opportunityScore ?? 0) + '分' };
+        }
+      }
+
+      // 主选项卡显示
+      switch (activeTab) {
+        case 'development':
+          return { text: '发展潜能', score: Math.ceil(item.developmentPotential ?? 0) + '分' };
+        case 'passion':
+          return { text: '热爱能量', score: Math.ceil(Number(item.score || '0') * 100) + '分' };
+        case 'opportunity':
+          return { text: '机遇指数', score: Math.ceil(item.opportunityScore ?? 0) + '分' };
+        default:
+          return { text: '发展潜能', score: Math.ceil(item.developmentPotential ?? 0) + '分' };
+      }
+    },
+    [activeTab, activeSubTab, activeOpportunitySubTab]
+  );
+
+  /**
    * 获取收藏专业列表
    */
   const fetchMajorIntentions = async () => {
@@ -40,9 +179,9 @@ const EducationalPage: React.FC = () => {
       const response = await getMajorIntentions();
       if (response && response.code === 200) {
         const dataIntentions = response.data || [];
-        dataIntentions.sort((a: any, b: any) => b.score - a.score);
-        //response.data || []
-        setMajorIntentions(dataIntentions);
+        // 使用排序逻辑对数据进行排序
+        const sortedData = sortMajors(dataIntentions);
+        setMajorIntentions(sortedData);
         console.log('收藏专业列表', response.data);
       }
     } catch (error) {
@@ -77,6 +216,14 @@ const EducationalPage: React.FC = () => {
       },
     });
   };
+
+  // 当选项卡或子选项卡切换时，重新排序数据
+  useEffect(() => {
+    if (majorIntentions.length > 0) {
+      const sortedData = sortMajors(majorIntentions);
+      setMajorIntentions(sortedData);
+    }
+  }, [activeTab, activeSubTab, activeOpportunitySubTab, sortMajors]);
 
   useEffect(() => {
     // 页面初始化逻辑
@@ -147,8 +294,8 @@ const EducationalPage: React.FC = () => {
                   justifyContent: 'center',
                   padding: '8px 12px',
                   borderRadius: '16px',
-                  fontSize: '14px',
-                  fontWeight: 500,
+                  fontSize: tab.key === 'development' ? '16px' : '14px', // 发展潜能字号大两号
+                  fontWeight: tab.key === 'development' ? 600 : 500, // 发展潜能字重也稍微加粗
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
                   background: activeTab === tab.key ? tab.color : 'transparent',
@@ -157,7 +304,14 @@ const EducationalPage: React.FC = () => {
                   transform: activeTab === tab.key ? 'scale(1.02)' : 'scale(1)',
                 }}
               >
-                <span style={{ marginRight: '4px', fontSize: '16px' }}>{tab.icon}</span>
+                <span
+                  style={{
+                    marginRight: '4px',
+                    fontSize: tab.key === 'development' ? '18px' : '16px',
+                  }}
+                >
+                  {tab.icon}
+                </span>
                 {tab.label}
               </div>
             ))}
@@ -165,94 +319,222 @@ const EducationalPage: React.FC = () => {
 
           {/* 热爱能量子选项卡 */}
           {activeTab === 'passion' && (
-            <div
-                          style={{
-              display: 'flex',
-              background: '#fef7f7',
-              borderRadius: '16px',
-              padding: '4px',
-              gap: '4px',
-              marginTop: '8px',
-            }}
-          >
-            {[
-              { key: 'le', label: '乐学', color: '#52c41a' },
-              { key: 'shan', label: '善学', color: '#1890ff' },
-              { key: 'yan', label: '厌学', color: '#fa8c16' },
-              { key: 'zu', label: '阻学', color: '#ff7875' },
-            ].map((subTab) => (
+            <>
+              <div
+                style={{
+                  display: 'flex',
+                  background: '#fef7f7',
+                  borderRadius: '16px',
+                  padding: '4px',
+                  gap: '4px',
+                  marginTop: '8px',
+                }}
+              >
+                {[
+                  { key: 'le', label: '乐学', color: '#52c41a' },
+                  { key: 'shan', label: '善学', color: '#1890ff' },
+                  { key: 'yan', label: '厌学', color: '#fa8c16' },
+                  { key: 'zu', label: '阻学', color: '#ff7875' },
+                ].map((subTab) => (
+                  <div
+                    key={subTab.key}
+                    onClick={() => setActiveSubTab(subTab.key as any)}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '6px 8px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      background: activeSubTab === subTab.key ? subTab.color : 'transparent',
+                      color: activeSubTab === subTab.key ? '#fff' : '#666',
+                      boxShadow: activeSubTab === subTab.key ? `0 2px 6px ${subTab.color}30` : 'none',
+                      transform: activeSubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
+                    }}
+                  >
+                    {subTab.label}
+                  </div>
+                ))}
+              </div>
+              
+              {/* 子Tab说明文字 */}
+              {activeSubTab && (
                 <div
-                  key={subTab.key}
-                  onClick={() => setActiveSubTab(subTab.key as any)}
+                  className="subtab-description"
                   style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '6px 8px',
+                    marginTop: '8px',
+                    padding: '10px 16px',
+                    background: (() => {
+                      switch (activeSubTab) {
+                        case 'le':
+                          return '#f6ffed';
+                        case 'shan':
+                          return '#e6f7ff';
+                        case 'yan':
+                          return '#fff7e6';
+                        case 'zu':
+                          return '#fff2f0';
+                        default:
+                          return '#f8f9fa';
+                      }
+                    })(),
                     borderRadius: '12px',
-                    fontSize: '12px',
+                    fontSize: '13px',
+                    color: (() => {
+                      switch (activeSubTab) {
+                        case 'le':
+                          return '#52c41a';
+                        case 'shan':
+                          return '#1890ff';
+                        case 'yan':
+                          return '#fa8c16';
+                        case 'zu':
+                          return '#ff7875';
+                        default:
+                          return '#666';
+                      }
+                    })(),
+                    textAlign: 'center',
+                    border: (() => {
+                      switch (activeSubTab) {
+                        case 'le':
+                          return '1px solid #b7eb8f';
+                        case 'shan':
+                          return '1px solid #91d5ff';
+                        case 'yan':
+                          return '1px solid #ffd591';
+                        case 'zu':
+                          return '1px solid #ffccc7';
+                        default:
+                          return '1px solid #e9ecef';
+                      }
+                    })(),
+                    lineHeight: '1.5',
                     fontWeight: 500,
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                                      background: activeSubTab === subTab.key ? subTab.color : 'transparent',
-                  color: activeSubTab === subTab.key ? '#fff' : '#666',
-                  boxShadow: activeSubTab === subTab.key ? `0 2px 6px ${subTab.color}30` : 'none',
-                    transform: activeSubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
                   }}
                 >
-                  {subTab.label}
+                  {activeSubTab === 'le' && '💚 内在开心体验带来持续动力'}
+                  {activeSubTab === 'shan' && '💙 自然而然学得更快更好更轻松'}
+                  {activeSubTab === 'yan' && '🟠 开心体验持续无法满足，导致动力衰减'}
+                  {activeSubTab === 'zu' && '🔴 思维与行为模式冲突，导致效率损耗'}
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
 
           {/* 机遇指数子选项卡 */}
           {activeTab === 'opportunity' && (
-            <div
-                          style={{
-              display: 'flex',
-              background: '#f0fdf4',
-              borderRadius: '16px',
-              padding: '4px',
-              gap: '4px',
-              marginTop: '8px',
-            }}
-          >
-            {[
-              { key: 'academic', label: '学业发展', color: '#8b5cf6' },
-              { key: 'career', label: '职业回报', color: '#06b6d4' },
-              { key: 'industry', label: '产业前景', color: '#ec4899' },
-              { key: 'growth', label: '成长空间', color: '#f97316' },
-            ].map((subTab) => (
+            <>
+              <div
+                style={{
+                  display: 'flex',
+                  background: '#f0fdf4',
+                  borderRadius: '16px',
+                  padding: '4px',
+                  gap: '4px',
+                  marginTop: '8px',
+                }}
+              >
+                {[
+                  { key: 'academic', label: '学业发展', color: '#8b5cf6' },
+                  { key: 'career', label: '职业回报', color: '#06b6d4' },
+                  { key: 'industry', label: '产业前景', color: '#ec4899' },
+                  { key: 'growth', label: '成长空间', color: '#f97316' },
+                ].map((subTab) => (
+                  <div
+                    key={subTab.key}
+                    onClick={() => setActiveOpportunitySubTab(subTab.key as any)}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '6px 8px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      background: activeOpportunitySubTab === subTab.key ? subTab.color : 'transparent',
+                      color: activeOpportunitySubTab === subTab.key ? '#fff' : '#666',
+                      boxShadow: activeOpportunitySubTab === subTab.key ? `0 2px 6px ${subTab.color}30` : 'none',
+                      transform: activeOpportunitySubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
+                    }}
+                  >
+                    {subTab.label}
+                  </div>
+                ))}
+              </div>
+              
+              {/* 机遇指数子Tab说明文字 */}
+              {activeOpportunitySubTab && (
                 <div
-                  key={subTab.key}
-                  onClick={() => setActiveOpportunitySubTab(subTab.key as any)}
+                  className="subtab-description"
                   style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '6px 8px',
+                    marginTop: '8px',
+                    padding: '10px 16px',
+                    background: (() => {
+                      switch (activeOpportunitySubTab) {
+                        case 'academic':
+                          return '#f3f0ff';
+                        case 'career':
+                          return '#e6fffb';
+                        case 'industry':
+                          return '#fdf2f8';
+                        case 'growth':
+                          return '#fff7ed';
+                        default:
+                          return '#f8f9fa';
+                      }
+                    })(),
                     borderRadius: '12px',
-                    fontSize: '12px',
+                    fontSize: '13px',
+                    color: (() => {
+                      switch (activeOpportunitySubTab) {
+                        case 'academic':
+                          return '#8b5cf6';
+                        case 'career':
+                          return '#06b6d4';
+                        case 'industry':
+                          return '#ec4899';
+                        case 'growth':
+                          return '#f97316';
+                        default:
+                          return '#666';
+                      }
+                    })(),
+                    textAlign: 'center',
+                    border: (() => {
+                      switch (activeOpportunitySubTab) {
+                        case 'academic':
+                          return '1px solid #c4b5fd';
+                        case 'career':
+                          return '1px solid #67e8f9';
+                        case 'industry':
+                          return '1px solid #f9a8d4';
+                        case 'growth':
+                          return '1px solid #fdba74';
+                        default:
+                          return '1px solid #e9ecef';
+                      }
+                    })(),
+                    lineHeight: '1.5',
                     fontWeight: 500,
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    background:
-                      activeOpportunitySubTab === subTab.key ? subTab.color : 'transparent',
-                    color: activeOpportunitySubTab === subTab.key ? '#fff' : '#666',
-                    boxShadow:
-                      activeOpportunitySubTab === subTab.key
-                        ? `0 2px 6px ${subTab.color}30`
-                        : 'none',
-                    transform: activeOpportunitySubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
                   }}
                 >
-                  {subTab.label}
+                  {activeOpportunitySubTab === 'academic' && '🎓 升学畅通程度'}
+                  {activeOpportunitySubTab === 'career' && '💰 起薪与加薪幅度'}
+                  {activeOpportunitySubTab === 'industry' && '📈 产业发展前景乐观度'}
+                  {activeOpportunitySubTab === 'growth' && '🚀 升迁空间广阔度'}
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
 
@@ -300,12 +582,12 @@ const EducationalPage: React.FC = () => {
                   <span className="ml-2 text-gray-400">&gt;</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-gray-900 font-bold mr-1">热爱能量</span>
+                  <span className="text-gray-900 font-bold mr-1">{getScoreDisplayText(item).text}</span>
                   <span 
                     className="font-bold text-lg"
                     style={{ color: colorTheme.text }}
                   >
-                    {Math.ceil(item.score * 100)}分！
+                    {getScoreDisplayText(item).score}！
                   </span>
                 </div>
                 {/* 移除按钮 */}
@@ -356,7 +638,7 @@ const EducationalPage: React.FC = () => {
                               '&groupNum=2&majorName=' +
                               item.majorName +
                               '&score=' +
-                              item.score
+                              item.developmentPotential
                           );
                       }}
                     >

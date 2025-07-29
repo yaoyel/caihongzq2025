@@ -79,4 +79,27 @@
   color: #ccc;
   font-size: 13px;
   margin-left: 2px;
+}
+
+/* 子Tab说明文字动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 子Tab说明文字样式 */
+.subtab-description {
+  animation: fadeIn 0.3s ease-in-out;
+  transition: all 0.3s ease;
+}
+
+.subtab-description:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
 } 

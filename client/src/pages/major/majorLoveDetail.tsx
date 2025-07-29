@@ -223,10 +223,10 @@ const MajorLoveDetail: React.FC = () => {
                 }
               />
               <CardItem
-                text={'3.好升学么？--' + Math.ceil(majorDetail?.academicDevelopmentScore) + '分'}
+                text={'3.好升学么？' + Math.ceil(majorDetail?.academicDevelopmentScore) + '分'}
                 onClick={() =>
                   navigator(
-                    `/major/majorjobintro?type=major&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    `/major/majorjobintro?type=major&majorCode=${majorCode}&majorName=${majorName}&score=${score}&anchor=academic`
                   )
                 }
               />
@@ -260,26 +260,26 @@ const MajorLoveDetail: React.FC = () => {
                 }
               />
               <CardItem
-                text={'2.薪酬水平--' + Math.ceil(majorDetail?.careerDevelopmentScore) + '分'}
+                text={'2.薪酬水平' + Math.ceil(majorDetail?.careerDevelopmentScore) + '分'}
                 onClick={() =>
                   navigator(
-                    `/major/majorjobintro?type=salary&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    `/major/majorjobintro?type=salary&majorCode=${majorCode}&majorName=${majorName}&score=${score}&anchor=career`
                   )
                 }
               />
               <CardItem
-                text={'3.产业前景--' + Math.ceil(majorDetail?.industryProspectsScore) + '分'}
+                text={'3.产业前景' + Math.ceil(majorDetail?.industryProspectsScore) + '分'}
                 onClick={() =>
                   navigator(
-                    `/major/majorjobintro?type=prospect&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    `/major/majorjobintro?type=prospect&majorCode=${majorCode}&majorName=${majorName}&score=${score}&anchor=industry`
                   )
                 }
               />
               <CardItem
-                text={'4.成长空间--' + Math.ceil(majorDetail?.growthPotentialScore) + '分'}
+                text={'4.成长空间' + Math.ceil(majorDetail?.growthPotentialScore) + '分'}
                 onClick={() =>
                   navigator(
-                    `/major/majorjobintro?type=prospect&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
+                    `/major/majorjobintro?type=prospect&majorCode=${majorCode}&majorName=${majorName}&score=${score}&anchor=growth`
                   )
                 }
               />
