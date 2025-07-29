@@ -590,7 +590,7 @@ const EducationalDetailPage: React.FC = () => {
 
         <div className="w-full max-w-xl bg-white rounded-2xl shadow mt-4">
           <div
-            className="flex items-center justify-between bg-[#dee9fd] rounded-t-xl p-4 mb-4"
+            className="flex items-center justify-between bg-[#dee9fd] rounded-t-xl p-4 mb-1"
             onClick={() => {
               navigator(
                 `/major/majorlovedetail?majorCode=${majorCode}&&majorName=${majorName}&score=${score}&isFavorite=true`,
@@ -610,7 +610,7 @@ const EducationalDetailPage: React.FC = () => {
               <span className="text-blue-700 font-bold text-base">{Math.ceil(score)}分！</span>
             </div>
           </div>
-          <div className="space-y-2 p-4">
+          <div className="space-y-2 p-2">
             {/* 院校信息块，严格还原设计图 */}
             {/* 第一个院校（未选中） */}
             {/* 搜索框和操作按钮 */}
@@ -689,9 +689,9 @@ const EducationalDetailPage: React.FC = () => {
                       <div
                         className={`flex items-center justify-between font-bold mb-4 text-sm border-b border-solid pb-3 ${
                           groupNum === Number(searchParams.get('groupNum'))
-                            ? 'border-blue-500 bg-blue-50 rounded-lg p-3'
+                            ? 'border-blue-500 bg-blue-50 rounded-lg p-3 '
                             : 'border-gray-200'
-                        }`}
+                        } pr-0`}
                       >
                         <div className="flex items-center">
                           <button
@@ -700,10 +700,10 @@ const EducationalDetailPage: React.FC = () => {
                           >
                             {expandedGroups[groupNum] ? '▼' : '▶'}
                           </button>
-                          【<span className="text-gray-900"> {groupMapping[groupNum]} </span>】
+                          <span className="text-gray-900"> {groupMapping[groupNum]} </span>
                         </div>
                         <div className="flex items-center">
-                          <span className="text-gray-600 text-sm mr-2">
+                          <span className="text-gray-600 text-sm mr-1">
                             {filteredGroupSchools.length}所院校
                           </span>
                         </div>

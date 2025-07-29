@@ -669,7 +669,7 @@ const EducationalPage: React.FC = () => {
                               '&groupNum=3&majorName=' +
                               item.majorName +
                               '&score=' +
-                              item.score
+                              item.developmentPotential
                           );
                       }}
                     >
@@ -698,7 +698,7 @@ const EducationalPage: React.FC = () => {
                               '&groupNum=1&majorName=' +
                               item.majorName +
                               '&score=' +
-                              item.score
+                              item.developmentPotential
                           );
                       }}
                     >
@@ -726,7 +726,7 @@ const EducationalPage: React.FC = () => {
                               '&groupNum=0&majorName=' +
                               item.majorName +
                               '&score=' +
-                              item.score
+                              item.developmentPotential
                           );
                       }}
                     >

@@ -1075,7 +1075,7 @@ const MajorPage: React.FC = () => {
       {/* 为固定选项卡区域留出空间 */}
       <div
         style={{
-          height: activeTab === 'passion' || activeTab === 'opportunity' ? '115px' : '55px',
+          height: activeTab === 'passion' || activeTab === 'opportunity' ? '115px' : '72px',
         }}
       ></div>
       {/* 选项卡区域 */}
@@ -1373,7 +1373,7 @@ const MajorPage: React.FC = () => {
           height:
             activeTab === 'passion' || activeTab === 'opportunity'
               ? 'calc(100vh - 240px)'
-              : 'calc(100vh - 200px)',
+              : 'calc(100vh - 220px)',
           overflow: 'auto',
         }}
       >

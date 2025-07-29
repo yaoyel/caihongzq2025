@@ -558,14 +558,30 @@ const Scale168Assessment: React.FC = () => {
       // 还有下一个维度
       setCurrentDimension(dimensions[currentDimensionIndex + 1]);
       setCurrentPage(0);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // 使用setTimeout确保状态更新后再滚动到正确的容器
+      setTimeout(() => {
+        const scrollContainer = document.querySelector('.page-bg-hasTop');
+        if (scrollContainer) {
+          scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 100);
     } else {
       // 当前类别的所有维度都答完了，检查是否还有下一个类别
       if (currentCategory === categories[0].type) {
         setCurrentCategory(categories[1].type);
         setCurrentDimension('看'); // 重置为第一个维度
         setCurrentPage(0);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // 使用setTimeout确保状态更新后再滚动到正确的容器
+        setTimeout(() => {
+          const scrollContainer = document.querySelector('.page-bg-hasTop');
+          if (scrollContainer) {
+            scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }, 100);
       } else {
         // 所有问题都已完成，跳转到专业列表页面
         handleComplete();
@@ -887,7 +903,15 @@ const Scale168Assessment: React.FC = () => {
     if (currentPage < maxPage) {
       // 还有下一页问题
       setCurrentPage(currentPage + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // 使用setTimeout确保状态更新后再滚动到正确的容器
+      setTimeout(() => {
+        const scrollContainer = document.querySelector('.page-bg-hasTop');
+        if (scrollContainer) {
+          scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 100);
     } else {
       // 当前维度的问题已答完，检查是否需要显示鼓励提示
       if (currentCategory === 'like' || currentCategory === 'talent') {
@@ -905,13 +929,29 @@ const Scale168Assessment: React.FC = () => {
       if (currentDimensionIndex < dimensions.length - 1) {
         // 还有下一个维度
         setCurrentDimension(dimensions[currentDimensionIndex + 1]);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // 使用setTimeout确保状态更新后再滚动到正确的容器
+        setTimeout(() => {
+          const scrollContainer = document.querySelector('.page-bg-hasTop');
+          if (scrollContainer) {
+            scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }, 100);
       } else {
         // 当前类别的所有维度都答完了，检查是否还有下一个类别
         if (currentCategory === categories[0].type) {
           setCurrentCategory(categories[1].type);
           setCurrentDimension('看'); // 重置为第一个维度
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          // 使用setTimeout确保状态更新后再滚动到正确的容器
+          setTimeout(() => {
+            const scrollContainer = document.querySelector('.page-bg-hasTop');
+            if (scrollContainer) {
+              scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }, 100);
         } else {
           // 所有问题都已完成
           handleComplete();
@@ -925,7 +965,12 @@ const Scale168Assessment: React.FC = () => {
       // 还有上一页问题
       setCurrentPage(currentPage - 1);
       setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const scrollContainer = document.querySelector('.page-bg-hasTop');
+        if (scrollContainer) {
+          scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
       }, 100);
     } else {
       // 当前维度的第一页，找上一个维度的最后一页
@@ -940,9 +985,14 @@ const Scale168Assessment: React.FC = () => {
         );
         const maxPage = Math.ceil(prevDimensionQuestions.length / questionsPerPage) - 1;
         setCurrentPage(Math.max(0, maxPage));
-        // 添加延时确保状态更新后再滚动
+        // 添加延时确保状态更新后再滚动到正确的容器
         setTimeout(() => {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          const scrollContainer = document.querySelector('.page-bg-hasTop');
+          if (scrollContainer) {
+            scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
         }, 100);
       } else {
         // 当前类别的第一个维度，检查是否有上一个类别
@@ -955,9 +1005,14 @@ const Scale168Assessment: React.FC = () => {
           );
           const maxPage = Math.ceil(prevCategoryQuestions.length / questionsPerPage) - 1;
           setCurrentPage(Math.max(0, maxPage));
-          // 添加延时确保状态更新后再滚动
+          // 添加延时确保状态更新后再滚动到正确的容器
           setTimeout(() => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            const scrollContainer = document.querySelector('.page-bg-hasTop');
+            if (scrollContainer) {
+              scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
           }, 100);
         }
       }
@@ -994,6 +1049,15 @@ const Scale168Assessment: React.FC = () => {
       setCurrentCategory(firstUnanswered.category);
       setCurrentDimension(firstUnanswered.dimension);
       setCurrentPage(firstUnanswered.page);
+      // 使用setTimeout确保状态更新后再滚动到正确的容器
+      setTimeout(() => {
+        const scrollContainer = document.querySelector('.page-bg-hasTop');
+        if (scrollContainer) {
+          scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 100);
     }
   };
 
@@ -1163,6 +1227,15 @@ const Scale168Assessment: React.FC = () => {
                           setCurrentCategory(category.type);
                           setCurrentDimension(dimension);
                           setCurrentPage(0);
+                          // 使用setTimeout确保状态更新后再滚动到正确的容器
+                          setTimeout(() => {
+                            const scrollContainer = document.querySelector('.page-bg-hasTop');
+                            if (scrollContainer) {
+                              scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+                            } else {
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }
+                          }, 100);
                         }}
                         icon={
                           allDimensionAnswered ? (
