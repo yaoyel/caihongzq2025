@@ -20,6 +20,7 @@ export interface AlternativeViewModel {
   RankdiffPer?: number;
   score?: number;
   developmentPotential?: number; 
+  position?: number;
 }
 
 /**
@@ -45,7 +46,8 @@ export function toAlternativeViewModel(alternative: any): AlternativeViewModel {
     Rankdiff: alternative.rankDiff || 0,
     RankdiffPer: Number((alternative.rankDiffPer || 0).toFixed(2)),
     score: alternative.score || 0,
-    developmentPotential: alternative.developmentPotential || 0 
+    developmentPotential: alternative.developmentPotential || 0 ,
+    position: alternative.position || 0
   };
 }
 
