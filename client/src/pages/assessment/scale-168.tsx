@@ -27,7 +27,9 @@ import {
   CloseOutlined,
   MenuOutlined,
   EditOutlined,
-  UserOutlined,
+  TrophyOutlined,
+  StarOutlined,
+  HeartOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -319,6 +321,165 @@ const StyledNicknameButton = styled(Button)`
   }
 `;
 
+// 添加鼓励提示配置
+const ENCOURAGEMENT_MESSAGES = {
+  like: {
+    看: {
+      title: '🎉 恭喜完成"看"维度自我发现！',
+      content: '您已经完成了"看"维度的自我评估！马上开始"听"维度的探索吧！',
+      nextStep: '听',
+      icon: <TrophyOutlined style={{ fontSize: '48px', color: '#52c41a' }} />,
+    },
+    听: {
+      title: '🎉 恭喜完成"听"维度自我发现！',
+      content: '您已经完成了"听"维度的自我评估！马上进入"说"维度的探索吧！',
+      nextStep: '说',
+      icon: <StarOutlined style={{ fontSize: '48px', color: '#1890ff' }} />,
+    },
+    说: {
+      title: '🎉 恭喜完成"说"维度自我发现！',
+      content: '您已经完成了"说"维度的自我评估！马上进入"记"维度的探索吧！',
+      nextStep: '记',
+      icon: <HeartOutlined style={{ fontSize: '48px', color: '#eb2f96' }} />,
+    },
+    记: {
+      title: '🎉 恭喜完成"记"维度自我发现！',
+      content: '您已经完成了"记"维度的自我评估！马上开始"想"维度的探索吧！',
+      nextStep: '想',
+      icon: <TrophyOutlined style={{ fontSize: '48px', color: '#fa8c16' }} />,
+    },
+    想: {
+      title: '🎉 恭喜完成"想"维度自我发现！',
+      content: '您已经完成了"想"维度的自我评估！马上进入"做"维度的探索吧！',
+      nextStep: '做',
+      icon: <StarOutlined style={{ fontSize: '48px', color: '#722ed1' }} />,
+    },
+    做: {
+      title: '🎉 恭喜完成"做"维度自我发现！',
+      content: '您已经完成了"做"维度的自我评估！马上进入"运动"维度的探索吧！',
+      nextStep: '运动',
+      icon: <HeartOutlined style={{ fontSize: '48px', color: '#13c2c2' }} />,
+    },
+    运动: {
+      title: '🎉 恭喜完成所有喜欢维度评估！',
+      content: '您的喜欢评估已全部完成！马上进入天赋评估！咱们依然从"看"开始！',
+      nextStep: '天赋评估',
+      icon: <TrophyOutlined style={{ fontSize: '48px', color: '#52c41a' }} />,
+    },
+  },
+  talent: {
+    看: {
+      title: '🎉 恭喜完成"看"维度规律发现！',
+      content: '您已经完成了"看"维度的规律发现！马上开始"听"维度的探索吧！',
+      nextStep: '听',
+      icon: <TrophyOutlined style={{ fontSize: '48px', color: '#722ed1' }} />,
+    },
+    听: {
+      title: '🎉 恭喜完成"听"维度规律发现！',
+      content: '您已经完成了"听"维度的规律发现！马上进入"说"维度的探索吧！',
+      nextStep: '说',
+      icon: <StarOutlined style={{ fontSize: '48px', color: '#13c2c2' }} />,
+    },
+    说: {
+      title: '🎉 恭喜完成"说"维度规律发现！',
+      content: '您已经完成了"说"维度的规律发现！马上进入"记"维度的探索吧！',
+      nextStep: '记',
+      icon: <HeartOutlined style={{ fontSize: '48px', color: '#fa8c16' }} />,
+    },
+    记: {
+      title: '🎉 恭喜完成"记"维度规律发现！',
+      content: '您已经完成了"记"维度的规律发现！马上开始"想"维度的探索吧！',
+      nextStep: '想',
+      icon: <TrophyOutlined style={{ fontSize: '48px', color: '#eb2f96' }} />,
+    },
+    想: {
+      title: '🎉 恭喜完成"想"维度规律发现！',
+      content: '您已经完成了"想"维度的规律发现！马上进入"做"维度的探索吧！',
+      nextStep: '做',
+      icon: <StarOutlined style={{ fontSize: '48px', color: '#52c41a' }} />,
+    },
+    做: {
+      title: '🎉 恭喜完成"做"维度规律发现！',
+      content: '您已经完成了"做"维度的规律发现！马上进入"运动"维度的探索吧！',
+      nextStep: '运动',
+      icon: <HeartOutlined style={{ fontSize: '48px', color: '#1890ff' }} />,
+    },
+    运动: {
+      title: '🎉 恭喜完成所有喜欢与天赋评估！',
+      content: '您的喜欢与天赋评估已全部完成！查看所有专业发展潜质！了解每个专业热爱能量与机遇指数！',
+      nextStep: '查看专业报告',
+      icon: <TrophyOutlined style={{ fontSize: '48px', color: '#52c41a' }} />,
+    },
+  },
+};
+
+// 添加鼓励提示模态框样式
+const EncouragementModal = styled(Modal)`
+  .ant-modal-content {
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  
+  .ant-modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-bottom: none;
+    padding: 24px 24px 16px;
+  }
+  
+  .ant-modal-title {
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+  }
+  
+  .ant-modal-body {
+    padding: 32px 24px;
+    text-align: center;
+  }
+  
+  .ant-modal-footer {
+    border-top: none;
+    padding: 0 24px 24px;
+    text-align: center;
+  }
+`;
+
+const EncouragementContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  
+  .encouragement-icon {
+    margin-bottom: 8px;
+  }
+  
+  .encouragement-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+  }
+  
+  .encouragement-message {
+    font-size: 16px;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+  
+  .encouragement-next {
+    font-size: 14px;
+    color: #1890ff;
+    font-weight: 500;
+    background: #f0f5ff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid #d6e4ff;
+  }
+`;
+
 const Scale168Assessment: React.FC = () => {
   const navigate = useNavigate();
   const [currentCategory, setCurrentCategory] = useState<string>(categories[0].type);
@@ -335,6 +496,10 @@ const Scale168Assessment: React.FC = () => {
   );
   const [isNicknameModalVisible, setIsNicknameModalVisible] = useState(false);
   const [newNickname, setNewNickname] = useState('');
+  
+  // 添加鼓励提示相关状态
+  const [showEncouragement, setShowEncouragement] = useState(false);
+  const [encouragementData, setEncouragementData] = useState<any>(null);
 
   // 添加窗口大小变化监听
   useEffect(() => {
@@ -365,6 +530,48 @@ const Scale168Assessment: React.FC = () => {
       filterQuestionsByCategoryAndDimension();
     }
   }, [currentCategory, currentDimension, allQuestions]);
+
+  // 添加检查维度完成状态的函数
+  const checkDimensionCompletion = (category: string, dimension: Dimension) => {
+    const dimensionQuestions = allQuestions.filter(
+      (q) => q.type === category && q.dimension === dimension
+    );
+    return dimensionQuestions.every((q) => answers[q.id]);
+  };
+
+  // 添加显示鼓励提示的函数
+  const showEncouragementMessage = (dimension: Dimension) => {
+    if (ENCOURAGEMENT_MESSAGES[currentCategory] && ENCOURAGEMENT_MESSAGES[currentCategory][dimension]) {
+      setEncouragementData(ENCOURAGEMENT_MESSAGES[currentCategory][dimension]);
+      setShowEncouragement(true);
+    }
+  };
+
+  // 添加处理鼓励提示确认的函数
+  const handleEncouragementConfirm = () => {
+    setShowEncouragement(false);
+    setEncouragementData(null);
+    
+    // 继续到下一个维度或类别
+    const currentDimensionIndex = dimensions.indexOf(currentDimension);
+    if (currentDimensionIndex < dimensions.length - 1) {
+      // 还有下一个维度
+      setCurrentDimension(dimensions[currentDimensionIndex + 1]);
+      setCurrentPage(0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      // 当前类别的所有维度都答完了，检查是否还有下一个类别
+      if (currentCategory === categories[0].type) {
+        setCurrentCategory(categories[1].type);
+        setCurrentDimension('看'); // 重置为第一个维度
+        setCurrentPage(0);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        // 所有问题都已完成，跳转到专业列表页面
+        handleComplete();
+      }
+    }
+  };
 
   const fetchAllQuestions = async () => {
     try {
@@ -682,6 +889,17 @@ const Scale168Assessment: React.FC = () => {
       setCurrentPage(currentPage + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
+      // 当前维度的问题已答完，检查是否需要显示鼓励提示
+      if (currentCategory === 'like' || currentCategory === 'talent') {
+        // 检查当前维度是否完成
+        const isCurrentDimensionCompleted = checkDimensionCompletion(currentCategory, currentDimension);
+        if (isCurrentDimensionCompleted) {
+          // 显示鼓励提示
+          showEncouragementMessage(currentDimension);
+          return; // 暂停自动跳转，等待用户确认
+        }
+      }
+
       // 当前维度的问题已答完，找下一个维度
       const currentDimensionIndex = dimensions.indexOf(currentDimension);
       if (currentDimensionIndex < dimensions.length - 1) {
@@ -1157,6 +1375,54 @@ const Scale168Assessment: React.FC = () => {
           showCount
         />
       </Modal>
+
+      {/* 鼓励提示模态框 */}
+      <EncouragementModal
+        title="🎉 维度完成"
+        open={showEncouragement}
+        onOk={handleEncouragementConfirm}
+        onCancel={handleEncouragementConfirm}
+        okText="继续"
+        cancelText=""
+        centered
+        width={480}
+        footer={[
+          <Button
+            key="continue"
+            type="primary"
+            size="large"
+            onClick={handleEncouragementConfirm}
+            style={{
+              borderRadius: '24px',
+              height: '48px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              border: 'none',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+            }}
+          >
+            继续探索
+          </Button>,
+        ]}
+      >
+        {encouragementData && (
+          <EncouragementContent>
+            <div className="encouragement-icon">
+              {encouragementData.icon}
+            </div>
+            <div className="encouragement-title">
+              {encouragementData.title}
+            </div>
+            <div className="encouragement-message">
+              {encouragementData.content}
+            </div>
+            <div className="encouragement-next">
+              下一步：{encouragementData.nextStep}
+            </div>
+          </EncouragementContent>
+        )}
+      </EncouragementModal>
     </StyledLayout>
   );
 };
