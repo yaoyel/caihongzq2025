@@ -910,7 +910,7 @@ const MajorPage: React.FC = () => {
    */
   const truncateMajorName = useCallback((name: string) => {
     if (!name) return '';
-    return name.length > 5 ? name.substring(0, 5) + '...' : name;
+    return name.length > 12 ? name.substring(0, 12) + '...' : name;
   }, []);
 
   /**
@@ -1074,7 +1074,9 @@ const MajorPage: React.FC = () => {
 
       {/* 为固定选项卡区域留出空间 */}
       <div
-        style={{ height: activeTab === 'passion' || activeTab === 'opportunity' ? '115px' : '55px' }}
+        style={{
+          height: activeTab === 'passion' || activeTab === 'opportunity' ? '115px' : '55px',
+        }}
       ></div>
       {/* 选项卡区域 */}
       <div
@@ -1181,7 +1183,7 @@ const MajorPage: React.FC = () => {
                 </div>
               ))}
             </div>
-            
+
             {/* 子Tab说明文字 */}
             {activeSubTab && (
               <div
@@ -1281,10 +1283,13 @@ const MajorPage: React.FC = () => {
                     fontWeight: 500,
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
-                    background: activeOpportunitySubTab === subTab.key ? subTab.color : 'transparent',
+                    background:
+                      activeOpportunitySubTab === subTab.key ? subTab.color : 'transparent',
                     color: activeOpportunitySubTab === subTab.key ? '#fff' : '#666',
                     boxShadow:
-                      activeOpportunitySubTab === subTab.key ? `0 2px 6px ${subTab.color}30` : 'none',
+                      activeOpportunitySubTab === subTab.key
+                        ? `0 2px 6px ${subTab.color}30`
+                        : 'none',
                     transform: activeOpportunitySubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
                   }}
                 >
@@ -1292,7 +1297,7 @@ const MajorPage: React.FC = () => {
                 </div>
               ))}
             </div>
-            
+
             {/* 机遇指数子Tab说明文字 */}
             {activeOpportunitySubTab && (
               <div
@@ -1553,17 +1558,35 @@ const MajorPage: React.FC = () => {
                             cursor: 'pointer',
                             fontWeight: 500,
                             fontSize: 15,
+                            display: 'flex',
+                            alignItems: 'center',
+                            width: '100%',
                           }}
                         >
-                          {/* 专业编号和名称 */}
-                          {activeTab !== 'passion' && activeTab !== 'opportunity' && (
-                            <span style={{ color: '#666', marginRight: 8 }}>{item.majorCode}</span>
-                          )}
-                          <span style={{ marginRight: 15 }} title={item.majorName}>
-                            {truncateMajorName(item.majorName)}
-                          </span>
+                          <div>
+                            {/* 专业名称 */}
+                            <div style={{ marginRight: 15 }} title={item.majorName}>
+                              {truncateMajorName(item.majorName)}
+                            </div>
+                            {/* 专业编号 */}
+                            {activeTab !== 'passion' && activeTab !== 'opportunity' && (
+                              <div style={{ color: '#666', fontSize: 12, marginTop: 2 }}>
+                                {item.majorCode}
+                              </div>
+                            )}
+                          </div>
                           {/* 跳转箭头 */}
-                          <span style={{ color: '#bbb', fontSize: 18 }}>{'>'}</span>
+                          <div
+                            style={{
+                              color: '#bbb',
+                              fontSize: 18,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            {'>'}
+                          </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center' }}>
                           <span
