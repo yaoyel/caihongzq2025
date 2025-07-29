@@ -77,6 +77,80 @@ export const PROVINCE_CODE_TO_NAME: { [key: string]: string } = {
 };
 
 /**
+ * 省份志愿数量对照表
+ */
+export const PROVINCE_VOLUNTEER_COUNT: { [key: string]: number } = {
+  '北京': 20,
+  '天津': 20,
+  '河北': 20,
+  '山西': 45,
+  '内蒙古': 45,
+  '辽宁': 60,
+  '吉林': 40,
+  '黑龙江': 40,
+  '上海': 8,
+  '江苏': 40,
+  '浙江': 80,
+  '安徽': 45,
+  '福建': 40,
+  '江西': 45,
+  '山东': 96,
+  '河南': 48,
+  '湖北': 20,
+  '湖南': 30,
+  '广东': 45,
+  '广西': 40,
+  '海南': 10,
+  '重庆': 96,
+  '四川': 45,
+  '贵州': 96,
+  '云南': 20,
+  '西藏': 0,
+  '陕西': 45,
+  '甘肃': 45,
+  '青海': 96,
+  '宁夏': 45,
+  '新疆': 9,
+};
+
+/**
+ * 省份代码到志愿数量的映射表
+ */
+export const PROVINCE_CODE_TO_VOLUNTEER_COUNT: { [key: string]: number } = {
+  '11': 20,
+  '12': 20,
+  '13': 20,
+  '14': 45,
+  '15': 45,
+  '21': 60,
+  '22': 40,
+  '23': 40,
+  '31': 8,
+  '32': 40,
+  '33': 80,
+  '34': 45,
+  '35': 40,
+  '36': 45,
+  '37': 96,
+  '41': 48,
+  '42': 20,
+  '43': 30,
+  '44': 45,
+  '45': 40,
+  '46': 10,
+  '50': 96,
+  '51': 45,
+  '52': 96,
+  '53': 20,
+  '54': 0,
+  '61': 45,
+  '62': 45,
+  '63': 96,
+  '64': 45,
+  '65': 9,
+};
+
+/**
  * 省份名称列表
  */
 export const PROVINCE_NAMES = Object.keys(PROVINCE_NAME_TO_CODE);
@@ -139,4 +213,72 @@ export function getAllProvinces(): Array<{ name: string; code: string }> {
  */
 export function getProvinceCount(): number {
   return PROVINCE_NAMES.length;
+}
+
+/**
+ * 获取省份志愿数量
+ * @param provinceName 省份名称
+ * @returns 志愿数量，如果未找到则返回undefined
+ */
+export function getProvinceVolunteerCount(provinceName: string): number | undefined {
+  return PROVINCE_VOLUNTEER_COUNT[provinceName];
+}
+
+/**
+ * 根据省份代码获取志愿数量
+ * @param provinceCode 省份代码
+ * @returns 志愿数量，如果未找到则返回undefined
+ */
+export function getProvinceVolunteerCountByCode(provinceCode: string): number | undefined {
+  return PROVINCE_CODE_TO_VOLUNTEER_COUNT[provinceCode];
+}
+
+/**
+ * 获取所有省份的志愿数量信息
+ * @returns 包含省份名称、代码和志愿数量的对象数组
+ */
+export function getAllProvincesWithVolunteerCount(): Array<{ name: string; code: string; volunteerCount: number }> {
+  return Object.entries(PROVINCE_NAME_TO_CODE).map(([name, code]) => ({
+    name,
+    code,
+    volunteerCount: PROVINCE_VOLUNTEER_COUNT[name] || 0,
+  }));
+}
+
+/**
+ * 获取志愿数量最多的省份
+ * @returns 志愿数量最多的省份信息
+ */
+export function getProvinceWithMaxVolunteerCount(): { name: string; code: string; volunteerCount: number } | null {
+  const provinces = getAllProvincesWithVolunteerCount();
+  if (provinces.length === 0) return null;
+  
+  return provinces.reduce((max, current) => 
+    current.volunteerCount > max.volunteerCount ? current : max
+  );
+}
+
+/**
+ * 获取志愿数量最少的省份
+ * @returns 志愿数量最少的省份信息
+ */
+export function getProvinceWithMinVolunteerCount(): { name: string; code: string; volunteerCount: number } | null {
+  const provinces = getAllProvincesWithVolunteerCount();
+  if (provinces.length === 0) return null;
+  
+  return provinces.reduce((min, current) => 
+    current.volunteerCount < min.volunteerCount ? current : min
+  );
+}
+
+/**
+ * 获取平均志愿数量
+ * @returns 所有省份的平均志愿数量
+ */
+export function getAverageVolunteerCount(): number {
+  const provinces = getAllProvincesWithVolunteerCount();
+  if (provinces.length === 0) return 0;
+  
+  const total = provinces.reduce((sum, province) => sum + province.volunteerCount, 0);
+  return Math.round(total / provinces.length);
 }

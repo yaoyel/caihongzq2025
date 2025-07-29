@@ -13,6 +13,7 @@ import { IntentionViewModel, toIntentionViewModels } from '../view-models/intent
 import { Alternative } from '../entities/Alternative';
 import { AlternativeViewModel, toAlternativeViewModel } from '../view-models/altrmative.view.model';
 import { MajorGroupViewModel, toMajorGroupViewModels } from '../view-models/major.group.view,model';
+import { PROVINCE_CODE_TO_VOLUNTEER_COUNT, PROVINCE_VOLUNTEER_COUNT } from '../config/province';
 
 /**
  * 专业匹配结果接口
@@ -903,6 +904,8 @@ export class MajorController {
     data: AlternativeViewModel[];
     currentPage: number;
     totalPages: number;
+    volunteerCount: number;
+    topDevelopmentCount: number;
   }> {
     try {
       if (!ctx.state.user?.userId) {
@@ -915,6 +918,8 @@ export class MajorController {
       if (pageSize > 100) pageSize = 100; // 限制最大每页数量
 
       const user = await this.userService.findOne(ctx.state.user.userId);
+      const province = user?.province || '';
+      const volunteerCount = PROVINCE_VOLUNTEER_COUNT[province] || 0;
       const rank = user?.rank || 0;
       // 构建查询
       const alternativeRepository = AppDataSource.getRepository(Alternative);
@@ -952,21 +957,66 @@ export class MajorController {
 
       // 构建专业分数映射
       const majorScores: Record<string, number> = {};
+      const majorScoreDetails: Record<string, {
+        lexueScore?: number;
+        shanxueScore?: number;
+        yanxueDeduction?: number;
+        tiaozhanDeduction?: number;
+        opportunityScore?: number;
+        academicDevelopmentScore?: number;
+        careerDevelopmentScore?: number;
+        growthPotentialScore?: number;
+        industryProspectsScore?: number;
+        developmentPotential?: number;
+      }> = {};
+      
       scores.forEach(score => {
         majorScores[score.majorCode] = score.score;
+        majorScoreDetails[score.majorCode] = {
+          lexueScore: score.lexueScore,
+          shanxueScore: score.shanxueScore,
+          yanxueDeduction: score.yanxueDeduction,
+          tiaozhanDeduction: score.tiaozhanDeduction,
+          opportunityScore: score.opportunityScore || undefined,
+          academicDevelopmentScore: score.academicDevelopmentScore || undefined,
+          careerDevelopmentScore: score.careerDevelopmentScore || undefined,
+          growthPotentialScore: score.growthPotentialScore || undefined,
+          industryProspectsScore: score.industryProspectsScore || undefined,
+          developmentPotential: score.developmentPotential
+        };
       });
 
       // 转换为视图模型，并添加分数信息
       const alternativeViewModels = alternatives.map(alternative => ({
         ...toAlternativeViewModel(alternative),
-        score: majorScores[alternative.majorCode] || 0
+        score: majorScores[alternative.majorCode] || 0,
+        developmentPotential: majorScoreDetails[alternative.majorCode]?.developmentPotential || 0 
       }));
+
+      // 获取前20%发展潜力最高的专业
+      const topDevelopmentMajors = await this.majorScoreService.getTopDevelopmentPotentialMajors(
+        ctx.state.user.userId.toString()
+      );
+
+      // 创建前20%专业代码的Set，用于快速查找
+      const topDevelopmentMajorSet = new Set(
+        topDevelopmentMajors.map(major => major.majorCode)
+      );
+
+      // 统计备选方案中属于前20%发展潜力专业的唯一专业代码数量
+      const topDevelopmentCount = new Set(
+        alternatives
+          .filter(alternative => topDevelopmentMajorSet.has(alternative.majorCode))
+          .map(alternative => alternative.majorCode)
+      ).size;
 
       return {
         total,
+        volunteerCount: volunteerCount,
         data: alternativeViewModels,
         currentPage: page,
-        totalPages
+        totalPages,
+        topDevelopmentCount
       };
 
     } catch (error: unknown) {
