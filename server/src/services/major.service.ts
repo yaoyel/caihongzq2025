@@ -197,9 +197,9 @@ export class MajorScoreService {
         fs.shanxue_score as "shanxueScore", 
         fs.school_count as "schoolCount",
         -- 发展潜力得分（取整数）
-        FLOOR(CAST(fs.academic_development_raw + fs.career_development_raw + fs.industry_prospects_raw + fs.growth_potential_raw AS NUMERIC))::NUMERIC as "developmentPotential",
+        FLOOR(CAST(fs.academic_development_raw + fs.career_development_raw + fs.industry_prospects_raw + fs.growth_potential_raw AS NUMERIC))::NUMERIC as "opportunityScore",
         -- 机会得分（取整数）
-        FLOOR(CAST((fs.academic_development_raw + fs.career_development_raw + fs.industry_prospects_raw + fs.growth_potential_raw) / 2 + fs.base_score * 100 / 2 AS NUMERIC))::NUMERIC as "opportunityScore",
+        FLOOR(CAST((fs.academic_development_raw + fs.career_development_raw + fs.industry_prospects_raw + fs.growth_potential_raw) / 2 + fs.base_score * 100 / 2 AS NUMERIC))::NUMERIC as "developmentPotential",
         
         -- 各项得分（取整数）
         FLOOR(CAST(fs.academic_development_raw AS NUMERIC))::NUMERIC as "academicDevelopmentScore",
@@ -371,9 +371,9 @@ export class MajorScoreService {
         fs.shanxue_score as "shanxueScore", 
         fs.school_count as "schoolCount",
         -- 发展潜力得分（取整数）
-        FLOOR(CAST(fs.academic_development_raw + fs.career_development_raw + fs.industry_prospects_raw + fs.growth_potential_raw AS NUMERIC))::NUMERIC as "developmentPotential",
+        FLOOR(CAST(fs.academic_development_raw + fs.career_development_raw + fs.industry_prospects_raw + fs.growth_potential_raw AS NUMERIC))::NUMERIC as "opportunityScore",
         -- 机会得分（取整数）
-        FLOOR(CAST((fs.academic_development_raw + fs.career_development_raw + fs.industry_prospects_raw + fs.growth_potential_raw) / 2 + fs.base_score * 100 / 2 AS NUMERIC))::NUMERIC as "opportunityScore",
+        FLOOR(CAST((fs.academic_development_raw + fs.career_development_raw + fs.industry_prospects_raw + fs.growth_potential_raw) / 2 + fs.base_score * 100 / 2 AS NUMERIC))::NUMERIC as "developmentPotential",
         
         -- 各项得分（取整数）
         FLOOR(CAST(fs.academic_development_raw AS NUMERIC))::NUMERIC as "academicDevelopmentScore",
