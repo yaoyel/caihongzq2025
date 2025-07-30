@@ -1075,7 +1075,22 @@ const MajorPage: React.FC = () => {
       {/* 为固定选项卡区域留出空间 */}
       <div
         style={{
-          height: activeTab === 'passion' || activeTab === 'opportunity' ? '115px' : '72px',
+          height: (() => {
+            // 基础高度：主选项卡 + 子选项卡
+            let baseHeight = 72;
+            
+            if (activeTab === 'passion' || activeTab === 'opportunity') {
+              baseHeight = 115; // 主选项卡 + 子选项卡
+              
+              // 如果有子Tab说明文字，需要额外增加高度
+              if ((activeTab === 'passion' && activeSubTab) || 
+                  (activeTab === 'opportunity' && activeOpportunitySubTab)) {
+                baseHeight += 50; // 子Tab说明文字的高度（包含margin和padding）
+              }
+            }
+            
+            return baseHeight;
+          })(),
         }}
       ></div>
       {/* 选项卡区域 */}
@@ -1370,10 +1385,22 @@ const MajorPage: React.FC = () => {
         className="major-list-card-area"
         ref={listAreaRef}
         style={{
-          height:
-            activeTab === 'passion' || activeTab === 'opportunity'
-              ? 'calc(100vh - 240px)'
-              : 'calc(100vh - 220px)',
+          height: (() => {
+            // 基础高度计算
+            let baseHeight = 220; // 搜索栏 + 主选项卡
+            
+            if (activeTab === 'passion' || activeTab === 'opportunity') {
+              baseHeight = 240; // 搜索栏 + 主选项卡 + 子选项卡
+              
+              // 如果有子Tab说明文字，需要额外增加高度
+              if ((activeTab === 'passion' && activeSubTab) || 
+                  (activeTab === 'opportunity' && activeOpportunitySubTab)) {
+                baseHeight += 50; // 子Tab说明文字的高度
+              }
+            }
+            
+            return `calc(100vh - ${baseHeight}px)`;
+          })(),
           overflow: 'auto',
         }}
       >

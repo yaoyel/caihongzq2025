@@ -499,9 +499,24 @@ const EducationalDetailPage: React.FC = () => {
     let htmlTemp = '';
     if (historyScores && historyScores.length > 0) {
       historyScores?.map((item, index) => {
-        // 添加分隔线（除了第一个）
+        // 添加分隔线和备注信息（包括第一个）
         if (index > 0) {
           htmlTemp += `<div class="border-t border-gray-200 my-4"></div>`;
+        }
+        
+        // 显示备注信息
+        if (item.remark) {
+          htmlTemp += `
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+              <div class="flex items-start">
+                <span class="text-yellow-600 mr-2 mt-0.5">📝</span>
+                <div class="text-sm text-yellow-800">
+                  <span class="font-medium">备注：</span>
+                  ${item.remark}
+                </div>
+              </div>
+            </div>
+          `;
         }
 
         // 历史分数表格
