@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import HomePage from './pages';
 import LoginPage from './pages/login';
 import AssessmentPage from './pages/assessment';
@@ -30,6 +30,7 @@ import IntentionDetail from './pages/intention/intentiondetail';
 import { handleWechatCallback, getCurrentUser } from './config';
 const App: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -37,6 +38,7 @@ const App: React.FC = () => {
     const code = urlParams.get('code');
     const token = localStorage.getItem('new-token');
     const userStr = localStorage.getItem('new-user');
+
 
     const handleCallback = async () => {
       if (code) {
@@ -50,8 +52,8 @@ const App: React.FC = () => {
             console.log('登录成功:', result.data.user);
 
             // 从URL参数中获取目标页面，如果没有则默认跳转到home
-            const targetPath = urlParams.get('redirect') || urlParams.get('path') || '/basicInfo';
-            navigate(targetPath);
+            // const targetPath = urlParams.get('redirect') || urlParams.get('path') || '/basicInfo';
+            navigate(location.pathname);
           }
         } catch (error) {
           console.error('登录失败:', error);

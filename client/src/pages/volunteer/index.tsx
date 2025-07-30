@@ -12,6 +12,7 @@ import {
   getMajorGroup,
   moveUpAlternative,
   moveDownAlternative,
+  getSchoolCharters,
 } from '../../config/volunteer';
 
 // 定义备选志愿项的类型（扩展自 API 返回的数据）
@@ -42,6 +43,9 @@ interface AlternativeItem {
   developmentPotential?: number; // 发展潜能
   topDevelopmentCount?: number; // 高发展潜能专业数量
   position?: number; // 位置排序字段
+  // 招生信息相关属性
+  admissionsSite?: string; // 招生网址
+  admissionsPhone?: string; // 招生电话
 }
 
 // 定义分组后的备选志愿类型
@@ -76,6 +80,18 @@ interface MajorGroupItem {
   majorNameDetail: string;
   majorName: string;
   year: number;
+}
+
+// 定义招生简章信息类型
+interface CharterItem {
+  id: string;
+  title: string; // 简章标题
+  content: string; // 简章内容
+  year: number; // 年份
+  schoolCode: string; // 学校代码
+  schoolName: string; // 学校名称
+  createdAt: string; // 创建时间
+  updatedAt: string; // 更新时间
 }
 
 const EducationalPage: React.FC = () => {
@@ -116,6 +132,7 @@ const EducationalPage: React.FC = () => {
   const [selectConfirmations, setSelectConfirmations] = useState({
     requirement: false,
     enrollment: false,
+    riskControl: false, // 退档风险控制
     majorGroup: false,
   });
 
@@ -126,6 +143,15 @@ const EducationalPage: React.FC = () => {
   const [currentMajorGroupInfo, setCurrentMajorGroupInfo] = useState<{
     majorGroupId: string;
     majorGroupName: string;
+    schoolName: string;
+  } | null>(null);
+
+  // 添加招生简章弹窗状态
+  const [showChartersDialog, setShowChartersDialog] = useState(false);
+  const [chartersData, setChartersData] = useState<CharterItem[]>([]);
+  const [chartersLoading, setChartersLoading] = useState(false);
+  const [currentSchoolInfo, setCurrentSchoolInfo] = useState<{
+    schoolCode: string;
     schoolName: string;
   } | null>(null);
 
@@ -205,6 +231,7 @@ const EducationalPage: React.FC = () => {
       setSelectConfirmations({
         requirement: false,
         enrollment: false,
+        riskControl: false,
         majorGroup: false,
       });
     }
@@ -217,6 +244,7 @@ const EducationalPage: React.FC = () => {
     setSelectConfirmations({
       requirement: false,
       enrollment: false,
+      riskControl: false,
       majorGroup: false,
     });
   };
@@ -255,6 +283,41 @@ const EducationalPage: React.FC = () => {
     setShowMajorGroupDialog(false);
     setMajorGroupData([]);
     setCurrentMajorGroupInfo(null);
+  };
+
+  // 查看招生简章
+  const handleViewCharters = async () => {
+    if (itemToSelect?.schoolCode) {
+      try {
+        setChartersLoading(true);
+        setCurrentSchoolInfo({
+          schoolCode: itemToSelect.schoolCode,
+          schoolName: itemToSelect.schoolName,
+        });
+
+        // 调用招生简章API
+        const response = await getSchoolCharters(itemToSelect.schoolCode);
+
+        if (response && response.code === 200) {
+          setChartersData(response.data || []);
+          setShowChartersDialog(true);
+        } else {
+          alert(response?.message || '获取招生简章失败');
+        }
+      } catch (error) {
+        console.error('获取招生简章失败:', error);
+        alert(error instanceof Error ? error.message : '获取招生简章失败');
+      } finally {
+        setChartersLoading(false);
+      }
+    }
+  };
+
+  // 关闭招生简章弹窗
+  const handleCloseChartersDialog = () => {
+    setShowChartersDialog(false);
+    setChartersData([]);
+    setCurrentSchoolInfo(null);
   };
 
   const groupNames = [
@@ -449,7 +512,9 @@ const EducationalPage: React.FC = () => {
           // 按位次段分组，每个位次段内按发展潜能倒序排序
           const groupedByRank = data.map((group) => ({
             ...group,
-            result: group.result.sort((a, b) => (b.developmentPotential || 0) - (a.developmentPotential || 0))
+            result: group.result.sort(
+              (a, b) => (b.developmentPotential || 0) - (a.developmentPotential || 0)
+            ),
           }));
           return groupedByRank;
         }
@@ -653,6 +718,9 @@ const EducationalPage: React.FC = () => {
               sortIndex: index, // 添加排序索引
               developmentPotential: item.developmentPotential || 0, // 发展潜能
               position: item.position || 0, // 位置排序字段
+              // 招生信息相关属性
+              admissionsSite: item.admissionsSite,
+              admissionsPhone: item.admissionsPhone,
             })
           );
 
@@ -1199,7 +1267,8 @@ const EducationalPage: React.FC = () => {
                       ? schoolGroups
                       : schoolGroups.slice(0, 1)
                     : schoolGroups; // 按升学率和就业率排序时显示所有学校
-                const hasMoreSchools = schoolGroups.length > 1 && (sortTab === 'group' || sortTab === 'major');
+                const hasMoreSchools =
+                  schoolGroups.length > 1 && (sortTab === 'group' || sortTab === 'major');
 
                 return (
                   <div
@@ -1255,11 +1324,12 @@ const EducationalPage: React.FC = () => {
                               </div>
                               <div className="flex items-center space-x-2">
                                 {/* 按自主意愿不显示，但在位次段和按专业排序时显示 */}
-                                {activeTab !== 'selected' && (sortTab === 'group' || sortTab === 'major') && (
-                                  <span className="text-yellow-600 bg-yellow-100  py-0.5 rounded text-xs ">
-                                    热爱能量{Math.ceil((item.score || 0) * 100)}分！
-                                  </span>
-                                )}
+                                {activeTab !== 'selected' &&
+                                  (sortTab === 'group' || sortTab === 'major') && (
+                                    <span className="text-yellow-600 bg-yellow-100  py-0.5 rounded text-xs ">
+                                      热爱能量{Math.ceil((item.score || 0) * 100)}分！
+                                    </span>
+                                  )}
                                 {/* 显示升学率和就业率 */}
                                 {(sortTab === 'enrollment' || sortTab === 'employment') && (
                                   <span className="text-green-600 bg-green-100 px-2 py-0.5 rounded text-xs font-bold">
@@ -1539,7 +1609,9 @@ const EducationalPage: React.FC = () => {
             <div className="text-center mb-6">
               <div className="text-green-500 text-4xl mb-3">🎯</div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">&ldquo;入选&rdquo;确认点</h3>
-              <p className="text-sm text-gray-600">请仔细确认以下信息后再入选</p>
+              <p className="text-sm text-gray-600">
+                请借助招生简章、院校官网、拨打招生办公室电话、上网搜索等多种办法，确认以下关键信息：
+              </p>
             </div>
 
             {/* 院校信息卡片 */}
@@ -1571,11 +1643,15 @@ const EducationalPage: React.FC = () => {
                   />
                   <div className="flex-1">
                     <h5 className="font-semibold text-gray-900 mb-2">
-                      1. 确认符合该院校本专业招生要求
+                      1. 您是否符合该院校本专业招生要求？
                     </h5>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      该校承诺对服从调剂且满足招生要求的考生&ldquo;进档不退档&rdquo;，退档风险低
-                    </p>
+                    <button
+                      onClick={handleViewCharters}
+                      className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
+                    >
+                      <span className="mr-1">查看招生简章</span>
+                      <span className="text-xs">{'>>'}</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1590,16 +1666,57 @@ const EducationalPage: React.FC = () => {
                   />
                   <div className="flex-1">
                     <h5 className="font-semibold text-gray-900 mb-2">
-                      2. 院校近几年升研率、保研率及今年招生人数、招生校区均已确认
+                      2. 院校近几年升研率、保研率、招生校区等，是否符合您的报考意愿？
                     </h5>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      符合报考意愿，升学就业前景良好
-                    </p>
+
+                    {itemToSelect.admissionsSite ? (
+                      <button
+                        onClick={() => window.open(itemToSelect.admissionsSite, '_blank')}
+                        className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
+                      >
+                        <span className="mr-1">查看院校官网</span>
+                        <span className="text-xs">{'>>'}</span>
+                      </button>
+                    ) : (
+                      <span className="text-sm text-gray-500">
+                        暂未收集招生网址，请手动访问院校官网
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* 选项3：专业组确认 */}
+              {/* 选项3：退档风险确认 */}
+              <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    checked={selectConfirmations.riskControl}
+                    onChange={(e) =>
+                      handleSelectConfirmationChange('riskControl', e.target.checked)
+                    }
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <h5 className="font-semibold text-gray-900 mb-2">
+                      3.
+                      该校是否承诺对服从调剂且满足招生要求的考生&ldquo;进档不退档&rdquo;、退档风险低？
+                    </h5>
+                    {itemToSelect.admissionsPhone ? (
+                      <button
+                        onClick={() => window.open(`tel:${itemToSelect.admissionsPhone}`)}
+                        className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
+                      >
+                        <span className="mr-1">招生办电话：{itemToSelect.admissionsPhone}</span>
+                        <span className="text-xs">{'>>'}</span>
+                      </button>
+                    ) : (
+                      <span className="text-sm text-gray-500">暂未收集招生电话，请手动查询</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* 选项4：专业组确认 */}
               <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-start space-x-3">
                   <Checkbox
@@ -1609,21 +1726,15 @@ const EducationalPage: React.FC = () => {
                   />
                   <div className="flex-1">
                     <h5 className="font-semibold text-gray-900 mb-2">
-                      3. 已仔细查看组内所有专业发展潜能值
+                      4. 如果被调剂至组内其他专业，是否可接受？
                     </h5>
-                    <p className="text-sm text-gray-600 leading-relaxed mb-3">
-                      即使被调剂，也均为可接受专业
-                    </p>
                     {itemToSelect.majorGroupId && (
                       <button
                         onClick={handleViewMajorGroup}
                         className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
                       >
                         <span className="mr-1">查看专业组</span>
-                        <span className="text-xs">
-                          {'>'}
-                          {'>'}
-                        </span>
+                        <span className="text-xs">{'>>'}</span>
                       </button>
                     )}
                   </div>
@@ -2057,6 +2168,60 @@ const EducationalPage: React.FC = () => {
               我知道了
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* 招生简章弹窗 */}
+      <Modal
+        title={
+          <div className="text-center">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              {currentSchoolInfo?.schoolName} - 招生简章
+            </h3>
+            <p className="text-sm text-gray-600">招生章程可能有多个，请仔细查看</p>
+          </div>
+        }
+        open={showChartersDialog}
+        onCancel={handleCloseChartersDialog}
+        footer={null}
+        width={800}
+        centered
+        className="rounded-2xl"
+        style={{ top: '20%' }}
+      >
+        <div className="p-4">
+          {chartersLoading ? (
+            <div className="text-center py-8">
+              <div className="text-gray-500">加载中...</div>
+            </div>
+          ) : chartersData.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-gray-500 mb-4">暂未收集招生简章</div>
+              <div className="text-sm text-gray-400">请手动访问院校官网查看招生简章</div>
+            </div>
+          ) : (
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {chartersData.map((charter) => (
+                <div
+                  key={charter.id}
+                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-gray-900 text-lg">
+                      {charter.title || `${charter.year}年招生简章`}
+                    </h4>
+                    <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                      {charter.year}年
+                    </span>
+                  </div>
+                  <div
+                    className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap"
+                    dangerouslySetInnerHTML={{ __html: charter.content }}
+                  ></div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </Modal>
     </div>

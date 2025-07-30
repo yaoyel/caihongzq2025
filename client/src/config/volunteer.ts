@@ -49,6 +49,8 @@ export const api = {
     moveDownAlternative: (alternativeId: string) => `/majors/alternative/${alternativeId}/move-down`,
     // 查询专业组接口
     majorGroup: (majorGroupId: string) => `/majors/group/${majorGroupId}`,
+    // 查询招生简章接口
+    schoolCharters: (schoolCode: string) => `/schools/${schoolCode}/charters`,
   },
 };
 
@@ -173,6 +175,8 @@ interface MajorAlternativeItem {
   selected?: boolean;
   historyScore?: any;
   group?: number;
+  admissionsSite?: string; // 招生网址
+  admissionsPhone?: string; // 招生电话
 }
 
 interface MajorAlternativesResponse {
@@ -416,6 +420,44 @@ export const moveDownAlternative = async (alternativeId: string): Promise<Altern
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(error.response?.data?.message || '下移志愿失败');
+    }
+    throw error;
+  }
+};
+
+// 招生简章接口类型定义
+interface CharterItem {
+  id: string;
+  title: string; // 简章标题
+  content: string; // 简章内容
+  year: number; // 年份
+  schoolCode: string; // 学校代码
+  schoolName: string; // 学校名称
+  createdAt: string; // 创建时间
+  updatedAt: string; // 更新时间
+}
+
+interface SchoolChartersResponse {
+  code: number;
+  message: string;
+  data: CharterItem[];
+}
+
+/**
+ * 查询学校招生简章
+ * @param schoolCode 学校代码
+ * @returns Promise<SchoolChartersResponse>
+ */
+export const getSchoolCharters = async (schoolCode: string): Promise<SchoolChartersResponse> => {
+  try {
+    const response = await axios.get<SchoolChartersResponse>(
+      getApiUrl(api.endpoints.schoolCharters(schoolCode)),
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '获取招生简章失败');
     }
     throw error;
   }
