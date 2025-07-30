@@ -941,6 +941,7 @@ export class MajorController {
       // 构建查询
       const alternativeRepository = AppDataSource.getRepository(Alternative);
       const queryBuilder = alternativeRepository.createQueryBuilder('alternative')
+        .leftJoinAndSelect('alternative.school', 'school') // 关联查询学校信息
         .where('alternative.userId = :userId', { userId: ctx.state.user.userId });
 
       // 如果指定了选中状态，添加筛选条件

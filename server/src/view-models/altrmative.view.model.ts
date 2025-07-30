@@ -21,6 +21,8 @@ export interface AlternativeViewModel {
   score?: number;
   developmentPotential?: number; 
   position?: number;
+  admissionsSite?: string;
+  admissionsPhone?: string;
 }
 
 /**
@@ -47,7 +49,9 @@ export function toAlternativeViewModel(alternative: any): AlternativeViewModel {
     RankdiffPer: Number((alternative.rankDiffPer || 0).toFixed(2)),
     score: alternative.score || 0,
     developmentPotential: alternative.developmentPotential || 0 ,
-    position: alternative.position || 0
+    position: alternative.position || 0,
+    admissionsSite: alternative.school?.admissionsSite,
+    admissionsPhone: alternative.school?.admissionsPhone
   };
 }
 

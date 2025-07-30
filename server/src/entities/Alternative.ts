@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from "typeorm";
 import { User } from "./User";
+import { School } from "./School";
 
 /**
  * 备选方案实体类
@@ -85,9 +86,24 @@ export class Alternative {
     })
     position?: number;
 
+    // ==================== 关系映射 ====================
+
+    /**
+     * 用户关联 (多对一关系)
+     * 多个备选方案对应一个用户
+     */
     @ManyToOne(() => User, user => user.alternatives)
     @JoinColumn({ name: 'user_id' })
     user: User;
+
+    /**
+     * 学校关联 (多对一关系)
+     * 多个备选方案对应一个学校
+     * 使用学校代码(schoolCode)作为关联字段
+     */
+    @ManyToOne(() => School, school => school.alternatives)
+    @JoinColumn({ name: 'school_code', referencedColumnName: 'code' })
+    school: School;
 
     
 }

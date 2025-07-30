@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { SchoolDetail } from "./SchoolDetail";
 import { SchoolMajor } from "./SchoolMajor";
 import { EnrollCharters } from "./EnrollCharter";
+import { Alternative } from "./Alternative";
 
 /**
  * 学校实体类
@@ -226,6 +227,14 @@ export class School {
         cascade: true, // 级联操作
     })
     enrollCharters: EnrollCharters[];
+
+    /**
+     * 该学校的备选方案关联列表 (一对多关系)
+     * 一个学校可以有多个备选方案
+     * 使用学校代码(code)作为关联字段
+     */
+    @OneToMany(() => Alternative, alternative => alternative.school)
+    alternatives: Alternative[];
 
     // ==================== 辅助方法 ====================
 

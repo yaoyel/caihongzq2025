@@ -5,6 +5,7 @@ import { SchoolDetailViewModel, toSchoolDetailViewModel } from '../view-models/s
 import { Service } from 'typedi';
 import { MajorScoreService } from '../services/major.service';
 import { UserService } from '../services/user.service';
+import { EnrollCharterService } from '../services/enroll-charter.service';
 
 /**
  * 学校专业信息接口
@@ -33,7 +34,8 @@ interface SchoolMajor {
 export class SchoolController {
   constructor(
     private majorScoreService: MajorScoreService,
-    private userService: UserService
+    private userService: UserService,
+    private enrollCharterService: EnrollCharterService
   ) {}
 
   /**
@@ -108,4 +110,29 @@ export class SchoolController {
     // 转换为完整视图模型
     return toSchoolDetailViewModel(school);
   }
+
+  /**
+   * 根据学校代码获取招生章程列表
+   * @param code 学校代码
+   * @returns Promise<EnrollCharters[]> 招生章程列表
+   */
+  @Get('/:code/charters')
+  async getSchoolCharters(@Param('code') code: string): Promise<any[]> {
+    try {
+      // 验证学校代码是否有效
+      const school = await SchoolRedisService.getSchool(code);
+      if (!school) {
+        throw new Error('学校不存在'); 
+      }
+
+      // 获取招生章程列表
+      const charters = await this.enrollCharterService.getChartersBySchoolCode(code);
+      
+      return charters;
+       
+    } catch (error) { 
+      throw new Error('获取招生章程失败');
+    }
+  } 
+ 
 }
