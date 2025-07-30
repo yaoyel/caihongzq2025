@@ -23,6 +23,8 @@ export interface AlternativeViewModel {
   position?: number;
   admissionsSite?: string;
   admissionsPhone?: string;
+  provinceName?: string;
+  cityName?: string;
 }
 
 /**
@@ -51,7 +53,9 @@ export function toAlternativeViewModel(alternative: any): AlternativeViewModel {
     developmentPotential: alternative.developmentPotential || 0 ,
     position: alternative.position || 0,
     admissionsSite: alternative.school?.admissionsSite,
-    admissionsPhone: alternative.school?.admissionsPhone
+    admissionsPhone: alternative.school?.admissionsPhone,
+    provinceName: alternative.school?.provinceName,
+    cityName: alternative.school?.cityName
   };
 }
 
