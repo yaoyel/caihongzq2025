@@ -13,7 +13,9 @@ import { IntentionViewModel, toIntentionViewModels } from '../view-models/intent
 import { Alternative } from '../entities/Alternative';
 import { AlternativeViewModel, toAlternativeViewModel } from '../view-models/altrmative.view.model';
 import { MajorGroupViewModel, toMajorGroupViewModels } from '../view-models/major.group.view,model';
-import { PROVINCE_CODE_TO_VOLUNTEER_COUNT, PROVINCE_VOLUNTEER_COUNT } from '../config/province';
+import { PROVINCE_VOLUNTEER_COUNT } from '../config/province';
+import { config } from 'dotenv'; 
+config();
 
 /**
  * 专业匹配结果接口
@@ -182,7 +184,7 @@ export class MajorController {
       // 根据用户信息，从redis中查询专业对应的分数
       const historyScore = await this.majorRedisService.getMajorScores(code, user!.province || '北京', user!.preferredSubjects || '综合', user!.secondarySubjects || '');
       const rank = user.rank;
-
+ 
       // 调用 MajorRedisService 的方法获取招生计划
       const enrollPlans = await this.majorRedisService.getEnrollPlans(
         code,
@@ -220,8 +222,15 @@ export class MajorController {
       
       // 同school.redis.services.ts中的getAverageRank方法，必须统一
       if (Array.isArray(rawData.schools) && Array.isArray(historyScore)) {
-        rawData.schools = rawData.schools.map((school: { id: number } & SchoolViewModel) => {
-          const schoolScores = historyScore.filter(score => score.schoolMajorId === school.id);
+        // 获取本地批次名称列表
+        const localBatchNames = process.env.LOCAL_BATCH_NAME?.split(',') || []; 
+        
+        // 先处理学校数据，添加历史分数信息
+        const processedSchools = rawData.schools.map((school: { id: number } & SchoolViewModel) => {
+          const schoolScores = historyScore.filter(score => 
+            score.schoolMajorId === school.id && 
+            (localBatchNames.length === 0 || localBatchNames.includes(score.batch))
+          );
           const avgRank = this.majorRedisService.getAverageRank(
             schoolScores.length > 0 ? schoolScores[0].historyScore as unknown as string : null
           );
@@ -249,7 +258,15 @@ export class MajorController {
             rankDiffPercentage,
             group
           };
-        }).sort((a: SchoolWithRank, b: SchoolWithRank) => {
+        });
+        
+        // 过滤掉 historyScores 数组长度为 0 的学校
+        const filteredSchools = processedSchools.filter((school: SchoolWithRank) => 
+          school.historyScores && school.historyScores.length > 0
+        );
+        
+        // 对过滤后的学校进行排序
+        rawData.schools = filteredSchools.sort((a: SchoolWithRank, b: SchoolWithRank) => {
           // 首先按分组排序（组2最优先，然后是组3，组1，最后是组0）
           const groupOrder = [2, 3, 1, 0];
           const groupDiff = groupOrder.indexOf(a.group || 0) - groupOrder.indexOf(b.group || 0);
@@ -760,7 +777,7 @@ export class MajorController {
         const year2024Rank = extract2024Rank(body.historyScore);
         if (year2024Rank !== null) {
           // 计算位次差值（用户位次 - 2024年位次）
-          rankDiff = user.rank - year2024Rank;
+          rankDiff =  year2024Rank - user.rank;
           // 计算位次差值百分比（差值 / 2024年位次）
           rankDiffPer = year2024Rank > 0 ? (rankDiff / year2024Rank) * 100 : 0;
         }

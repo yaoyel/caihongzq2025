@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne, Index, JoinColumn } from "typeorm";
 import { SchoolDetail } from "./SchoolDetail";
 import { SchoolMajor } from "./SchoolMajor";
+import { EnrollCharters } from "./EnrollCharter";
 
 /**
  * 学校实体类
@@ -87,6 +88,42 @@ export class School {
      */
     @Column({ length: 100, nullable: true, name: 'city_name' })
     cityName: string;
+
+    /**
+     * 招生邮箱
+     */
+    @Column({ length: 128, nullable: true, name: 'admissions_email' })
+    admissionsEmail: string;
+
+    /**
+     * 学校地址
+     */
+    @Column({ length: 500, nullable: true, name: 'address' })
+    address: string;
+
+    /**
+     * 邮政编码
+     */
+    @Column({ length: 10, nullable: true, name: 'postcode' })
+    postcode: string;
+
+    /**
+     * 招生网站
+     */
+    @Column({ length: 255, nullable: true, name: 'admissions_site' })
+    admissionsSite: string;
+
+    /**
+     * 官方网站
+     */
+    @Column({ length: 128, nullable: true, name: 'official_site' })
+    officialSite: string;
+
+    /**
+     * 招生电话
+     */
+    @Column({ length: 128, nullable: true, name: 'admissions_phone' })
+    admissionsPhone: string;
 
     /**
      * 点击量
@@ -179,6 +216,16 @@ export class School {
     })
     @JoinColumn({ name: 'school_code', referencedColumnName: 'code' })
     schoolMajors: SchoolMajor[];
+
+    /**
+     * 该学校的招生章程关联列表 (一对多关系)
+     * 一个学校可以有多个年份的招生章程
+     * 使用学校代码(code)作为关联字段
+     */
+    @OneToMany(() => EnrollCharters, enrollCharter => enrollCharter.school, {
+        cascade: true, // 级联操作
+    })
+    enrollCharters: EnrollCharters[];
 
     // ==================== 辅助方法 ====================
 

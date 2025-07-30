@@ -243,6 +243,7 @@ export function toMajorDetailViewModel(data: any): MajorDetailViewModel | undefi
             batch: score.batch,
             subjectSelection: score.subjectSelection,
             planMajorName: score.planMajorName,
+            remark: score.remark,
             // planNum: score.planNum,
             studyPeriod: score.studyPeriod,
             tuition: score.tuition,

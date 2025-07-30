@@ -25,6 +25,7 @@ import { MajorHistoryScore } from './entities/MajorHistoryScore';
 import { Intention } from './entities/Intention';
 import { Alternative } from './entities/Alternative';
 import { EnrollPlans } from './entities/EnrollPlans';   
+import { EnrollCharters } from './entities/EnrollCharter';
 // 加载环境变量
 config();
 
@@ -66,7 +67,8 @@ export const AppDataSource = new DataSource({
         MajorHistoryScore,
         Intention,
         Alternative,
-        EnrollPlans
+        EnrollPlans,
+        EnrollCharters
     ],
     migrations: [
       //  __dirname + '/migrations/*.ts'  // 使用绝对路径
