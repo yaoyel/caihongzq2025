@@ -1078,17 +1078,19 @@ const MajorPage: React.FC = () => {
           height: (() => {
             // 基础高度：主选项卡 + 子选项卡
             let baseHeight = 72;
-            
+
             if (activeTab === 'passion' || activeTab === 'opportunity') {
               baseHeight = 115; // 主选项卡 + 子选项卡
-              
+
               // 如果有子Tab说明文字，需要额外增加高度
-              if ((activeTab === 'passion' && activeSubTab) || 
-                  (activeTab === 'opportunity' && activeOpportunitySubTab)) {
+              if (
+                (activeTab === 'passion' && activeSubTab) ||
+                (activeTab === 'opportunity' && activeOpportunitySubTab)
+              ) {
                 baseHeight += 50; // 子Tab说明文字的高度（包含margin和padding）
               }
             }
-            
+
             return baseHeight;
           })(),
         }}
@@ -1388,17 +1390,19 @@ const MajorPage: React.FC = () => {
           height: (() => {
             // 基础高度计算
             let baseHeight = 220; // 搜索栏 + 主选项卡
-            
+
             if (activeTab === 'passion' || activeTab === 'opportunity') {
               baseHeight = 240; // 搜索栏 + 主选项卡 + 子选项卡
-              
+
               // 如果有子Tab说明文字，需要额外增加高度
-              if ((activeTab === 'passion' && activeSubTab) || 
-                  (activeTab === 'opportunity' && activeOpportunitySubTab)) {
+              if (
+                (activeTab === 'passion' && activeSubTab) ||
+                (activeTab === 'opportunity' && activeOpportunitySubTab)
+              ) {
                 baseHeight += 50; // 子Tab说明文字的高度
               }
             }
-            
+
             return `calc(100vh - ${baseHeight}px)`;
           })(),
           overflow: 'auto',
@@ -1873,7 +1877,7 @@ const MajorPage: React.FC = () => {
                               );
                             }}
                           >
-                            招生院校{item.schoolCount}所 {'>'}
+                            招生院校 {'>'}
                           </div>
                         )}
                       </div>
@@ -2084,11 +2088,11 @@ const MajorPage: React.FC = () => {
                     }}
                   >
                     <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#2563eb' }}>
-                      3.
+                      1.
                       建议特别关注&ldquo;乐学/善学/厌学/阻学特质&rdquo;，了解为什么自己可能喜欢与擅长该专业
                     </div>
                     <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#2563eb' }}>
-                      4.
+                      2.
                       请详细了解学业发展、职业回报、产业前景、成长空间等&ldquo;外部机遇&rdquo;相关内容，基于更全面的评估，决定是否&ldquo;收藏&rdquo;为意向专业
                     </div>
                   </div>

@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import Top from '../comm/top';
-import { Card, Spin } from 'antd';
+import { Card, Spin, message } from 'antd';
 import BottomNav from '../comm/bottom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getMajorDetail } from '../../config';
+import { createMajorAlternative, getMajorAlternatives, cancelAlternative } from '../../config/volunteer';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../store';
+import { setAlternativeStatus, updateAlternativeStatus, updateLoadingStatus } from '../../store/slices/intentionDetailSlice';
 
 /**
  * 主页面组件
@@ -25,6 +29,10 @@ const MajorSchools: React.FC = () => {
   //其他位次院校
   const [tuijianSchools4, setTuijianSchools4] = useState([]);
 
+  // 添加 Redux 相关
+  const dispatch = useDispatch();
+  const { alternativeStatus, loadingStatus } = useSelector((state: RootState) => state.intentionDetail);
+
   useEffect(() => {
     const fetchMajorDetail = async () => {
       setLoading(true); // 开始加载时设置loading为true
@@ -34,7 +42,11 @@ const MajorSchools: React.FC = () => {
           return;
         }
 
-        const detailResponse = await getMajorDetail(majorCode);
+        // 并行获取专业详情和已备选志愿
+        const [detailResponse, alternativesResponse] = await Promise.all([
+          getMajorDetail(majorCode),
+          getMajorAlternatives(),
+        ]);
 
         if (detailResponse && (detailResponse as any).code === 200) {
           if ((detailResponse as any).data) {
@@ -46,6 +58,22 @@ const MajorSchools: React.FC = () => {
             }
           }
         }
+
+        // 处理已备选志愿数据
+        if (alternativesResponse && alternativesResponse.code === 200) {
+          const alternatives = alternativesResponse.data?.data || [];
+          const alternativeMap: { [key: string]: { isAlternative: boolean; id?: string } } = {};
+
+          // 构建已备选学校的映射
+          alternatives.forEach((item: any) => {
+            if (item.majorCode === majorCode) {
+              const schoolKey = `${item.schoolCode}_${item.majorCode}`;
+              alternativeMap[schoolKey] = { isAlternative: true, id: item.id };
+            }
+          });
+
+          dispatch(setAlternativeStatus(alternativeMap));
+        }
       } catch (error) {
         console.error('获取专业详细信息失败:', error);
       } finally {
@@ -54,8 +82,90 @@ const MajorSchools: React.FC = () => {
     };
 
     fetchMajorDetail();
-  }, [searchParams]);
+  }, [searchParams, majorCode, dispatch]);
   const navigator = useNavigate();
+
+  // 处理备选按钮点击
+  const handleAlternativeClick = async (school: any) => {
+    const schoolKey = `${school.code}_${majorCode}`;
+    const currentStatus = alternativeStatus[schoolKey];
+
+    // 如果正在加载中，直接返回
+    if (loadingStatus[schoolKey]) {
+      return;
+    }
+
+    try {
+      // 设置加载状态
+      dispatch(updateLoadingStatus({ key: schoolKey, loading: true }));
+
+      if (currentStatus?.isAlternative && currentStatus.id) {
+        // 如果已经备选，则取消备选
+        const response = await cancelAlternative(currentStatus.id);
+
+        if (response && response.code === 200) {
+          // 更新备选状态
+          dispatch(
+            updateAlternativeStatus({
+              key: schoolKey,
+              status: { isAlternative: false, id: undefined },
+            })
+          );
+          // 备选删除成功提示
+          message.success('取消备选成功，已成功从志愿频道的备选志愿列表中移除。');
+        } else {
+          alert(response.message || '取消备选志愿失败');
+        }
+      } else {
+        // 如果未备选，则添加备选
+        // 准备历史分数数据
+        const historyScoreData =
+          school.historyScores?.map((item: any) => {
+            const scoreData: { [key: string]: string } = {};
+            item.historyScore?.forEach((hs: any) => {
+              for (const [key, value] of Object.entries(hs)) {
+                scoreData[key] = value as string;
+              }
+            });
+            return scoreData;
+          }) || [];
+
+        // 调用创建备选志愿接口
+        const response = await createMajorAlternative({
+          majorCode: majorCode!,
+          majorName: majorName!,
+          schoolCode: school.code,
+          schoolName: school.name,
+          schoolFeature: school.features || '',
+          historyScore: historyScoreData,
+          group: school.group.toString(),
+        });
+
+        if (response && response.code === 200) {
+          // 更新备选状态
+          dispatch(
+            updateAlternativeStatus({
+              key: schoolKey,
+              status: {
+                isAlternative: true,
+                id: response.data?.id,
+              },
+            })
+          );
+          // 备选成功提示
+          message.success('备选成功，已成功加入志愿频道的备选志愿列表。');
+        } else {
+          alert(response.message || '添加备选志愿失败');
+        }
+      }
+    } catch (error) {
+      console.error('备选志愿操作失败:', error);
+      alert(error instanceof Error ? error.message : '备选志愿操作失败');
+    } finally {
+      // 清除加载状态
+      dispatch(updateLoadingStatus({ key: schoolKey, loading: false }));
+    }
+  };
 
   // 解析学校特色标签的函数
   const parseSchoolFeatures = (features: string | null | undefined): string[] => {
@@ -158,6 +268,10 @@ const MajorSchools: React.FC = () => {
   };
 
   const renderSchool = (school: any) => {
+    const schoolKey = `${school.code}_${majorCode}`;
+    const isAlternative = alternativeStatus[schoolKey]?.isAlternative || false;
+    const isLoading = loadingStatus[schoolKey];
+
     return (
       <div
         key={school.code}
@@ -182,7 +296,19 @@ const MajorSchools: React.FC = () => {
                   : school.name}
               </span>
             </div>
-            <span className="text-gray-400 text-lg">&gt;</span>
+            <button
+              className={`ml-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm ${
+                isAlternative
+                  ? 'bg-red-500 text-white hover:bg-red-600 hover:shadow-md'
+                  : isLoading
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-green-500 text-white hover:bg-green-600 hover:shadow-md'
+              }`}
+              onClick={() => handleAlternativeClick(school)}
+              disabled={isLoading}
+            >
+              {isLoading ? '处理中...' : isAlternative ? '移除' : '备选'}
+            </button>
           </div>
 
           {/* 学校标签行 */}
