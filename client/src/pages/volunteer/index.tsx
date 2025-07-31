@@ -1280,17 +1280,6 @@ const EducationalPage: React.FC = () => {
         onBack={() => window.history.back()}
       />
       <div className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3 min-h-screen">
-        {/* 页面标题和统计 */}
-        <div className="w-full max-w-xl bg-white rounded-2xl shadow p-4 mb-3">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              <span className="text-2xl mr-3">🎯</span>
-              <span className="text-[22px] font-bold text-gray-900 mb-2">志愿管理</span>
-            </div>
-            <div className="text-blue-600 text-[22px] font-bold">共{currentCount}个</div>
-          </div>
-        </div>
-
         {/* 主Tab选项卡 */}
         <div className="w-full max-w-xl bg-white rounded-2xl shadow p-4 mb-3">
           <div
@@ -1350,12 +1339,7 @@ const EducationalPage: React.FC = () => {
         </div>
 
         {/* 排序Tab选项卡 - 独立的card */}
-        <div className="w-full max-w-xl bg-white rounded-2xl shadow p-4 mb-3">
-          <div className="flex items-center mb-3">
-            <span className="text-lg font-bold text-gray-900">
-              {activeTab === 'selected' ? '入选志愿排序' : '排序方式'}
-            </span>
-          </div>
+        <div className="w-full max-w-xl bg-white rounded-2xl shadow p-4 mb-0">
           <div className="flex gap-2 flex-wrap">
             {activeTab === 'selected' ? (
               // 入选志愿的排序选项
