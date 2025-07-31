@@ -39,6 +39,8 @@ interface AlternativeItem {
   majorGroupId?: string; // 专业组ID
   majorGroupName?: string; // 专业组名称
   schoolCity?: string; // 学校所在城市
+  provinceName?: string; // 省份名称
+  cityName?: string; // 城市名称
   sortIndex?: number; // 手动排序索引
   developmentPotential?: number; // 发展潜能
   topDevelopmentCount?: number; // 高发展潜能专业数量
@@ -147,7 +149,7 @@ const EducationalPage: React.FC = () => {
   const [expandedSelected, setExpandedSelected] = useState<{ [key: number]: boolean }>({});
 
   // 添加专业分组的展开状态管理 - 默认全部展开
-const [expandedMajorGroups, setExpandedMajorGroups] = useState<{ [key: string]: boolean }>({});
+  const [expandedMajorGroups, setExpandedMajorGroups] = useState<{ [key: string]: boolean }>({});
 
   // 添加入选确认对话框状态
   const [showSelectDialog, setShowSelectDialog] = useState(false);
@@ -491,7 +493,7 @@ const [expandedMajorGroups, setExpandedMajorGroups] = useState<{ [key: string]: 
       const orderedRankGroups = [2, 3, 1, 0]
         .map((groupIndex) => {
           const items = rankGroups.get(groupIndex) || [];
-          
+
           // 按学校分组
           const schoolMap = new Map<string, AlternativeItem[]>();
           items.forEach((item) => {
@@ -843,6 +845,8 @@ const [expandedMajorGroups, setExpandedMajorGroups] = useState<{ [key: string]: 
               majorGroupId: item.majorGroupId,
               majorGroupName: item.majorGroupName,
               schoolCity: item.schoolCity,
+              provinceName: item.provinceName,
+              cityName: item.cityName,
               sortIndex: index, // 添加排序索引
               developmentPotential: item.developmentPotential || 0, // 发展潜能
               position: item.position || 0, // 位置排序字段
@@ -1141,19 +1145,39 @@ const [expandedMajorGroups, setExpandedMajorGroups] = useState<{ [key: string]: 
       .filter((tag) => tag.length > 0);
   };
 
+  // 获取城市显示信息的辅助函数
+  const getCityDisplayInfo = (item: AlternativeItem): string => {
+    // 优先使用 provinceName 和 cityName
+    if (item.provinceName && item.cityName) {
+      return `${item.provinceName} ${item.cityName}`;
+    }
+    if (item.provinceName) {
+      return item.provinceName;
+    }
+    if (item.cityName) {
+      return item.cityName;
+    }
+    // 如果都没有，使用 schoolCity
+    if (item.schoolCity) {
+      return item.schoolCity;
+    }
+    // 最后才显示未知城市
+    return '城市信息待补充';
+  };
+
   const getHistoryScore = (historyScore: any) => {
     let htmlTemp = '';
-    
+
     // 兼容不同的数据结构
     const historyScores = Array.isArray(historyScore) ? historyScore : [historyScore];
-    
+
     if (historyScores && historyScores.length > 0) {
       historyScores?.map((item: any, index: number) => {
         // 添加分隔线和备注信息（包括第一个）
         if (index > 0) {
           htmlTemp += `<div class="border-t border-gray-200 my-4"></div>`;
         }
-        
+
         // 显示备注信息（兼容不同的字段名）
         const remark = item.remark || item.remarkInfo || item.note || '';
         if (remark) {
@@ -1172,7 +1196,10 @@ const [expandedMajorGroups, setExpandedMajorGroups] = useState<{ [key: string]: 
 
         // 历史分数表格
         const scoreData = item.historyScore || item.scoreData || item;
-        if (scoreData && (Array.isArray(scoreData) ? scoreData.length > 0 : Object.keys(scoreData).length > 0)) {
+        if (
+          scoreData &&
+          (Array.isArray(scoreData) ? scoreData.length > 0 : Object.keys(scoreData).length > 0)
+        ) {
           htmlTemp += `
             <div class="bg-white border border-gray-200 rounded-lg overflow-hidden mb-4">
               <div class="bg-blue-50 px-4 py-3 border-b border-gray-200">
@@ -1500,14 +1527,14 @@ const [expandedMajorGroups, setExpandedMajorGroups] = useState<{ [key: string]: 
                                 : items.result[0]?.majorCode}
                             </span>
                             <span className="text-blue-700 text-base font-bold">
-                              {(isMajorGroup
-                                ? (items as any).majorGroup.majorName
-                                : items.result[0]?.majorName
-                              ).length > 8
-                                ? `${(isMajorGroup ? (items as any).majorGroup.majorName : items.result[0]?.majorName).substring(0, 8)}...`
-                                : isMajorGroup
+                              {(() => {
+                                const majorName = isMajorGroup
                                   ? (items as any).majorGroup.majorName
-                                  : items.result[0]?.majorName}{' '}
+                                  : items.result[0]?.majorName || '';
+                                return majorName.length > 8
+                                  ? `${majorName.substring(0, 8)}...`
+                                  : majorName;
+                              })()}{' '}
                             </span>
                             <span className="ml-2 text-gray-400">&gt;</span>
                           </div>
@@ -1526,7 +1553,6 @@ const [expandedMajorGroups, setExpandedMajorGroups] = useState<{ [key: string]: 
                         </div>
 
                         <div className="space-y-2 p-2">
-
                           {/* 位次段分组显示 */}
                           {isMajorGroup && rankGroups.length > 0 ? (
                             rankGroups.map((rankGroup) => {
@@ -1709,7 +1735,7 @@ const [expandedMajorGroups, setExpandedMajorGroups] = useState<{ [key: string]: 
                                                   key={item.schoolName + '校区'}
                                                   className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200"
                                                 >
-                                                  {item.schoolCity || '未知城市'}
+                                                  {getCityDisplayInfo(item)}
                                                 </span>
                                               </div>
                                             </div>
@@ -1872,7 +1898,7 @@ const [expandedMajorGroups, setExpandedMajorGroups] = useState<{ [key: string]: 
                                             key={item.schoolName + '校区'}
                                             className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200"
                                           >
-                                            {item.schoolCity || '未知城市'}
+                                            {getCityDisplayInfo(item)}
                                           </span>
                                         </div>
                                       </div>
@@ -2116,7 +2142,7 @@ const [expandedMajorGroups, setExpandedMajorGroups] = useState<{ [key: string]: 
                                   key={item.schoolName + '校区'}
                                   className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200"
                                 >
-                                  {item.schoolCity || '未知城市'}
+                                  {getCityDisplayInfo(item)}
                                 </span>
                               </div>
 

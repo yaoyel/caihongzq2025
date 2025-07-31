@@ -806,7 +806,7 @@ const MajorPage: React.FC = () => {
           // 当前已收藏，执行取消收藏
           response = await cancelMajorIntention(String(majorCode));
           if (response && response.code === 200) {
-            message.success('取消收藏成功');
+            message.success('取消收藏成功，已成功从意向列表中移除。');
             // 重新获取收藏列表以更新状态
             await fetchMajorIntentions(true);
           }
@@ -814,7 +814,7 @@ const MajorPage: React.FC = () => {
           // 当前未收藏，执行收藏
           response = await toggleMajorIntention(String(majorCode));
           if (response && response.code === 200) {
-            message.success('收藏成功');
+            message.success('收藏成功，已成功加入意向列表。');
             // 重新获取收藏列表以更新状态
             await fetchMajorIntentions(true);
           }
