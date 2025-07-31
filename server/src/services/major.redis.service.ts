@@ -141,6 +141,92 @@ export class MajorRedisService {
   }
 
   /**
+   * 批量获取多个专业在指定省份和科类的分数信息
+   * @param codes 专业代码数组
+   * @param province 省份名称
+   * @param subjectType 科类（如：物理、历史）
+   * @param secondarySelected 次选科目（用逗号分隔的字符串）
+   * @param batch 批次（可选，如：本科批）
+   * @param start 起始位置（可选，默认0）
+   * @param end 结束位置（可选，默认-1表示所有）
+   * @returns 包含专业代码和分数信息的映射对象
+   */
+  async getMultipleMajorScores(
+    codes: string[],
+    province: string,
+    subjectType: string,
+    secondarySelected: string,
+    batch?: string,
+    start: number = 0,
+    end: number = -1
+  ): Promise<Map<string, MajorHistoryScore[]>> {
+    try {
+      // 参数验证
+      if (!Array.isArray(codes) || codes.length === 0) {
+        return new Map();
+      }
+
+      // 将次选科目字符串转换为数组
+      const secondSubjects = secondarySelected.split(',').filter(Boolean);
+      
+      // 使用RedisModule获取所有可能的组合
+      const patterns = await RedisModule.getMatchingPatterns("major_scores", subjectType, secondSubjects);
+      
+      // 使用multi进行批量查询
+      const multi = this.redisClient.multi();
+      
+      // 为每个专业代码和每个组合构建Redis键并添加到查询中
+      for (const code of codes) {
+        for (const pattern of patterns) {
+          const redisKey = `major_scores:${code}_${province}_${pattern}`;
+          const finalKey = batch ? `${redisKey}_${batch}` : redisKey;
+          multi.zRange(finalKey, start, end, { REV: true });
+        }
+      }
+  
+      // 执行批量查询
+      const results = await multi.exec();
+      if (!results) return new Map();
+      
+      // 处理查询结果，按专业代码分组
+      const majorScoresMap = new Map<string, MajorHistoryScore[]>();
+      
+      let resultIndex = 0;
+      for (const code of codes) {
+        const codeResults: MajorHistoryScore[] = [];
+        
+        // 处理当前专业的所有模式结果
+        for (const pattern of patterns) {
+          const result = results[resultIndex];
+          if (Array.isArray(result) && result.length > 0) {
+            const parsedResults = (result as string[]).map(item => ({
+              ...JSON.parse(item),
+              majorCode: code, // 添加专业代码到返回数据中
+              pattern: pattern // 添加匹配模式到返回数据中
+            }));
+            codeResults.push(...parsedResults);
+          }
+          resultIndex++;
+        }
+        
+        // 将当前专业的结果添加到映射中
+        if (codeResults.length > 0) {
+          majorScoresMap.set(code, codeResults);
+        } else {
+          majorScoresMap.set(code, []);
+        }
+      }
+      
+      return majorScoresMap;
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      console.error('批量获取专业分数信息失败:', errorMessage);
+      throw new Error(`批量获取专业分数信息失败: ${errorMessage}`);
+    }
+  }
+
+  /**
    * 获取专业分数的排名信息
    * @param code 专业代码
    * @param province 省份名称
@@ -596,6 +682,104 @@ export class MajorRedisService {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
       console.error('获取招生计划数据失败:', errorMessage);
       throw new Error(`获取招生计划数据失败: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * 获取多个专业的招生计划数据
+   * @param majorCodes 专业代码数组
+   * @param province 省份
+   * @param year 年份
+   * @param batch 批次
+   * @param enrollType 招生类型
+   * @param preferredSubjects 首选科目
+   * @param secondarySubjects 次选科目数组
+   * @returns Promise<Map<string, any[]>> 包含专业代码和招生计划的映射对象
+   */
+  async getMultipleEnrollPlans(
+    majorCodes: string[],
+    province: string,
+    year: number,
+    batch: string,
+    enrollType: string,
+    preferredSubjects: string,
+    secondarySubjects: string[]
+  ): Promise<Map<string, any[]>> {
+    try {
+      // 参数验证
+      if (!Array.isArray(majorCodes) || majorCodes.length === 0) {
+        return new Map();
+      }
+
+      // 使用 RedisModule 获取所有可能的匹配模式
+      const patterns = await RedisModule.getMatchingPatterns(
+        'enroll_plans',
+        preferredSubjects,
+        secondarySubjects
+      );
+
+      if (patterns.length === 0) {
+        console.log('未找到匹配的科目模式');
+        return new Map();
+      }
+
+      console.log(`为 ${majorCodes.length} 个专业查询招生计划，匹配模式:`, patterns);
+
+      // 使用 multi 进行批量查询
+      const multi = this.redisClient.multi();
+      
+      // 为每个专业代码和每个匹配的模式构建 Redis key 并添加到查询中
+      for (const majorCode of majorCodes) {
+        for (const pattern of patterns) {
+          const redisKey = `enroll_plans:${majorCode}_${province}_${year}_${batch}_${enrollType}_${pattern}`;
+          multi.hGetAll(redisKey);
+        }
+      }
+
+      // 执行批量查询
+      const results = await multi.exec();
+      if (!results) return new Map();
+
+      // 处理查询结果，按专业代码分组
+      const enrollPlansMap = new Map<string, any[]>();
+      
+      let resultIndex = 0;
+      for (const majorCode of majorCodes) {
+        const majorEnrollPlans: any[] = [];
+        
+        // 处理当前专业的所有模式结果
+        for (const pattern of patterns) {
+          const result = results[resultIndex];
+          if (result && typeof result === 'object' && Object.keys(result).length > 0) {
+            const parsedResults = Object.values(result).map(item => {
+              try {
+                return JSON.parse(item as string);
+              } catch (e) {
+                console.error('解析招生计划数据失败:', e);
+                return null;
+              }
+            }).filter(item => item !== null);
+            
+            majorEnrollPlans.push(...parsedResults);
+          }
+          resultIndex++;
+        }
+        
+        // 将当前专业的招生计划添加到映射中
+        if (majorEnrollPlans.length > 0) {
+          enrollPlansMap.set(majorCode, majorEnrollPlans);
+        } else {
+          enrollPlansMap.set(majorCode, []);
+        }
+      }
+      
+      console.log(`成功获取 ${majorCodes.length} 个专业的招生计划数据`);
+      return enrollPlansMap;
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      console.error('批量获取招生计划数据失败:', errorMessage);
+      throw new Error(`批量获取招生计划数据失败: ${errorMessage}`);
     }
   }
 

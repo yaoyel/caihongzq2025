@@ -402,7 +402,7 @@ export class MajorScoreService {
    * @param userId 用户ID
    * @returns 专业代码和发展潜力得分列表（按得分从高到低排序）
    */
-  async getTopDevelopmentPotentialMajors(userId: string): Promise<{majorCode: string, developmentPotential: number}[]> {
+  async getTopDevelopmentPotentialMajors(userId: string): Promise<{majorCode: string, developmentpotential: number}[]> {
     // 使用优化的SQL查询，只获取必要的字段
     const result = await this.majorDetailRepository.query(`
          WITH user_answers AS (
