@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect } from 'react';
 import { Input, Button, Modal, message, Spin, Tabs, Checkbox } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { SearchOutlined, StarOutlined, StarFilled } from '@ant-design/icons';
+import { SearchOutlined, StarOutlined, StarFilled, DownOutlined, UpOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import {
@@ -174,6 +174,8 @@ const MajorPage: React.FC = () => {
     choice1: false,
     choice2: false,
   });
+  // tab说明文字展开状态
+  const [isTabDescriptionExpanded, setIsTabDescriptionExpanded] = useState(false);
   // 使用Redux管理tab状态
   const dispatch = useDispatch();
   const { activeTab, activeSubTab, activeOpportunitySubTab } = useSelector(
@@ -806,7 +808,7 @@ const MajorPage: React.FC = () => {
           // 当前已收藏，执行取消收藏
           response = await cancelMajorIntention(String(majorCode));
           if (response && response.code === 200) {
-            message.success('取消收藏成功');
+            message.success('取消收藏成功，已成功从意向列表中移除。');
             // 重新获取收藏列表以更新状态
             await fetchMajorIntentions(true);
           }
@@ -814,7 +816,7 @@ const MajorPage: React.FC = () => {
           // 当前未收藏，执行收藏
           response = await toggleMajorIntention(String(majorCode));
           if (response && response.code === 200) {
-            message.success('收藏成功');
+            message.success('收藏成功，已成功加入意向列表。');
             // 重新获取收藏列表以更新状态
             await fetchMajorIntentions(true);
           }
@@ -1024,6 +1026,29 @@ const MajorPage: React.FC = () => {
     return Math.ceil(score * 100);
   }, []);
 
+  /**
+   * 获取当前tab的说明文字
+   */
+  const getTabDescription = useCallback(() => {
+    switch (activeTab) {
+      case 'development':
+        return '不同喜欢与天赋在面对各专业微观环境时所具有的热爱能量、面对各专业宏观环境时所拥有的发展机遇，所决定的"学习过程愉快、效率高、效果好"，及"工作干得顺、赚得多、前景光明"。';
+      case 'passion':
+        return '热爱能量——微观环境中，更偏爱、更具动力，更擅长、更具能力的专业。';
+      case 'opportunity':
+        return '机遇指数——宏观环境下，更顺利、更具发展前景的专业。';
+      default:
+        return '';
+    }
+  }, [activeTab]);
+
+  /**
+   * 切换tab说明文字的展开收起状态
+   */
+  const toggleTabDescription = useCallback(() => {
+    setIsTabDescriptionExpanded(prev => !prev);
+  }, []);
+
   return (
     <div className="page-bg text-gray-900">
       {/* 顶部搜索栏 */}
@@ -1078,17 +1103,19 @@ const MajorPage: React.FC = () => {
           height: (() => {
             // 基础高度：主选项卡 + 子选项卡
             let baseHeight = 72;
-            
+
             if (activeTab === 'passion' || activeTab === 'opportunity') {
               baseHeight = 115; // 主选项卡 + 子选项卡
-              
+
               // 如果有子Tab说明文字，需要额外增加高度
-              if ((activeTab === 'passion' && activeSubTab) || 
-                  (activeTab === 'opportunity' && activeOpportunitySubTab)) {
+              if (
+                (activeTab === 'passion' && activeSubTab) ||
+                (activeTab === 'opportunity' && activeOpportunitySubTab)
+              ) {
                 baseHeight += 50; // 子Tab说明文字的高度（包含margin和padding）
               }
             }
-            
+
             return baseHeight;
           })(),
         }}
@@ -1388,22 +1415,164 @@ const MajorPage: React.FC = () => {
           height: (() => {
             // 基础高度计算
             let baseHeight = 220; // 搜索栏 + 主选项卡
-            
+
             if (activeTab === 'passion' || activeTab === 'opportunity') {
               baseHeight = 240; // 搜索栏 + 主选项卡 + 子选项卡
-              
+
               // 如果有子Tab说明文字，需要额外增加高度
-              if ((activeTab === 'passion' && activeSubTab) || 
-                  (activeTab === 'opportunity' && activeOpportunitySubTab)) {
+              if (
+                (activeTab === 'passion' && activeSubTab) ||
+                (activeTab === 'opportunity' && activeOpportunitySubTab)
+              ) {
                 baseHeight += 50; // 子Tab说明文字的高度
               }
             }
-            
+
             return `calc(100vh - ${baseHeight}px)`;
           })(),
           overflow: 'auto',
         }}
       >
+        {/* Tab说明文字区域 */}
+        <div
+          style={{
+            margin: '16px 16px 8px 16px',
+            padding: '16px 20px',
+            background: (() => {
+              switch (activeTab) {
+                case 'development':
+                  return 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)';
+                case 'passion':
+                  return 'linear-gradient(135deg, #fef7f7 0%, #fed7d7 100%)';
+                case 'opportunity':
+                  return 'linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%)';
+                default:
+                  return 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)';
+              }
+            })(),
+            borderRadius: '16px',
+            border: (() => {
+              switch (activeTab) {
+                case 'development':
+                  return '1px solid #3b82f6';
+                case 'passion':
+                  return '1px solid #ef4444';
+                case 'opportunity':
+                  return '1px solid #10b981';
+                default:
+                  return '1px solid #d1d5db';
+              }
+            })(),
+            boxShadow: (() => {
+              switch (activeTab) {
+                case 'development':
+                  return '0 4px 12px rgba(59, 130, 246, 0.15)';
+                case 'passion':
+                  return '0 4px 12px rgba(239, 68, 68, 0.15)';
+                case 'opportunity':
+                  return '0 4px 12px rgba(16, 185, 129, 0.15)';
+                default:
+                  return '0 4px 12px rgba(0, 0, 0, 0.05)';
+              }
+            })(),
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+          onClick={toggleTabDescription}
+        >
+          {/* 装饰性背景元素 */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '-20px',
+              right: '-20px',
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              background: (() => {
+                switch (activeTab) {
+                  case 'development':
+                    return 'rgba(59, 130, 246, 0.1)';
+                  case 'passion':
+                    return 'rgba(239, 68, 68, 0.1)';
+                  case 'opportunity':
+                    return 'rgba(16, 185, 129, 0.1)';
+                  default:
+                    return 'rgba(0, 0, 0, 0.05)';
+                }
+              })(),
+            }}
+          />
+          
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              color: (() => {
+                switch (activeTab) {
+                  case 'development':
+                    return '#1e40af';
+                  case 'passion':
+                    return '#dc2626';
+                  case 'opportunity':
+                    return '#059669';
+                  default:
+                    return '#374151';
+                }
+              })(),
+              fontSize: '15px',
+              fontWeight: 600,
+              lineHeight: '1.6',
+              position: 'relative',
+              zIndex: 1,
+            }}
+          >
+            <div
+              style={{
+                flex: 1,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: isTabDescriptionExpanded ? 'normal' : 'nowrap',
+                transition: 'all 0.3s ease',
+              }}
+            >
+              {getTabDescription()}
+            </div>
+            <div
+              style={{
+                marginLeft: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                transition: 'all 0.3s ease',
+                transform: isTabDescriptionExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                padding: '4px',
+                borderRadius: '50%',
+                background: (() => {
+                  switch (activeTab) {
+                    case 'development':
+                      return 'rgba(59, 130, 246, 0.1)';
+                    case 'passion':
+                      return 'rgba(239, 68, 68, 0.1)';
+                    case 'opportunity':
+                      return 'rgba(16, 185, 129, 0.1)';
+                    default:
+                      return 'rgba(0, 0, 0, 0.05)';
+                  }
+                })(),
+              }}
+            >
+              {isTabDescriptionExpanded ? (
+                <UpOutlined style={{ fontSize: '14px' }} />
+              ) : (
+                <DownOutlined style={{ fontSize: '14px' }} />
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* 专业列表卡片 */}
         <div
           className="major-list-card"
@@ -1411,8 +1580,9 @@ const MajorPage: React.FC = () => {
             background: '#fff',
             borderRadius: 16,
             margin: '16px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
             minWidth: 'calc(100% - 32px)',
+            border: '1px solid #f1f5f9',
           }}
         >
           {/* 标题 */}
@@ -1873,7 +2043,7 @@ const MajorPage: React.FC = () => {
                               );
                             }}
                           >
-                            招生院校{item.schoolCount}所 {'>'}
+                            招生院校 {'>'}
                           </div>
                         )}
                       </div>
@@ -2084,11 +2254,11 @@ const MajorPage: React.FC = () => {
                     }}
                   >
                     <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#2563eb' }}>
-                      3.
+                      1.
                       建议特别关注&ldquo;乐学/善学/厌学/阻学特质&rdquo;，了解为什么自己可能喜欢与擅长该专业
                     </div>
                     <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#2563eb' }}>
-                      4.
+                      2.
                       请详细了解学业发展、职业回报、产业前景、成长空间等&ldquo;外部机遇&rdquo;相关内容，基于更全面的评估，决定是否&ldquo;收藏&rdquo;为意向专业
                     </div>
                   </div>

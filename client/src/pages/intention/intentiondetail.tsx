@@ -10,7 +10,7 @@ import {
   getMajorAlternatives,
   cancelAlternative,
 } from '../../config/volunteer';
-import { Modal, Button, Checkbox } from 'antd';
+import { Modal, Button, Checkbox, message } from 'antd';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import {
@@ -439,6 +439,8 @@ const EducationalDetailPage: React.FC = () => {
               status: { isAlternative: false, id: undefined },
             })
           );
+          // 备选删除成功提示
+          message.success('取消备选成功，已成功从志愿频道的备选志愿列表中移除。');
         } else {
           alert(response.message || '取消备选志愿失败');
         }
@@ -482,6 +484,8 @@ const EducationalDetailPage: React.FC = () => {
               },
             })
           );
+          // 备选成功提示
+          message.success('备选成功，已成功加入志愿频道的备选志愿列表。');
         } else {
           alert(response.message || '添加备选志愿失败');
         }
@@ -503,7 +507,7 @@ const EducationalDetailPage: React.FC = () => {
         if (index > 0) {
           htmlTemp += `<div class="border-t border-gray-200 my-4"></div>`;
         }
-        
+
         // 显示备注信息
         if (item.remark) {
           htmlTemp += `
