@@ -16,7 +16,7 @@ import selfAssessmentGrey from '../../public/self-assessment-grey.svg';
  */
 const navItems = [
   {
-    label: '自评',
+    label: 'AI志愿',
     blueIcon: selfAssessmentBlue,
     greyIcon: selfAssessmentGrey,
   },
@@ -67,7 +67,8 @@ const BottomNav: React.FC<BottomNavProps> = ({ selectedIndex }) => {
         let path = '';
         switch (idx) {
           case 0:
-            path = '/selfassessment';
+            // path = '/selfassessment';
+            path = '/volunteer/aiVolunteer';
             break;
           case 1:
             path = '/major/list';

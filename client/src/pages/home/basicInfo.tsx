@@ -205,13 +205,13 @@ const BasicInfo: React.FC = () => {
           Dialog.confirm({
             content: '考生信息更新成功',
             confirmText: '查看专业报告',
-            cancelText: '重做自评',
+            // cancelText: '重做自评',
             onConfirm: () => {
               navigator('/major/list');
             },
-            onCancel: () => {
-              navigator('/selfassessment');
-            },
+            // onCancel: () => {
+            //   navigator('/selfassessment');
+            // },
           });
         }
       }

@@ -33,6 +33,7 @@ const SelfassessmentPage: React.FC = () => {
         <Top
           title={userInfo?.scaleAnswerCount !== 168 ? '自评' : '自评结果'}
           onBack={() => window.history.back()}
+          showRestartButton={userInfo?.scaleAnswerCount === 168}
         />
         <div className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3 min-h-screen">
           {isLoading ? (

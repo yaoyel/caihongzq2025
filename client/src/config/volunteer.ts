@@ -46,11 +46,14 @@ export const api = {
     // 上移志愿接口
     moveUpAlternative: (alternativeId: string) => `/majors/alternative/${alternativeId}/move-up`,
     // 下移志愿接口
-    moveDownAlternative: (alternativeId: string) => `/majors/alternative/${alternativeId}/move-down`,
+    moveDownAlternative: (alternativeId: string) =>
+      `/majors/alternative/${alternativeId}/move-down`,
     // 查询专业组接口
     majorGroup: (majorGroupId: string) => `/majors/group/${majorGroupId}`,
     // 查询招生简章接口
     schoolCharters: (schoolCode: string) => `/schools/${schoolCode}/charters`,
+    // 自动生成志愿接口
+    nominate: '/config/nominate',
   },
 };
 
@@ -280,7 +283,9 @@ interface AlternativeActionResponse {
  * @param alternativeId 备选志愿ID
  * @returns Promise<AlternativeActionResponse>
  */
-export const selectAlternative = async (alternativeId: string): Promise<AlternativeActionResponse> => {
+export const selectAlternative = async (
+  alternativeId: string
+): Promise<AlternativeActionResponse> => {
   try {
     const response = await axios.post<AlternativeActionResponse>(
       getApiUrl(api.endpoints.selectAlternative(alternativeId)),
@@ -301,7 +306,9 @@ export const selectAlternative = async (alternativeId: string): Promise<Alternat
  * @param alternativeId 备选志愿ID
  * @returns Promise<AlternativeActionResponse>
  */
-export const unselectAlternative = async (alternativeId: string): Promise<AlternativeActionResponse> => {
+export const unselectAlternative = async (
+  alternativeId: string
+): Promise<AlternativeActionResponse> => {
   try {
     const response = await axios.post<AlternativeActionResponse>(
       getApiUrl(api.endpoints.unselectAlternative(alternativeId)),
@@ -322,7 +329,9 @@ export const unselectAlternative = async (alternativeId: string): Promise<Altern
  * @param alternativeId 备选志愿ID
  * @returns Promise<AlternativeActionResponse>
  */
-export const cancelAlternative = async (alternativeId: string): Promise<AlternativeActionResponse> => {
+export const cancelAlternative = async (
+  alternativeId: string
+): Promise<AlternativeActionResponse> => {
   try {
     const response = await axios.delete<AlternativeActionResponse>(
       getApiUrl(api.endpoints.cancelAlternative(alternativeId)),
@@ -388,7 +397,9 @@ export const getMajorGroup = async (majorGroupId: string): Promise<MajorGroupRes
  * @param alternativeId 备选志愿ID
  * @returns Promise<AlternativeActionResponse>
  */
-export const moveUpAlternative = async (alternativeId: string): Promise<AlternativeActionResponse> => {
+export const moveUpAlternative = async (
+  alternativeId: string
+): Promise<AlternativeActionResponse> => {
   try {
     const response = await axios.post<AlternativeActionResponse>(
       getApiUrl(api.endpoints.moveUpAlternative(alternativeId)),
@@ -409,7 +420,9 @@ export const moveUpAlternative = async (alternativeId: string): Promise<Alternat
  * @param alternativeId 备选志愿ID
  * @returns Promise<AlternativeActionResponse>
  */
-export const moveDownAlternative = async (alternativeId: string): Promise<AlternativeActionResponse> => {
+export const moveDownAlternative = async (
+  alternativeId: string
+): Promise<AlternativeActionResponse> => {
   try {
     const response = await axios.post<AlternativeActionResponse>(
       getApiUrl(api.endpoints.moveDownAlternative(alternativeId)),
@@ -458,6 +471,89 @@ export const getSchoolCharters = async (schoolCode: string): Promise<SchoolChart
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(error.response?.data?.message || '获取招生简章失败');
+    }
+    throw error;
+  }
+};
+
+
+
+interface NominateMajor {
+  code: string;
+  name: string;
+  developmentPotential: string;
+  majorGroupId: number;
+  majorGroupName: string;
+  rankDiff: number;
+  rankDiffPer: number;
+  rankDiffPercentage: number;
+}
+
+interface NominateItem {
+  id: number;
+  name: string;
+  averageRank: number;
+  belong: string;
+  cityName: string;
+  employmentRate: number | null;
+  enrollmentRate: number | null;
+  features: string;
+  group: number;
+  historyScores: any[];
+  isTopFive: boolean;
+  major: NominateMajor;
+}
+
+interface NominateUser {
+  province: string;
+  preferredSubjects: string;
+  secondPreferredSubjects?: string;
+}
+
+interface NominateResponse {
+  code: number;
+  message: string;
+  data: {
+    recommendCount: number;
+    schools: NominateItem[];
+    total: number;
+    user: NominateUser;
+    volunteerCount: number;
+  };
+}
+
+/**
+ * 自动生成志愿
+ * @param options 可选参数，如sortByMajor等
+ * @returns Promise<NominateResponse>
+ */
+export const nominate = async (options?: {
+  sortByMajor?: boolean;
+  [key: string]: any;
+}): Promise<NominateResponse> => {
+  try {
+    // 构建查询参数
+    const queryParams = new URLSearchParams();
+    if (options?.sortByMajor) {
+      queryParams.append('sortByMajor', 'true');
+    }
+
+    // 添加其他可能的查询参数
+    Object.keys(options || {}).forEach((key) => {
+      if (key !== 'sortByMajor' && options![key] !== undefined) {
+        queryParams.append(key, String(options![key]));
+      }
+    });
+
+    const url =
+      getApiUrl(api.endpoints.nominate) +
+      (queryParams.toString() ? `?${queryParams.toString()}` : '');
+
+    const response = await axios.get<NominateResponse>(url, { headers: getAuthHeaders() });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '自动生成志愿失败');
     }
     throw error;
   }
