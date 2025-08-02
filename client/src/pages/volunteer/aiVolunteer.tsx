@@ -12,6 +12,7 @@ import {
   getMajorAlternatives,
 } from '../../config/volunteer';
 
+
 // 定义备选志愿项的类型（扩展自 API 返回的数据）
 interface AlternativeItem {
   id: string;
