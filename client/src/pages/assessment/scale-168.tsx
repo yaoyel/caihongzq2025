@@ -1311,7 +1311,7 @@ const Scale168Assessment: React.FC = () => {
       >
         <StyledContent>
           <TitleRow>
-            <AbsoluteTitle level={2}>喜欢与天赋自评</AbsoluteTitle>
+            <AbsoluteTitle level={2}>逆袭志愿自评</AbsoluteTitle>
             <StyledNicknameButton
               icon={<EditOutlined />}
               onClick={() => {
@@ -1323,7 +1323,10 @@ const Scale168Assessment: React.FC = () => {
                 setIsNicknameModalVisible(true);
               }}
             />
-            <StyledHomeButton icon={<HomeOutlined />} onClick={() => navigate('/major/list')} />
+            <StyledHomeButton
+              icon={<HomeOutlined />}
+              onClick={() => navigate('/volunteer/aiVolunteer')}
+            />
           </TitleRow>
           <ResponsiveSteps
             current={dimensions.indexOf(currentDimension)}
@@ -1531,7 +1534,9 @@ const Scale168Assessment: React.FC = () => {
             <div className="encouragement-icon">{encouragementData.icon}</div>
             <div className="encouragement-title">{encouragementData.title}</div>
             <div className="encouragement-message">{encouragementData.content}</div>
-            <div className="encouragement-next">下一步：{encouragementData.nextStep}</div>
+            <div className="encouragement-next" onClick={handleEncouragementConfirm}>
+              下一步：{encouragementData.nextStep}
+            </div>
           </EncouragementContent>
         )}
       </EncouragementModal>

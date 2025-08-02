@@ -367,61 +367,17 @@ const AiVolunteerPage: React.FC = () => {
           }));
         }
         case 'rankDiff': {
-          // 按位次差从低到高排序，并按学校分组
+          // 按位次差从低到高排序，保持API返回的顺序
           const allRankDiffData = data.flatMap((group) => group.result);
 
-          // 按学校分组
-          const schoolGroups = groupBySchool(allRankDiffData);
+          // 按位次差从低到高排序
+          const sortedRankDiffData = allRankDiffData.sort((a, b) => (a.Rankdiff || 0) - (b.Rankdiff || 0));
 
-          // 对每个学校组内的专业按位次差从低到高排序
-          const sortedSchoolGroups = schoolGroups.map((schoolGroup) => ({
-            ...schoolGroup,
-            majors: schoolGroup.majors.sort((a, b) => (a.Rankdiff || 0) - (b.Rankdiff || 0)),
-          }));
-
-          // 对学校按历史最低录取分从高到低排序
-          const sortedSchools = sortedSchoolGroups.sort((a, b) => {
-            // 获取学校的历史最低录取分
-            const getSchoolMinScore = (school: SchoolGroup) => {
-              let minScore = 0;
-              school.majors.forEach((major) => {
-                if (major.historyScore && major.historyScore.length > 0) {
-                  const firstHistoryScore = major.historyScore[0];
-                  if (firstHistoryScore.historyScore && firstHistoryScore.historyScore.length > 0) {
-                    const scoreData = firstHistoryScore.historyScore[0];
-                    if (scoreData && typeof scoreData === 'object') {
-                      // 遍历所有年份的分数，找到最低分
-                      Object.values(scoreData).forEach((value: any) => {
-                        if (typeof value === 'string') {
-                          const scoreParts = value.split(',');
-                          if (scoreParts.length > 0) {
-                            const score = parseInt(scoreParts[0]);
-                            if (!isNaN(score) && (minScore === 0 || score < minScore)) {
-                              minScore = score;
-                            }
-                          }
-                        }
-                      });
-                    }
-                  }
-                }
-              });
-              return minScore;
-            };
-
-            const scoreA = getSchoolMinScore(a);
-            const scoreB = getSchoolMinScore(b);
-
-            // 从高到低排序
-            return scoreB - scoreA;
-          });
-
-          // 返回按学校分组的格式，所有学校作为一个group
+          // 返回按API顺序的格式
           return [
             {
               group: -1000, // 使用负数避免与位次段分组冲突
-              result: sortedSchools.flatMap((school) => school.majors),
-              schoolGroups: sortedSchools, // 添加所有学校组信息
+              result: sortedRankDiffData,
             },
           ];
         }
@@ -986,10 +942,6 @@ const AiVolunteerPage: React.FC = () => {
                     const majorGroup = (group.result[0] as any).majorGroup as MajorGroup;
                     rankGroups = majorGroup?.rankGroups || [];
                     schoolGroups = rankGroups.flatMap((rankGroup) => rankGroup.schools);
-                  } else if (sortTab === 'rankDiff' && (group.result[0] as any).schoolGroups) {
-                    // 按位次差排序时的学校分组数据
-                    const schoolGroupsData = (group.result[0] as any).schoolGroups as SchoolGroup[];
-                    schoolGroups = schoolGroupsData;
                   } else {
                     // 按位次段分组的数据
                     schoolGroups = groupBySchool(group.result);
@@ -1145,9 +1097,37 @@ const AiVolunteerPage: React.FC = () => {
                                             </div>
                                           </div>
 
-                                          {/* 学校标签行 */}
+                                          {/* 专业信息行 */}
                                           {schoolGroup.majors.map((item: any) => (
                                             <div key={item.id}>
+                                              <div className="flex items-center justify-between mb-3">
+                                                <div className="flex items-center">
+                                                  <span className="text-blue-700 text-sm mr-2">
+                                                    {item.majorCode} {item.majorName}
+                                                  </span>
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                  {/* 位次差显示 */}
+                                                  <span className="px-2 py-0.5 rounded text-xs font-bold">
+                                                    较上年
+                                                    <span
+                                                      className={
+                                                        (item.Rankdiff || 0) > 0
+                                                          ? 'text-green-600 bg-green-100'
+                                                          : (item.Rankdiff || 0) < 0
+                                                            ? 'text-red-600 bg-red-100'
+                                                            : 'text-gray-600 bg-gray-100'
+                                                      }
+                                                    >
+                                                      {(item.Rankdiff || 0) > 0
+                                                        ? `高${item.Rankdiff}/${Math.floor(item.RankdiffPer || 0)}%`
+                                                        : (item.Rankdiff || 0) < 0
+                                                          ? `低${Math.abs(item.Rankdiff)}/${Math.floor(item.RankdiffPer || 0)}%`
+                                                          : '0%'}
+                                                    </span>
+                                                  </span>
+                                                </div>
+                                              </div>
                                               <div className="flex flex-wrap gap-2 mb-3">
                                                 {/* 学校特色标签 */}
                                                 {parseSchoolFeatures(item.schoolFeature).map(
@@ -1281,9 +1261,37 @@ const AiVolunteerPage: React.FC = () => {
                                         </div>
                                       </div>
 
-                                      {/* 学校标签行 */}
+                                      {/* 专业信息行 */}
                                       {schoolGroup.majors.map((item: any) => (
                                         <div key={item.id}>
+                                          <div className="flex items-center justify-between mb-3">
+                                            <div className="flex items-center">
+                                              <span className="text-blue-700 text-sm mr-2">
+                                                {item.majorCode} {item.majorName}
+                                              </span>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                              {/* 位次差显示 */}
+                                              <span className="px-2 py-0.5 rounded text-xs font-bold">
+                                                较上年
+                                                <span
+                                                  className={
+                                                    (item.Rankdiff || 0) > 0
+                                                      ? 'text-green-600 bg-green-100'
+                                                      : (item.Rankdiff || 0) < 0
+                                                        ? 'text-red-600 bg-red-100'
+                                                        : 'text-gray-600 bg-gray-100'
+                                                  }
+                                                >
+                                                  {(item.Rankdiff || 0) > 0
+                                                    ? `高${item.Rankdiff}/${Math.floor(item.RankdiffPer || 0)}%`
+                                                    : (item.Rankdiff || 0) < 0
+                                                      ? `低${Math.abs(item.Rankdiff)}/${Math.floor(item.RankdiffPer || 0)}%`
+                                                      : '0%'}
+                                                </span>
+                                              </span>
+                                            </div>
+                                          </div>
                                           <div className="flex flex-wrap gap-2 mb-3">
                                             {/* 学校特色标签 */}
                                             {parseSchoolFeatures(item.schoolFeature).map(
@@ -1360,167 +1368,149 @@ const AiVolunteerPage: React.FC = () => {
                           </div>
                         </div>
                       ) : sortTab === 'rankDiff' ? (
-                        /* 按位次差排序时的学校分组显示 */
+                        /* 按位次差排序时的列表显示 */
                         <div className="w-full max-w-xl bg-white rounded-2xl shadow">
-                          {displaySchools.map((schoolGroup) => (
-                            <div key={schoolGroup.schoolCode} className="mb-4">
-                              {/* 学校与基本信息 */}
-                              <div
-                                className="flex items-center justify-between border-b pb-2 p-2 -mx-4 px-4"
-                                style={{ backgroundColor: '#007bff' }}
-                                onClick={() => {
-                                  navigate(
-                                    `/major/schooldetail?schoolCode=${schoolGroup.schoolCode}&schoolname=${schoolGroup.schoolName}`
-                                  );
-                                }}
-                              >
-                                <div className="flex items-center space-x-2">
-                                  <span className="text-[18px] font-bold text-white">
-                                    {schoolGroup.schoolName} {'>'}
-                                  </span>
-                                </div>
+                          {group.result.map((item: any) => (
+                            <div key={item.id} className="mb-4 border-b border-gray-200 pb-4 last:border-b-0">
+                              {/* 学校名称 */}
+                              <div className="flex items-center justify-between mb-3">
+                                <span
+                                  className="text-blue-600 text-lg font-bold cursor-pointer hover:text-blue-700 transition-colors duration-200"
+                                  onClick={() => {
+                                    navigate(
+                                      `/major/schooldetail?schoolCode=${item.schoolCode}&schoolname=${item.schoolName}`
+                                    );
+                                  }}
+                                >
+                                  {item.schoolName}
+                                </span>
+                                <button
+                                  className={`px-3 py-1 rounded text-sm font-medium transition-all duration-200 ${
+                                    (() => {
+                                      const itemKey = `${item.schoolCode}_${item.majorCode}`;
+                                      const isAlternative = alternativeStatus[itemKey]?.isAlternative || false;
+                                      const isLoading = loadingStatus[itemKey];
+                                      return isAlternative
+                                        ? 'bg-red-500 text-white hover:bg-red-600'
+                                        : isLoading
+                                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                          : 'bg-green-500 text-white hover:bg-green-600';
+                                    })()
+                                  }`}
+                                  onClick={() => handleAlternativeClick(item)}
+                                  disabled={(() => {
+                                    const itemKey = `${item.schoolCode}_${item.majorCode}`;
+                                    return loadingStatus[itemKey];
+                                  })()}
+                                >
+                                  {(() => {
+                                    const itemKey = `${item.schoolCode}_${item.majorCode}`;
+                                    const isAlternative = alternativeStatus[itemKey]?.isAlternative || false;
+                                    const isLoading = loadingStatus[itemKey];
+                                    return isLoading
+                                      ? '处理中...'
+                                      : isAlternative
+                                        ? '移除'
+                                        : '备选';
+                                  })()}
+                                </button>
                               </div>
 
-                              {/* 专业列表 */}
-                              {schoolGroup.majors.map((item: any) => (
-                                <div key={item.id}>
-                                  {/* 专业与热爱能量 */}
-                                  <div className="flex items-center justify-between mt-2">
-                                    <div className="flex items-center">
-                                      <span
-                                        className={`text-blue-700 text-[14px] mr-2 ${item.majorName.length > 8 ? 'cursor-pointer hover:text-blue-800' : ''}`}
-                                        onClick={() => {
-                                          navigate(
-                                            `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isFavorite=true`,
-                                            { replace: false } // 不使用 replace，保持正常的导航历史
-                                          );
-                                        }}
-                                      >
-                                        {item.majorCode}{' '}
-                                        {item.majorName.length > 5
-                                          ? item.majorName.substring(0, 5) + '...'
-                                          : item.majorName}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                      {/* 显示较上年变化 */}
-                                      <span className="text-orange-600 bg-orange-100 px-2 py-0.5 rounded text-xs font-bold">
-                                        较上年
-                                        <span
-                                          className={
-                                            (item.Rankdiff || 0) > 0
-                                              ? 'text-green-600 bg-green-100'
-                                              : (item.Rankdiff || 0) < 0
-                                                ? 'text-red-600 bg-red-100'
-                                                : 'text-gray-600 bg-gray-100'
-                                          }
-                                        >
-                                          {(item.Rankdiff || 0) > 0
-                                            ? `高${item.Rankdiff}/${Math.floor(item.RankdiffPer || 0)}%`
-                                            : (item.Rankdiff || 0) < 0
-                                              ? `低${Math.abs(item.Rankdiff)}/${Math.floor(item.RankdiffPer || 0)}%`
-                                              : '0%'}
-                                        </span>
-                                      </span>
-                                      <button
-                                        className={`px-3 py-1 rounded ${(() => {
-                                          const itemKey = `${item.schoolCode}_${item.majorCode}`;
-                                          const isAlternative =
-                                            alternativeStatus[itemKey]?.isAlternative || false;
-                                          const isLoading = loadingStatus[itemKey];
-                                          return isAlternative
-                                            ? 'bg-red-500 text-white hover:bg-red-600'
-                                            : isLoading
-                                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                              : 'bg-green-500 text-white hover:bg-green-600';
-                                        })()}`}
-                                        onClick={() => handleAlternativeClick(item)}
-                                        disabled={(() => {
-                                          const itemKey = `${item.schoolCode}_${item.majorCode}`;
-                                          return loadingStatus[itemKey];
-                                        })()}
-                                      >
-                                        {(() => {
-                                          const itemKey = `${item.schoolCode}_${item.majorCode}`;
-                                          const isAlternative =
-                                            alternativeStatus[itemKey]?.isAlternative || false;
-                                          const isLoading = loadingStatus[itemKey];
-                                          return isLoading
-                                            ? '处理中...'
-                                            : isAlternative
-                                              ? '移除'
-                                              : '备选';
-                                        })()}
-                                      </button>
-                                    </div>
-                                  </div>
+                              {/* 专业信息 */}
+                              <div className="flex items-center justify-between mb-3">
+                                <span
+                                  className="text-blue-700 text-sm cursor-pointer hover:text-blue-800"
+                                  onClick={() => {
+                                    navigate(
+                                      `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isFavorite=true`,
+                                      { replace: false }
+                                    );
+                                  }}
+                                >
+                                  {item.majorCode} {item.majorName}
+                                </span>
+                                <span className="px-2 py-0.5 rounded text-xs font-bold">
+                                  较上年
+                                  <span
+                                    className={
+                                      (item.Rankdiff || 0) > 0
+                                        ? 'text-green-600 bg-green-100'
+                                        : (item.Rankdiff || 0) < 0
+                                          ? 'text-red-600 bg-red-100'
+                                          : 'text-gray-600 bg-gray-100'
+                                    }
+                                  >
+                                    {(item.Rankdiff || 0) > 0
+                                      ? `高${item.Rankdiff}/${Math.floor(item.RankdiffPer || 0)}%`
+                                      : (item.Rankdiff || 0) < 0
+                                        ? `低${Math.abs(item.Rankdiff)}/${Math.floor(item.RankdiffPer || 0)}%`
+                                        : '0%'}
+                                  </span>
+                                </span>
+                              </div>
 
-                                  {/* 学校标签行 */}
-                                  <div className="flex flex-wrap gap-2 mb-3 mt-2">
-                                    {/* 学校特色标签 */}
-                                    {parseSchoolFeatures(item.schoolFeature).map(
-                                      (feature, index) => (
-                                        <span
-                                          key={`${item.schoolName}-feature-${index}`}
-                                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
-                                        >
-                                          {feature}
-                                        </span>
-                                      )
-                                    )}
+                              {/* 学校标签行 */}
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                {/* 学校特色标签 */}
+                                {parseSchoolFeatures(item.schoolFeature).map((feature, index) => (
+                                  <span
+                                    key={`${item.schoolName}-feature-${index}`}
+                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
+                                  >
+                                    {feature}
+                                  </span>
+                                ))}
+                                <span
+                                  key={item.schoolName + '公办'}
+                                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200"
+                                >
+                                  {item.schoolNature === 'public' ? '公办' : '民办'}
+                                </span>
+                                {item.enrollmentRate !== 0 && (
+                                  <span
+                                    key={item.schoolName + '升学率'}
+                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
+                                  >
+                                    升学率
+                                    {item.enrollmentRate && item.enrollmentRate > 0
+                                      ? item.enrollmentRate + '%'
+                                      : '待补充'}
+                                  </span>
+                                )}
+                                {item.majorGroupId && (
+                                  <span
+                                    key={item.schoolName + '专业组'}
+                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                                  >
+                                    {item.majorGroupName}专业组
+                                  </span>
+                                )}
+                                {/* 学制标签 */}
+                                {item.historyScore &&
+                                  item.historyScore.length > 0 &&
+                                  item.historyScore[0].studyPeriod && (
                                     <span
-                                      key={item.schoolName + '公办'}
-                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200"
+                                      key={item.schoolName + '学制'}
+                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200"
                                     >
-                                      {item.schoolNature === 'public' ? '公办' : '民办'}
+                                      学制{item.historyScore[0].studyPeriod}年
                                     </span>
-                                    {item.enrollmentRate !== 0 && (
-                                      <span
-                                        key={item.schoolName + '升学率'}
-                                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
-                                      >
-                                        升学率
-                                        {item.enrollmentRate && item.enrollmentRate > 0
-                                          ? item.enrollmentRate + '%'
-                                          : '待补充'}
-                                      </span>
-                                    )}
-                                    {item.majorGroupId && (
-                                      <span
-                                        key={item.schoolName + '专业组'}
-                                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
-                                      >
-                                        {item.majorGroupName}专业组
-                                      </span>
-                                    )}
-                                    {/* 学制标签 */}
-                                    {item.historyScore &&
-                                      item.historyScore.length > 0 &&
-                                      item.historyScore[0].studyPeriod && (
-                                        <span
-                                          key={item.schoolName + '学制'}
-                                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200"
-                                        >
-                                          学制{item.historyScore[0].studyPeriod}年
-                                        </span>
-                                      )}
-                                    <span
-                                      key={item.schoolName + '校区'}
-                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200"
-                                    >
-                                      {getCityDisplayInfo(item)}
-                                    </span>
-                                  </div>
+                                  )}
+                                <span
+                                  key={item.schoolName + '校区'}
+                                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200"
+                                >
+                                  {getCityDisplayInfo(item)}
+                                </span>
+                              </div>
 
-                                  {/* 历年分数表格 */}
-                                  <div
-                                    className=" bg-gray-50 rounded-b-lg"
-                                    dangerouslySetInnerHTML={{
-                                      __html: getHistoryScore(item?.historyScore || []),
-                                    }}
-                                  ></div>
-                                </div>
-                              ))}
+                              {/* 历年分数表格 */}
+                              <div
+                                className="bg-gray-50 rounded-b-lg"
+                                dangerouslySetInnerHTML={{
+                                  __html: getHistoryScore(item?.historyScore || []),
+                                }}
+                              ></div>
                             </div>
                           ))}
                         </div>

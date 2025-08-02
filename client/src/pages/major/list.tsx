@@ -1433,55 +1433,60 @@ const MajorPage: React.FC = () => {
           overflow: 'auto',
         }}
       >
-        {/* Tab说明文字区域 */}
-        <div
-          style={{
-            margin: '16px 16px 8px 16px',
-            padding: '16px 20px',
-            background: (() => {
-              switch (activeTab) {
-                case 'development':
-                  return 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)';
-                case 'passion':
-                  return 'linear-gradient(135deg, #fef7f7 0%, #fed7d7 100%)';
-                case 'opportunity':
-                  return 'linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%)';
-                default:
-                  return 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)';
-              }
-            })(),
-            borderRadius: '16px',
-            border: (() => {
-              switch (activeTab) {
-                case 'development':
-                  return '1px solid #3b82f6';
-                case 'passion':
-                  return '1px solid #ef4444';
-                case 'opportunity':
-                  return '1px solid #10b981';
-                default:
-                  return '1px solid #d1d5db';
-              }
-            })(),
-            boxShadow: (() => {
-              switch (activeTab) {
-                case 'development':
-                  return '0 4px 12px rgba(59, 130, 246, 0.15)';
-                case 'passion':
-                  return '0 4px 12px rgba(239, 68, 68, 0.15)';
-                case 'opportunity':
-                  return '0 4px 12px rgba(16, 185, 129, 0.15)';
-                default:
-                  return '0 4px 12px rgba(0, 0, 0, 0.05)';
-              }
-            })(),
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-          onClick={toggleTabDescription}
-        >
+        {/* Tab说明文字区域 - 只在没有子选项卡时显示 */}
+        {!(
+          (activeTab === 'passion' && activeSubTab) ||
+          (activeTab === 'opportunity' && activeOpportunitySubTab)
+        ) && (
+          <div
+            style={{
+              margin: '16px 16px 8px 16px',
+              padding: '16px 20px',
+              background: (() => {
+                switch (activeTab) {
+                  case 'development':
+                    return 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)';
+                  case 'passion':
+                    return 'linear-gradient(135deg, #fef7f7 0%, #fed7d7 100%)';
+                  case 'opportunity':
+                    return 'linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%)';
+                  default:
+                    return 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)';
+                }
+              })(),
+              borderRadius: '16px',
+              border: (() => {
+                switch (activeTab) {
+                  case 'development':
+                    return '1px solid #3b82f6';
+                  case 'passion':
+                    return '1px solid #ef4444';
+                  case 'opportunity':
+                    return '1px solid #10b981';
+                  default:
+                    return '1px solid #d1d5db';
+                }
+              })(),
+              boxShadow: (() => {
+                switch (activeTab) {
+                  case 'development':
+                    return '0 4px 12px rgba(59, 130, 246, 0.15)';
+                  case 'passion':
+                    return '0 4px 12px rgba(239, 68, 68, 0.15)';
+                  case 'opportunity':
+                    return '0 4px 12px rgba(16, 185, 129, 0.15)';
+                  default:
+                    return '0 4px 12px rgba(0, 0, 0, 0.05)';
+                }
+              })(),
+              cursor: 'pointer',
+              transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+              position: 'relative',
+              overflow: 'hidden',
+              transform: isTabDescriptionExpanded ? 'scale(1.02)' : 'scale(1)',
+            }}
+            onClick={toggleTabDescription}
+          >
           {/* 装饰性背景元素 */}
           <div
             style={{
@@ -1503,6 +1508,9 @@ const MajorPage: React.FC = () => {
                     return 'rgba(0, 0, 0, 0.05)';
                 }
               })(),
+              transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+              transform: isTabDescriptionExpanded ? 'scale(1.2)' : 'scale(1)',
+              opacity: isTabDescriptionExpanded ? 0.8 : 0.5,
             }}
           />
           
@@ -1535,8 +1543,10 @@ const MajorPage: React.FC = () => {
                 flex: 1,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                whiteSpace: isTabDescriptionExpanded ? 'normal' : 'nowrap',
-                transition: 'all 0.3s ease',
+                whiteSpace: 'normal',
+                maxHeight: isTabDescriptionExpanded ? '200px' : '24px',
+                transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                opacity: isTabDescriptionExpanded ? 1 : 0.8,
               }}
             >
               {getTabDescription()}
@@ -1546,8 +1556,7 @@ const MajorPage: React.FC = () => {
                 marginLeft: '12px',
                 display: 'flex',
                 alignItems: 'center',
-                transition: 'all 0.3s ease',
-                transform: isTabDescriptionExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                 padding: '4px',
                 borderRadius: '50%',
                 background: (() => {
@@ -1562,16 +1571,25 @@ const MajorPage: React.FC = () => {
                       return 'rgba(0, 0, 0, 0.05)';
                   }
                 })(),
+                transform: isTabDescriptionExpanded ? 'scale(1.1)' : 'scale(1)',
               }}
             >
-              {isTabDescriptionExpanded ? (
-                <UpOutlined style={{ fontSize: '14px' }} />
-              ) : (
-                <DownOutlined style={{ fontSize: '14px' }} />
-              )}
+              <div
+                style={{
+                  transition: 'all 0.3s ease',
+                  transform: isTabDescriptionExpanded ? 'rotate(0deg)' : 'rotate(0deg)',
+                }}
+              >
+                {isTabDescriptionExpanded ? (
+                  <UpOutlined style={{ fontSize: '14px' }} />
+                ) : (
+                  <DownOutlined style={{ fontSize: '14px' }} />
+                )}
+              </div>
             </div>
           </div>
         </div>
+        )}
 
         {/* 专业列表卡片 */}
         <div

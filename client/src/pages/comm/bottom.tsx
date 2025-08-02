@@ -16,7 +16,7 @@ import selfAssessmentGrey from '../../public/self-assessment-grey.svg';
  */
 const navItems = [
   {
-    label: 'AI志愿',
+    label: 'AI推荐',
     blueIcon: selfAssessmentBlue,
     greyIcon: selfAssessmentGrey,
   },

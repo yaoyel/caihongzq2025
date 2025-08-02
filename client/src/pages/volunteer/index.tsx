@@ -1600,6 +1600,27 @@ const EducationalPage: React.FC = () => {
                                                   ? `${schoolGroup.schoolName.substring(0, 10)}...`
                                                   : schoolGroup.schoolName}
                                               </span>
+                                              {/* 位次差显示 - 仅在入选志愿tab的按专业子tab中显示 */}
+                                              {activeTab === 'selected' && (sortTab as any) === 'major' && schoolGroup.majors[0]?.Rankdiff !== undefined && (
+                                                <span className="px-2 py-0.5 rounded text-xs font-bold">
+                                                  较上年
+                                                  <span
+                                                    className={
+                                                      (schoolGroup.majors[0].Rankdiff || 0) > 0
+                                                        ? 'text-green-600 bg-green-100'
+                                                        : (schoolGroup.majors[0].Rankdiff || 0) < 0
+                                                          ? 'text-red-600 bg-red-100'
+                                                          : 'text-gray-600 bg-gray-100'
+                                                    }
+                                                  >
+                                                    {(schoolGroup.majors[0].Rankdiff || 0) > 0
+                                                      ? `高${schoolGroup.majors[0].Rankdiff}/${schoolGroup.majors[0].RankdiffPer}%`
+                                                      : (schoolGroup.majors[0].Rankdiff || 0) < 0
+                                                        ? `低${schoolGroup.majors[0].Rankdiff}/${schoolGroup.majors[0].RankdiffPer}%`
+                                                        : '0%'}
+                                                  </span>
+                                                </span>
+                                              )}
                                             </div>
                                             {/* 操作按钮 */}
                                             {activeTab === 'alternatives' ? (
@@ -1884,6 +1905,17 @@ const EducationalPage: React.FC = () => {
                                           >
                                             {getCityDisplayInfo(item)}
                                           </span>
+                                          {/* 位次差标签 - 仅在入选志愿tab的按专业子tab中显示 */}
+                                          {activeTab === 'selected' &&
+                                            (sortTab as any) === 'major' &&
+                                            item.Rankdiff !== undefined && (
+                                              <span
+                                                key={item.schoolName + '位次差'}
+                                                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200"
+                                              >
+                                                选中的 较上年..: {item.Rankdiff}
+                                              </span>
+                                            )}
                                         </div>
                                       </div>
                                     ))}
@@ -1975,12 +2007,7 @@ const EducationalPage: React.FC = () => {
                                       发展潜能{Math.ceil(item.developmentPotential || 0)}分
                                     </span>
                                   )}
-                                  {/* 显示位次差值 */}
-                                  {sortTab === 'rankDiff' && (
-                                    <span className="text-orange-600 bg-orange-100 px-2 py-0.5 rounded text-xs font-bold">
-                                      位次差{item.Rankdiff || 0}
-                                    </span>
-                                  )}
+
                                   {/* 显示自主意愿分数 */}
                                   {(sortTab as any) !== 'major' && activeTab === 'selected' && (
                                     <span className="px-2 py-0.5 rounded text-xs font-bold">
@@ -2128,6 +2155,17 @@ const EducationalPage: React.FC = () => {
                                 >
                                   {getCityDisplayInfo(item)}
                                 </span>
+                                {/* 位次差标签 - 仅在入选志愿tab的按专业子tab中显示 */}
+                                {activeTab === 'selected' &&
+                                  (sortTab as any) === 'major' &&
+                                  item.Rankdiff !== undefined && (
+                                    <span
+                                      key={item.schoolName + '位次差'}
+                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200"
+                                    >
+                                      选中的 较上年..: {item.Rankdiff}
+                                    </span>
+                                  )}
                               </div>
 
                               {/* 历年分数表格 */}

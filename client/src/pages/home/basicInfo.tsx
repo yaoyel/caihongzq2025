@@ -204,14 +204,14 @@ const BasicInfo: React.FC = () => {
         } else {
           Dialog.confirm({
             content: '考生信息更新成功',
-            confirmText: '查看专业报告',
-            // cancelText: '重做自评',
+            confirmText: 'AI推荐志愿',
+            cancelText: '自主探索更具发展潜能专业',
             onConfirm: () => {
+              navigator('/volunteer/aiVolunteer');
+            },
+            onCancel: () => {
               navigator('/major/list');
             },
-            // onCancel: () => {
-            //   navigator('/selfassessment');
-            // },
           });
         }
       }
