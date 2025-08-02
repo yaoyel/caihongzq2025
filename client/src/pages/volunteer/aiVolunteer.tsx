@@ -1,6 +1,22 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal, Button, Checkbox, message } from 'antd';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../store';
+import {
+  setScrollPosition,
+  setDisplayCount,
+  setSortTab,
+  setAlternativeStatus,
+  updateAlternativeStatus,
+  setLoading,
+  updateLoadingStatus,
+  setRecommendCount,
+  setAlternatives,
+  setPageKey,
+  setIsReturning,
+  setHasInitialized,
+} from '../../store/slices/aiVolunteerSlice';
 
 import BottomNav from '../comm/bottom';
 import StartWelcomePage from '../selfassessment/startWelcome';
@@ -104,16 +120,25 @@ interface MajorGroupedAlternatives {
 
 const AiVolunteerPage: React.FC = () => {
   const navigate = useNavigate();
-  const [alternatives, setAlternatives] = useState<GroupedAlternatives[]>([]);
+  const dispatch = useDispatch();
+  
+  // 从 Redux 获取状态
+  const {
+    alternatives,
+    loading,
+    loadingStatus,
+    displayCount,
+    sortTab,
+    alternativeStatus,
+    recommendCount,
+    hasInitialized,
+  } = useSelector((state: RootState) => state.aiVolunteer);
 
-  const [loading, setLoading] = useState(true); // 添加加载状态
-
-  const [loadingStatus, setLoadingStatus] = useState<{ [key: string]: boolean }>({}); // 添加按钮加载状态
-
-  // 分页加载相关状态
-  const [displayCount, setDisplayCount] = useState(10); // 初始显示10个项目
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // 生成页面唯一标识
+  const currentPageKey = useRef(`ai-volunteer-${Date.now()}`);
 
   // 滚动加载更多数据
   const handleScroll = useCallback(() => {
@@ -123,12 +148,14 @@ const AiVolunteerPage: React.FC = () => {
     const scrollHeight = document.documentElement.scrollHeight;
     const clientHeight = window.innerHeight;
 
+    // 保存滚动位置到 Redux
+    dispatch(setScrollPosition(scrollTop));
+
     console.log('滚动检测:', {
       scrollTop,
       scrollHeight,
       clientHeight,
       displayCount,
-      totalItems,
       remaining: scrollHeight - scrollTop - clientHeight,
     });
 
@@ -137,11 +164,11 @@ const AiVolunteerPage: React.FC = () => {
       console.log('触发滚动加载:', { scrollTop, scrollHeight, clientHeight, displayCount });
       setIsLoadingMore(true);
       setTimeout(() => {
-        setDisplayCount((prev) => prev + 10); // 每次增加10个项目
+        dispatch(setDisplayCount(displayCount + 10)); // 每次增加10个项目
         setIsLoadingMore(false);
       }, 500);
     }
-  }, [isLoadingMore, displayCount]);
+  }, [isLoadingMore, displayCount, dispatch]);
 
   // 添加全局滚动监听
   useEffect(() => {
@@ -151,10 +178,103 @@ const AiVolunteerPage: React.FC = () => {
     };
   }, [handleScroll]);
 
-  // 添加备选状态管理
-  const [alternativeStatus, setAlternativeStatus] = useState<{
-    [key: string]: { isAlternative: boolean; id?: string };
-  }>({});
+  // 保存滚动位置到 localStorage
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+      localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+      dispatch(setScrollPosition(currentScrollPosition));
+    };
+
+    // 节流处理滚动事件
+    let timeoutId: NodeJS.Timeout;
+    const throttledScrollHandler = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      timeoutId = setTimeout(handleScroll, 100);
+    };
+
+    window.addEventListener('scroll', throttledScrollHandler);
+    
+    return () => {
+      window.removeEventListener('scroll', throttledScrollHandler);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [dispatch]);
+
+  // 页面离开时保存滚动位置
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+      localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+        localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  // 页面加载时检查是否需要恢复滚动位置
+  useEffect(() => {
+    if (!loading && hasInitialized) {
+      // 检查是否是从返回操作进入的页面
+      const isBackNavigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+      const isReturningFromBack = isBackNavigation?.type === 'back_forward';
+      
+      if (isReturningFromBack) {
+        // 从 localStorage 获取保存的滚动位置
+        const savedScrollPosition = localStorage.getItem('aiVolunteerScrollPosition');
+        if (savedScrollPosition) {
+          const scrollPosition = parseInt(savedScrollPosition, 10);
+          if (scrollPosition > 0) {
+            // 延迟恢复滚动位置，确保DOM已渲染
+            const timer = setTimeout(() => {
+              window.scrollTo(0, scrollPosition);
+              console.log('恢复滚动位置:', scrollPosition);
+            }, 500);
+            return () => clearTimeout(timer);
+          }
+        }
+      }
+    }
+  }, [loading, hasInitialized]);
+
+  // 更简单的恢复方法：在页面加载完成后尝试恢复
+  useEffect(() => {
+    if (!loading && hasInitialized) {
+      // 延迟检查是否需要恢复滚动位置
+      const timer = setTimeout(() => {
+        const savedScrollPosition = localStorage.getItem('aiVolunteerScrollPosition');
+        if (savedScrollPosition) {
+          const scrollPosition = parseInt(savedScrollPosition, 10);
+          if (scrollPosition > 0) {
+            // 检查当前滚动位置，如果接近顶部则恢复
+            const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+            if (currentScrollPosition < 100) {
+              window.scrollTo(0, scrollPosition);
+              console.log('恢复滚动位置:', scrollPosition);
+            }
+          }
+        }
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [loading, hasInitialized]);
 
   // 弹框相关状态
   const [isTipModalVisible, setIsTipModalVisible] = useState(false);
@@ -162,11 +282,6 @@ const AiVolunteerPage: React.FC = () => {
     choice1: false,
     choice2: false,
   });
-
-  // 排序Tab状态 - 控制排序方式
-  const [sortTab, setSortTab] = useState<'willingness' | 'major' | 'rankDiff'>('rankDiff');
-
-  const [recommendCount, setRecommendCount] = useState(0); // 推荐志愿数量
 
   // 添加专业组详情相关状态
   const [showMajorGroupDialog, setShowMajorGroupDialog] = useState(false);
@@ -316,7 +431,7 @@ const AiVolunteerPage: React.FC = () => {
 
   // 处理排序Tab切换
   const handleSortTabChange = (tab: 'willingness' | 'major' | 'rankDiff') => {
-    setSortTab(tab);
+    dispatch(setSortTab(tab));
   };
 
   // 根据当前排序Tab对数据进行排序
@@ -367,17 +482,24 @@ const AiVolunteerPage: React.FC = () => {
           }));
         }
         case 'rankDiff': {
-          // 按位次差从低到高排序，保持API返回的顺序
+          // 使用原始API返回的数据顺序，不进行任何排序
+          // 从localStorage获取原始顺序数据
+          const originalDataStr = localStorage.getItem('aiVolunteerOriginalData');
+          if (originalDataStr) {
+            try {
+              const originalData = JSON.parse(originalDataStr);
+              return originalData;
+            } catch (error) {
+              console.error('解析原始数据失败:', error);
+            }
+          }
+          
+          // 如果无法获取原始数据，则使用当前数据但不进行排序
           const allRankDiffData = data.flatMap((group) => group.result);
-
-          // 按位次差从低到高排序
-          const sortedRankDiffData = allRankDiffData.sort((a, b) => (a.Rankdiff || 0) - (b.Rankdiff || 0));
-
-          // 返回按API顺序的格式
           return [
             {
               group: -1000, // 使用负数避免与位次段分组冲突
-              result: sortedRankDiffData,
+              result: allRankDiffData,
             },
           ];
         }
@@ -399,7 +521,19 @@ const AiVolunteerPage: React.FC = () => {
     // 页面初始化逻辑
     const initializePage = async () => {
       try {
-        setLoading(true);
+        dispatch(setLoading(true));
+        
+        // 设置页面标识
+        dispatch(setPageKey(currentPageKey.current));
+        
+        // 检查是否是从返回操作进入的页面
+        const isBackNavigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+        const isReturningFromBack = isBackNavigation?.type === 'back_forward';
+        
+        if (isReturningFromBack) {
+          dispatch(setIsReturning(true));
+        }
+        
         // 获取自动推荐的志愿
         const nominateResponse = await nominate();
 
@@ -411,7 +545,7 @@ const AiVolunteerPage: React.FC = () => {
           // 从API响应中获取推荐志愿数量
           const apiRecommendCount = nominateResponse.data.recommendCount;
           if (apiRecommendCount !== undefined) {
-            setRecommendCount(apiRecommendCount);
+            dispatch(setRecommendCount(apiRecommendCount));
           }
 
           // 获取已备选志愿状态
@@ -427,7 +561,7 @@ const AiVolunteerPage: React.FC = () => {
                 alternativeMap[schoolKey] = { isAlternative: true, id: item.id };
               });
 
-              setAlternativeStatus(alternativeMap);
+              dispatch(setAlternativeStatus(alternativeMap));
             }
           } catch (error) {
             console.error('获取备选状态失败:', error);
@@ -473,6 +607,10 @@ const AiVolunteerPage: React.FC = () => {
             admissionsPhone: '', // 默认值
           }));
 
+          // 为了保持API返回的原始顺序，我们需要保存原始数据
+          // 同时也要支持按位次段分组的功能
+          const originalData = convertedData; // 保存原始顺序的数据
+          
           const groupByCategory = (
             arr: AlternativeItem[],
             key: keyof AlternativeItem
@@ -503,12 +641,24 @@ const AiVolunteerPage: React.FC = () => {
             return orderMap[a.group] - orderMap[b.group];
           });
 
-          setAlternatives(sortedAlternativesGroup);
+          // 同时保存原始顺序的数据，用于rankDiff模式
+          const originalOrderData = [
+            {
+              group: -999, // 使用特殊标识表示原始顺序
+              result: originalData,
+            }
+          ];
+
+          // 将原始顺序数据也存储到Redux中，以便rankDiff模式使用
+          dispatch(setAlternatives(sortedAlternativesGroup));
+          // 将原始顺序数据存储到localStorage中，供rankDiff模式使用
+          localStorage.setItem('aiVolunteerOriginalData', JSON.stringify(originalOrderData));
         }
       } catch (error) {
         console.error('页面初始化失败:', error);
       } finally {
-        setLoading(false);
+        dispatch(setLoading(false));
+        dispatch(setHasInitialized(true));
       }
     };
 
@@ -529,7 +679,7 @@ const AiVolunteerPage: React.FC = () => {
         return () => clearTimeout(timer);
       }
     }
-  }, []);
+  }, [dispatch]);
 
   // 渲染空状态提示
   const renderEmptyState = () => (
@@ -562,7 +712,7 @@ const AiVolunteerPage: React.FC = () => {
 
     try {
       // 设置加载状态
-      setLoadingStatus((prev) => ({ ...prev, [itemKey]: true }));
+      dispatch(updateLoadingStatus({ key: itemKey, loading: true }));
 
       if (currentStatus?.isAlternative && currentStatus.id) {
         // 如果已经备选，则取消备选
@@ -570,9 +720,9 @@ const AiVolunteerPage: React.FC = () => {
 
         if (response && response.code === 200) {
           // 更新备选状态
-          setAlternativeStatus((prev) => ({
-            ...prev,
-            [itemKey]: { isAlternative: false, id: undefined },
+          dispatch(updateAlternativeStatus({
+            key: itemKey,
+            status: { isAlternative: false, id: undefined }
           }));
           // 备选删除成功提示
           message.success('取消备选成功，已成功从志愿频道的备选志愿列表中移除。');
@@ -606,12 +756,12 @@ const AiVolunteerPage: React.FC = () => {
 
         if (response && response.code === 200) {
           // 更新备选状态
-          setAlternativeStatus((prev) => ({
-            ...prev,
-            [itemKey]: {
+          dispatch(updateAlternativeStatus({
+            key: itemKey,
+            status: {
               isAlternative: true,
               id: response.data?.id,
-            },
+            }
           }));
           // 备选成功提示
           message.success('备选成功，已成功加入志愿频道的备选志愿列表。');
@@ -624,7 +774,7 @@ const AiVolunteerPage: React.FC = () => {
       alert(error instanceof Error ? error.message : '备选志愿操作失败');
     } finally {
       // 清除加载状态
-      setLoadingStatus((prev) => ({ ...prev, [itemKey]: false }));
+      dispatch(updateLoadingStatus({ key: itemKey, loading: false }));
     }
   };
 
@@ -842,7 +992,7 @@ const AiVolunteerPage: React.FC = () => {
   const filteredData = getFilteredData();
 
   // 计算总项目数
-  const totalItems = filteredData.reduce((total, group) => total + (group.result?.length || 0), 0);
+  const totalItems = filteredData.reduce((total: number, group: GroupedAlternatives) => total + (group.result?.length || 0), 0);
 
   // 计算当前应该显示的分组数量
   const getDisplayedGroups = () => {
@@ -1701,7 +1851,7 @@ const AiVolunteerPage: React.FC = () => {
                       onClick={() => {
                         setIsLoadingMore(true);
                         setTimeout(() => {
-                          setDisplayCount((prev) => prev + 10);
+                          dispatch(setDisplayCount(displayCount + 10));
                           setIsLoadingMore(false);
                         }, 500);
                       }}
@@ -1755,7 +1905,7 @@ const AiVolunteerPage: React.FC = () => {
             }}
           >
             <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#2563eb' }}>
-              点击“备选“按钮，该院校专业将进入”志愿“频道，作为”备选志愿“，供进一步筛选确认。
+              点击&quot;备选&quot;按钮，该院校专业将进入&quot;志愿&quot;频道，作为&quot;备选志愿&quot;，供进一步筛选确认。
             </div>
           </div>
 
