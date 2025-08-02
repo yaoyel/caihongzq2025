@@ -271,15 +271,18 @@ export class ConfigController {
           // 计算位次差异百分比：正值表示学校平均位次比用户位次好，负值表示较差
           const rankDiffPercentage = avgRank === 0 ? 0 : ((avgRank - rank) / avgRank) * 100;
           
-          // 计算位次差值和位次差值百分比（参照 major.controller.ts 第773行）
+          // 计算位次差值和位次差值百分比（与2024年位次比较）
           let rankDiff = 0;
           let rankDiffPer = 0;
           
-          if (rank && rank > 0 && avgRank > 0) {
-            // 计算位次差值（用户位次 - 学校平均位次）
-            rankDiff = avgRank - rank;
-            // 计算位次差值百分比（差值 / 学校平均位次）
-            rankDiffPer = avgRank > 0 ? (rankDiff / avgRank) * 100 : 0;
+          // 获取2024年的位次数据
+          const rank2024 = extract2024Rank(schoolScores.length > 0 ? schoolScores[0].historyScore : null);
+          
+          if (rank && rank > 0 && rank2024 && rank2024 > 0) {
+            // 计算位次差值（2024年位次 - 用户位次）
+            rankDiff = rank2024 - rank;
+            // 计算位次差值百分比（差值 / 2024年位次）
+            rankDiffPer = rank2024 > 0 ? (rankDiff / rank2024) * 100 : 0;
           }
           
           // 确定分组
@@ -471,7 +474,7 @@ export class ConfigController {
             
             // 如果都有效，按 averageRank 从高到低排序
             if (aIsValid && bIsValid) {
-              return (b.averageRank || 0) - (a.averageRank || 0);
+              return (b.rankDiff || 0) - (a.rankDiff || 0);
             }
           }
 
