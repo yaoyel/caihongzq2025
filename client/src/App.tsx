@@ -28,6 +28,7 @@ import SchoolDetail from './pages/major/schooldetail';
 import LoveMajorSchool from './pages/major/loveMajorSchool';
 import IntentionDetail from './pages/intention/intentiondetail';
 import { handleWechatCallback, getCurrentUser } from './config';
+import AiVolunteerPage from './pages/volunteer/aiVolunteer';
 const App: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -114,6 +115,7 @@ const App: React.FC = () => {
       <Route path="/major/schooldetail" element={<SchoolDetail />} />
       <Route path="/major/loveMajorSchool" element={<LoveMajorSchool />} />
       <Route path="/intention/intentiondetail" element={<IntentionDetail />} />
+      <Route path="/volunteer/aiVolunteer" element={<AiVolunteerPage />} />
     </Routes>
   );
 };

@@ -406,7 +406,8 @@ const ENCOURAGEMENT_MESSAGES = {
     },
     运动: {
       title: '🎉 恭喜完成所有喜欢与天赋评估！',
-      content: '您的喜欢与天赋评估已全部完成！查看所有专业发展潜质！了解每个专业热爱能量与机遇指数！',
+      content:
+        '您的喜欢与天赋评估已全部完成！查看所有专业发展潜质！了解每个专业热爱能量与机遇指数！',
       nextStep: '查看专业报告',
       icon: <TrophyOutlined style={{ fontSize: '48px', color: '#52c41a' }} />,
     },
@@ -419,25 +420,25 @@ const EncouragementModal = styled(Modal)`
     border-radius: 16px;
     overflow: hidden;
   }
-  
+
   .ant-modal-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-bottom: none;
     padding: 24px 24px 16px;
   }
-  
+
   .ant-modal-title {
     color: white;
     font-size: 18px;
     font-weight: bold;
     text-align: center;
   }
-  
+
   .ant-modal-body {
     padding: 32px 24px;
     text-align: center;
   }
-  
+
   .ant-modal-footer {
     border-top: none;
     padding: 0 24px 24px;
@@ -450,25 +451,25 @@ const EncouragementContent = styled.div`
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  
+
   .encouragement-icon {
     margin-bottom: 8px;
   }
-  
+
   .encouragement-title {
     font-size: 20px;
     font-weight: bold;
     color: #333;
     margin-bottom: 8px;
   }
-  
+
   .encouragement-message {
     font-size: 16px;
     color: #666;
     line-height: 1.6;
     margin-bottom: 16px;
   }
-  
+
   .encouragement-next {
     font-size: 14px;
     color: #1890ff;
@@ -496,7 +497,7 @@ const Scale168Assessment: React.FC = () => {
   );
   const [isNicknameModalVisible, setIsNicknameModalVisible] = useState(false);
   const [newNickname, setNewNickname] = useState('');
-  
+
   // 添加鼓励提示相关状态
   const [showEncouragement, setShowEncouragement] = useState(false);
   const [encouragementData, setEncouragementData] = useState<any>(null);
@@ -541,7 +542,10 @@ const Scale168Assessment: React.FC = () => {
 
   // 添加显示鼓励提示的函数
   const showEncouragementMessage = (dimension: Dimension) => {
-    if (ENCOURAGEMENT_MESSAGES[currentCategory] && ENCOURAGEMENT_MESSAGES[currentCategory][dimension]) {
+    if (
+      ENCOURAGEMENT_MESSAGES[currentCategory] &&
+      ENCOURAGEMENT_MESSAGES[currentCategory][dimension]
+    ) {
       setEncouragementData(ENCOURAGEMENT_MESSAGES[currentCategory][dimension]);
       setShowEncouragement(true);
     }
@@ -551,7 +555,7 @@ const Scale168Assessment: React.FC = () => {
   const handleEncouragementConfirm = () => {
     setShowEncouragement(false);
     setEncouragementData(null);
-    
+
     // 继续到下一个维度或类别
     const currentDimensionIndex = dimensions.indexOf(currentDimension);
     if (currentDimensionIndex < dimensions.length - 1) {
@@ -916,7 +920,10 @@ const Scale168Assessment: React.FC = () => {
       // 当前维度的问题已答完，检查是否需要显示鼓励提示
       if (currentCategory === 'like' || currentCategory === 'talent') {
         // 检查当前维度是否完成
-        const isCurrentDimensionCompleted = checkDimensionCompletion(currentCategory, currentDimension);
+        const isCurrentDimensionCompleted = checkDimensionCompletion(
+          currentCategory,
+          currentDimension
+        );
         if (isCurrentDimensionCompleted) {
           // 显示鼓励提示
           showEncouragementMessage(currentDimension);
@@ -1019,8 +1026,39 @@ const Scale168Assessment: React.FC = () => {
     }
   };
 
+  const [completionModalVisible, setCompletionModalVisible] = useState(false);
+
   const handleComplete = async () => {
+    setCompletionModalVisible(true);
+  };
+
+  const handleAIRecommendation = () => {
+    setCompletionModalVisible(false);
+    navigate('/volunteer/aiVolunteer');
+  };
+
+  const handleFreeExploration = () => {
+    setCompletionModalVisible(false);
     navigate('/major/list');
+  };
+
+  const handleReassessment = () => {
+    setCompletionModalVisible(false);
+    // 重置所有答案
+    setAnswers({});
+    // 重置到第一个类别和维度
+    setCurrentCategory(categories[0].type);
+    setCurrentDimension('看');
+    setCurrentPage(0);
+    // 滚动到顶部
+    setTimeout(() => {
+      const scrollContainer = document.querySelector('.page-bg-hasTop');
+      if (scrollContainer) {
+        scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 100);
   };
 
   const findFirstUnansweredCategory = () => {
@@ -1285,7 +1323,7 @@ const Scale168Assessment: React.FC = () => {
                 setIsNicknameModalVisible(true);
               }}
             />
-            <StyledHomeButton icon={<HomeOutlined />} onClick={() => navigate('/selfassessment')} />
+            <StyledHomeButton icon={<HomeOutlined />} onClick={() => navigate('/major/list')} />
           </TitleRow>
           <ResponsiveSteps
             current={dimensions.indexOf(currentDimension)}
@@ -1299,7 +1337,14 @@ const Scale168Assessment: React.FC = () => {
 
           <StyledCard
             title={
-              <Space style={{ width: '100%', justifyContent: 'space-between',display:"flex",flexDirection:"column" }}>
+              <Space
+                style={{
+                  width: '100%',
+                  justifyContent: 'space-between',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
                 <Space>
                   <Text style={{ color: getCurrentCategoryColor() }}>
                     {categories.find((c) => c.type === currentCategory)?.title} - {currentDimension}
@@ -1319,11 +1364,13 @@ const Scale168Assessment: React.FC = () => {
                 <Progress
                   percent={Math.round(progress)}
                   format={() => (
-                    <span style={{ 
-                      color: '#fa8c16', 
-                      fontWeight: 'bold',
-                      whiteSpace: 'nowrap'
-                    }}>
+                    <span
+                      style={{
+                        color: '#fa8c16',
+                        fontWeight: 'bold',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
                       总进度 {Math.round(progress)}%
                     </span>
                   )}
@@ -1481,21 +1528,99 @@ const Scale168Assessment: React.FC = () => {
       >
         {encouragementData && (
           <EncouragementContent>
-            <div className="encouragement-icon">
-              {encouragementData.icon}
-            </div>
-            <div className="encouragement-title">
-              {encouragementData.title}
-            </div>
-            <div className="encouragement-message">
-              {encouragementData.content}
-            </div>
-            <div className="encouragement-next">
-              下一步：{encouragementData.nextStep}
-            </div>
+            <div className="encouragement-icon">{encouragementData.icon}</div>
+            <div className="encouragement-title">{encouragementData.title}</div>
+            <div className="encouragement-message">{encouragementData.content}</div>
+            <div className="encouragement-next">下一步：{encouragementData.nextStep}</div>
           </EncouragementContent>
         )}
       </EncouragementModal>
+
+      {/* 完成评估对话框 */}
+      <Modal
+        title={
+          <div style={{ textAlign: 'center', fontSize: '20px', fontWeight: 'bold' }}>
+            🎉 恭喜完成所有评估！
+          </div>
+        }
+        open={completionModalVisible}
+        onCancel={() => setCompletionModalVisible(false)}
+        centered
+        width={500}
+        footer={null}
+        closable={false}
+        maskClosable={false}
+      >
+        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+          <div
+            style={{
+              fontSize: '16px',
+              color: '#666',
+              marginBottom: '30px',
+              lineHeight: '1.6',
+            }}
+          >
+            您已完成喜欢与天赋的全面评估，现在可以选择下一步操作：
+          </div>
+
+          <Space direction="vertical" style={{ width: '100%' }} size="large">
+            <Button
+              type="primary"
+              size="large"
+              onClick={handleAIRecommendation}
+              style={{
+                height: '50px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                border: 'none',
+                borderRadius: '25px',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+                width: '100%',
+              }}
+              icon={<TrophyOutlined />}
+            >
+              一键生成AI推荐志愿
+            </Button>
+
+            <Button
+              size="large"
+              onClick={handleFreeExploration}
+              style={{
+                height: '50px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                border: '2px solid #1890ff',
+                borderRadius: '25px',
+                color: '#1890ff',
+                background: 'white',
+                width: '100%',
+              }}
+              icon={<StarOutlined />}
+            >
+              自由探索更具发展潜能专业
+            </Button>
+
+            <Button
+              size="large"
+              onClick={handleReassessment}
+              style={{
+                height: '50px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                border: '2px solid #52c41a',
+                borderRadius: '25px',
+                color: '#52c41a',
+                background: 'white',
+                width: '100%',
+              }}
+              icon={<EditOutlined />}
+            >
+              重新自评
+            </Button>
+          </Space>
+        </div>
+      </Modal>
     </StyledLayout>
   );
 };
