@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Modal, Button, Checkbox, message } from 'antd';
+import { Modal, Button, Checkbox, message, Input, Tag } from 'antd';
+import { SearchOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import {
@@ -135,6 +136,29 @@ const AiVolunteerPage: React.FC = () => {
 
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // 搜索相关状态
+  const [searchText, setSearchText] = useState('');
+  const [selectedSchoolNature, setSelectedSchoolNature] = useState<string>('all');
+  const [showSearchTips, setShowSearchTips] = useState(false);
+
+  // 点击外部关闭搜索提示
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.search-tips-container')) {
+        setShowSearchTips(false);
+      }
+    };
+
+    if (showSearchTips) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSearchTips]);
 
   // 生成页面唯一标识
   const currentPageKey = useRef(`ai-volunteer-${Date.now()}`);
@@ -512,11 +536,36 @@ const AiVolunteerPage: React.FC = () => {
     [sortTab]
   );
 
+  // 搜索过滤逻辑
+  const filterDataBySearch = useCallback((data: AlternativeItem[]) => {
+    return data.filter((item) => {
+      // 搜索文本过滤
+      const searchLower = searchText.toLowerCase();
+      const matchesSearch = searchText === '' || 
+        item.schoolName.toLowerCase().includes(searchLower) ||
+        item.majorName.toLowerCase().includes(searchLower) ||
+        item.majorCode.toLowerCase().includes(searchLower) ||
+        getCityDisplayInfo(item).toLowerCase().includes(searchLower);
+
+      // 学校性质过滤
+      const matchesNature = selectedSchoolNature === 'all' || 
+        item.schoolNature === selectedSchoolNature;
+
+      return matchesSearch && matchesNature;
+    });
+  }, [searchText, selectedSchoolNature]);
+
   // 根据当前Tab过滤数据
   const getFilteredData = useCallback(() => {
     // 备选志愿页面显示所有志愿（包括未入选的）
-    return getSortedData(alternatives);
-  }, [alternatives, getSortedData]);
+    const sortedData = getSortedData(alternatives);
+    
+    // 应用搜索过滤
+    return sortedData.map((group: GroupedAlternatives) => ({
+      ...group,
+      result: filterDataBySearch(group.result)
+    })).filter((group: GroupedAlternatives) => group.result.length > 0);
+  }, [alternatives, getSortedData, filterDataBySearch]);
 
   useEffect(() => {
     // 页面初始化逻辑
@@ -1065,6 +1114,92 @@ const AiVolunteerPage: React.FC = () => {
         showRestartButton={true}
       />
       <div className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3 min-h-screen">
+        {/* 搜索组件 */}
+        <div className="w-full max-w-xl bg-white rounded-2xl p-4 mb-3">
+          <div className="space-y-3">
+            {/* 搜索框 */}
+            <div className="relative">
+              <Input
+                placeholder="搜索学校名称、专业名称、城市等..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                prefix={<SearchOutlined className="text-gray-400" />}
+                suffix={
+                  <InfoCircleOutlined 
+                    className="text-blue-500 cursor-pointer" 
+                    onClick={() => setShowSearchTips(!showSearchTips)}
+                    title="搜索帮助"
+                  />
+                }
+                className="rounded-lg"
+                allowClear
+              />
+              {/* 搜索提示 */}
+              {showSearchTips && (
+                <div className="search-tips-container absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg p-3 shadow-lg z-10">
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <div>💡 <strong>搜索提示：</strong></div>
+                    <div>• 可以搜索学校名称（如：清华大学）</div>
+                    <div>• 可以搜索专业名称（如：计算机科学）</div>
+                    <div>• 可以搜索专业代码（如：080901）</div>
+                    <div>• 可以搜索城市名称（如：北京、上海）</div>
+                    <div>• 支持模糊搜索，输入部分关键词即可</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 学校性质标签 */}
+            <div className="flex flex-wrap gap-2">
+              <span className="text-sm font-medium text-gray-700 mr-2">学校性质：</span>
+              <Tag
+                color={selectedSchoolNature === 'all' ? 'blue' : 'default'}
+                className="cursor-pointer"
+                onClick={() => setSelectedSchoolNature('all')}
+              >
+                全部
+              </Tag>
+              <Tag
+                color={selectedSchoolNature === 'public' ? 'green' : 'default'}
+                className="cursor-pointer"
+                onClick={() => setSelectedSchoolNature('public')}
+              >
+                公办
+              </Tag>
+              <Tag
+                color={selectedSchoolNature === 'private' ? 'orange' : 'default'}
+                className="cursor-pointer"
+                onClick={() => setSelectedSchoolNature('private')}
+              >
+                民办
+              </Tag>
+            </div>
+          </div>
+        </div>
+
+        {/* 搜索结果统计 */}
+        {(searchText || selectedSchoolNature !== 'all') && (
+          <div className="w-full max-w-xl bg-blue-50 rounded-2xl p-3 mb-3">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center space-x-2">
+                <span className="text-blue-600 font-medium">搜索结果：</span>
+                <span className="text-blue-800">
+                  找到 {totalItems} 个志愿
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  setSearchText('');
+                  setSelectedSchoolNature('all');
+                }}
+                className="text-blue-600 hover:text-blue-800 text-sm underline"
+              >
+                清除筛选
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* 排序Tab选项卡 - 独立的card */}
         <div className="w-full max-w-xl bg-white rounded-2xl p-4 mb-0">
           <div className="flex gap-2 flex-wrap">

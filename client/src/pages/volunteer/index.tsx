@@ -1273,6 +1273,30 @@ const EducationalPage: React.FC = () => {
   const filteredData = getFilteredData();
   const currentCount = activeTab === 'selected' ? selectedCount : alternativesCount;
 
+  // 获取位次差DOM
+  const getRankdiffDom = (item: any) => {
+    return (
+      <span className="px-2 py-0.5 rounded text-xs font-bold">
+        上年较您
+        <span
+          className={
+            (item.Rankdiff || 0) > 0
+              ? 'text-red-600 bg-red-100'
+              : (item.Rankdiff || 0) < 0
+                ? 'text-green-600 bg-green-100'
+                : 'text-gray-600 bg-gray-100'
+          }
+        >
+          {(item.Rankdiff || 0) > 0
+            ? `高${item.Rankdiff}位次/${Math.floor(item.RankdiffPer || 0)}%`
+            : (item.Rankdiff || 0) < 0
+              ? `低${Math.abs(item.Rankdiff)}位次/${Math.floor(item.RankdiffPer || 0)}%`
+              : '0%'}
+        </span>
+      </span>
+    );
+  };
+
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 40 }}>
       <Top
@@ -1601,26 +1625,10 @@ const EducationalPage: React.FC = () => {
                                                   : schoolGroup.schoolName}
                                               </span>
                                               {/* 位次差显示 - 仅在入选志愿tab的按专业子tab中显示 */}
-                                              {activeTab === 'selected' && (sortTab as any) === 'major' && schoolGroup.majors[0]?.Rankdiff !== undefined && (
-                                                <span className="px-2 py-0.5 rounded text-xs font-bold">
-                                                  较上年
-                                                  <span
-                                                    className={
-                                                      (schoolGroup.majors[0].Rankdiff || 0) > 0
-                                                        ? 'text-green-600 bg-green-100'
-                                                        : (schoolGroup.majors[0].Rankdiff || 0) < 0
-                                                          ? 'text-red-600 bg-red-100'
-                                                          : 'text-gray-600 bg-gray-100'
-                                                    }
-                                                  >
-                                                    {(schoolGroup.majors[0].Rankdiff || 0) > 0
-                                                      ? `高${schoolGroup.majors[0].Rankdiff}/${schoolGroup.majors[0].RankdiffPer}%`
-                                                      : (schoolGroup.majors[0].Rankdiff || 0) < 0
-                                                        ? `低${schoolGroup.majors[0].Rankdiff}/${schoolGroup.majors[0].RankdiffPer}%`
-                                                        : '0%'}
-                                                  </span>
-                                                </span>
-                                              )}
+                                              {activeTab === 'selected' &&
+                                                (sortTab as any) === 'major' &&
+                                                schoolGroup.majors[0]?.Rankdiff !== undefined &&
+                                                getRankdiffDom(schoolGroup.majors[0])}
                                             </div>
                                             {/* 操作按钮 */}
                                             {activeTab === 'alternatives' ? (
@@ -1905,17 +1913,6 @@ const EducationalPage: React.FC = () => {
                                           >
                                             {getCityDisplayInfo(item)}
                                           </span>
-                                          {/* 位次差标签 - 仅在入选志愿tab的按专业子tab中显示 */}
-                                          {activeTab === 'selected' &&
-                                            (sortTab as any) === 'major' &&
-                                            item.Rankdiff !== undefined && (
-                                              <span
-                                                key={item.schoolName + '位次差'}
-                                                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200"
-                                              >
-                                                选中的 较上年..: {item.Rankdiff}
-                                              </span>
-                                            )}
                                         </div>
                                       </div>
                                     ))}
@@ -2009,26 +2006,9 @@ const EducationalPage: React.FC = () => {
                                   )}
 
                                   {/* 显示自主意愿分数 */}
-                                  {(sortTab as any) !== 'major' && activeTab === 'selected' && (
-                                    <span className="px-2 py-0.5 rounded text-xs font-bold">
-                                      较上年
-                                      <span
-                                        className={
-                                          (item.Rankdiff || 0) > 0
-                                            ? 'text-green-600 bg-green-100'
-                                            : (item.Rankdiff || 0) < 0
-                                              ? 'text-red-600 bg-red-100'
-                                              : 'text-gray-600 bg-gray-100'
-                                        }
-                                      >
-                                        {(item.Rankdiff || 0) > 0
-                                          ? `高${item.Rankdiff}/${item.RankdiffPer}%`
-                                          : (item.Rankdiff || 0) < 0
-                                            ? `低${item.Rankdiff}/${item.RankdiffPer}%`
-                                            : '0%'}
-                                      </span>
-                                    </span>
-                                  )}
+                                  {(sortTab as any) !== 'major' &&
+                                    activeTab === 'selected' &&
+                                    getRankdiffDom(item)}
                                   {activeTab === 'alternatives' ? (
                                     <div className="flex space-x-2">
                                       <button
