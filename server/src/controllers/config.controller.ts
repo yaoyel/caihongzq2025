@@ -314,6 +314,7 @@ export class ConfigController {
           return {
             ...school,
             historyScores: schoolScores,
+            majorDisplayName: schoolScores.length > 0 ? schoolScores[0].planMajorName : null,
             averageRank: avgRank,
             rankDiffPercentage,
             rankDiff,
@@ -411,7 +412,8 @@ export class ConfigController {
               developmentPotential: majors.find(m => m.majorCode === major.code)?.developmentpotential || 0,
               schools: sortedSchools.map((school: any) => ({
                 id: school.id,
-                name: school.name,
+                name: school.name,  
+                displayName: school.majorDisplayName,
                 schoolCode: school.code, 
                 averageRank: school.averageRank,
                 rankDiffPercentage: school.rankDiffPercentage,
@@ -619,6 +621,7 @@ export class ConfigController {
           major: {
             code: school.majorCode,
             name: school.majorName,
+            displayName: school.majorDisplayName,
             developmentPotential: majors.find(m => m.majorCode === school.majorCode)?.developmentpotential || 0 
           }
         }));
