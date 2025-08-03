@@ -285,19 +285,28 @@ export class ConfigController {
             rankDiffPer = rank2024 > 0 ? (rankDiff / rank2024) * 100 : 0;
           }
           
-          // 确定分组
+          // 确定分组（基于平均位次，用于sortByMajor=true时的排序）
           let group = 0; // 默认组（无分数或差异过大）
           if (avgRank > 0) { // 只对有位次的学校进行分组
-            if (rankDiffPercentage > 30 && rankDiffPercentage <= 100) {
-              group = 5; // 30%到100%（较高范围）
-            } else if (rankDiffPercentage > 5 && rankDiffPercentage <= 30) {
-              group = 1; // 5%到30%（稍高）
-            } else if (rankDiffPercentage >= -10 && rankDiffPercentage <= 5) {
-              group = 2; // -10%到5%（最匹配）
-            } else if (rankDiffPercentage >= -30 && rankDiffPercentage < -10) {
-              group = 3; // -30%到-10%（稍低）
-            } else if (rankDiffPercentage >= -100 && rankDiffPercentage < -30) {
-              group = 4; // -100%到-30%（较低范围）- 新增
+            // 30%到100%范围使用2024年位次与用户位次比较
+            if (rank2024 && rank2024 > 0 && rank && rank > 0) {
+              const rankDiffPercentage2024 = ((rank2024 - rank) / rank2024) * 100;
+              if (rankDiffPercentage2024 > 30 && rankDiffPercentage2024 <= 100) {
+                group = 5; // 30%到100%（较高范围）- 基于2024年位次
+              }
+            }
+            
+            // 其他分组使用平均位次比较
+            if (group === 0) { // 如果还没有分组，继续使用平均位次判断
+              if (rankDiffPercentage > 5 && rankDiffPercentage <= 30) {
+                group = 1; // 5%到30%（稍高）
+              } else if (rankDiffPercentage >= -10 && rankDiffPercentage <= 5) {
+                group = 2; // -10%到5%（最匹配）
+              } else if (rankDiffPercentage >= -30 && rankDiffPercentage < -10) {
+                group = 3; // -30%到-10%（稍低）
+              } else if (rankDiffPercentage >= -100 && rankDiffPercentage < -30) {
+                group = 4; // -100%到-30%（较低范围）- 新增
+              }
             }
           }
           
@@ -308,14 +317,26 @@ export class ConfigController {
             rankDiffPercentage,
             rankDiff,
             rankDiffPer,
+            rank2024,
             group
           };
         });
         
-        // 过滤掉 historyScores 数组长度为 0 的学校
-        const filteredSchools = processedSchools.filter((school: SchoolWithRank) => 
-          school.historyScores && school.historyScores.length > 0
-        );
+        // 过滤掉 historyScores 数组长度为 0 的学校和2024年位次数据无效的学校
+        const filteredSchools = processedSchools.filter((school: SchoolWithRank) => {
+          // 检查是否有历史分数数据
+          if (!school.historyScores || school.historyScores.length === 0) {
+            return false;
+          }
+          
+          // 检查2024年位次数据是否有效
+          const rank2024 = school.rank2024;
+          if (!rank2024 || rank2024 <= 0) {
+            return false;
+          }
+          
+          return true;
+        });
 
         return {
           ...majorDetail,
@@ -472,27 +493,40 @@ export class ConfigController {
               return aIsValid ? -1 : 1;
             }
             
-            // 如果都有效，按 averageRank 从高到低排序
+            // 如果都有效，按2024年录取位次从高到低排序
             if (aIsValid && bIsValid) {
-              return (b.rankDiff || 0) - (a.rankDiff || 0);
+              // 获取2024年位次
+              const aRank2024 = extract2024Rank(a.historyScores?.length > 0 ? a.historyScores[0].historyScore : null);
+              const bRank2024 = extract2024Rank(b.historyScores?.length > 0 ? b.historyScores[0].historyScore : null);
+              
+              // 从高到低排序（位次数值越小越好）
+              return (aRank2024 || 0) - (bRank2024 || 0);
             }
           }
 
-          // 对于非置顶的学校，优先显示 rankDiffPercentage 在 -30% 到 30% 范围内的学校
-          if (!a.isTopFive && !b.isTopFive) {
-            // 首先将 averageRank 为 0 的排在后面
-            if ((a.averageRank || 0) === 0 && (b.averageRank || 0) !== 0) return 1;
-            if ((b.averageRank || 0) === 0 && (a.averageRank || 0) !== 0) return -1;
-            
-            const aRankDiff = a.rankDiffPercentage || 0;
-            const bRankDiff = b.rankDiffPercentage || 0;
-            
-            const aInRange = aRankDiff >= -30 && aRankDiff <= 30;
-            const bInRange = bRankDiff >= -30 && bRankDiff <= 30;  
+                      // 对于非置顶的学校，优先显示 rankDiffPercentage 在 -30% 到 30% 范围内的学校
+            if (!a.isTopFive && !b.isTopFive) {
+              // 首先将 averageRank 为 0 的排在后面
+              if ((a.averageRank || 0) === 0 && (b.averageRank || 0) !== 0) return 1;
+              if ((b.averageRank || 0) === 0 && (a.averageRank || 0) !== 0) return -1;
+              
+              // 使用已存储的2024年位次数据
+              const aRank2024 = a.rank2024 || 0;
+              const bRank2024 = b.rank2024 || 0;
+              
+              const aRankDiff = aRank2024 && rank ? ((aRank2024 - rank) / aRank2024) * 100 : 0;
+              const bRankDiff = bRank2024 && rank ? ((bRank2024 - rank) / bRank2024) * 100 : 0;
+              
+              const aInRange = aRankDiff >= -30 && aRankDiff <= 30;
+              const bInRange = bRankDiff >= -30 && bRankDiff <= 30;  
             
             // 如果两个学校都在范围内，按 rankDiffPercentage 从高到低排序
             if (aInRange && bInRange) {
-              return bRankDiff - aRankDiff;
+              const aRank2024 = extract2024Rank(a.historyScores?.length > 0 ? a.historyScores[0].historyScore : null);
+              const bRank2024 = extract2024Rank(b.historyScores?.length > 0 ? b.historyScores[0].historyScore : null);
+              
+              // 从高到低排序（位次数值越小越好）
+              return (aRank2024 || 0) - (bRank2024 || 0);
             }
             
             // 如果只有一个在范围内，在范围内的排在前面
