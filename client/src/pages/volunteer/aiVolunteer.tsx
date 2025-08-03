@@ -28,7 +28,6 @@ import {
   getMajorAlternatives,
 } from '../../config/volunteer';
 
-
 // 定义备选志愿项的类型（扩展自 API 返回的数据）
 interface AlternativeItem {
   id: string;
@@ -121,7 +120,7 @@ interface MajorGroupedAlternatives {
 const AiVolunteerPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  
+
   // 从 Redux 获取状态
   const {
     alternatives,
@@ -196,7 +195,7 @@ const AiVolunteerPage: React.FC = () => {
     };
 
     window.addEventListener('scroll', throttledScrollHandler);
-    
+
     return () => {
       window.removeEventListener('scroll', throttledScrollHandler);
       if (timeoutId) {
@@ -221,7 +220,7 @@ const AiVolunteerPage: React.FC = () => {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
+
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -232,9 +231,11 @@ const AiVolunteerPage: React.FC = () => {
   useEffect(() => {
     if (!loading && hasInitialized) {
       // 检查是否是从返回操作进入的页面
-      const isBackNavigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+      const isBackNavigation = performance.getEntriesByType(
+        'navigation'
+      )[0] as PerformanceNavigationTiming;
       const isReturningFromBack = isBackNavigation?.type === 'back_forward';
-      
+
       if (isReturningFromBack) {
         // 从 localStorage 获取保存的滚动位置
         const savedScrollPosition = localStorage.getItem('aiVolunteerScrollPosition');
@@ -271,7 +272,7 @@ const AiVolunteerPage: React.FC = () => {
           }
         }
       }, 1000);
-      
+
       return () => clearTimeout(timer);
     }
   }, [loading, hasInitialized]);
@@ -439,7 +440,7 @@ const AiVolunteerPage: React.FC = () => {
     (data: GroupedAlternatives[]) => {
       switch (sortTab) {
         case 'willingness': {
-          // 按发展潜能分数由高到低排序
+          // 按发展潜能分数由高到低排序，不按学校分组
           const allWillingnessData = data.flatMap((group) => group.result);
           // 按发展潜能分数从高到低排序
           const sortedWillingnessData = allWillingnessData.sort(
@@ -493,7 +494,7 @@ const AiVolunteerPage: React.FC = () => {
               console.error('解析原始数据失败:', error);
             }
           }
-          
+
           // 如果无法获取原始数据，则使用当前数据但不进行排序
           const allRankDiffData = data.flatMap((group) => group.result);
           return [
@@ -522,18 +523,20 @@ const AiVolunteerPage: React.FC = () => {
     const initializePage = async () => {
       try {
         dispatch(setLoading(true));
-        
+
         // 设置页面标识
         dispatch(setPageKey(currentPageKey.current));
-        
+
         // 检查是否是从返回操作进入的页面
-        const isBackNavigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+        const isBackNavigation = performance.getEntriesByType(
+          'navigation'
+        )[0] as PerformanceNavigationTiming;
         const isReturningFromBack = isBackNavigation?.type === 'back_forward';
-        
+
         if (isReturningFromBack) {
           dispatch(setIsReturning(true));
         }
-        
+
         // 获取自动推荐的志愿
         const nominateResponse = await nominate();
 
@@ -610,7 +613,7 @@ const AiVolunteerPage: React.FC = () => {
           // 为了保持API返回的原始顺序，我们需要保存原始数据
           // 同时也要支持按位次段分组的功能
           const originalData = convertedData; // 保存原始顺序的数据
-          
+
           const groupByCategory = (
             arr: AlternativeItem[],
             key: keyof AlternativeItem
@@ -646,7 +649,7 @@ const AiVolunteerPage: React.FC = () => {
             {
               group: -999, // 使用特殊标识表示原始顺序
               result: originalData,
-            }
+            },
           ];
 
           // 将原始顺序数据也存储到Redux中，以便rankDiff模式使用
@@ -683,7 +686,7 @@ const AiVolunteerPage: React.FC = () => {
 
   // 渲染空状态提示
   const renderEmptyState = () => (
-    <div className="w-full max-w-xl bg-white rounded-2xl shadow p-6 text-center">
+    <div className="w-full max-w-xl bg-white rounded-2xl  p-6 text-center">
       <div className="mb-4">
         <div className="text-gray-400 text-6xl mb-4">🎯</div>
         <h3 className="text-lg font-bold text-gray-900 mb-2">暂无备选志愿</h3>
@@ -720,10 +723,12 @@ const AiVolunteerPage: React.FC = () => {
 
         if (response && response.code === 200) {
           // 更新备选状态
-          dispatch(updateAlternativeStatus({
-            key: itemKey,
-            status: { isAlternative: false, id: undefined }
-          }));
+          dispatch(
+            updateAlternativeStatus({
+              key: itemKey,
+              status: { isAlternative: false, id: undefined },
+            })
+          );
           // 备选删除成功提示
           message.success('取消备选成功，已成功从志愿频道的备选志愿列表中移除。');
         } else {
@@ -756,13 +761,15 @@ const AiVolunteerPage: React.FC = () => {
 
         if (response && response.code === 200) {
           // 更新备选状态
-          dispatch(updateAlternativeStatus({
-            key: itemKey,
-            status: {
-              isAlternative: true,
-              id: response.data?.id,
-            }
-          }));
+          dispatch(
+            updateAlternativeStatus({
+              key: itemKey,
+              status: {
+                isAlternative: true,
+                id: response.data?.id,
+              },
+            })
+          );
           // 备选成功提示
           message.success('备选成功，已成功加入志愿频道的备选志愿列表。');
         } else {
@@ -992,7 +999,10 @@ const AiVolunteerPage: React.FC = () => {
   const filteredData = getFilteredData();
 
   // 计算总项目数
-  const totalItems = filteredData.reduce((total: number, group: GroupedAlternatives) => total + (group.result?.length || 0), 0);
+  const totalItems = filteredData.reduce(
+    (total: number, group: GroupedAlternatives) => total + (group.result?.length || 0),
+    0
+  );
 
   // 计算当前应该显示的分组数量
   const getDisplayedGroups = () => {
@@ -1023,12 +1033,40 @@ const AiVolunteerPage: React.FC = () => {
 
   const displayedGroups = getDisplayedGroups();
 
+  // 获取位次差DOM
+  const getRankdiffDom = (item: any) => {
+    return (
+      <span className="px-2 py-0.5 rounded text-xs font-bold">
+        上年较您
+        <span
+          className={
+            (item.Rankdiff || 0) > 0
+              ? 'text-red-600 bg-red-100'
+              : (item.Rankdiff || 0) < 0
+                ? 'text-green-600 bg-green-100'
+                : 'text-gray-600 bg-gray-100'
+          }
+        >
+          {(item.Rankdiff || 0) > 0
+            ? `高${item.Rankdiff}位次/${Math.floor(item.RankdiffPer || 0)}%`
+            : (item.Rankdiff || 0) < 0
+              ? `低${Math.abs(item.Rankdiff)}位次/${Math.floor(item.RankdiffPer || 0)}%`
+              : '0%'}
+        </span>
+      </span>
+    );
+  };
+
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 40 }}>
-      <Top title={'AI推荐志愿' + recommendCount + '个'} onBack={() => window.history.back()} showRestartButton={true} />
+      <Top
+        title={'AI推荐志愿' + recommendCount + '个'}
+        onBack={() => window.history.back()}
+        showRestartButton={true}
+      />
       <div className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3 min-h-screen">
         {/* 排序Tab选项卡 - 独立的card */}
-        <div className="w-full max-w-xl bg-white rounded-2xl shadow p-4 mb-0">
+        <div className="w-full max-w-xl bg-white rounded-2xl p-4 mb-0">
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => handleSortTabChange('rankDiff')}
@@ -1066,7 +1104,7 @@ const AiVolunteerPage: React.FC = () => {
 
         {/* 加载状态 */}
         {loading && (
-          <div className="w-full max-w-xl bg-white rounded-2xl shadow mt-3 p-6 text-center">
+          <div className="w-full max-w-xl bg-white rounded-2xl mt-3 p-6 text-center">
             <div className="text-gray-500">加载中...</div>
           </div>
         )}
@@ -1105,13 +1143,13 @@ const AiVolunteerPage: React.FC = () => {
                       key={group.group + 'group'}
                       className={
                         sortTab === 'major'
-                          ? 'w-full max-w-xl bg-white rounded-2xl shadow mt-3'
-                          : 'w-full max-w-xl bg-white rounded-2xl shadow mt-3 p-4'
+                          ? 'w-full max-w-xl bg-white rounded-2xl  mt-3'
+                          : 'w-full max-w-xl bg-white rounded-2xl  mt-3 p-2'
                       }
                     >
                       {/* 按专业排序时显示层级结构 */}
                       {sortTab === 'major' ? (
-                        <div className="w-full max-w-xl bg-white rounded-2xl shadow mt-3">
+                        <div className="w-full max-w-xl bg-white rounded-2xl  mt-3">
                           {/* 专业信息头部 - 完全按照intentiondetail.tsx的样式 */}
                           <div
                             className="flex items-center justify-between bg-[#dee9fd] rounded-t-xl p-4 mb-1"
@@ -1257,25 +1295,7 @@ const AiVolunteerPage: React.FC = () => {
                                                   </span>
                                                 </div>
                                                 <div className="flex items-center space-x-2">
-                                                  {/* 位次差显示 */}
-                                                  <span className="px-2 py-0.5 rounded text-xs font-bold">
-                                                    较上年
-                                                    <span
-                                                      className={
-                                                        (item.Rankdiff || 0) > 0
-                                                          ? 'text-green-600 bg-green-100'
-                                                          : (item.Rankdiff || 0) < 0
-                                                            ? 'text-red-600 bg-red-100'
-                                                            : 'text-gray-600 bg-gray-100'
-                                                      }
-                                                    >
-                                                      {(item.Rankdiff || 0) > 0
-                                                        ? `高${item.Rankdiff}/${Math.floor(item.RankdiffPer || 0)}%`
-                                                        : (item.Rankdiff || 0) < 0
-                                                          ? `低${Math.abs(item.Rankdiff)}/${Math.floor(item.RankdiffPer || 0)}%`
-                                                          : '0%'}
-                                                    </span>
-                                                  </span>
+                                                  {getRankdiffDom(item)}
                                                 </div>
                                               </div>
                                               <div className="flex flex-wrap gap-2 mb-3">
@@ -1421,25 +1441,7 @@ const AiVolunteerPage: React.FC = () => {
                                               </span>
                                             </div>
                                             <div className="flex items-center space-x-2">
-                                              {/* 位次差显示 */}
-                                              <span className="px-2 py-0.5 rounded text-xs font-bold">
-                                                较上年
-                                                <span
-                                                  className={
-                                                    (item.Rankdiff || 0) > 0
-                                                      ? 'text-green-600 bg-green-100'
-                                                      : (item.Rankdiff || 0) < 0
-                                                        ? 'text-red-600 bg-red-100'
-                                                        : 'text-gray-600 bg-gray-100'
-                                                  }
-                                                >
-                                                  {(item.Rankdiff || 0) > 0
-                                                    ? `高${item.Rankdiff}/${Math.floor(item.RankdiffPer || 0)}%`
-                                                    : (item.Rankdiff || 0) < 0
-                                                      ? `低${Math.abs(item.Rankdiff)}/${Math.floor(item.RankdiffPer || 0)}%`
-                                                      : '0%'}
-                                                </span>
-                                              </span>
+                                              {getRankdiffDom(item)}
                                             </div>
                                           </div>
                                           <div className="flex flex-wrap gap-2 mb-3">
@@ -1519,9 +1521,12 @@ const AiVolunteerPage: React.FC = () => {
                         </div>
                       ) : sortTab === 'rankDiff' ? (
                         /* 按位次差排序时的列表显示 */
-                        <div className="w-full max-w-xl bg-white rounded-2xl shadow">
+                        <div className="w-full max-w-xl bg-white rounded-2xl">
                           {group.result.map((item: any) => (
-                            <div key={item.id} className="mb-4 border-b border-gray-200 pb-4 last:border-b-0">
+                            <div
+                              key={item.id}
+                              className="mb-4 border-b border-gray-200 pb-4 last:border-b-0"
+                            >
                               {/* 学校名称 */}
                               <div className="flex items-center justify-between mb-3">
                                 <span
@@ -1535,18 +1540,17 @@ const AiVolunteerPage: React.FC = () => {
                                   {item.schoolName}
                                 </span>
                                 <button
-                                  className={`px-3 py-1 rounded text-sm font-medium transition-all duration-200 ${
-                                    (() => {
-                                      const itemKey = `${item.schoolCode}_${item.majorCode}`;
-                                      const isAlternative = alternativeStatus[itemKey]?.isAlternative || false;
-                                      const isLoading = loadingStatus[itemKey];
-                                      return isAlternative
-                                        ? 'bg-red-500 text-white hover:bg-red-600'
-                                        : isLoading
-                                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                          : 'bg-green-500 text-white hover:bg-green-600';
-                                    })()
-                                  }`}
+                                  className={`px-3 py-1 rounded text-sm font-medium transition-all duration-200 ${(() => {
+                                    const itemKey = `${item.schoolCode}_${item.majorCode}`;
+                                    const isAlternative =
+                                      alternativeStatus[itemKey]?.isAlternative || false;
+                                    const isLoading = loadingStatus[itemKey];
+                                    return isAlternative
+                                      ? 'bg-red-500 text-white hover:bg-red-600'
+                                      : isLoading
+                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        : 'bg-green-500 text-white hover:bg-green-600';
+                                  })()}`}
                                   onClick={() => handleAlternativeClick(item)}
                                   disabled={(() => {
                                     const itemKey = `${item.schoolCode}_${item.majorCode}`;
@@ -1555,7 +1559,8 @@ const AiVolunteerPage: React.FC = () => {
                                 >
                                   {(() => {
                                     const itemKey = `${item.schoolCode}_${item.majorCode}`;
-                                    const isAlternative = alternativeStatus[itemKey]?.isAlternative || false;
+                                    const isAlternative =
+                                      alternativeStatus[itemKey]?.isAlternative || false;
                                     const isLoading = loadingStatus[itemKey];
                                     return isLoading
                                       ? '处理中...'
@@ -1579,24 +1584,147 @@ const AiVolunteerPage: React.FC = () => {
                                 >
                                   {item.majorCode} {item.majorName}
                                 </span>
-                                <span className="px-2 py-0.5 rounded text-xs font-bold">
-                                  较上年
+                                {getRankdiffDom(item)}
+                              </div>
+
+                              {/* 学校标签行 */}
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                {/* 学校特色标签 */}
+                                {parseSchoolFeatures(item.schoolFeature).map((feature, index) => (
                                   <span
-                                    className={
-                                      (item.Rankdiff || 0) > 0
-                                        ? 'text-green-600 bg-green-100'
-                                        : (item.Rankdiff || 0) < 0
-                                          ? 'text-red-600 bg-red-100'
-                                          : 'text-gray-600 bg-gray-100'
-                                    }
+                                    key={`${item.schoolName}-feature-${index}`}
+                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
                                   >
-                                    {(item.Rankdiff || 0) > 0
-                                      ? `高${item.Rankdiff}/${Math.floor(item.RankdiffPer || 0)}%`
-                                      : (item.Rankdiff || 0) < 0
-                                        ? `低${Math.abs(item.Rankdiff)}/${Math.floor(item.RankdiffPer || 0)}%`
-                                        : '0%'}
+                                    {feature}
                                   </span>
+                                ))}
+                                <span
+                                  key={item.schoolName + '公办'}
+                                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200"
+                                >
+                                  {item.schoolNature === 'public' ? '公办' : '民办'}
                                 </span>
+                                {item.enrollmentRate !== 0 && (
+                                  <span
+                                    key={item.schoolName + '升学率'}
+                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
+                                  >
+                                    升学率
+                                    {item.enrollmentRate && item.enrollmentRate > 0
+                                      ? item.enrollmentRate + '%'
+                                      : '待补充'}
+                                  </span>
+                                )}
+                                {item.majorGroupId && (
+                                  <span
+                                    key={item.schoolName + '专业组'}
+                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                                  >
+                                    {item.majorGroupName}专业组
+                                  </span>
+                                )}
+                                {/* 学制标签 */}
+                                {item.historyScore &&
+                                  item.historyScore.length > 0 &&
+                                  item.historyScore[0].studyPeriod && (
+                                    <span
+                                      key={item.schoolName + '学制'}
+                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200"
+                                    >
+                                      学制{item.historyScore[0].studyPeriod}年
+                                    </span>
+                                  )}
+                                <span
+                                  key={item.schoolName + '校区'}
+                                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200"
+                                >
+                                  {getCityDisplayInfo(item)}
+                                </span>
+                              </div>
+
+                              {/* 历年分数表格 */}
+                              <div
+                                className="bg-gray-50 rounded-b-lg"
+                                dangerouslySetInnerHTML={{
+                                  __html: getHistoryScore(item?.historyScore || []),
+                                }}
+                              ></div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : sortTab === 'willingness' ? (
+                        /* 按发展潜能排序时的列表显示 - 不按学校分组 */
+                        <div className="w-full max-w-xl bg-white rounded-2xl ">
+                          {group.result.map((item: any) => (
+                            <div
+                              key={item.id}
+                              className="mb-4 border-b border-gray-200 pb-4 last:border-b-0"
+                            >
+                              {/* 学校名称 */}
+                              <div className="flex items-center justify-between mb-3">
+                                <span
+                                  className="text-blue-600 text-lg font-bold cursor-pointer hover:text-blue-700 transition-colors duration-200"
+                                  onClick={() => {
+                                    navigate(
+                                      `/major/schooldetail?schoolCode=${item.schoolCode}&schoolname=${item.schoolName}`
+                                    );
+                                  }}
+                                >
+                                  {item.schoolName}
+                                </span>
+                                <button
+                                  className={`px-3 py-1 rounded text-sm font-medium transition-all duration-200 ${(() => {
+                                    const itemKey = `${item.schoolCode}_${item.majorCode}`;
+                                    const isAlternative =
+                                      alternativeStatus[itemKey]?.isAlternative || false;
+                                    const isLoading = loadingStatus[itemKey];
+                                    return isAlternative
+                                      ? 'bg-red-500 text-white hover:bg-red-600'
+                                      : isLoading
+                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        : 'bg-green-500 text-white hover:bg-green-600';
+                                  })()}`}
+                                  onClick={() => handleAlternativeClick(item)}
+                                  disabled={(() => {
+                                    const itemKey = `${item.schoolCode}_${item.majorCode}`;
+                                    return loadingStatus[itemKey];
+                                  })()}
+                                >
+                                  {(() => {
+                                    const itemKey = `${item.schoolCode}_${item.majorCode}`;
+                                    const isAlternative =
+                                      alternativeStatus[itemKey]?.isAlternative || false;
+                                    const isLoading = loadingStatus[itemKey];
+                                    return isLoading
+                                      ? '处理中...'
+                                      : isAlternative
+                                        ? '移除'
+                                        : '备选';
+                                  })()}
+                                </button>
+                              </div>
+
+                              {/* 专业信息 */}
+                              <div className="flex items-center justify-between mb-3">
+                                <span
+                                  className="text-blue-700 text-sm cursor-pointer hover:text-blue-800"
+                                  onClick={() => {
+                                    navigate(
+                                      `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isFavorite=true`,
+                                      { replace: false }
+                                    );
+                                  }}
+                                >
+                                  {item.majorCode} {item.majorName}
+                                </span>
+                                <div className="flex items-center space-x-2">
+                                  {/* 显示发展潜能分数 */}
+                                  <span className="text-purple-600 bg-purple-100 px-2 py-0.5 rounded text-xs font-bold">
+                                    发展潜能{Math.ceil(item.developmentPotential || 0)}分
+                                  </span>
+                                  {/* 显示较上年变化 */}
+                                  {getRankdiffDom(item)}
+                                </div>
                               </div>
 
                               {/* 学校标签行 */}
@@ -1708,24 +1836,7 @@ const AiVolunteerPage: React.FC = () => {
                                   </div>
                                   <div className="flex items-center space-x-2">
                                     {/* 显示较上年变化 */}
-                                    <span className="text-orange-600 bg-orange-100 px-2 py-0.5 rounded text-xs font-bold">
-                                      较上年
-                                      <span
-                                        className={
-                                          (item.Rankdiff || 0) > 0
-                                            ? 'text-green-600 bg-green-100'
-                                            : (item.Rankdiff || 0) < 0
-                                              ? 'text-red-600 bg-red-100'
-                                              : 'text-gray-600 bg-gray-100'
-                                        }
-                                      >
-                                        {(item.Rankdiff || 0) > 0
-                                          ? `高${item.Rankdiff}/${Math.floor(item.RankdiffPer || 0)}%`
-                                          : (item.Rankdiff || 0) < 0
-                                            ? `低${Math.abs(item.Rankdiff)}/${Math.floor(item.RankdiffPer || 0)}%`
-                                            : '0%'}
-                                      </span>
-                                    </span>
+                                    {getRankdiffDom(item)}
                                     {/* 显示发展潜能分数 */}
                                     {sortTab === 'willingness' && (
                                       <span className="text-purple-600 bg-purple-100 px-2 py-0.5 rounded text-xs font-bold">
@@ -1839,14 +1950,14 @@ const AiVolunteerPage: React.FC = () => {
 
                 {/* 加载更多提示 */}
                 {isLoadingMore && (
-                  <div className="w-full max-w-xl bg-white rounded-2xl shadow mt-3 p-6 text-center">
+                  <div className="w-full max-w-xl bg-white rounded-2xl  mt-3 p-6 text-center">
                     <div className="text-gray-500">加载中...</div>
                   </div>
                 )}
 
                 {/* 显示更多按钮 */}
                 {!isLoadingMore && displayCount < totalItems && (
-                  <div className="w-full max-w-xl bg-white rounded-2xl shadow mt-3 p-6 text-center">
+                  <div className="w-full max-w-xl bg-white rounded-2xl  mt-3 p-6 text-center">
                     <button
                       onClick={() => {
                         setIsLoadingMore(true);
