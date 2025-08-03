@@ -368,7 +368,7 @@ export class MajorScoreService {
       SELECT 
         fs.major_code as "majorCode",
         fs.major_name as "majorName",
-		fs.major_brief as "majorBrief",
+	     	fs.major_brief as "majorBrief",
         fs.edu_level as "eduLevel",
         fs.yanxue_deduction as "yanxueDeduction",
         fs.tiaozhan_deduction as "tiaozhanDeduction",
@@ -402,7 +402,7 @@ export class MajorScoreService {
    * @param userId 用户ID
    * @returns 专业代码和发展潜力得分列表（按得分从高到低排序）
    */
-  async getTopDevelopmentPotentialMajors(userId: string): Promise<{majorCode: string, developmentpotential: number}[]> {
+  async getTopDevelopmentPotentialMajors(userId: string): Promise<{majorCode: string, developmentpotential: number,lexue_score:number}[]> {
     // 使用优化的SQL查询，只获取必要的字段
     const result = await this.majorDetailRepository.query(`
          WITH user_answers AS (
@@ -520,7 +520,7 @@ export class MajorScoreService {
           ss.major_code,
           ss.major_name,
           ss.edu_level,  
-		     ss.major_brief, 
+		      ss.major_brief, 
           ss.academic_development_score,
           ss.career_development_score,
           ss.growth_potential_score,
@@ -544,6 +544,7 @@ export class MajorScoreService {
         LEFT JOIN school_majors_count smc ON smc.major_code = ss.major_code
       )
       SELECT 
+         fs.lexue_score,
          fs.major_code as "majorCode",
          ROUND(CAST((fs.academic_development_raw + fs.career_development_raw +
 	     	ROUND((COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0)) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)
