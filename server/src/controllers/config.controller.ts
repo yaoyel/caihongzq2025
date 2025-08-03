@@ -620,7 +620,7 @@ export class ConfigController {
           // 添加专业信息到学校里面
           major: {
             code: school.majorCode,
-            name: school.majorName,
+            name: school.majorDisplayName || school.majorName,
             displayName: school.majorDisplayName,
             developmentPotential: majors.find(m => m.majorCode === school.majorCode)?.developmentpotential || 0 
           }
