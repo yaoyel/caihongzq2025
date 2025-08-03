@@ -198,7 +198,7 @@ export class ConfigController {
       }
       
       const rank = user.rank;
-      const majors = await this.majorScoreService.getTopDevelopmentPotentialMajors(ctx.state.user!.userId.toString()); 
+      const majors = (await this.majorScoreService.getTopDevelopmentPotentialMajors(ctx.state.user!.userId.toString())).filter(s=> s.lexue_score > 0);
 
       const volunteerCount = PROVINCE_VOLUNTEER_COUNT[user.province??""] || 0;
       const recommendCount = volunteerCount * 3;
