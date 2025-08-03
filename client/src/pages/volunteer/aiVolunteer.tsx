@@ -301,6 +301,65 @@ const AiVolunteerPage: React.FC = () => {
     }
   }, [loading, hasInitialized]);
 
+  // 改进的滚动位置恢复逻辑
+  useEffect(() => {
+    // 使用 sessionStorage 来标记是否是从详情页返回
+    const isFromDetail = sessionStorage.getItem('aiVolunteerFromDetail') === 'true';
+    
+    if (isFromDetail && !loading && hasInitialized) {
+      // 清除标记，避免重复恢复
+      sessionStorage.removeItem('aiVolunteerFromDetail');
+      
+      // 从 localStorage 获取保存的滚动位置
+      const savedScrollPosition = localStorage.getItem('aiVolunteerScrollPosition');
+      if (savedScrollPosition) {
+        const scrollPosition = parseInt(savedScrollPosition, 10);
+        if (scrollPosition > 0) {
+          // 使用多个延迟确保DOM完全渲染
+          const timers = [300, 600, 1000, 1500].map(delay => 
+            setTimeout(() => {
+              const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+              // 只有在当前滚动位置接近顶部时才恢复
+              if (currentScrollPosition < 200) {
+                window.scrollTo(0, scrollPosition);
+                console.log(`延迟${delay}ms恢复滚动位置:`, scrollPosition);
+              }
+            }, delay)
+          );
+          
+          return () => timers.forEach(timer => clearTimeout(timer));
+        }
+      }
+    }
+  }, [loading, hasInitialized]);
+
+  // 页面离开时设置标记
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // 设置标记，表示用户即将离开页面
+      sessionStorage.setItem('aiVolunteerFromDetail', 'true');
+      const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+      localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // 页面隐藏时也设置标记
+        sessionStorage.setItem('aiVolunteerFromDetail', 'true');
+        const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+        localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   // 弹框相关状态
   const [isTipModalVisible, setIsTipModalVisible] = useState(false);
   const [userChoices, setUserChoices] = useState({
@@ -323,6 +382,18 @@ const AiVolunteerPage: React.FC = () => {
     '（-10%）到+（+5%）位次段院校',
     '（-30%） 到 （-10%）位次段院校',
   ];
+
+  // 辅助函数：处理导航跳转，设置返回标记
+  const handleNavigation = useCallback((url: string, options?: { replace?: boolean }) => {
+    // 设置标记，表示用户即将离开页面
+    sessionStorage.setItem('aiVolunteerFromDetail', 'true');
+    // 保存当前滚动位置
+    const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+    
+    // 执行导航
+    return navigate(url, options);
+  }, [navigate]);
 
   // 处理用户选择变化
   const handleChoiceChange = useCallback((choice: 'choice1' | 'choice2', checked: boolean) => {
@@ -536,35 +607,69 @@ const AiVolunteerPage: React.FC = () => {
     [sortTab]
   );
 
+  // 智能省份搜索函数
+  const isProvinceMatch = (searchText: string, provinceName: string): boolean => {
+    if (!searchText || !provinceName) return false;
+    
+    const searchLower = searchText.toLowerCase();
+    const provinceLower = provinceName.toLowerCase();
+    
+    // 直接匹配
+    if (provinceLower.includes(searchLower) || searchLower.includes(provinceLower)) {
+      return true;
+    }
+    
+    // 处理带"省"字的搜索
+    if (searchLower.endsWith('省')) {
+      const searchWithoutProvince = searchLower.slice(0, -1); // 去掉"省"字
+      return provinceLower.includes(searchWithoutProvince);
+    }
+    
+    // 处理带"市"字的搜索
+    if (searchLower.endsWith('市')) {
+      const searchWithoutCity = searchLower.slice(0, -1); // 去掉"市"字
+      return provinceLower.includes(searchWithoutCity);
+    }
+    
+    return false;
+  };
+
   // 搜索过滤逻辑
-  const filterDataBySearch = useCallback((data: AlternativeItem[]) => {
-    return data.filter((item) => {
-      // 搜索文本过滤
-      const searchLower = searchText.toLowerCase();
-      const matchesSearch = searchText === '' || 
-        item.schoolName.toLowerCase().includes(searchLower) ||
-        item.majorName.toLowerCase().includes(searchLower) ||
-        item.majorCode.toLowerCase().includes(searchLower) ||
-        getCityDisplayInfo(item).toLowerCase().includes(searchLower);
+  const filterDataBySearch = useCallback(
+    (data: AlternativeItem[]) => {
+      return data.filter((item) => {
+        // 搜索文本过滤
+        const searchLower = searchText.toLowerCase();
+        const matchesSearch =
+          searchText === '' ||
+          item.schoolName.toLowerCase().includes(searchLower) ||
+          item.majorName.toLowerCase().includes(searchLower) ||
+          item.majorCode.toLowerCase().includes(searchLower) ||
+          getCityDisplayInfo(item).toLowerCase().includes(searchLower) ||
+          (item.provinceName && isProvinceMatch(searchText, item.provinceName));
 
-      // 学校性质过滤
-      const matchesNature = selectedSchoolNature === 'all' || 
-        item.schoolNature === selectedSchoolNature;
+        // 学校性质过滤
+        const matchesNature =
+          selectedSchoolNature === 'all' || item.schoolNature === selectedSchoolNature;
 
-      return matchesSearch && matchesNature;
-    });
-  }, [searchText, selectedSchoolNature]);
+        return matchesSearch && matchesNature;
+      });
+    },
+    [searchText, selectedSchoolNature]
+  );
 
   // 根据当前Tab过滤数据
   const getFilteredData = useCallback(() => {
     // 备选志愿页面显示所有志愿（包括未入选的）
     const sortedData = getSortedData(alternatives);
-    
+
     // 应用搜索过滤
-    return sortedData.map((group: GroupedAlternatives) => ({
-      ...group,
-      result: filterDataBySearch(group.result)
-    })).filter((group: GroupedAlternatives) => group.result.length > 0);
+    return sortedData
+      .map((group: GroupedAlternatives) => ({
+        ...group,
+        result: filterDataBySearch(group.result),
+      }))
+      .filter((group: GroupedAlternatives) => group.result.length > 0);
   }, [alternatives, getSortedData, filterDataBySearch]);
 
   useEffect(() => {
@@ -644,12 +749,12 @@ const AiVolunteerPage: React.FC = () => {
             RankdiffPer: item.rankDiffPer || 0, // 位次差百分比
             // 学校标签相关属性
             schoolFeature: item.schoolFeature || '', // 学校特色
-            schoolNature: item.belong === '省教育厅' ? 'public' : 'private', // 根据belong判断公办民办
+            schoolNature: item.schoolNature, // 根据belong判断公办民办
             schoolLevel: '专科', // 根据实际情况调整
             majorGroupId: item.major?.majorGroupId?.toString() || '', // 专业组ID
             majorGroupName: item.major?.majorGroupName || '', // 专业组名称
             schoolCity: item.cityName || '', // 学校所在城市
-            provinceName: '', // 默认值
+            provinceName: item.provinceName || '', // 省份名称
             cityName: item.cityName || '', // 城市名称
             sortIndex: index, // 添加排序索引
             developmentPotential: parseFloat(item.major?.developmentPotential || '0') || 0, // 发展潜能
@@ -744,7 +849,7 @@ const AiVolunteerPage: React.FC = () => {
         </p>
       </div>
       <button
-        onClick={() => navigate('/intention')}
+        onClick={() => handleNavigation('/intention')}
         className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
       >
         去意向页面备选
@@ -1120,13 +1225,13 @@ const AiVolunteerPage: React.FC = () => {
             {/* 搜索框 */}
             <div className="relative">
               <Input
-                placeholder="搜索学校名称、专业名称、城市等..."
+                placeholder="搜索学校名称、专业名称、城市、省份等..."
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
                 prefix={<SearchOutlined className="text-gray-400" />}
                 suffix={
-                  <InfoCircleOutlined 
-                    className="text-blue-500 cursor-pointer" 
+                  <InfoCircleOutlined
+                    className="text-blue-500 cursor-pointer"
                     onClick={() => setShowSearchTips(!showSearchTips)}
                     title="搜索帮助"
                   />
@@ -1138,11 +1243,14 @@ const AiVolunteerPage: React.FC = () => {
               {showSearchTips && (
                 <div className="search-tips-container absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg p-3 shadow-lg z-10">
                   <div className="text-sm text-gray-600 space-y-1">
-                    <div>💡 <strong>搜索提示：</strong></div>
+                    <div>
+                      💡 <strong>搜索提示：</strong>
+                    </div>
                     <div>• 可以搜索学校名称（如：清华大学）</div>
                     <div>• 可以搜索专业名称（如：计算机科学）</div>
                     <div>• 可以搜索专业代码（如：080901）</div>
                     <div>• 可以搜索城市名称（如：北京、上海）</div>
+                    <div>• 可以搜索省份名称（如：江苏、浙江、湖南省）</div>
                     <div>• 支持模糊搜索，输入部分关键词即可</div>
                   </div>
                 </div>
@@ -1183,9 +1291,7 @@ const AiVolunteerPage: React.FC = () => {
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center space-x-2">
                 <span className="text-blue-600 font-medium">搜索结果：</span>
-                <span className="text-blue-800">
-                  找到 {totalItems} 个志愿
-                </span>
+                <span className="text-blue-800">找到 {totalItems} 个志愿</span>
               </div>
               <button
                 onClick={() => {
@@ -1292,7 +1398,7 @@ const AiVolunteerPage: React.FC = () => {
                               if (isMajorGroup && (group.result[0] as any).majorGroup) {
                                 const majorGroup = (group.result[0] as any)
                                   .majorGroup as MajorGroup;
-                                navigate(
+                                handleNavigation(
                                   `/major/majorlovedetail?majorCode=${majorGroup.majorCode}&&majorName=${majorGroup.majorName}&score=${majorGroup.rankGroups?.[0]?.schools?.[0]?.majors?.[0]?.score || 0}&isFavorite=true`,
                                   { replace: false }
                                 );
@@ -1377,7 +1483,7 @@ const AiVolunteerPage: React.FC = () => {
                                                 className="text-blue-600 text-lg font-bold cursor-pointer hover:text-blue-700 transition-colors duration-200 truncate block"
                                                 title={schoolGroup.schoolName}
                                                 onClick={() => {
-                                                  navigate(
+                                                  handleNavigation(
                                                     `/major/schooldetail?schoolCode=${schoolGroup.schoolCode}&schoolname=${schoolGroup.schoolName}`
                                                   );
                                                 }}
@@ -1524,7 +1630,7 @@ const AiVolunteerPage: React.FC = () => {
                                             className="text-blue-600 text-lg font-bold cursor-pointer hover:text-blue-700 transition-colors duration-200 truncate block"
                                             title={schoolGroup.schoolName}
                                             onClick={() => {
-                                              navigate(
+                                              handleNavigation(
                                                 `/major/schooldetail?schoolCode=${schoolGroup.schoolCode}&schoolname=${schoolGroup.schoolName}`
                                               );
                                             }}
@@ -1667,7 +1773,7 @@ const AiVolunteerPage: React.FC = () => {
                                 <span
                                   className="text-blue-600 text-lg font-bold cursor-pointer hover:text-blue-700 transition-colors duration-200"
                                   onClick={() => {
-                                    navigate(
+                                    handleNavigation(
                                       `/major/schooldetail?schoolCode=${item.schoolCode}&schoolname=${item.schoolName}`
                                     );
                                   }}
@@ -1711,7 +1817,7 @@ const AiVolunteerPage: React.FC = () => {
                                 <span
                                   className="text-blue-700 text-sm cursor-pointer hover:text-blue-800"
                                   onClick={() => {
-                                    navigate(
+                                    handleNavigation(
                                       `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isFavorite=true`,
                                       { replace: false }
                                     );
@@ -1800,7 +1906,7 @@ const AiVolunteerPage: React.FC = () => {
                                 <span
                                   className="text-blue-600 text-lg font-bold cursor-pointer hover:text-blue-700 transition-colors duration-200"
                                   onClick={() => {
-                                    navigate(
+                                    handleNavigation(
                                       `/major/schooldetail?schoolCode=${item.schoolCode}&schoolname=${item.schoolName}`
                                     );
                                   }}
@@ -1844,7 +1950,7 @@ const AiVolunteerPage: React.FC = () => {
                                 <span
                                   className="text-blue-700 text-sm cursor-pointer hover:text-blue-800"
                                   onClick={() => {
-                                    navigate(
+                                    handleNavigation(
                                       `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isFavorite=true`,
                                       { replace: false }
                                     );
@@ -1936,7 +2042,7 @@ const AiVolunteerPage: React.FC = () => {
                               className="flex items-center justify-between border-b pb-2 p-2 -mx-4 px-4"
                               style={{ backgroundColor: '#007bff' }}
                               onClick={() => {
-                                navigate(
+                                handleNavigation(
                                   `/major/schooldetail?schoolCode=${schoolGroup.schoolCode}&schoolname=${schoolGroup.schoolName}`
                                 );
                               }}
@@ -1957,7 +2063,7 @@ const AiVolunteerPage: React.FC = () => {
                                     <span
                                       className={`text-blue-700 text-[14px] mr-2 ${item.majorName.length > 8 ? 'cursor-pointer hover:text-blue-800' : ''}`}
                                       onClick={() => {
-                                        navigate(
+                                        handleNavigation(
                                           `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isFavorite=true`,
                                           { replace: false } // 不使用 replace，保持正常的导航历史
                                         );

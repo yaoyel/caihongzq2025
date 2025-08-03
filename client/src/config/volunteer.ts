@@ -495,6 +495,7 @@ interface NominateItem {
   averageRank: number;
   belong: string;
   cityName: string;
+  provinceName: string;
   employmentRate: number | null;
   enrollmentRate: number | null;
   features: string;
