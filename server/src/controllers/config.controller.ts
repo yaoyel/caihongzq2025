@@ -413,7 +413,7 @@ export class ConfigController {
               schools: sortedSchools.map((school: any) => ({
                 id: school.id,
                 name: school.name,  
-                nature: school.nature,
+                schoolNature: school.nature,
                 displayName: school.majorDisplayName,
                 schoolCode: school.code, 
                 averageRank: school.averageRank,
@@ -600,7 +600,7 @@ export class ConfigController {
           id: school.id,
           name: school.name,
           schoolCode: school.code,
-          nature: school.nature,
+          schoolNature: school.nature,
           averageRank: school.averageRank,
           rankDiffPercentage: school.rankDiffPercentage,
           rankDiff: school.rankDiff,
