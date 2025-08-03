@@ -638,7 +638,7 @@ export class ConfigController {
             score: user.score
           },
           volunteerCount,
-          recommendCount,
+          recommendCount:actualTotal,
           total: actualTotal, // 更新为实际返回的学校数量
           schools: schoolsWithMajor // 改为 schools 数组，每个学校单独显示
         };
