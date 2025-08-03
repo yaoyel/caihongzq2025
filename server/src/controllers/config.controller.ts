@@ -208,17 +208,18 @@ export class ConfigController {
       const historyScoreMap = await this.majorRedisService.getMultipleMajorScores(majors.map(s=>s.majorCode), user!.province || '北京', user!.preferredSubjects || '综合', user!.secondarySubjects || '');
 
       const enrollPlansMap = await this.majorRedisService.getMultipleEnrollPlans(majors.map(s=>s.majorCode), user!.province || '北京', 2025, '专科批', '普通类', user!.preferredSubjects || '综合', user!.secondarySubjects?.split(',') || ['不限']);
-      
+        
       // 将 Map 转换为数组格式，便于后续处理
       const historyScore: any[] = [];
       historyScoreMap.forEach((scores, majorCode) => {
         scores.forEach(score => {
           historyScore.push({
             ...score,
-            majorCode
+            majorCode, 
           });
         });
-      });
+      }); 
+
 
       // 处理每个专业的学校数据，添加历史分数信息并按位次分组排序
       const processedMajorDetails = majorDetails.data.map((majorDetail: any) => {
@@ -504,7 +505,7 @@ export class ConfigController {
             }
           }
 
-                      // 对于非置顶的学校，优先显示 rankDiffPercentage 在 -30% 到 30% 范围内的学校
+            // 对于非置顶的学校，优先显示 rankDiffPercentage 在 -30% 到 30% 范围内的学校
             if (!a.isTopFive && !b.isTopFive) {
               // 首先将 averageRank 为 0 的排在后面
               if ((a.averageRank || 0) === 0 && (b.averageRank || 0) !== 0) return 1;
@@ -581,8 +582,12 @@ export class ConfigController {
             school.features.includes('国家级骨干')
           )
         );
-        const nonTopFiveSchools = sortedAllSchools.filter(school => !school.isTopFive);
-        const selectedNonTopFiveSchools = nonTopFiveSchools.slice(0, recommendCount);
+        const nonTopFiveSchools = sortedAllSchools.filter(school => 
+          !school.isTopFive && 
+          school.rankDiffPer >= -30 && 
+          school.rankDiffPer <= 30
+        );
+        const selectedNonTopFiveSchools = nonTopFiveSchools;//.slice(0, recommendCount);
         
         // 合并置顶和非置顶学校
         const allSelectedSchools = [...topFiveSchools, ...selectedNonTopFiveSchools];
