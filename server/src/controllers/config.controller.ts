@@ -281,7 +281,7 @@ export class ConfigController {
           
           if (rank && rank > 0 && rank2024 && rank2024 > 0) {
             // 计算位次差值（2024年位次 - 用户位次）
-            rankDiff = rank2024 - rank;
+            rankDiff = rank- rank2024 ;
             // 计算位次差值百分比（差值 / 2024年位次）
             rankDiffPer = rank2024 > 0 ? (rankDiff / rank2024) * 100 : 0;
           }
@@ -291,7 +291,7 @@ export class ConfigController {
           if (avgRank > 0) { // 只对有位次的学校进行分组
             // 30%到100%范围使用2024年位次与用户位次比较
             if (rank2024 && rank2024 > 0 && rank && rank > 0) {
-              const rankDiffPercentage2024 = ((rank2024 - rank) / rank2024) * 100;
+              const rankDiffPercentage2024 = ((rank-rank2024) / rank2024) * 100;
               if (rankDiffPercentage2024 > 30 && rankDiffPercentage2024 <= 100) {
                 group = 5; // 30%到100%（较高范围）- 基于2024年位次
               }
@@ -376,15 +376,15 @@ export class ConfigController {
                 return aIsValid ? -1 : 1;
               }
               
-              // 如果都有效，按 averageRank 从高到低排序
-              if (aIsValid && bIsValid) {
-                return (b.averageRank || 0) - (a.averageRank || 0);
-              }
+              // // 如果都有效，按 averageRank 从高到低排序
+              // if (aIsValid && bIsValid) {
+              //   return (b.averageRank || 0) - (a.averageRank || 0);
+              // }
             }
             
             // 优先显示 rankDiffPercentage 在 -30% 到 30% 范围内的学校
-            const aRankDiff = a.rankDiffPercentage || 0;
-            const bRankDiff = b.rankDiffPercentage || 0;
+            const aRankDiff = a.rankDiffPer || 0;
+            const bRankDiff = b.rankDiffPer || 0;
             
             const aInRange = aRankDiff >= -30 && aRankDiff <= 30;
             const bInRange = bRankDiff >= -30 && bRankDiff <= 30;  
@@ -400,7 +400,7 @@ export class ConfigController {
             
             // 如果都不在范围内，按 rankDiffPercentage 从高到低排序
             if (!aInRange && !bInRange) {
-              return bRankDiff - aRankDiff;
+              return aRankDiff - bRankDiff;
             }
             
             return 0;
@@ -454,7 +454,7 @@ export class ConfigController {
             score: user.score
           },
           volunteerCount,
-          recommendCount,
+          recommendCount:sortedByDevelopmentPotential.length,
           total: sortedByDevelopmentPotential.length,
           majors: sortedByDevelopmentPotential // 返回按专业分组的数据
         };
