@@ -207,6 +207,11 @@ const AiVolunteerPage: React.FC = () => {
       const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
       localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
       dispatch(setScrollPosition(currentScrollPosition));
+      
+      // 添加调试信息，只在滚动位置大于0时记录
+      if (currentScrollPosition > 0) {
+        console.log('滚动位置已保存:', currentScrollPosition);
+      }
     };
 
     // 节流处理滚动事件
@@ -251,87 +256,116 @@ const AiVolunteerPage: React.FC = () => {
     };
   }, []);
 
-  // 页面加载时检查是否需要恢复滚动位置
+  // 优化的滚动位置恢复逻辑
   useEffect(() => {
     if (!loading && hasInitialized) {
-      // 检查是否是从返回操作进入的页面
-      const isBackNavigation = performance.getEntriesByType(
-        'navigation'
-      )[0] as PerformanceNavigationTiming;
-      const isReturningFromBack = isBackNavigation?.type === 'back_forward';
-
-      if (isReturningFromBack) {
-        // 从 localStorage 获取保存的滚动位置
-        const savedScrollPosition = localStorage.getItem('aiVolunteerScrollPosition');
-        if (savedScrollPosition) {
-          const scrollPosition = parseInt(savedScrollPosition, 10);
-          if (scrollPosition > 0) {
-            // 延迟恢复滚动位置，确保DOM已渲染
-            const timer = setTimeout(() => {
-              window.scrollTo(0, scrollPosition);
-              console.log('恢复滚动位置:', scrollPosition);
-            }, 500);
-            return () => clearTimeout(timer);
-          }
-        }
-      }
-    }
-  }, [loading, hasInitialized]);
-
-  // 更简单的恢复方法：在页面加载完成后尝试恢复
-  useEffect(() => {
-    if (!loading && hasInitialized) {
-      // 延迟检查是否需要恢复滚动位置
-      const timer = setTimeout(() => {
-        const savedScrollPosition = localStorage.getItem('aiVolunteerScrollPosition');
-        if (savedScrollPosition) {
-          const scrollPosition = parseInt(savedScrollPosition, 10);
-          if (scrollPosition > 0) {
-            // 检查当前滚动位置，如果接近顶部则恢复
-            const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-            if (currentScrollPosition < 100) {
-              window.scrollTo(0, scrollPosition);
-              console.log('恢复滚动位置:', scrollPosition);
-            }
-          }
-        }
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [loading, hasInitialized]);
-
-  // 改进的滚动位置恢复逻辑
-  useEffect(() => {
-    // 使用 sessionStorage 来标记是否是从详情页返回
-    const isFromDetail = sessionStorage.getItem('aiVolunteerFromDetail') === 'true';
-    
-    if (isFromDetail && !loading && hasInitialized) {
-      // 清除标记，避免重复恢复
-      sessionStorage.removeItem('aiVolunteerFromDetail');
-      
-      // 从 localStorage 获取保存的滚动位置
+      // 检查是否是从详情页返回
+      const isFromDetail = sessionStorage.getItem('aiVolunteerFromDetail') === 'true';
       const savedScrollPosition = localStorage.getItem('aiVolunteerScrollPosition');
-      if (savedScrollPosition) {
+      
+          const xunigundongElement = document.querySelector('.xunigundong') as HTMLElement;
+    const xunigundongHeight = xunigundongElement?.scrollHeight || 0;
+    const calculatedPageHeight = xunigundongHeight + 68 + 98; // xunigundong高度 + 68px + 98px
+    
+    console.log('滚动位置恢复检查:', {
+      loading,
+      hasInitialized,
+      isFromDetail,
+      savedScrollPosition,
+      currentScrollPosition: window.pageYOffset || document.documentElement.scrollTop,
+      alternativesLength: alternatives.length,
+      xunigundongHeight,
+      calculatedPageHeight,
+      documentHeight: document.documentElement.scrollHeight,
+      windowHeight: window.innerHeight,
+      scrollTop: window.pageYOffset || document.documentElement.scrollTop
+    });
+      
+      if (isFromDetail && savedScrollPosition) {
         const scrollPosition = parseInt(savedScrollPosition, 10);
-        if (scrollPosition > 0) {
-          // 使用多个延迟确保DOM完全渲染
-          const timers = [300, 600, 1000, 1500].map(delay => 
-            setTimeout(() => {
-              const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-              // 只有在当前滚动位置接近顶部时才恢复
-              if (currentScrollPosition < 200) {
-                window.scrollTo(0, scrollPosition);
-                console.log(`延迟${delay}ms恢复滚动位置:`, scrollPosition);
-              }
-            }, delay)
-          );
+        console.log('检查滚动位置恢复条件:', {
+          scrollPosition,
+          isGreaterThanZero: scrollPosition > 0,
+          documentHeight: document.documentElement.scrollHeight,
+          windowHeight: window.innerHeight
+        });
+        
+        // 清除标记，避免重复恢复
+        sessionStorage.removeItem('aiVolunteerFromDetail');
+        
+        console.log('开始恢复滚动位置:', scrollPosition);
+        
+        // 计算需要加载的数据量
+        const estimatedItemsNeeded = Math.ceil(scrollPosition / 100) * 10; // 每100px大约需要10个项目
+        const currentDisplayCount = displayCount;
+        const additionalItemsNeeded = Math.max(0, estimatedItemsNeeded - currentDisplayCount);
+        
+        console.log('滚动恢复数据加载:', {
+          scrollPosition,
+          currentDisplayCount,
+          estimatedItemsNeeded,
+          additionalItemsNeeded
+        });
+        
+        // 定义恢复滚动位置的函数
+        const restoreScroll = () => {
+          const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+          const documentHeight = document.documentElement.scrollHeight;
           
-          return () => timers.forEach(timer => clearTimeout(timer));
+          console.log('检查滚动恢复条件:', {
+            scrollPosition,
+            currentScrollPosition,
+            documentHeight,
+            '页面高度是否足够': documentHeight > scrollPosition
+          });
+          
+          // 只有在当前滚动位置接近顶部时才恢复
+          if (currentScrollPosition < 200) {
+            // 检查页面高度是否足够
+            if (documentHeight > scrollPosition) {
+              // 使用 requestAnimationFrame 确保在下一帧执行滚动
+              requestAnimationFrame(() => {
+                window.scrollTo(0, scrollPosition);
+                console.log('成功恢复滚动位置:', scrollPosition);
+              });
+            } else {
+              console.log('页面高度不足，无法恢复滚动位置:', {
+                scrollPosition,
+                documentHeight,
+                '需要更多数据': '需要更多数据'
+              });
+            }
+          } else {
+            console.log('当前滚动位置不在顶部，跳过恢复:', currentScrollPosition);
+          }
+        };
+        
+        // 如果需要更多数据，先加载数据
+        if (additionalItemsNeeded > 0) {
+          console.log(`需要加载更多数据: ${additionalItemsNeeded} 条`);
+          dispatch(setDisplayCount(currentDisplayCount + additionalItemsNeeded));
+          
+          // 等待数据加载完成后再恢复滚动位置
+          setTimeout(() => {
+            restoreScroll();
+          }, 500);
+        } else {
+          // 数据足够，直接恢复滚动位置
+          restoreScroll();
         }
+        
+        // 然后使用多个延迟确保DOM完全渲染
+        const timers = [100, 300, 600, 1000, 1500, 2000].map(delay => 
+          setTimeout(() => {
+            console.log(`延迟${delay}ms尝试恢复滚动位置`);
+            restoreScroll();
+          }, delay)
+        );
+        
+        return () => timers.forEach(timer => clearTimeout(timer));
       }
     }
-  }, [loading, hasInitialized]);
+  }, [loading, hasInitialized, alternatives.length]);
 
   // 页面离开时设置标记
   useEffect(() => {
@@ -367,6 +401,9 @@ const AiVolunteerPage: React.FC = () => {
     choice2: false,
   });
 
+  // 添加按专业排序加载状态
+  const [isLoadingMajorData, setIsLoadingMajorData] = useState(false);
+
   // 添加专业组详情相关状态
   const [showMajorGroupDialog, setShowMajorGroupDialog] = useState(false);
   const [majorGroupData, setMajorGroupData] = useState<MajorGroupItem[]>([]);
@@ -390,6 +427,22 @@ const AiVolunteerPage: React.FC = () => {
     // 保存当前滚动位置
     const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
     localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+    
+    const xunigundongElement = document.querySelector('.xunigundong') as HTMLElement;
+    const xunigundongHeight = xunigundongElement?.scrollHeight || 0;
+    const calculatedPageHeight = xunigundongHeight + 68 + 98; // xunigundong高度 + 68px + 98px
+    
+    console.log('导航跳转，保存滚动位置:', {
+      url,
+      currentScrollPosition,
+      options,
+      xunigundongHeight,
+      calculatedPageHeight,
+      documentHeight: document.documentElement.scrollHeight,
+      windowHeight: window.innerHeight,
+      scrollTop: window.pageYOffset || document.documentElement.scrollTop,
+      '用户是否滚动过': currentScrollPosition > 0 ? '是' : '否'
+    });
     
     // 执行导航
     return navigate(url, options);
@@ -526,7 +579,88 @@ const AiVolunteerPage: React.FC = () => {
   };
 
   // 处理排序Tab切换
-  const handleSortTabChange = (tab: 'willingness' | 'major' | 'rankDiff') => {
+  const handleSortTabChange = async (tab: 'willingness' | 'major' | 'rankDiff') => {
+    // 如果切换到按专业排序，需要重新调用API
+    if (tab === 'major') {
+      try {
+        setIsLoadingMajorData(true);
+        dispatch(setLoading(true));
+        
+        // 调用API获取按专业排序的数据
+        const nominateResponse = await nominate({ sortByMajor: true });
+        
+        if (nominateResponse && nominateResponse.code === 200) {
+          // 当sortByMajor=true时，API返回的是majors数组而不是schools数组
+          const majorsData = nominateResponse.data.majors || [];
+          
+          // 将API返回的专业数据转换为我们的格式
+          const convertedData: AlternativeItem[] = [];
+          
+          majorsData.forEach((major: any, majorIndex: number) => {
+            if (major.schools && Array.isArray(major.schools)) {
+              major.schools.forEach((school: any, schoolIndex: number) => {
+                convertedData.push({
+                  id: `${school.id}_${major.code}`,
+                  majorCode: major.code || '',
+                  majorName: major.name || '',
+                  schoolCode: school.schoolCode || '',
+                  schoolName: school.name || '',
+                  priority: majorIndex * 1000 + schoolIndex, // 使用组合索引作为优先级
+                  createdAt: new Date().toISOString(),
+                  score: 0,
+                  selected: false,
+                  historyScore: school.historyScores || [],
+                  group: school.group || 0,
+                  enrollmentRate: school.enrollmentRate || 0,
+                  employmentRate: school.employmentRate || 0,
+                  Rankdiff: school.rankDiff || 0,
+                  RankdiffPer: school.rankDiffPer || 0,
+                  schoolFeature: school.schoolFeature || '',
+                  schoolNature: school.schoolNature,
+                  schoolLevel: '专科',
+                  majorGroupId: school.majorGroupId?.toString() || '',
+                  majorGroupName: school.majorGroupName || '',
+                  schoolCity: school.cityName || '',
+                  provinceName: school.provinceName || '',
+                  cityName: school.cityName || '',
+                  sortIndex: majorIndex * 1000 + schoolIndex,
+                  developmentPotential: parseFloat(major.developmentPotential || '0') || 0,
+                  position: majorIndex * 1000 + schoolIndex,
+                  admissionsSite: '',
+                  admissionsPhone: '',
+                });
+              });
+            }
+          });
+          
+          // 按专业分组数据
+          const majorGroups = groupByMajorAndRank(convertedData);
+          
+          // 转换为GroupedAlternatives格式
+          const groupedData = majorGroups.map((majorGroup, index) => ({
+            group: -1000 - index,
+            result: majorGroup.rankGroups?.flatMap((rankGroup) =>
+              rankGroup.schools.flatMap((school) => school.majors)
+            ) || [],
+            majorGroup: majorGroup,
+          }));
+          
+          // 更新Redux状态
+          dispatch(setAlternatives(groupedData));
+          
+          // 保存按专业排序的数据到localStorage
+          localStorage.setItem('aiVolunteerMajorData', JSON.stringify(groupedData));
+        }
+      } catch (error) {
+        console.error('获取按专业排序数据失败:', error);
+        message.error('获取按专业排序数据失败，请重试');
+      } finally {
+        setIsLoadingMajorData(false);
+        dispatch(setLoading(false));
+      }
+    }
+    
+    // 更新排序Tab
     dispatch(setSortTab(tab));
   };
 
@@ -544,7 +678,18 @@ const AiVolunteerPage: React.FC = () => {
           return [{ group: -1, result: sortedWillingnessData }];
         }
         case 'major': {
-          // 按专业分组，每个专业下按位次段显示学校
+          // 从localStorage获取按专业排序的数据
+          const majorDataStr = localStorage.getItem('aiVolunteerMajorData');
+          if (majorDataStr) {
+            try {
+              const majorData = JSON.parse(majorDataStr);
+              return majorData;
+            } catch (error) {
+              console.error('解析按专业排序数据失败:', error);
+            }
+          }
+          
+          // 如果无法获取按专业排序数据，则使用当前数据进行分组
           const allData = data.flatMap((group) => group.result);
           const majorGroups = groupByMajorAndRank(allData);
 
@@ -689,6 +834,7 @@ const AiVolunteerPage: React.FC = () => {
 
         if (isReturningFromBack) {
           dispatch(setIsReturning(true));
+          console.log('检测到返回导航操作');
         }
 
         // 获取自动推荐的志愿
@@ -1322,13 +1468,16 @@ const AiVolunteerPage: React.FC = () => {
 
             <button
               onClick={() => handleSortTabChange('major')}
+              disabled={isLoadingMajorData}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                 sortTab === 'major'
                   ? 'bg-blue-500 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : isLoadingMajorData
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              按专业
+              {isLoadingMajorData ? '加载中...' : '按专业'}
             </button>
             <button
               onClick={() => handleSortTabChange('willingness')}
@@ -1358,7 +1507,7 @@ const AiVolunteerPage: React.FC = () => {
 
             {/* 备选志愿列表 - 使用虚拟滚动优化 */}
             {filteredData.length > 0 && (
-              <div ref={scrollContainerRef} className="w-full max-w-xl">
+              <div ref={scrollContainerRef} className="w-full max-w-xl xunigundong">
                 {displayedGroups.map((group) => {
                   // 检查是否为按专业分组的数据
                   const isMajorGroup = group.group <= -1000 && (group.result[0] as any).majorGroup;

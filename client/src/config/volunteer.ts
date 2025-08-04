@@ -482,11 +482,12 @@ interface NominateMajor {
   code: string;
   name: string;
   developmentPotential: string;
-  majorGroupId: number;
-  majorGroupName: string;
-  rankDiff: number;
-  rankDiffPer: number;
-  rankDiffPercentage: number;
+  schools?: NominateItem[]; // 当sortByMajor=true时，每个专业包含学校数组
+  majorGroupId?: number;
+  majorGroupName?: string;
+  rankDiff?: number;
+  rankDiffPer?: number;
+  rankDiffPercentage?: number;
 }
 
 interface NominateItem {
@@ -516,7 +517,8 @@ interface NominateResponse {
   message: string;
   data: {
     recommendCount: number;
-    schools: NominateItem[];
+    schools?: NominateItem[]; // 当sortByMajor=false时返回
+    majors?: NominateMajor[]; // 当sortByMajor=true时返回
     total: number;
     user: NominateUser;
     volunteerCount: number;
