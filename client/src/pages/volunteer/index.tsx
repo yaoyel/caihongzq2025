@@ -275,18 +275,20 @@ const EducationalPage: React.FC = () => {
   };
 
   // 查看专业组详情
-  const handleViewMajorGroup = async () => {
-    if (itemToSelect?.majorGroupId) {
+  // 通用的专业组查看函数
+  const handleViewMajorGroup = async (item?: AlternativeItem) => {
+    const targetItem = item || itemToSelect;
+    if (targetItem?.majorGroupId) {
       try {
         setMajorGroupLoading(true);
         setCurrentMajorGroupInfo({
-          majorGroupId: itemToSelect.majorGroupId,
-          majorGroupName: itemToSelect.majorGroupName || '',
-          schoolName: itemToSelect.schoolName,
+          majorGroupId: targetItem.majorGroupId,
+          majorGroupName: targetItem.majorGroupName || '',
+          schoolName: targetItem.schoolName,
         });
 
         // 调用专业组API
-        const response = await getMajorGroup(itemToSelect.majorGroupId);
+        const response = await getMajorGroup(targetItem.majorGroupId);
 
         if (response && response.code === 200) {
           setMajorGroupData(response.data || []);
@@ -1621,8 +1623,8 @@ const EducationalPage: React.FC = () => {
                                                   ? `${schoolGroup.schoolName.substring(0, 10)}...`
                                                   : schoolGroup.schoolName}
                                               </span>
-                                              {/* 位次差显示 - 仅在入选志愿tab的按专业子tab中显示 */}
-                                              {activeTab === 'selected' &&
+                                              {/* 位次差显示 - 在入选志愿和备选志愿tab的按专业子tab中显示 */}
+                                              {(activeTab === 'selected' || activeTab === 'alternatives') &&
                                                 (sortTab as any) === 'major' &&
                                                 schoolGroup.majors[0]?.Rankdiff !== undefined &&
                                                 getRankdiffDom(schoolGroup.majors[0])}
@@ -1720,12 +1722,13 @@ const EducationalPage: React.FC = () => {
                                                   </span>
                                                 )}
                                                 {item.majorGroupName&& (
-                                                  <span
+                                                  <button
                                                     key={item.schoolName + '专业组'}
-                                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                                                    onClick={() => handleViewMajorGroup(item)}
+                                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200 transition-colors cursor-pointer"
                                                   >
                                                     {item.majorGroupName}专业组
-                                                  </span>
+                                                  </button>
                                                 )}
                                                 {/* 学制标签 */}
                                                 {item.historyScore &&
@@ -1880,12 +1883,13 @@ const EducationalPage: React.FC = () => {
                                             </span>
                                           )}
                                           { item.majorGroupName && (
-                                            <span
+                                            <button
                                               key={item.schoolName + '专业组'}
-                                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                                              onClick={() => handleViewMajorGroup(item)}
+                                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200 transition-colors cursor-pointer"
                                             >
                                               {item.majorGroupName}专业组
-                                            </span>
+                                            </button>
                                           )}
                                           {/* 学制标签 */}
                                           {item.historyScore &&
@@ -2001,7 +2005,7 @@ const EducationalPage: React.FC = () => {
 
                                   {/* 显示自主意愿分数 */}
                                   {(sortTab as any) !== 'major' &&
-                                    activeTab === 'selected' &&
+                                    (activeTab === 'selected' || activeTab === 'alternatives') &&
                                     getRankdiffDom(item)}
                                   {activeTab === 'alternatives' ? (
                                     <div className="flex space-x-2">
@@ -2095,12 +2099,13 @@ const EducationalPage: React.FC = () => {
                                 )}
 
                                 {item.majorGroupName&& (
-                                  <span
+                                  <button
                                     key={item.schoolName + '专业组'}
-                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                                    onClick={() => handleViewMajorGroup(item)}
+                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200 transition-colors cursor-pointer"
                                   >
                                     {item.majorGroupName}专业组
-                                  </span>
+                                  </button>
                                 )}
                                 {/* 学制标签 */}
                                 {item.historyScore &&
@@ -2119,8 +2124,8 @@ const EducationalPage: React.FC = () => {
                                 >
                                   {getCityDisplayInfo(item)}
                                 </span>
-                                {/* 位次差标签 - 仅在入选志愿tab的按专业子tab中显示，且位次差不为0时显示 */}
-                                {activeTab === 'selected' &&
+                                {/* 位次差标签 - 在入选志愿和备选志愿tab的按专业子tab中显示，且位次差不为0时显示 */}
+                                {(activeTab === 'selected' || activeTab === 'alternatives') &&
                                   (sortTab as any) === 'major' &&
                                   item.Rankdiff !== undefined &&
                                   item.Rankdiff !== 0 && (
@@ -2128,7 +2133,14 @@ const EducationalPage: React.FC = () => {
                                       key={item.schoolName + '位次差'}
                                       className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200"
                                     >
-                                      选中的 较上年..: {item.Rankdiff}
+                                      上年较您
+                                      <span
+                                        className={item.Rankdiff > 0 ? 'text-red-600 bg-red-100' : 'text-green-600 bg-green-100'}
+                                      >
+                                        {item.Rankdiff > 0
+                                          ? `高${item.Rankdiff}位次/${Math.floor(item.RankdiffPer || 0)}%`
+                                          : `低${Math.abs(item.Rankdiff)}位次/${Math.floor(item.RankdiffPer || 0)}%`}
+                                      </span>
                                     </span>
                                   )}
                               </div>
@@ -2384,9 +2396,9 @@ const EducationalPage: React.FC = () => {
                     <h5 className="font-semibold text-gray-900 mb-2">
                       4. 如果被调剂至组内其他专业，是否可接受？
                     </h5>
-                    {itemToSelect.majorGroupId && (
+                    {itemToSelect.majorGroupName && (
                       <button
-                        onClick={handleViewMajorGroup}
+                        onClick={() => handleViewMajorGroup()}
                         className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
                       >
                         <span className="mr-1">查看专业组</span>
