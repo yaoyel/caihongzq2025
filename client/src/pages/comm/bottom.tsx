@@ -60,7 +60,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ selectedIndex }) => {
         position: 'fixed',
         left: 0,
         bottom: 0,
-        zIndex: 100,
+        zIndex: 1,
       }}
     >
       {navItems.map((item, idx) => {

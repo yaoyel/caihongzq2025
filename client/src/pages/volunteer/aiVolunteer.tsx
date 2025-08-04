@@ -27,6 +27,7 @@ import {
   nominate,
   createMajorAlternative,
   getMajorAlternatives,
+  getMajorGroup,
 } from '../../config/volunteer';
 
 // 定义备选志愿项的类型（扩展自 API 返回的数据）
@@ -132,6 +133,7 @@ const AiVolunteerPage: React.FC = () => {
     alternativeStatus,
     recommendCount,
     hasInitialized,
+    scrollPosition: reduxScrollPosition,
   } = useSelector((state: RootState) => state.aiVolunteer);
 
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -141,6 +143,110 @@ const AiVolunteerPage: React.FC = () => {
   const [searchText, setSearchText] = useState('');
   const [selectedSchoolNature, setSelectedSchoolNature] = useState<string>('all');
   const [showSearchTips, setShowSearchTips] = useState(false);
+
+  // 添加精确的滚动位置恢复机制
+  const [isRestoringScroll, setIsRestoringScroll] = useState(false);
+
+  // 保存用户最后查看的项目ID
+  const saveLastViewedItem = useCallback((itemId: string) => {
+    localStorage.setItem('aiVolunteerLastViewedItem', itemId);
+  }, []);
+
+  // 精确的滚动位置恢复函数
+  const preciseScrollRestore = useCallback(
+    (scrollPosition: number) => {
+      setIsRestoringScroll(true);
+
+      // 获取页面实际高度 - 使用文档高度而不是xunigundong高度
+      const documentHeight = document.documentElement.scrollHeight;
+      const windowHeight = window.innerHeight;
+      const maxScrollPosition = documentHeight - windowHeight;
+
+      // 检查滚动位置是否超出页面高度
+      if (scrollPosition > maxScrollPosition) {
+        scrollPosition = maxScrollPosition;
+      }
+
+      // 如果滚动位置为0或很小，不需要恢复
+      if (scrollPosition < 50) {
+        setIsRestoringScroll(false);
+        return;
+      }
+
+      // 如果需要更多数据，先加载
+      const estimatedItemsNeeded = Math.ceil(scrollPosition / 200) + 10; // 每200px大约需要1个项目
+      const requiredItems = Math.max(estimatedItemsNeeded, 30); // 确保有足够的数据
+
+      if (requiredItems > displayCount) {
+        dispatch(setDisplayCount(requiredItems));
+
+        // 等待数据加载完成后恢复滚动位置
+        setTimeout(() => {
+          requestAnimationFrame(() => {
+            window.scrollTo(0, scrollPosition);
+            setIsRestoringScroll(false);
+          });
+        }, 300);
+      } else {
+        // 数据足够，直接恢复
+        requestAnimationFrame(() => {
+          window.scrollTo(0, scrollPosition);
+          setIsRestoringScroll(false);
+        });
+      }
+    },
+    [displayCount, dispatch]
+  );
+
+  // 定位到特定项目的函数
+  const scrollToItem = useCallback(
+    (itemId: string) => {
+      // 查找项目在数据中的位置
+      let itemIndex = -1;
+      let currentIndex = 0;
+
+      for (const group of alternatives) {
+        for (const item of group.result) {
+          if (item.id === itemId) {
+            itemIndex = currentIndex;
+            break;
+          }
+          currentIndex++;
+        }
+        if (itemIndex !== -1) break;
+      }
+
+      if (itemIndex !== -1) {
+        // 计算项目的大概位置
+        const itemHeight = 200;
+        const estimatedScrollPosition = itemIndex * itemHeight;
+
+        // 获取页面实际高度
+        const documentHeight = document.documentElement.scrollHeight;
+        const windowHeight = window.innerHeight;
+        const maxScrollPosition = documentHeight - windowHeight;
+
+        // 检查滚动位置是否超出页面高度
+        let finalScrollPosition = estimatedScrollPosition;
+        if (estimatedScrollPosition > maxScrollPosition) {
+          finalScrollPosition = maxScrollPosition;
+        }
+
+        // 确保有足够的数据显示
+        const requiredItems = Math.max(itemIndex + 10, 30);
+
+        if (requiredItems > displayCount) {
+          dispatch(setDisplayCount(requiredItems));
+          setTimeout(() => {
+            window.scrollTo(0, finalScrollPosition);
+          }, 300);
+        } else {
+          window.scrollTo(0, finalScrollPosition);
+        }
+      }
+    },
+    [alternatives, displayCount, dispatch]
+  );
 
   // 点击外部关闭搜索提示
   useEffect(() => {
@@ -174,17 +280,8 @@ const AiVolunteerPage: React.FC = () => {
     // 保存滚动位置到 Redux
     dispatch(setScrollPosition(scrollTop));
 
-    console.log('滚动检测:', {
-      scrollTop,
-      scrollHeight,
-      clientHeight,
-      displayCount,
-      remaining: scrollHeight - scrollTop - clientHeight,
-    });
-
     // 当滚动到底部时加载更多
     if (scrollTop + clientHeight >= scrollHeight - 200) {
-      console.log('触发滚动加载:', { scrollTop, scrollHeight, clientHeight, displayCount });
       setIsLoadingMore(true);
       setTimeout(() => {
         dispatch(setDisplayCount(displayCount + 10)); // 每次增加10个项目
@@ -207,11 +304,6 @@ const AiVolunteerPage: React.FC = () => {
       const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
       localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
       dispatch(setScrollPosition(currentScrollPosition));
-      
-      // 添加调试信息，只在滚动位置大于0时记录
-      if (currentScrollPosition > 0) {
-        console.log('滚动位置已保存:', currentScrollPosition);
-      }
     };
 
     // 节流处理滚动事件
@@ -233,166 +325,96 @@ const AiVolunteerPage: React.FC = () => {
     };
   }, [dispatch]);
 
-  // 页面离开时保存滚动位置
+  // 页面离开时保存滚动位置 - 增强版
   useEffect(() => {
     const handleBeforeUnload = () => {
       const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
       localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+      sessionStorage.setItem('aiVolunteerFromDetail', 'true');
     };
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
         const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
         localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+        sessionStorage.setItem('aiVolunteerFromDetail', 'true');
       }
+    };
+
+    // 监听页面离开事件
+    const handlePageHide = () => {
+      const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+      localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+      sessionStorage.setItem('aiVolunteerFromDetail', 'true');
+    };
+
+    // 监听路由变化
+    const handleRouteChange = () => {
+      const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+      localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+      sessionStorage.setItem('aiVolunteerFromDetail', 'true');
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('popstate', handleRouteChange);
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pagehide', handlePageHide);
+      window.removeEventListener('popstate', handleRouteChange);
     };
   }, []);
 
   // 优化的滚动位置恢复逻辑
   useEffect(() => {
-    if (!loading && hasInitialized) {
+    if (!loading && hasInitialized && !isRestoringScroll) {
       // 检查是否是从详情页返回
       const isFromDetail = sessionStorage.getItem('aiVolunteerFromDetail') === 'true';
       const savedScrollPosition = localStorage.getItem('aiVolunteerScrollPosition');
-      
-          const xunigundongElement = document.querySelector('.xunigundong') as HTMLElement;
-    const xunigundongHeight = xunigundongElement?.scrollHeight || 0;
-    const calculatedPageHeight = xunigundongHeight + 68 + 98; // xunigundong高度 + 68px + 98px
-    
-    console.log('滚动位置恢复检查:', {
-      loading,
-      hasInitialized,
-      isFromDetail,
-      savedScrollPosition,
-      currentScrollPosition: window.pageYOffset || document.documentElement.scrollTop,
-      alternativesLength: alternatives.length,
-      xunigundongHeight,
-      calculatedPageHeight,
-      documentHeight: document.documentElement.scrollHeight,
-      windowHeight: window.innerHeight,
-      scrollTop: window.pageYOffset || document.documentElement.scrollTop
-    });
-      
+
       if (isFromDetail && savedScrollPosition) {
         const scrollPosition = parseInt(savedScrollPosition, 10);
-        console.log('检查滚动位置恢复条件:', {
-          scrollPosition,
-          isGreaterThanZero: scrollPosition > 0,
-          documentHeight: document.documentElement.scrollHeight,
-          windowHeight: window.innerHeight
-        });
-        
+
         // 清除标记，避免重复恢复
         sessionStorage.removeItem('aiVolunteerFromDetail');
-        
-        console.log('开始恢复滚动位置:', scrollPosition);
-        
-        // 计算需要加载的数据量
-        const estimatedItemsNeeded = Math.ceil(scrollPosition / 100) * 10; // 每100px大约需要10个项目
-        const currentDisplayCount = displayCount;
-        const additionalItemsNeeded = Math.max(0, estimatedItemsNeeded - currentDisplayCount);
-        
-        console.log('滚动恢复数据加载:', {
-          scrollPosition,
-          currentDisplayCount,
-          estimatedItemsNeeded,
-          additionalItemsNeeded
-        });
-        
-        // 定义恢复滚动位置的函数
-        const restoreScroll = () => {
-          const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-          const documentHeight = document.documentElement.scrollHeight;
-          
-          console.log('检查滚动恢复条件:', {
-            scrollPosition,
-            currentScrollPosition,
-            documentHeight,
-            '页面高度是否足够': documentHeight > scrollPosition
-          });
-          
-          // 只有在当前滚动位置接近顶部时才恢复
-          if (currentScrollPosition < 200) {
-            // 检查页面高度是否足够
-            if (documentHeight > scrollPosition) {
-              // 使用 requestAnimationFrame 确保在下一帧执行滚动
-              requestAnimationFrame(() => {
-                window.scrollTo(0, scrollPosition);
-                console.log('成功恢复滚动位置:', scrollPosition);
-              });
-            } else {
-              console.log('页面高度不足，无法恢复滚动位置:', {
-                scrollPosition,
-                documentHeight,
-                '需要更多数据': '需要更多数据'
-              });
-            }
+
+        // 如果滚动位置为0，尝试从Redux获取
+        if (scrollPosition === 0) {
+          if (reduxScrollPosition > 0) {
+            preciseScrollRestore(reduxScrollPosition);
+            return;
           } else {
-            console.log('当前滚动位置不在顶部，跳过恢复:', currentScrollPosition);
+            return;
           }
-        };
-        
-        // 如果需要更多数据，先加载数据
-        if (additionalItemsNeeded > 0) {
-          console.log(`需要加载更多数据: ${additionalItemsNeeded} 条`);
-          dispatch(setDisplayCount(currentDisplayCount + additionalItemsNeeded));
-          
-          // 等待数据加载完成后再恢复滚动位置
-          setTimeout(() => {
-            restoreScroll();
-          }, 500);
-        } else {
-          // 数据足够，直接恢复滚动位置
-          restoreScroll();
         }
-        
-        // 然后使用多个延迟确保DOM完全渲染
-        const timers = [100, 300, 600, 1000, 1500, 2000].map(delay => 
-          setTimeout(() => {
-            console.log(`延迟${delay}ms尝试恢复滚动位置`);
-            restoreScroll();
-          }, delay)
-        );
-        
-        return () => timers.forEach(timer => clearTimeout(timer));
+
+        // 使用精确的滚动位置恢复机制
+        // 检查是否有保存的最后查看项目
+        const savedLastViewedItem = localStorage.getItem('aiVolunteerLastViewedItem');
+        if (savedLastViewedItem) {
+          // 优先定位到具体项目
+          scrollToItem(savedLastViewedItem);
+          localStorage.removeItem('aiVolunteerLastViewedItem');
+        } else {
+          // 使用滚动位置恢复
+          preciseScrollRestore(scrollPosition);
+        }
       }
     }
-  }, [loading, hasInitialized, alternatives.length]);
+  }, [
+    loading,
+    hasInitialized,
+    alternatives.length,
+    displayCount,
+    preciseScrollRestore,
+    scrollToItem,
+    isRestoringScroll,
+  ]);
 
-  // 页面离开时设置标记
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      // 设置标记，表示用户即将离开页面
-      sessionStorage.setItem('aiVolunteerFromDetail', 'true');
-      const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-      localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        // 页面隐藏时也设置标记
-        sessionStorage.setItem('aiVolunteerFromDetail', 'true');
-        const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-        localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
+  // 页面离开时设置标记 - 已合并到上面的增强版中
 
   // 弹框相关状态
   const [isTipModalVisible, setIsTipModalVisible] = useState(false);
@@ -421,32 +443,24 @@ const AiVolunteerPage: React.FC = () => {
   ];
 
   // 辅助函数：处理导航跳转，设置返回标记
-  const handleNavigation = useCallback((url: string, options?: { replace?: boolean }) => {
-    // 设置标记，表示用户即将离开页面
-    sessionStorage.setItem('aiVolunteerFromDetail', 'true');
-    // 保存当前滚动位置
-    const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-    localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
-    
-    const xunigundongElement = document.querySelector('.xunigundong') as HTMLElement;
-    const xunigundongHeight = xunigundongElement?.scrollHeight || 0;
-    const calculatedPageHeight = xunigundongHeight + 68 + 98; // xunigundong高度 + 68px + 98px
-    
-    console.log('导航跳转，保存滚动位置:', {
-      url,
-      currentScrollPosition,
-      options,
-      xunigundongHeight,
-      calculatedPageHeight,
-      documentHeight: document.documentElement.scrollHeight,
-      windowHeight: window.innerHeight,
-      scrollTop: window.pageYOffset || document.documentElement.scrollTop,
-      '用户是否滚动过': currentScrollPosition > 0 ? '是' : '否'
-    });
-    
-    // 执行导航
-    return navigate(url, options);
-  }, [navigate]);
+  const handleNavigation = useCallback(
+    (url: string, options?: { replace?: boolean }, itemId?: string) => {
+      // 设置标记，表示用户即将离开页面
+      sessionStorage.setItem('aiVolunteerFromDetail', 'true');
+      // 保存当前滚动位置
+      const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+      localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+
+      // 如果提供了项目ID，保存最后查看的项目
+      if (itemId) {
+        saveLastViewedItem(itemId);
+      }
+
+      // 执行导航
+      return navigate(url, options);
+    },
+    [navigate, saveLastViewedItem]
+  );
 
   // 处理用户选择变化
   const handleChoiceChange = useCallback((choice: 'choice1' | 'choice2', checked: boolean) => {
@@ -585,17 +599,17 @@ const AiVolunteerPage: React.FC = () => {
       try {
         setIsLoadingMajorData(true);
         dispatch(setLoading(true));
-        
+
         // 调用API获取按专业排序的数据
         const nominateResponse = await nominate({ sortByMajor: true });
-        
+
         if (nominateResponse && nominateResponse.code === 200) {
           // 当sortByMajor=true时，API返回的是majors数组而不是schools数组
           const majorsData = nominateResponse.data.majors || [];
-          
+
           // 将API返回的专业数据转换为我们的格式
           const convertedData: AlternativeItem[] = [];
-          
+          console.log('majorsData', majorsData);
           majorsData.forEach((major: any, majorIndex: number) => {
             if (major.schools && Array.isArray(major.schools)) {
               major.schools.forEach((school: any, schoolIndex: number) => {
@@ -610,11 +624,11 @@ const AiVolunteerPage: React.FC = () => {
                   score: 0,
                   selected: false,
                   historyScore: school.historyScores || [],
-                  group: school.group || 0,
-                  enrollmentRate: school.enrollmentRate || 0,
-                  employmentRate: school.employmentRate || 0,
-                  Rankdiff: school.rankDiff || 0,
-                  RankdiffPer: school.rankDiffPer || 0,
+                  group: school.group ,
+                  enrollmentRate: school.enrollmentRate ,
+                  employmentRate: school.employmentRate ,
+                  Rankdiff: school.rankDiff ,
+                  RankdiffPer: school.rankDiffPer ,
                   schoolFeature: school.schoolFeature || '',
                   schoolNature: school.schoolNature,
                   schoolLevel: '专科',
@@ -624,7 +638,7 @@ const AiVolunteerPage: React.FC = () => {
                   provinceName: school.provinceName || '',
                   cityName: school.cityName || '',
                   sortIndex: majorIndex * 1000 + schoolIndex,
-                  developmentPotential: parseFloat(major.developmentPotential || '0') || 0,
+                  developmentPotential: parseFloat(major.developmentPotential || '0'),
                   position: majorIndex * 1000 + schoolIndex,
                   admissionsSite: '',
                   admissionsPhone: '',
@@ -632,34 +646,34 @@ const AiVolunteerPage: React.FC = () => {
               });
             }
           });
-          
+
           // 按专业分组数据
           const majorGroups = groupByMajorAndRank(convertedData);
-          
+
           // 转换为GroupedAlternatives格式
           const groupedData = majorGroups.map((majorGroup, index) => ({
             group: -1000 - index,
-            result: majorGroup.rankGroups?.flatMap((rankGroup) =>
-              rankGroup.schools.flatMap((school) => school.majors)
-            ) || [],
+            result:
+              majorGroup.rankGroups?.flatMap((rankGroup) =>
+                rankGroup.schools.flatMap((school) => school.majors)
+              ) || [],
             majorGroup: majorGroup,
           }));
-          
+
           // 更新Redux状态
           dispatch(setAlternatives(groupedData));
-          
+
           // 保存按专业排序的数据到localStorage
           localStorage.setItem('aiVolunteerMajorData', JSON.stringify(groupedData));
         }
       } catch (error) {
-        console.error('获取按专业排序数据失败:', error);
         message.error('获取按专业排序数据失败，请重试');
       } finally {
         setIsLoadingMajorData(false);
         dispatch(setLoading(false));
       }
     }
-    
+
     // 更新排序Tab
     dispatch(setSortTab(tab));
   };
@@ -668,7 +682,6 @@ const AiVolunteerPage: React.FC = () => {
   const getSortedData = useCallback(
     (data: GroupedAlternatives[]) => {
       switch (sortTab) {
-
         case 'major': {
           // 从localStorage获取按专业排序的数据
           const majorDataStr = localStorage.getItem('aiVolunteerMajorData');
@@ -677,10 +690,10 @@ const AiVolunteerPage: React.FC = () => {
               const majorData = JSON.parse(majorDataStr);
               return majorData;
             } catch (error) {
-              console.error('解析按专业排序数据失败:', error);
+              // 解析按专业排序数据失败
             }
           }
-          
+
           // 如果无法获取按专业排序数据，则使用当前数据进行分组
           const allData = data.flatMap((group) => group.result);
           const majorGroups = groupByMajorAndRank(allData);
@@ -723,7 +736,7 @@ const AiVolunteerPage: React.FC = () => {
               const originalData = JSON.parse(originalDataStr);
               return originalData;
             } catch (error) {
-              console.error('解析原始数据失败:', error);
+              // 解析原始数据失败
             }
           }
 
@@ -747,27 +760,27 @@ const AiVolunteerPage: React.FC = () => {
   // 智能省份搜索函数
   const isProvinceMatch = (searchText: string, provinceName: string): boolean => {
     if (!searchText || !provinceName) return false;
-    
+
     const searchLower = searchText.toLowerCase();
     const provinceLower = provinceName.toLowerCase();
-    
+
     // 直接匹配
     if (provinceLower.includes(searchLower) || searchLower.includes(provinceLower)) {
       return true;
     }
-    
+
     // 处理带"省"字的搜索
     if (searchLower.endsWith('省')) {
       const searchWithoutProvince = searchLower.slice(0, -1); // 去掉"省"字
       return provinceLower.includes(searchWithoutProvince);
     }
-    
+
     // 处理带"市"字的搜索
     if (searchLower.endsWith('市')) {
       const searchWithoutCity = searchLower.slice(0, -1); // 去掉"市"字
       return provinceLower.includes(searchWithoutCity);
     }
-    
+
     return false;
   };
 
@@ -826,7 +839,6 @@ const AiVolunteerPage: React.FC = () => {
 
         if (isReturningFromBack) {
           dispatch(setIsReturning(true));
-          console.log('检测到返回导航操作');
         }
 
         // 获取自动推荐的志愿
@@ -859,7 +871,7 @@ const AiVolunteerPage: React.FC = () => {
               dispatch(setAlternativeStatus(alternativeMap));
             }
           } catch (error) {
-            console.error('获取备选状态失败:', error);
+            // 获取备选状态失败
           }
 
           // 设置高发展潜能专业数量（根据发展潜能计算）
@@ -880,22 +892,22 @@ const AiVolunteerPage: React.FC = () => {
             score: 0, // 默认值，后续可以根据需要调整
             selected: false, // 默认未入选
             historyScore: item.historyScores || [],
-            group: item.group || 0,
-            enrollmentRate: item.enrollmentRate || 0,
-            employmentRate: item.employmentRate || 0,
-            Rankdiff: item.rankDiff || 0, // 位次差
-            RankdiffPer: item.rankDiffPer || 0, // 位次差百分比
+            group: item.group ,
+            enrollmentRate: item.enrollmentRate ,
+            employmentRate: item.employmentRate,
+            Rankdiff: item.rankDiff , // 位次差
+            RankdiffPer: item.rankDiffPer , // 位次差百分比
             // 学校标签相关属性
             schoolFeature: item.schoolFeature || '', // 学校特色
             schoolNature: item.schoolNature, // 根据belong判断公办民办
             schoolLevel: '专科', // 根据实际情况调整
-            majorGroupId: item.major?.majorGroupId?.toString() || '', // 专业组ID
-            majorGroupName: item.major?.majorGroupName || '', // 专业组名称
+            majorGroupId: item.majorGroupId?.toString() || '', // 专业组ID
+            majorGroupName: item.majorGroupName || '', // 专业组名称
             schoolCity: item.cityName || '', // 学校所在城市
             provinceName: item.provinceName || '', // 省份名称
             cityName: item.cityName || '', // 城市名称
             sortIndex: index, // 添加排序索引
-            developmentPotential: parseFloat(item.major?.developmentPotential || '0') || 0, // 发展潜能
+            developmentPotential: parseFloat(item.major?.developmentPotential || '0') , // 发展潜能
             position: index, // 位置排序字段
             // 招生信息相关属性
             admissionsSite: '', // 默认值
@@ -950,7 +962,7 @@ const AiVolunteerPage: React.FC = () => {
           localStorage.setItem('aiVolunteerOriginalData', JSON.stringify(originalOrderData));
         }
       } catch (error) {
-        console.error('页面初始化失败:', error);
+        // 页面初始化失败
       } finally {
         dispatch(setLoading(false));
         dispatch(setHasInitialized(true));
@@ -1024,7 +1036,7 @@ const AiVolunteerPage: React.FC = () => {
           // 备选删除成功提示
           message.success('取消备选成功，已成功从志愿频道的备选志愿列表中移除。');
         } else {
-          alert(response?.message || '取消备选志愿失败');
+          message.error(response?.message || '取消备选志愿失败');
         }
       } else {
         // 如果未备选，则添加备选
@@ -1065,46 +1077,42 @@ const AiVolunteerPage: React.FC = () => {
           // 备选成功提示
           message.success('备选成功，已成功加入志愿频道的备选志愿列表。');
         } else {
-          alert(response?.message || '添加备选志愿失败');
+          message.error(response?.message || '添加备选志愿失败');
         }
       }
     } catch (error) {
-      console.error('备选志愿操作失败:', error);
-      alert(error instanceof Error ? error.message : '备选志愿操作失败');
+      message.error('备选志愿操作失败');
     } finally {
       // 清除加载状态
       dispatch(updateLoadingStatus({ key: itemKey, loading: false }));
     }
   };
 
-  // 查看专业组详情
-  // const handleViewMajorGroup = async (item: AlternativeItem) => {
-  //   if (item?.majorGroupId) {
-  //     try {
-  //       setMajorGroupLoading(true);
-  //       setCurrentMajorGroupInfo({
-  //         majorGroupId: item.majorGroupId,
-  //         majorGroupName: item.majorGroupName || '',
-  //         schoolName: item.schoolName,
-  //       });
+  // 通用的专业组查看函数
+  const handleViewMajorGroup = async (item: AlternativeItem) => {
+    if (item?.majorGroupId) {
+      try {
+        setCurrentMajorGroupInfo({
+          majorGroupId: item.majorGroupId,
+          majorGroupName: item.majorGroupName || '',
+          schoolName: item.schoolName,
+        });
 
-  //       // 调用专业组API
-  //       const response = await getMajorGroup(item.majorGroupId);
+        // 调用专业组API
+        const response = await getMajorGroup(item.majorGroupId);
 
-  //       if (response && response.code === 200) {
-  //         setMajorGroupData(response.data || []);
-  //         setShowMajorGroupDialog(true);
-  //       } else {
-  //         alert(response?.message || '获取专业组信息失败');
-  //       }
-  //     } catch (error) {
-  //       console.error('获取专业组信息失败:', error);
-  //       alert(error instanceof Error ? error.message : '获取专业组信息失败');
-  //     } finally {
-  //       setMajorGroupLoading(false);
-  //     }
-  //   }
-  // };
+        if (response && response.code === 200) {
+          setMajorGroupData(response.data || []);
+          setShowMajorGroupDialog(true);
+        } else {
+          message.error(response?.message || '获取专业组信息失败');
+        }
+      } catch (error) {
+        console.error('获取专业组信息失败:', error);
+        message.error('获取专业组信息失败');
+      }
+    }
+  };
 
   // 关闭专业组弹窗
   const handleCloseMajorGroupDialog = () => {
@@ -1112,34 +1120,6 @@ const AiVolunteerPage: React.FC = () => {
     setMajorGroupData([]);
     setCurrentMajorGroupInfo(null);
   };
-
-  // 查看招生简章
-  // const handleViewCharters = async (item: AlternativeItem) => {
-  //   if (item?.schoolCode) {
-  //     try {
-  //       setChartersLoading(true);
-  //       setCurrentSchoolInfo({
-  //         schoolCode: item.schoolCode,
-  //         schoolName: item.schoolName,
-  //       });
-
-  //       // 调用招生简章API
-  //       const response = await getSchoolCharters(item.schoolCode);
-
-  //       if (response && response.code === 200) {
-  //         setChartersData(response.data || []);
-  //         setShowChartersDialog(true);
-  //       } else {
-  //         alert(response?.message || '获取招生简章失败');
-  //       }
-  //     } catch (error) {
-  //       console.error('获取招生简章失败:', error);
-  //       alert(error instanceof Error ? error.message : '获取招生简章失败');
-  //     } finally {
-  //       setChartersLoading(false);
-  //     }
-  //   }
-  // };
 
   const scaleAnswerCount = localStorage.getItem('scaleAnswerCount');
 
@@ -1327,23 +1307,20 @@ const AiVolunteerPage: React.FC = () => {
 
   // 获取位次差DOM
   const getRankdiffDom = (item: any) => {
+    // 如果位次差为0或不存在，则不显示
+    if (!item.Rankdiff || item.Rankdiff === 0) {
+      return null;
+    }
+
     return (
       <span className="px-2 py-0.5 rounded text-xs font-bold">
         上年较您
         <span
-          className={
-            (item.Rankdiff || 0) > 0
-              ? 'text-red-600 bg-red-100'
-              : (item.Rankdiff || 0) < 0
-                ? 'text-green-600 bg-green-100'
-                : 'text-gray-600 bg-gray-100'
-          }
+          className={item.Rankdiff > 0 ? 'text-red-600 bg-red-100' : 'text-green-600 bg-green-100'}
         >
-          {(item.Rankdiff || 0) > 0
+          {item.Rankdiff > 0
             ? `高${item.Rankdiff}位次/${Math.floor(item.RankdiffPer || 0)}%`
-            : (item.Rankdiff || 0) < 0
-              ? `低${Math.abs(item.Rankdiff)}位次/${Math.floor(item.RankdiffPer || 0)}%`
-              : '0%'}
+            : `低${Math.abs(item.Rankdiff)}位次/${Math.floor(item.RankdiffPer || 0)}%`}
         </span>
       </span>
     );
@@ -1356,6 +1333,7 @@ const AiVolunteerPage: React.FC = () => {
         onBack={() => window.history.back()}
         showRestartButton={true}
       />
+
       <div className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3 min-h-screen">
         {/* 搜索组件 */}
         <div className="w-full max-w-xl bg-white rounded-2xl p-4 mb-3">
@@ -1471,7 +1449,6 @@ const AiVolunteerPage: React.FC = () => {
             >
               {isLoadingMajorData ? '加载中...' : '按专业'}
             </button>
-
           </div>
         </div>
 
@@ -1689,24 +1666,23 @@ const AiVolunteerPage: React.FC = () => {
                                                 >
                                                   {item.schoolNature === 'public' ? '公办' : '民办'}
                                                 </span>
-                                                {item.enrollmentRate !== 0 && (
+                                                {item.enrollmentRate && item.enrollmentRate > 0 && (
                                                   <span
                                                     key={item.schoolName + '升学率'}
                                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
                                                   >
-                                                    升学率
-                                                    {item.enrollmentRate && item.enrollmentRate > 0
-                                                      ? item.enrollmentRate + '%'
-                                                      : '待补充'}
+                                                    升学率{item.enrollmentRate}%
                                                   </span>
                                                 )}
-                                                {item.majorGroupId && (
-                                                  <span
+                                                
+                                                {item.majorGroupName && (
+                                                  <button
                                                     key={item.schoolName + '专业组'}
-                                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                                                    onClick={() => handleViewMajorGroup(item)}
+                                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200 transition-colors cursor-pointer"
                                                   >
                                                     {item.majorGroupName}专业组
-                                                  </span>
+                                                  </button>
                                                 )}
                                                 {/* 学制标签 */}
                                                 {item.historyScore &&
@@ -1835,24 +1811,23 @@ const AiVolunteerPage: React.FC = () => {
                                             >
                                               {item.schoolNature === 'public' ? '公办' : '民办'}
                                             </span>
-                                            {item.enrollmentRate !== 0 && (
+                                            {item.enrollmentRate && item.enrollmentRate > 0 && (
                                               <span
                                                 key={item.schoolName + '升学率'}
                                                 className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
                                               >
-                                                升学率
-                                                {item.enrollmentRate && item.enrollmentRate > 0
-                                                  ? item.enrollmentRate + '%'
-                                                  : '待补充'}
+                                                升学率{item.enrollmentRate}%
                                               </span>
                                             )}
-                                            {item.majorGroupId && (
-                                              <span
+                                           
+                                            {item.majorGroupName && (
+                                              <button
                                                 key={item.schoolName + '专业组'}
-                                                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                                                onClick={() => handleViewMajorGroup(item)}
+                                                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200 transition-colors cursor-pointer"
                                               >
                                                 {item.majorGroupName}专业组
-                                              </span>
+                                              </button>
                                             )}
                                             {/* 学制标签 */}
                                             {item.historyScore &&
@@ -1977,24 +1952,23 @@ const AiVolunteerPage: React.FC = () => {
                                 >
                                   {item.schoolNature === 'public' ? '公办' : '民办'}
                                 </span>
-                                {item.enrollmentRate !== 0 && (
+                                {item.enrollmentRate && item.enrollmentRate > 0 && (
                                   <span
                                     key={item.schoolName + '升学率'}
                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
                                   >
-                                    升学率
-                                    {item.enrollmentRate && item.enrollmentRate > 0
-                                      ? item.enrollmentRate + '%'
-                                      : '待补充'}
+                                    升学率{item.enrollmentRate}%
                                   </span>
                                 )}
-                                {item.majorGroupId && (
-                                  <span
+                       
+                                {item.majorGroupName && (
+                                  <button
                                     key={item.schoolName + '专业组'}
-                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                                    onClick={() => handleViewMajorGroup(item)}
+                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200 transition-colors cursor-pointer"
                                   >
                                     {item.majorGroupName}专业组
-                                  </span>
+                                  </button>
                                 )}
                                 {/* 学制标签 */}
                                 {item.historyScore &&
@@ -2025,7 +1999,6 @@ const AiVolunteerPage: React.FC = () => {
                             </div>
                           ))}
                         </div>
-
                       ) : (
                         /* 原有的渲染逻辑（位次段排序等） */
                         displaySchools.map((schoolGroup) => (
@@ -2071,7 +2044,6 @@ const AiVolunteerPage: React.FC = () => {
                                   <div className="flex items-center space-x-2">
                                     {/* 显示较上年变化 */}
                                     {getRankdiffDom(item)}
-
 
                                     <button
                                       className={`px-3 py-1 rounded ${(() => {
@@ -2123,24 +2095,23 @@ const AiVolunteerPage: React.FC = () => {
                                   >
                                     {item.schoolNature === 'public' ? '公办' : '民办'}
                                   </span>
-                                  {item.enrollmentRate !== 0 && (
+                                  {item.enrollmentRate && item.enrollmentRate > 0 && (
                                     <span
                                       key={item.schoolName + '升学率'}
                                       className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
                                     >
-                                      升学率
-                                      {item.enrollmentRate && item.enrollmentRate > 0
-                                        ? item.enrollmentRate + '%'
-                                        : '待补充'}
+                                      升学率{item.enrollmentRate}%
                                     </span>
                                   )}
-                                  {item.majorGroupId && (
-                                    <span
+                                  
+                                  {item.majorGroupName && (
+                                    <button
                                       key={item.schoolName + '专业组'}
-                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                                      onClick={() => handleViewMajorGroup(item)}
+                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200 transition-colors cursor-pointer"
                                     >
                                       {item.majorGroupName}专业组
-                                    </span>
+                                    </button>
                                   )}
                                   {/* 学制标签 */}
                                   {item.historyScore &&
@@ -2233,7 +2204,7 @@ const AiVolunteerPage: React.FC = () => {
         width={400}
         centered
         className="rounded-2xl"
-        style={{ top: '20%' }}
+        style={{ top: '20%', zIndex: 10000 }}
       >
         <div style={{ padding: '20px 0' }}>
           <div
@@ -2319,7 +2290,7 @@ const AiVolunteerPage: React.FC = () => {
         width={800}
         centered
         className="rounded-2xl"
-        style={{ top: '20%' }}
+        style={{ top: '20%', zIndex: 10000 }}
       >
         <div className="p-4">
           {majorGroupData.length === 0 ? (

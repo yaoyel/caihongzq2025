@@ -9,6 +9,7 @@ import {
   createMajorAlternative,
   getMajorAlternatives,
   cancelAlternative,
+  getMajorGroup,
 } from '../../config/volunteer';
 import { Modal, Button, Checkbox, message } from 'antd';
 import { useDispatch, useSelector } from 'react-redux';
@@ -40,6 +41,15 @@ const EducationalDetailPage: React.FC = () => {
     choice1: false,
     choice2: false,
   });
+
+  // 专业组相关状态
+  const [showMajorGroupDialog, setShowMajorGroupDialog] = useState(false);
+  const [majorGroupData, setMajorGroupData] = useState<any[]>([]);
+  const [currentMajorGroupInfo, setCurrentMajorGroupInfo] = useState<{
+    majorGroupId: string;
+    majorGroupName: string;
+    schoolName: string;
+  } | null>(null);
 
   // 添加排序相关状态
   const [activeTab, setActiveTab] = useState<'group' | 'enrollment' | 'employment'>('group');
@@ -414,6 +424,39 @@ const EducationalDetailPage: React.FC = () => {
   }, [tuijianSchools, restoreScrollPosition, scrollToGroup, groupNum, isInitialized]);
 
   // 处理备选按钮点击
+  // 通用的专业组查看函数
+  const handleViewMajorGroup = async (school: any) => {
+    if (school?.majorGroupId) {
+      try {
+        setCurrentMajorGroupInfo({
+          majorGroupId: school.majorGroupId,
+          majorGroupName: school.majorGroupName || '',
+          schoolName: school.name,
+        });
+
+        // 调用专业组API
+        const response = await getMajorGroup(school.majorGroupId);
+
+        if (response && response.code === 200) {
+          setMajorGroupData(response.data || []);
+          setShowMajorGroupDialog(true);
+        } else {
+          message.error(response?.message || '获取专业组信息失败');
+        }
+      } catch (error) {
+        console.error('获取专业组信息失败:', error);
+        message.error('获取专业组信息失败');
+      }
+    }
+  };
+
+  // 关闭专业组弹窗
+  const handleCloseMajorGroupDialog = () => {
+    setShowMajorGroupDialog(false);
+    setMajorGroupData([]);
+    setCurrentMajorGroupInfo(null);
+  };
+
   const handleAlternativeClick = async (school: any) => {
     const schoolKey = `${school.code}_${majorCode}`;
     const currentStatus = alternativeStatus[schoolKey];
@@ -706,19 +749,17 @@ const EducationalDetailPage: React.FC = () => {
                     >
                       {/* 位次段标题 */}
                       <div
-                        className={`flex items-center justify-between font-bold mb-4 text-sm border-b border-solid pb-3 ${
+                        className={`flex items-center justify-between font-bold mb-4 text-sm border-b border-solid pb-3 cursor-pointer hover:bg-gray-50 transition-colors duration-200 ${
                           groupNum === Number(searchParams.get('groupNum'))
                             ? 'border-blue-500 bg-blue-50 rounded-lg p-3 '
                             : 'border-gray-200'
                         } pr-0`}
+                        onClick={() => handleToggleGroupExpansion(groupNum)}
                       >
                         <div className="flex items-center">
-                          <button
-                            onClick={() => handleToggleGroupExpansion(groupNum)}
-                            className="mr-3 text-gray-500 hover:text-gray-700 transition-colors text-lg"
-                          >
+                          <span className="mr-3 text-gray-500 text-lg">
                             {expandedGroups[groupNum] ? '▼' : '▶'}
-                          </button>
+                          </span>
                           <span className="text-gray-900"> {groupMapping[groupNum]} </span>
                         </div>
                         <div className="flex items-center">
@@ -809,12 +850,13 @@ const EducationalDetailPage: React.FC = () => {
                                     </span>
                                   )}
                                   {school.majorGroupId && (
-                                    <span
+                                    <button
                                       key={school.name + '专业组'}
-                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                                      onClick={() => handleViewMajorGroup(school)}
+                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200 transition-colors cursor-pointer"
                                     >
                                       {school.majorGroupName}专业组
-                                    </span>
+                                    </button>
                                   )}
                                   {/* 学制标签 */}
                                   {school.historyScores &&
@@ -1080,6 +1122,66 @@ const EducationalDetailPage: React.FC = () => {
               我知道了
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* 专业组详情弹窗 */}
+      <Modal
+        title={
+          <div className="text-center">
+            <p className="text-sm text-gray-600">专业组详情</p>
+            <p className="text-lg font-semibold text-gray-900">
+              {currentMajorGroupInfo?.schoolName} - {currentMajorGroupInfo?.majorGroupName}
+            </p>
+          </div>
+        }
+        open={showMajorGroupDialog}
+        onCancel={handleCloseMajorGroupDialog}
+        footer={null}
+        width={800}
+        centered
+      >
+        <div className="max-h-96 overflow-y-auto">
+          {majorGroupData.length === 0 ? (
+            <div className="text-gray-500">暂无专业组详情</div>
+          ) : (
+            <div className="space-y-4">
+              {majorGroupData.map((item) => (
+                <div key={item.id} className="border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700">专业代码：</span>
+                      <span className="text-gray-900">{item.majorCode}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">专业名称：</span>
+                      <span className="text-gray-900">{item.majorName}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">批次：</span>
+                      <span className="text-gray-900">{item.batch}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">计划数：</span>
+                      <span className="text-gray-900">{item.num}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">学制：</span>
+                      <span className="text-gray-900">{item.studyPeriod}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">学费：</span>
+                      <span className="text-gray-900">{item.tuition}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="font-medium text-gray-700">备注：</span>
+                      <span className="text-gray-900">{item.remark || '无'}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </Modal>
     </div>

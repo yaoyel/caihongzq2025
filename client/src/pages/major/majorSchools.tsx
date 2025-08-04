@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Top from '../comm/top';
-import { Card, Spin, message } from 'antd';
+import { Card, Spin, message, Input, Tag, Modal } from 'antd';
+import { SearchOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import BottomNav from '../comm/bottom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getMajorDetail } from '../../config';
-import { createMajorAlternative, getMajorAlternatives, cancelAlternative } from '../../config/volunteer';
+import { createMajorAlternative, getMajorAlternatives, cancelAlternative, getMajorGroup } from '../../config/volunteer';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { setAlternativeStatus, updateAlternativeStatus, updateLoadingStatus } from '../../store/slices/intentionDetailSlice';
@@ -29,9 +30,106 @@ const MajorSchools: React.FC = () => {
   //其他位次院校
   const [tuijianSchools4, setTuijianSchools4] = useState([]);
 
+  // 搜索相关状态
+  const [searchText, setSearchText] = useState('');
+  const [selectedSchoolNature, setSelectedSchoolNature] = useState<string>('all');
+  const [showSearchTips, setShowSearchTips] = useState(false);
+
+  // 专业组相关状态
+  const [showMajorGroupDialog, setShowMajorGroupDialog] = useState(false);
+  const [majorGroupData, setMajorGroupData] = useState<any[]>([]);
+  const [currentMajorGroupInfo, setCurrentMajorGroupInfo] = useState<{
+    majorGroupId: string;
+    majorGroupName: string;
+    schoolName: string;
+  } | null>(null);
+
   // 添加 Redux 相关
   const dispatch = useDispatch();
   const { alternativeStatus, loadingStatus } = useSelector((state: RootState) => state.intentionDetail);
+
+  // 智能省份搜索函数
+  const isProvinceMatch = (searchText: string, provinceName: string): boolean => {
+    if (!searchText || !provinceName) return false;
+    
+    const searchLower = searchText.toLowerCase();
+    const provinceLower = provinceName.toLowerCase();
+    
+    // 直接匹配
+    if (provinceLower.includes(searchLower) || searchLower.includes(provinceLower)) {
+      return true;
+    }
+    
+    // 处理带"省"字的搜索
+    if (searchLower.endsWith('省')) {
+      const searchWithoutProvince = searchLower.slice(0, -1); // 去掉"省"字
+      return provinceLower.includes(searchWithoutProvince);
+    }
+    
+    // 处理带"市"字的搜索
+    if (searchLower.endsWith('市')) {
+      const searchWithoutCity = searchLower.slice(0, -1); // 去掉"市"字
+      return provinceLower.includes(searchWithoutCity);
+    }
+    
+    return false;
+  };
+
+  // 搜索过滤逻辑
+  const filterSchoolsBySearch = useCallback(
+    (schools: any[]) => {
+      return schools.filter((school) => {
+        // 搜索文本过滤
+        const searchLower = searchText.toLowerCase();
+        const matchesSearch =
+          searchText === '' ||
+          school.name.toLowerCase().includes(searchLower) ||
+          (school.cityName && school.cityName.toLowerCase().includes(searchLower)) ||
+          (school.provinceName && isProvinceMatch(searchText, school.provinceName));
+
+        // 学校性质过滤
+        const matchesNature =
+          selectedSchoolNature === 'all' || school.nature === selectedSchoolNature;
+
+        return matchesSearch && matchesNature;
+      });
+    },
+    [searchText, selectedSchoolNature]
+  );
+
+  // 获取过滤后的学校数据
+  const getFilteredSchools = useCallback(() => {
+    return {
+      tuijianSchools1: filterSchoolsBySearch(tuijianSchools1),
+      tuijianSchools2: filterSchoolsBySearch(tuijianSchools2),
+      tuijianSchools3: filterSchoolsBySearch(tuijianSchools3),
+      tuijianSchools4: filterSchoolsBySearch(tuijianSchools4),
+    };
+  }, [tuijianSchools1, tuijianSchools2, tuijianSchools3, tuijianSchools4, filterSchoolsBySearch]);
+
+  // 计算总项目数
+  const getTotalItems = useCallback(() => {
+    const filtered = getFilteredSchools();
+    return filtered.tuijianSchools1.length + 
+           filtered.tuijianSchools2.length + 
+           filtered.tuijianSchools3.length + 
+           filtered.tuijianSchools4.length;
+  }, [getFilteredSchools]);
+
+  // 点击外部关闭搜索提示
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.search-tips-container') && !target.closest('.ant-input-suffix')) {
+        setShowSearchTips(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchMajorDetail = async () => {
@@ -86,6 +184,39 @@ const MajorSchools: React.FC = () => {
   const navigator = useNavigate();
 
   // 处理备选按钮点击
+  // 通用的专业组查看函数
+  const handleViewMajorGroup = async (school: any) => {
+    if (school?.majorGroupId) {
+      try {
+        setCurrentMajorGroupInfo({
+          majorGroupId: school.majorGroupId,
+          majorGroupName: school.majorGroupName || '',
+          schoolName: school.name,
+        });
+
+        // 调用专业组API
+        const response = await getMajorGroup(school.majorGroupId);
+
+        if (response && response.code === 200) {
+          setMajorGroupData(response.data || []);
+          setShowMajorGroupDialog(true);
+        } else {
+          message.error(response?.message || '获取专业组信息失败');
+        }
+      } catch (error) {
+        console.error('获取专业组信息失败:', error);
+        message.error('获取专业组信息失败');
+      }
+    }
+  };
+
+  // 关闭专业组弹窗
+  const handleCloseMajorGroupDialog = () => {
+    setShowMajorGroupDialog(false);
+    setMajorGroupData([]);
+    setCurrentMajorGroupInfo(null);
+  };
+
   const handleAlternativeClick = async (school: any) => {
     const schoolKey = `${school.code}_${majorCode}`;
     const currentStatus = alternativeStatus[schoolKey];
@@ -345,12 +476,13 @@ const MajorSchools: React.FC = () => {
               </span>
             )}
             {school.majorGroupId && (
-              <span
+              <button
                 key={school.name + '专业组'}
-                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                onClick={() => handleViewMajorGroup(school)}
+                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200 transition-colors cursor-pointer"
               >
                 {school.majorGroupName}专业组
-              </span>
+              </button>
             )}
             {/* 学制标签 */}
             {school.historyScores &&
@@ -409,7 +541,93 @@ const MajorSchools: React.FC = () => {
       
 
       
-      <div className="bg-[#f7f7fa] flex flex-col justify-center items-start p-3">
+      <div className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3 min-h-screen">
+        {/* 搜索组件 */}
+        <div className="w-full max-w-xl bg-white rounded-2xl p-4 mb-3">
+          <div className="space-y-3">
+            {/* 搜索框 */}
+            <div className="relative">
+              <Input
+                placeholder="搜索学校名称、专业名称、城市、省份等..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                prefix={<SearchOutlined className="text-gray-400" />}
+                suffix={
+                  <InfoCircleOutlined
+                    className="text-blue-500 cursor-pointer"
+                    onClick={() => setShowSearchTips(!showSearchTips)}
+                    title="搜索帮助"
+                  />
+                }
+                className="rounded-lg"
+                allowClear
+              />
+              {/* 搜索提示 */}
+              {showSearchTips && (
+                <div className="search-tips-container absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg p-3 shadow-lg z-10">
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <div>
+                      💡 <strong>搜索提示：</strong>
+                    </div>
+                    <div>• 可以搜索学校名称（如：清华大学）</div>
+                    <div>• 可以搜索专业名称（如：计算机科学）</div>
+                    <div>• 可以搜索专业代码（如：080901）</div>
+                    <div>• 可以搜索城市名称（如：北京、上海）</div>
+                    <div>• 可以搜索省份名称（如：江苏、浙江、湖南省）</div>
+                    <div>• 支持模糊搜索，输入部分关键词即可</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 学校性质标签 */}
+            <div className="flex flex-wrap gap-2">
+              <span className="text-sm font-medium text-gray-700 mr-2">学校性质：</span>
+              <Tag
+                color={selectedSchoolNature === 'all' ? 'blue' : 'default'}
+                className="cursor-pointer"
+                onClick={() => setSelectedSchoolNature('all')}
+              >
+                全部
+              </Tag>
+              <Tag
+                color={selectedSchoolNature === 'public' ? 'green' : 'default'}
+                className="cursor-pointer"
+                onClick={() => setSelectedSchoolNature('public')}
+              >
+                公办
+              </Tag>
+              <Tag
+                color={selectedSchoolNature === 'private' ? 'orange' : 'default'}
+                className="cursor-pointer"
+                onClick={() => setSelectedSchoolNature('private')}
+              >
+                民办
+              </Tag>
+            </div>
+          </div>
+        </div>
+
+        {/* 搜索结果统计 */}
+        {(searchText || selectedSchoolNature !== 'all') && (
+          <div className="w-full max-w-xl bg-blue-50 rounded-2xl p-3 mb-3">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center space-x-2">
+                <span className="text-blue-600 font-medium">搜索结果：</span>
+                <span className="text-blue-800">找到 {getTotalItems()} 个志愿</span>
+              </div>
+              <button
+                onClick={() => {
+                  setSearchText('');
+                  setSelectedSchoolNature('all');
+                }}
+                className="text-blue-600 hover:text-blue-800 text-sm underline"
+              >
+                清除筛选
+              </button>
+            </div>
+          </div>
+        )}
         {/* 页面主卡片 */}
         <Card className="rounded-2xl w-full max-w-xl shadow" bodyStyle={{ padding: '24px 16px' }}>
           {loading ? (
@@ -421,41 +639,108 @@ const MajorSchools: React.FC = () => {
           ) : (
             // 数据加载完成后的内容
             <>
-              <div className="text-lg font-bold mb-2 flex items-center">
-                <span className="w-1.5 h-4 bg-blue-500 rounded-sm mr-2 inline-block" />
-                全部招生院校 {tuijianSchools1.length + tuijianSchools2.length + tuijianSchools3.length + tuijianSchools4.length}所
-              </div>
+              {(() => {
+                const filtered = getFilteredSchools();
+                return (
+                  <>
+                    <div className="text-lg font-bold mb-2 flex items-center">
+                      <span className="w-1.5 h-4 bg-blue-500 rounded-sm mr-2 inline-block" />
+                      全部招生院校 {filtered.tuijianSchools1.length + filtered.tuijianSchools2.length + filtered.tuijianSchools3.length + filtered.tuijianSchools4.length}所
+                    </div>
 
-              {tuijianSchools1.length > 0 &&
-                renderSchoolTop('比您高考分低10%到高5%位次段院校 (' + tuijianSchools1.length + '所)')}
-              {/* 院校招生信息列表 */}
-              <div className="space-y-4">
-                {tuijianSchools1.map((school) => renderSchool(school))}
-              </div>
-              {tuijianSchools2.length > 0 &&
-                renderSchoolTop('比您高考分低30%到10%位次段院校 (' + tuijianSchools2.length + '所)')}
-              {/* 院校招生信息列表 */}
-              <div className="space-y-4">
-                {tuijianSchools2.map((school) => renderSchool(school))}
-              </div>
-              {tuijianSchools3.length > 0 &&
-                renderSchoolTop('比您高考分高5%到30%位次段院校(' + tuijianSchools3.length + '所)')}
-              {/* 院校招生信息列表 */}
-              <div className="space-y-4">
-                {tuijianSchools3.map((school) => renderSchool(school))}
-              </div>
-              {tuijianSchools4.length > 0 &&
-                renderSchoolTop('其他位次段院校(' + tuijianSchools4.length + '所)')}
-              {/* 院校招生信息列表 */}
-              <div className="space-y-4">
-                {tuijianSchools4.map((school) => renderSchool(school))}
-              </div>
+                    {filtered.tuijianSchools1.length > 0 &&
+                      renderSchoolTop('比您高考分低10%到高5%位次段院校 (' + filtered.tuijianSchools1.length + '所)')}
+                    {/* 院校招生信息列表 */}
+                    <div className="space-y-4">
+                      {filtered.tuijianSchools1.map((school) => renderSchool(school))}
+                    </div>
+                    {filtered.tuijianSchools2.length > 0 &&
+                      renderSchoolTop('比您高考分低30%到10%位次段院校 (' + filtered.tuijianSchools2.length + '所)')}
+                    {/* 院校招生信息列表 */}
+                    <div className="space-y-4">
+                      {filtered.tuijianSchools2.map((school) => renderSchool(school))}
+                    </div>
+                    {filtered.tuijianSchools3.length > 0 &&
+                      renderSchoolTop('比您高考分高5%到30%位次段院校(' + filtered.tuijianSchools3.length + '所)')}
+                    {/* 院校招生信息列表 */}
+                    <div className="space-y-4">
+                      {filtered.tuijianSchools3.map((school) => renderSchool(school))}
+                    </div>
+                    {filtered.tuijianSchools4.length > 0 &&
+                      renderSchoolTop('其他位次段院校(' + filtered.tuijianSchools4.length + '所)')}
+                    {/* 院校招生信息列表 */}
+                    <div className="space-y-4">
+                      {filtered.tuijianSchools4.map((school) => renderSchool(school))}
+                    </div>
+                  </>
+                );
+              })()}
             </>
           )}
         </Card>
       </div>
       {/* 底部导航 */}
       <BottomNav selectedIndex={1} />
+
+      {/* 专业组详情弹窗 */}
+      <Modal
+        title={
+          <div className="text-center">
+            <p className="text-sm text-gray-600">专业组详情</p>
+            <p className="text-lg font-semibold text-gray-900">
+              {currentMajorGroupInfo?.schoolName} - {currentMajorGroupInfo?.majorGroupName}
+            </p>
+          </div>
+        }
+        open={showMajorGroupDialog}
+        onCancel={handleCloseMajorGroupDialog}
+        footer={null}
+        width={800}
+        centered
+      >
+        <div className="max-h-96 overflow-y-auto">
+          {majorGroupData.length === 0 ? (
+            <div className="text-gray-500">暂无专业组详情</div>
+          ) : (
+            <div className="space-y-4">
+              {majorGroupData.map((item) => (
+                <div key={item.id} className="border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700">专业代码：</span>
+                      <span className="text-gray-900">{item.majorCode}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">专业名称：</span>
+                      <span className="text-gray-900">{item.majorName}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">批次：</span>
+                      <span className="text-gray-900">{item.batch}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">计划数：</span>
+                      <span className="text-gray-900">{item.num}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">学制：</span>
+                      <span className="text-gray-900">{item.studyPeriod}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">学费：</span>
+                      <span className="text-gray-900">{item.tuition}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="font-medium text-gray-700">备注：</span>
+                      <span className="text-gray-900">{item.remark || '无'}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 };
