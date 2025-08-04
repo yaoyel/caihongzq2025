@@ -225,7 +225,7 @@ export function toMajorDetailViewModel(data: any): MajorDetailViewModel | undefi
     },
     schools: Array.isArray(data.schools) ? data.schools.map((school: any) => ({
       schoolCode: school.code,
-      name: school.name,
+      schooName: school.name,
       schoolNature: school.nature,
       level: school.level,
       belong: school.belong,
