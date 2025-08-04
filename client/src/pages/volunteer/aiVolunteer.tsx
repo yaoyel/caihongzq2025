@@ -579,7 +579,7 @@ const AiVolunteerPage: React.FC = () => {
   };
 
   // 处理排序Tab切换
-  const handleSortTabChange = async (tab: 'willingness' | 'major' | 'rankDiff') => {
+  const handleSortTabChange = async (tab: 'major' | 'rankDiff') => {
     // 如果切换到按专业排序，需要重新调用API
     if (tab === 'major') {
       try {
@@ -668,15 +668,7 @@ const AiVolunteerPage: React.FC = () => {
   const getSortedData = useCallback(
     (data: GroupedAlternatives[]) => {
       switch (sortTab) {
-        case 'willingness': {
-          // 按发展潜能分数由高到低排序，不按学校分组
-          const allWillingnessData = data.flatMap((group) => group.result);
-          // 按发展潜能分数从高到低排序
-          const sortedWillingnessData = allWillingnessData.sort(
-            (a, b) => (b.developmentPotential || 0) - (a.developmentPotential || 0)
-          );
-          return [{ group: -1, result: sortedWillingnessData }];
-        }
+
         case 'major': {
           // 从localStorage获取按专业排序的数据
           const majorDataStr = localStorage.getItem('aiVolunteerMajorData');
@@ -1479,16 +1471,7 @@ const AiVolunteerPage: React.FC = () => {
             >
               {isLoadingMajorData ? '加载中...' : '按专业'}
             </button>
-            <button
-              onClick={() => handleSortTabChange('willingness')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                sortTab === 'willingness'
-                  ? 'bg-blue-500 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              按发展潜能
-            </button>
+
           </div>
         </div>
 
@@ -2042,146 +2025,7 @@ const AiVolunteerPage: React.FC = () => {
                             </div>
                           ))}
                         </div>
-                      ) : sortTab === 'willingness' ? (
-                        /* 按发展潜能排序时的列表显示 - 不按学校分组 */
-                        <div className="w-full max-w-xl bg-white rounded-2xl ">
-                          {group.result.map((item: any) => (
-                            <div
-                              key={item.id}
-                              className="mb-4 border-b border-gray-200 pb-4 last:border-b-0"
-                            >
-                              {/* 学校名称 */}
-                              <div className="flex items-center justify-between mb-3">
-                                <span
-                                  className="text-blue-600 text-lg font-bold cursor-pointer hover:text-blue-700 transition-colors duration-200"
-                                  onClick={() => {
-                                    handleNavigation(
-                                      `/major/schooldetail?schoolCode=${item.schoolCode}&schoolname=${item.schoolName}`
-                                    );
-                                  }}
-                                >
-                                  {item.schoolName}
-                                </span>
-                                <button
-                                  className={`px-3 py-1 rounded text-sm font-medium transition-all duration-200 ${(() => {
-                                    const itemKey = `${item.schoolCode}_${item.majorCode}`;
-                                    const isAlternative =
-                                      alternativeStatus[itemKey]?.isAlternative || false;
-                                    const isLoading = loadingStatus[itemKey];
-                                    return isAlternative
-                                      ? 'bg-red-500 text-white hover:bg-red-600'
-                                      : isLoading
-                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                        : 'bg-green-500 text-white hover:bg-green-600';
-                                  })()}`}
-                                  onClick={() => handleAlternativeClick(item)}
-                                  disabled={(() => {
-                                    const itemKey = `${item.schoolCode}_${item.majorCode}`;
-                                    return loadingStatus[itemKey];
-                                  })()}
-                                >
-                                  {(() => {
-                                    const itemKey = `${item.schoolCode}_${item.majorCode}`;
-                                    const isAlternative =
-                                      alternativeStatus[itemKey]?.isAlternative || false;
-                                    const isLoading = loadingStatus[itemKey];
-                                    return isLoading
-                                      ? '处理中...'
-                                      : isAlternative
-                                        ? '移除'
-                                        : '备选';
-                                  })()}
-                                </button>
-                              </div>
 
-                              {/* 专业信息 */}
-                              <div className="flex items-center justify-between mb-3">
-                                <span
-                                  className="text-blue-700 text-sm cursor-pointer hover:text-blue-800"
-                                  onClick={() => {
-                                    handleNavigation(
-                                      `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isFavorite=true`,
-                                      { replace: false }
-                                    );
-                                  }}
-                                >
-                                  {item.majorCode} {item.majorName}
-                                </span>
-                                <div className="flex items-center space-x-2">
-                                  {/* 显示发展潜能分数 */}
-                                  <span className="text-purple-600 bg-purple-100 px-2 py-0.5 rounded text-xs font-bold">
-                                    发展潜能{Math.ceil(item.developmentPotential || 0)}分
-                                  </span>
-                                  {/* 显示较上年变化 */}
-                                  {getRankdiffDom(item)}
-                                </div>
-                              </div>
-
-                              {/* 学校标签行 */}
-                              <div className="flex flex-wrap gap-2 mb-3">
-                                {/* 学校特色标签 */}
-                                {parseSchoolFeatures(item.schoolFeature).map((feature, index) => (
-                                  <span
-                                    key={`${item.schoolName}-feature-${index}`}
-                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
-                                  >
-                                    {feature}
-                                  </span>
-                                ))}
-                                <span
-                                  key={item.schoolName + '公办'}
-                                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200"
-                                >
-                                  {item.schoolNature === 'public' ? '公办' : '民办'}
-                                </span>
-                                {item.enrollmentRate !== 0 && (
-                                  <span
-                                    key={item.schoolName + '升学率'}
-                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
-                                  >
-                                    升学率
-                                    {item.enrollmentRate && item.enrollmentRate > 0
-                                      ? item.enrollmentRate + '%'
-                                      : '待补充'}
-                                  </span>
-                                )}
-                                {item.majorGroupId && (
-                                  <span
-                                    key={item.schoolName + '专业组'}
-                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
-                                  >
-                                    {item.majorGroupName}专业组
-                                  </span>
-                                )}
-                                {/* 学制标签 */}
-                                {item.historyScore &&
-                                  item.historyScore.length > 0 &&
-                                  item.historyScore[0].studyPeriod && (
-                                    <span
-                                      key={item.schoolName + '学制'}
-                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200"
-                                    >
-                                      学制{item.historyScore[0].studyPeriod}年
-                                    </span>
-                                  )}
-                                <span
-                                  key={item.schoolName + '校区'}
-                                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200"
-                                >
-                                  {getCityDisplayInfo(item)}
-                                </span>
-                              </div>
-
-                              {/* 历年分数表格 */}
-                              <div
-                                className="bg-gray-50 rounded-b-lg"
-                                dangerouslySetInnerHTML={{
-                                  __html: getHistoryScore(item?.historyScore || []),
-                                }}
-                              ></div>
-                            </div>
-                          ))}
-                        </div>
                       ) : (
                         /* 原有的渲染逻辑（位次段排序等） */
                         displaySchools.map((schoolGroup) => (
@@ -2227,12 +2071,7 @@ const AiVolunteerPage: React.FC = () => {
                                   <div className="flex items-center space-x-2">
                                     {/* 显示较上年变化 */}
                                     {getRankdiffDom(item)}
-                                    {/* 显示发展潜能分数 */}
-                                    {sortTab === 'willingness' && (
-                                      <span className="text-purple-600 bg-purple-100 px-2 py-0.5 rounded text-xs font-bold">
-                                        发展潜能{Math.ceil(item.developmentPotential || 0)}分
-                                      </span>
-                                    )}
+
 
                                     <button
                                       className={`px-3 py-1 rounded ${(() => {
