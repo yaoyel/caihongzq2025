@@ -1279,16 +1279,12 @@ const EducationalPage: React.FC = () => {
     if (!item.Rankdiff || item.Rankdiff === 0) {
       return null;
     }
-    
+
     return (
       <span className="px-2 py-0.5 rounded text-xs font-bold">
         上年较您
         <span
-          className={
-            item.Rankdiff > 0
-              ? 'text-red-600 bg-red-100'
-              : 'text-green-600 bg-green-100'
-          }
+          className={item.Rankdiff > 0 ? 'text-red-600 bg-red-100' : 'text-green-600 bg-green-100'}
         >
           {item.Rankdiff > 0
             ? `高${item.Rankdiff}位次/${Math.floor(item.RankdiffPer || 0)}%`
@@ -1715,7 +1711,7 @@ const EducationalPage: React.FC = () => {
                                                 >
                                                   {item.schoolNature === 'public' ? '公办' : '民办'}
                                                 </span>
-                                                {item.enrollmentRate && item.enrollmentRate > 0 && (
+                                                {Number(item.enrollmentRate) > 0 && (
                                                   <span
                                                     key={item.schoolName + '升学率'}
                                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
@@ -1723,7 +1719,7 @@ const EducationalPage: React.FC = () => {
                                                     升学率{item.enrollmentRate}%
                                                   </span>
                                                 )}
-                                                {item.majorGroupId && (
+                                                {item.majorGroupName&& (
                                                   <span
                                                     key={item.schoolName + '专业组'}
                                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
@@ -1875,15 +1871,15 @@ const EducationalPage: React.FC = () => {
                                           >
                                             {item.schoolNature === 'public' ? '公办' : '民办'}
                                           </span>
-                                                                                          {item.enrollmentRate && item.enrollmentRate > 0 && (
-                                                  <span
-                                                    key={item.schoolName + '升学率'}
-                                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
-                                                  >
-                                                    升学率{item.enrollmentRate}%
-                                                  </span>
-                                                )}
-                                          {item.majorGroupId && (
+                                          {Number(item.enrollmentRate) > 0 && (
+                                            <span
+                                              key={item.schoolName + '升学率'}
+                                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
+                                            >
+                                              升学率{item.enrollmentRate}%
+                                            </span>
+                                          )}
+                                          { item.majorGroupName && (
                                             <span
                                               key={item.schoolName + '专业组'}
                                               className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
@@ -1948,14 +1944,14 @@ const EducationalPage: React.FC = () => {
                                 {schoolGroup.schoolName} {'>'}
                               </span>
                               {/* 在按专业排序时显示位次段信息，且位次段不为0时显示 */}
-                              {(sortTab as any) === 'major' && 
-                               schoolGroup.majors.length > 0 && 
-                               schoolGroup.majors[0].group && 
-                               schoolGroup.majors[0].group !== 0 && (
-                                <span className="text-white text-sm opacity-80">
-                                  ({groupNames[schoolGroup.majors[0].group]})
-                                </span>
-                              )}
+                              {(sortTab as any) === 'major' &&
+                                schoolGroup.majors.length > 0 &&
+                                schoolGroup.majors[0].group &&
+                                schoolGroup.majors[0].group !== 0 && (
+                                  <span className="text-white text-sm opacity-80">
+                                    ({groupNames[schoolGroup.majors[0].group]})
+                                  </span>
+                                )}
                             </div>
                           </div>
 
@@ -2089,7 +2085,7 @@ const EducationalPage: React.FC = () => {
                                 >
                                   {item.schoolNature === 'public' ? '公办' : '民办'}
                                 </span>
-                                {item.enrollmentRate && item.enrollmentRate > 0 && sortTab !== 'enrollment' && (
+                                {Number(item.enrollmentRate) > 0 && sortTab !== 'enrollment' && (
                                   <span
                                     key={item.schoolName + '升学率'}
                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
@@ -2097,15 +2093,8 @@ const EducationalPage: React.FC = () => {
                                     升学率{item.enrollmentRate}%
                                   </span>
                                 )}
-                                {/* {item.schoolLevel !== 'zhuan' && (
-                                  <span
-                                    key={item.schoolName + '保研率'}
-                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200"
-                                  >
-                                    保研率{item.enrollmentRate}%
-                                  </span>
-                                )} */}
-                                {item.majorGroupId && (
+
+                                {item.majorGroupName&& (
                                   <span
                                     key={item.schoolName + '专业组'}
                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
