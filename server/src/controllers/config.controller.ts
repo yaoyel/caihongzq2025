@@ -412,7 +412,7 @@ export class ConfigController {
               developmentPotential: majors.find(m => m.majorCode === major.code)?.developmentpotential || 0,
               schools: sortedSchools.map((school: any) => ({
                 id: school.id,
-                name: school.name,  
+                schoolName: school.name,  
                 schoolNature: school.nature,
                 displayName: school.majorDisplayName,
                 schoolCode: school.code, 
@@ -598,7 +598,7 @@ export class ConfigController {
         // 将专业信息放到学校里面，每个学校单独显示
         const schoolsWithMajor = allSelectedSchools.map(school => ({
           id: school.id,
-          name: school.name,
+          schoolName: school.name,
           schoolCode: school.code,
           schoolNature: school.nature,
           averageRank: school.averageRank,
