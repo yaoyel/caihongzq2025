@@ -52,6 +52,13 @@ interface MajorHistoryScoreViewModel {
  */
 interface ExtendedSchoolViewModel extends SchoolViewModel {
   historyScores?: MajorHistoryScoreViewModel[];
+  averageRank?: number;
+  rankDiffPercentage?: number;
+  rankDiff?: number;
+  rankDiffPer?: number;
+  group?: number;
+  majorGroupId?: number;
+  majorGroupName?: string;
 }
 
 /**
@@ -217,13 +224,13 @@ export function toMajorDetailViewModel(data: any): MajorDetailViewModel | undefi
       tiaozhanDeduction: data.major.tiaozhanDeduction,
     },
     schools: Array.isArray(data.schools) ? data.schools.map((school: any) => ({
-      code: school.code,
+      schoolCode: school.code,
       name: school.name,
-      nature: school.nature,
+      schoolNature: school.nature,
       level: school.level,
       belong: school.belong,
       categories: school.categories,
-      features: school.features,
+      schoolFeature: school.features,
       provinceName: school.provinceName,
       cityName: school.cityName,
       enrollmentRate: school.enrollmentRate || 0,
@@ -233,6 +240,8 @@ export function toMajorDetailViewModel(data: any): MajorDetailViewModel | undefi
       group:school.group,
       averageRank:school.averageRank,
       rankDiffPercentage: school.rankDiffPercentage,
+      rankDiff: school.rankDiff,
+      rankDiffPer: school.rankDiffPer,
       majorGroupId: school.majorGroupId || 0,
       majorGroupName: school.majorGroupName || '',
       historyScores: Array.isArray(school.historyScores) 

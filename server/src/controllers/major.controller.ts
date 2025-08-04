@@ -237,17 +237,31 @@ export class MajorController {
           
           // 计算与用户位次的差异百分比
           // 计算位次差异百分比：正值表示学校平均位次比用户位次好，负值表示较差
-          const rankDiffPercentage = avgRank === 0 ? 0 : ((rank - avgRank) / rank) * 100;
+          const rankDiffPercentage = avgRank === 0 ? 0 : ((avgRank - rank) / avgRank) * 100;
+          
+          // 计算位次差值和位次差值百分比（与2024年位次比较）
+          let rankDiff = 0;
+          let rankDiffPer = 0;
+          
+          // 获取2024年的位次数据
+          const rank2024 = extract2024Rank(schoolScores.length > 0 ? schoolScores[0].historyScore : null);
+          
+          if (rank && rank > 0 && rank2024 && rank2024 > 0) {
+            // 计算位次差值（用户位次 - 2024年位次）
+            rankDiff = rank - rank2024;
+            // 计算位次差值百分比（差值 / 2024年位次）
+            rankDiffPer = rank2024 > 0 ? (rankDiff / rank2024) * 100 : 0;
+          }
           
           // 确定分组
           let group = 0; // 默认组（无分数或差异过大）
           if (avgRank > 0) { // 只对有位次的学校进行分组
             if (rankDiffPercentage > 5 && rankDiffPercentage <= 30) {
-              group = 1; // 5%到10%
+              group = 1; // 5%到30%（稍高）
             } else if (rankDiffPercentage >= -10 && rankDiffPercentage <= 5) {
-              group = 2; // -5%到5%（最匹配）
+              group = 2; // -10%到5%（最匹配）
             } else if (rankDiffPercentage >= -30 && rankDiffPercentage < -10) {
-              group = 3; // -5%到-15%
+              group = 3; // -30%到-10%（稍低）
             }
           }
           
@@ -256,6 +270,9 @@ export class MajorController {
             historyScores: schoolScores,
             averageRank: avgRank,
             rankDiffPercentage,
+            rankDiff,
+            rankDiffPer,
+            rank2024,
             group
           };
         });
@@ -736,6 +753,7 @@ export class MajorController {
       schoolCode: string;
       schoolName: string;
       schoolFeature: string;
+      schoolNature: string;
       enrollmentRate?: number;
       employmentRate?: number;
       majorGroupId?: number;
@@ -777,7 +795,7 @@ export class MajorController {
         const year2024Rank = extract2024Rank(body.historyScore);
         if (year2024Rank !== null) {
           // 计算位次差值（用户位次 - 2024年位次）
-          rankDiff =  year2024Rank - user.rank;
+          rankDiff =  user.rank - year2024Rank;
           // 计算位次差值百分比（差值 / 2024年位次）
           rankDiffPer = year2024Rank > 0 ? (rankDiff / year2024Rank) * 100 : 0;
         }

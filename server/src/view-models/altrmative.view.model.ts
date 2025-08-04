@@ -9,6 +9,8 @@ export interface AlternativeViewModel {
   schoolCode: string;
   schoolName: string;
   schoolFeature: string;
+  belong: string;
+  schoolNature: string;
   group: number;
   historyScore: object;
   selected?: boolean;
@@ -39,7 +41,9 @@ export function toAlternativeViewModel(alternative: any): AlternativeViewModel {
     majorName: alternative.majorName,
     schoolCode: alternative.schoolCode,
     schoolName: alternative.schoolName,
-    schoolFeature: alternative.schoolNature,
+    schoolFeature: alternative.schoolFeature,
+    belong: alternative.school?.belong || '',
+    schoolNature: alternative.school?.nature || '',
     group: alternative.group,
     historyScore: alternative.historyScore,
     selected: alternative.selected,
