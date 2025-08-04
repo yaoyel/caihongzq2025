@@ -83,13 +83,13 @@ const MajorSchools: React.FC = () => {
         const searchLower = searchText.toLowerCase();
         const matchesSearch =
           searchText === '' ||
-          school.name.toLowerCase().includes(searchLower) ||
+          school.schoolName.toLowerCase().includes(searchLower) ||
           (school.cityName && school.cityName.toLowerCase().includes(searchLower)) ||
           (school.provinceName && isProvinceMatch(searchText, school.provinceName));
 
         // 学校性质过滤
         const matchesNature =
-          selectedSchoolNature === 'all' || school.nature === selectedSchoolNature;
+          selectedSchoolNature === 'all' || school.schoolNature === selectedSchoolNature;
 
         return matchesSearch && matchesNature;
       });
@@ -191,7 +191,7 @@ const MajorSchools: React.FC = () => {
         setCurrentMajorGroupInfo({
           majorGroupId: school.majorGroupId,
           majorGroupName: school.majorGroupName || '',
-          schoolName: school.name,
+          schoolName: school.schoolName,
         });
 
         // 调用专业组API
@@ -218,7 +218,7 @@ const MajorSchools: React.FC = () => {
   };
 
   const handleAlternativeClick = async (school: any) => {
-    const schoolKey = `${school.code}_${majorCode}`;
+    const schoolKey = `${school.schoolCode}_${majorCode}`;
     const currentStatus = alternativeStatus[schoolKey];
 
     // 如果正在加载中，直接返回
@@ -265,9 +265,9 @@ const MajorSchools: React.FC = () => {
         const response = await createMajorAlternative({
           majorCode: majorCode!,
           majorName: majorName!,
-          schoolCode: school.code,
-          schoolName: school.name,
-          schoolFeature: school.features || '',
+          schoolCode: school.schoolCode,
+          schoolName: school.schoolName,
+          schoolFeature: school.schoolFeature || '',
           historyScore: historyScoreData,
           group: school.group.toString(),
         });
@@ -299,11 +299,11 @@ const MajorSchools: React.FC = () => {
   };
 
   // 解析学校特色标签的函数
-  const parseSchoolFeatures = (features: string | null | undefined): string[] => {
-    if (!features) return [];
+  const parseSchoolFeatures = (schoolFeature: string | null | undefined): string[] => {
+    if (!schoolFeature) return [];
 
     // 按逗号分隔并去除空白字符
-    return features
+    return schoolFeature
       .split(',')
       .map((tag) => tag.trim())
       .filter((tag) => tag.length > 0);
@@ -399,13 +399,12 @@ const MajorSchools: React.FC = () => {
   };
 
   const renderSchool = (school: any) => {
-    const schoolKey = `${school.code}_${majorCode}`;
+    const schoolKey = `${school.schoolCode}_${majorCode}`;
     const isAlternative = alternativeStatus[schoolKey]?.isAlternative || false;
     const isLoading = loadingStatus[schoolKey];
-
     return (
-      <div
-        key={school.code}
+              <div
+          key={school.schoolCode}
         className="border border-gray-200 mb-4 overflow-hidden bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
       >
         {/* 院校头部 */}
@@ -415,16 +414,16 @@ const MajorSchools: React.FC = () => {
             <div className="flex-1 min-w-0">
               <span
                 className="text-blue-600 text-lg font-bold cursor-pointer hover:text-blue-700 transition-colors duration-200 truncate block"
-                title={school.name}
+                title={school.schoolName}
                 onClick={() => {
                   navigator(
-                    `/major/schooldetail?schoolCode=${school.code}&schoolname=${school.name}`
+                    `/major/schooldetail?schoolCode=${school.schoolCode}&schoolname=${school.schoolName}`
                   );
                 }}
               >
-                {school.name.length > 10
-                  ? `${school.name.substring(0, 10)}...`
-                  : school.name}
+                {school.schoolName.length > 10
+                  ? `${school.schoolName.substring(0, 10)}...`
+                  : school.schoolName}
               </span>
             </div>
             <button
@@ -445,23 +444,23 @@ const MajorSchools: React.FC = () => {
           {/* 学校标签行 */}
           <div className="flex flex-wrap gap-2 mb-3">
             {/* 学校特色标签 */}
-            {parseSchoolFeatures(school.features).map((feature, index) => (
+            {parseSchoolFeatures(school.schoolFeature).map((feature, index) => (
               <span
-                key={`${school.name}-feature-${index}`}
+                key={`${school.schoolName}-feature-${index}`}
                 className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
               >
                 {feature}
               </span>
             ))}
             <span
-              key={school.name + '公办'}
+              key={school.schoolName + '公办'}
               className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200"
             >
-              {school.nature === 'public' ? '公办' : '民办'}
+              {school.schoolNature === 'public' ? '公办' : '民办'}
             </span>
             {school.enrollmentRate !== 0 && (
               <span
-                key={school.name + '升学率'}
+                key={school.schoolName + '升学率'}
                 className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
               >
                 升学率{school.enrollmentRate}%
@@ -469,7 +468,7 @@ const MajorSchools: React.FC = () => {
             )}
             {school.level !== 'zhuan' && (
               <span
-                key={school.name + '保研率'}
+                key={school.schoolName + '保研率'}
                 className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200"
               >
                 保研率{school.enrollmentRate}%
@@ -477,7 +476,7 @@ const MajorSchools: React.FC = () => {
             )}
             {school.majorGroupId && (
               <button
-                key={school.name + '专业组'}
+                key={school.schoolName + '专业组'}
                 onClick={() => handleViewMajorGroup(school)}
                 className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200 transition-colors cursor-pointer"
               >
@@ -489,14 +488,14 @@ const MajorSchools: React.FC = () => {
               school.historyScores.length > 0 &&
               school.historyScores[0].studyPeriod && (
                 <span
-                  key={school.name + '学制'}
+                  key={school.schoolName + '学制'}
                   className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200"
                 >
                   学制{school.historyScores?.[0]?.studyPeriod}年
                 </span>
               )}
             <span
-              key={school.name + '校区'}
+              key={school.schoolName + '校区'}
               className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200"
             >
               {school.cityName || school.provinceName}

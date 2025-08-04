@@ -138,7 +138,7 @@ const App: React.FC = () => {
       schools?.filter((school) => {
         const searchLower = searchQuery.toLowerCase();
         return (
-          school.name.toLowerCase().includes(searchLower) ||
+          school.schoolName.toLowerCase().includes(searchLower) ||
           school.provinceName.toLowerCase().includes(searchLower) ||
           school.cityName.toLowerCase().includes(searchLower) ||
           school.belong.toLowerCase().includes(searchLower)
@@ -365,25 +365,25 @@ const App: React.FC = () => {
                   {displayedSchools?.length > 0 ? (
                     displayedSchools.map((school) => (
                       <Card
-                        key={school.code}
+                        key={school.schoolCode}
                         className="cursor-pointer hover:shadow-lg transition-shadow border-none"
                         style={{ padding: '8px' }}
                         onClick={() => {
-                          getSchools(school.code);
-                          setSelectedSchool(school.code);
+                          getSchools(school.schoolCode);
+                          setSelectedSchool(school.schoolCode);
                         }}
                         hoverable
                       >
-                        <h3 className="font-medium mb-2">{school.name}</h3>
+                        <h3 className="font-medium mb-2">{school.schoolName}</h3>
                         <p className="text-gray-600 text-sm">
                           {school.provinceName}-{school.cityName}
                         </p>
-                        <p className="text-gray-600 text-sm mt-10">{school.features}</p>
+                        <p className="text-gray-600 text-sm mt-10">{school.schoolFeature}</p>
                         <div className="mt-2 flex flex-wrap gap-1">
                           <Tag className="mb-1" color="green">
-                            {school.nature === 'public'
+                            {school.schoolNature === 'public'
                               ? '公办'
-                              : school.nature === 'private'
+                              : school.schoolNature === 'private'
                                 ? '民办'
                                 : '独立学院'}
                           </Tag>

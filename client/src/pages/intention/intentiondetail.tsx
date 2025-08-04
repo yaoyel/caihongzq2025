@@ -11,16 +11,15 @@ import {
   cancelAlternative,
   getMajorGroup,
 } from '../../config/volunteer';
-import { Modal, Button, Checkbox, message } from 'antd';
+import { Modal, Button, Checkbox, message, Input, Tag } from 'antd';
+import { SearchOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import {
   setExpandedGroups,
   toggleGroupExpansion,
-  setAllGroupsExpanded,
   saveScrollPosition,
   setCurrentMajorInfo,
-  setSearchKeyword,
   setAlternativeStatus,
   updateAlternativeStatus,
   updateLoadingStatus,
@@ -33,7 +32,7 @@ const EducationalDetailPage: React.FC = () => {
   const majorCode = searchParams.get('majorCode');
   const majorName = searchParams.get('majorName');
   const score = searchParams.get('score');
-  const groupNum = Number(searchParams.get('groupNum'));
+  const groupNum = Number(searchParams.get('groupNum')) || null;
 
   // 弹框相关状态
   const [isTipModalVisible, setIsTipModalVisible] = useState(false);
@@ -55,8 +54,13 @@ const EducationalDetailPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'group' | 'enrollment' | 'employment'>('group');
 
   // 从 Redux 获取状态
-  const { expandedGroups, searchKeyword, alternativeStatus, loadingStatus, scrollPositions } =
+  const { expandedGroups, alternativeStatus, loadingStatus, scrollPositions } =
     useSelector((state: RootState) => state.intentionDetail);
+
+  // 搜索相关状态
+  const [searchText, setSearchText] = useState('');
+  const [selectedSchoolNature, setSelectedSchoolNature] = useState<string>('all');
+  const [showSearchTips, setShowSearchTips] = useState(false);
 
   // 定义位次段映射关系
   const groupMapping = {
@@ -84,6 +88,93 @@ const EducationalDetailPage: React.FC = () => {
   const autoScrollingRef = useRef(false);
   // 添加用户滚动防抖定时器
   const userScrollDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 点击外部关闭搜索提示
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.search-tips-container')) {
+        setShowSearchTips(false);
+      }
+    };
+
+    if (showSearchTips) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSearchTips]);
+
+  // 智能省份搜索函数
+  const isProvinceMatch = (searchText: string, provinceName: string): boolean => {
+    if (!searchText || !provinceName) return false;
+
+    const searchLower = searchText.toLowerCase();
+    const provinceLower = provinceName.toLowerCase();
+
+    // 直接匹配
+    if (provinceLower.includes(searchLower) || searchLower.includes(provinceLower)) {
+      return true;
+    }
+
+    // 处理带"省"字的搜索
+    if (searchLower.endsWith('省')) {
+      const searchWithoutProvince = searchLower.slice(0, -1); // 去掉"省"字
+      return provinceLower.includes(searchWithoutProvince);
+    }
+
+    // 处理带"市"字的搜索
+    if (searchLower.endsWith('市')) {
+      const searchWithoutCity = searchLower.slice(0, -1); // 去掉"市"字
+      return provinceLower.includes(searchWithoutCity);
+    }
+
+    return false;
+  };
+
+  // 获取城市显示信息的辅助函数
+  const getCityDisplayInfo = (school: any): string => {
+    // 优先使用 provinceName 和 cityName
+    if (school.provinceName && school.cityName) {
+      return `${school.provinceName} ${school.cityName}`;
+    }
+    if (school.provinceName) {
+      return school.provinceName;
+    }
+    if (school.cityName) {
+      return school.cityName;
+    }
+    // 如果都没有，使用 schoolCity
+    if (school.schoolCity) {
+      return school.schoolCity;
+    }
+    // 最后才显示未知城市
+    return '城市信息待补充';
+  };
+
+  // 位次差显示函数
+  const getRankdiffDom = (school: any) => {
+    console.log(school);
+    // 如果位次差为0或不存在，则不显示
+    if (!school.rankDiff || school.rankDiff === 0) {
+      return null;
+    }
+
+    return (
+      <span className="px-2 py-0.5 rounded text-xs font-bold">
+        上年较您
+        <span
+          className={school.rankDiff > 0 ? 'text-red-600 bg-red-100' : 'text-green-600 bg-green-100'}
+        >
+          {school.rankDiff > 0
+            ? `高${school.rankDiff}位次/${Math.floor(school.RankdiffPer || 0)}%`
+            : `低${Math.abs(school.rankDiff)}位次/${Math.floor(school.RankdiffPer || 0)}%`}
+        </span>
+      </span>
+    );
+  };
 
   // 处理用户选择变化
   const handleChoiceChange = useCallback((choice: 'choice1' | 'choice2', checked: boolean) => {
@@ -231,20 +322,34 @@ const EducationalDetailPage: React.FC = () => {
     dispatch(toggleGroupExpansion(groupNum));
   };
 
-  // 全部展开或收起
-  const handleToggleAllGroups = () => {
-    const allExpanded = selectedGroups.every((group) => expandedGroups[group]);
-    dispatch(setAllGroupsExpanded(!allExpanded));
-  };
 
-  // 处理搜索关键词变化
-  const handleSearchKeywordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    dispatch(setSearchKeyword(e.target.value));
-  };
+
+
 
   // 处理Tab切换
   const handleTabChange = (tab: 'group' | 'enrollment' | 'employment') => {
     setActiveTab(tab);
+  };
+
+  // 搜索过滤逻辑
+  const filterSchools = (schools: any[]) => {
+    return schools.filter((school) => {
+      // 搜索文本过滤
+      const searchLower = searchText.toLowerCase();
+      const matchesSearch =
+        searchText === '' ||
+        school.schoolName.toLowerCase().includes(searchLower) ||
+        school.majorName?.toLowerCase().includes(searchLower) ||
+        school.majorCode?.toLowerCase().includes(searchLower) ||
+        getCityDisplayInfo(school).toLowerCase().includes(searchLower) ||
+        (school.provinceName && isProvinceMatch(searchText, school.provinceName));
+
+      // 学校性质过滤
+      const matchesNature =
+        selectedSchoolNature === 'all' || school.schoolNature === selectedSchoolNature;
+
+      return matchesSearch && matchesNature;
+    });
   };
 
   // 根据当前Tab对学校进行排序
@@ -263,16 +368,6 @@ const EducationalDetailPage: React.FC = () => {
         // 按位次段分组排列（保持原有逻辑）
         return filteredSchools;
     }
-  };
-
-  // 过滤学校列表的函数
-  const filterSchools = (schools: any[]) => {
-    return schools.filter((school) => {
-      if (!searchKeyword.trim()) {
-        return true;
-      }
-      return school.name.toLowerCase().includes(searchKeyword.toLowerCase());
-    });
   };
 
   // 解析学校特色标签的函数
@@ -330,16 +425,18 @@ const EducationalDetailPage: React.FC = () => {
           dispatch(setAlternativeStatus(alternativeMap));
         }
 
-        // 初始化位次段展开状态
+        // 标记初始化完成
+        setIsInitialized(true);
+        
+        // 初始化位次段展开状态 - 在数据加载完成后设置
         const initialExpandedState: { [key: number]: boolean } = {};
         selectedGroups.forEach((group) => {
           // 默认展开传入的groupNum对应的位次段，其他收起
-          initialExpandedState[group] = group === groupNum;
+          // 确保groupNum是有效数字且不为NaN
+          const shouldExpand = !isNaN(groupNum) && group === groupNum;
+          initialExpandedState[group] = shouldExpand;
         });
         dispatch(setExpandedGroups(initialExpandedState));
-
-        // 标记初始化完成
-        setIsInitialized(true);
       } catch (error) {
         console.error('页面初始化失败:', error);
       }
@@ -347,6 +444,38 @@ const EducationalDetailPage: React.FC = () => {
 
     initializePage();
   }, [majorCode, groupNum, dispatch]);
+
+  // 确保在数据加载完成后设置展开状态
+  useEffect(() => {
+    if (tuijianSchools && tuijianSchools.length > 0 && isInitialized) {
+      // 检查每个位次段是否有数据
+      const groupDataStatus = selectedGroups.map(group => ({
+        group,
+        hasData: tuijianSchools.filter(school => school.group === group).length > 0
+      }));
+      
+      // 找到第一个有数据的位次段
+      const firstGroupWithData = groupDataStatus.find(item => item.hasData)?.group;
+      
+      const initialExpandedState: { [key: number]: boolean } = {};
+      selectedGroups.forEach((group) => {
+        let shouldExpand = false;
+        
+        if (!isNaN(groupNum) && group === groupNum) {
+          // 如果传入的位次段有数据，则展开
+          const targetGroupHasData = groupDataStatus.find(item => item.group === group)?.hasData;
+          shouldExpand = targetGroupHasData || false;
+        } else if (group === firstGroupWithData) {
+          // 如果传入的位次段没有数据，则展开第一个有数据的位次段
+          shouldExpand = !isNaN(groupNum) && !groupDataStatus.find(item => item.group === groupNum)?.hasData;
+        }
+        
+        initialExpandedState[group] = shouldExpand;
+      });
+      
+      dispatch(setExpandedGroups(initialExpandedState));
+    }
+  }, [tuijianSchools, isInitialized, groupNum, dispatch]);
 
   // 检查是否需要显示提示弹窗
   useEffect(() => {
@@ -431,7 +560,7 @@ const EducationalDetailPage: React.FC = () => {
         setCurrentMajorGroupInfo({
           majorGroupId: school.majorGroupId,
           majorGroupName: school.majorGroupName || '',
-          schoolName: school.name,
+          schoolName: school.schoolName,
         });
 
         // 调用专业组API
@@ -458,7 +587,7 @@ const EducationalDetailPage: React.FC = () => {
   };
 
   const handleAlternativeClick = async (school: any) => {
-    const schoolKey = `${school.code}_${majorCode}`;
+    const schoolKey = `${school.schoolCode}_${majorCode}`;
     const currentStatus = alternativeStatus[schoolKey];
 
     // 如果正在加载中，直接返回
@@ -505,13 +634,13 @@ const EducationalDetailPage: React.FC = () => {
         const response = await createMajorAlternative({
           majorCode: majorCode!,
           majorName: majorName!,
-          schoolCode: school.code,
-          schoolName: school.name,
+          schoolCode: school.schoolCode,
+          schoolName: school.schoolName,
           enrollmentRate: school.enrollmentRate,
           employmentRate: school.employmentRate,
           majorGroupId: school.majorGroupId,
           majorGroupName: school.majorGroupName,
-          schoolFeature: school.features || '',
+                        schoolFeature: school.schoolFeature || '',
           historyScore: historyScoreData,
           group: groupNum,
         });
@@ -675,22 +804,94 @@ const EducationalDetailPage: React.FC = () => {
           <div className="space-y-2 p-2">
             {/* 院校信息块，严格还原设计图 */}
             {/* 第一个院校（未选中） */}
-            {/* 搜索框和操作按钮 */}
-            <div className="mb-4 flex gap-3">
-              <input
-                type="text"
-                placeholder="搜索学校名称..."
-                value={searchKeyword}
-                onChange={handleSearchKeywordChange}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
-              <button
-                onClick={handleToggleAllGroups}
-                className="px-5 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
-              >
-                {selectedGroups.every((group) => expandedGroups[group]) ? '全部收起' : '全部展开'}
-              </button>
+            {/* 搜索组件 */}
+            <div className="w-full max-w-xl bg-white rounded-2xl p-4 mb-3">
+              <div className="space-y-3">
+                {/* 搜索框 */}
+                <div className="relative">
+                  <Input
+                    placeholder="搜索学校名称、专业名称、城市、省份等..."
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    prefix={<SearchOutlined className="text-gray-400" />}
+                    suffix={
+                      <InfoCircleOutlined
+                        className="text-blue-500 cursor-pointer"
+                        onClick={() => setShowSearchTips(!showSearchTips)}
+                        title="搜索帮助"
+                      />
+                    }
+                    className="rounded-lg"
+                    allowClear
+                  />
+                  {/* 搜索提示 */}
+                  {showSearchTips && (
+                    <div className="search-tips-container absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg p-3 shadow-lg z-10">
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <div>
+                          💡 <strong>搜索提示：</strong>
+                        </div>
+                        <div>• 可以搜索学校名称（如：清华大学）</div>
+                        <div>• 可以搜索专业名称（如：计算机科学）</div>
+                        <div>• 可以搜索专业代码（如：080901）</div>
+                        <div>• 可以搜索城市名称（如：北京、上海）</div>
+                        <div>• 可以搜索省份名称（如：江苏、浙江、湖南省）</div>
+                        <div>• 支持模糊搜索，输入部分关键词即可</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 学校性质标签 */}
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-sm font-medium text-gray-700 mr-2">学校性质：</span>
+                  <Tag
+                    color={selectedSchoolNature === 'all' ? 'blue' : 'default'}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedSchoolNature('all')}
+                  >
+                    全部
+                  </Tag>
+                  <Tag
+                    color={selectedSchoolNature === 'public' ? 'green' : 'default'}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedSchoolNature('public')}
+                  >
+                    公办
+                  </Tag>
+                  <Tag
+                    color={selectedSchoolNature === 'private' ? 'orange' : 'default'}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedSchoolNature('private')}
+                  >
+                    民办
+                  </Tag>
+                </div>
+              </div>
             </div>
+
+            {/* 搜索结果统计 */}
+            {(searchText || selectedSchoolNature !== 'all') && (
+              <div className="w-full max-w-xl bg-blue-50 rounded-2xl p-3 mb-3">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-blue-600 font-medium">搜索结果：</span>
+                    <span className="text-blue-800">找到 {getSortedSchools(tuijianSchools).length} 所院校</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSearchText('');
+                      setSelectedSchoolNature('all');
+                    }}
+                    className="text-blue-600 hover:text-blue-800 text-sm underline"
+                  >
+                    清除筛选
+                  </button>
+                </div>
+              </div>
+            )}
+
+
 
             {/* 排序Tab */}
             <div className="mb-4 flex gap-2">
@@ -772,34 +973,35 @@ const EducationalDetailPage: React.FC = () => {
                       {/* 该位次段的院校列表 */}
                       {expandedGroups[groupNum] &&
                         filteredGroupSchools.map((school) => {
-                          const schoolKey = `${school.code}_${majorCode}`;
+                          const schoolKey = `${school.schoolCode}_${majorCode}`;
                           const isAlternative =
                             alternativeStatus[schoolKey]?.isAlternative || false;
                           const isLoading = loadingStatus[schoolKey];
 
                           return (
                             <div
-                              key={school.code}
+                              key={school.schoolCode}
                               className="border border-gray-200 mb-4 overflow-hidden bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
                             >
                               {/* 院校头部 */}
                               <div className="p-4">
                                 {/* 学校名称和备选按钮行 */}
                                 <div className="flex items-center justify-between mb-3">
-                                  <div className="flex-1 min-w-0">
+                                  <div className="flex-1 min-w-0 flex items-center space-x-2">
                                     <span
                                       className="text-blue-600 text-lg font-bold cursor-pointer hover:text-blue-700 transition-colors duration-200 truncate block"
-                                      title={school.name}
+                                      title={school.schoolName}
                                       onClick={() => {
                                         navigator(
-                                          `/major/schooldetail?schoolCode=${school.code}&schoolname=${school.name}`
+                                          `/major/schooldetail?schoolCode=${school.schoolCode}&schoolname=${school.schoolName}`
                                         );
                                       }}
                                     >
-                                      {school.name.length > 10
-                                        ? `${school.name.substring(0, 10)}...`
-                                        : school.name}
+                                      {school.schoolName.length > 10
+                                        ? `${school.schoolName.substring(0, 10)}...`
+                                        : school.schoolName}
                                     </span>
+                                    {getRankdiffDom(school)}
                                   </div>
                                   <button
                                     className={`ml-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm ${
@@ -819,23 +1021,23 @@ const EducationalDetailPage: React.FC = () => {
                                 {/* 学校标签行 */}
                                 <div className="flex flex-wrap gap-2 mb-3">
                                   {/* 学校特色标签 */}
-                                  {parseSchoolFeatures(school.features).map((feature, index) => (
+                                  {parseSchoolFeatures(school.schoolFeature).map((feature, index) => (
                                     <span
-                                      key={`${school.name}-feature-${index}`}
+                                      key={`${school.schoolName}-feature-${index}`}
                                       className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
                                     >
                                       {feature}
                                     </span>
                                   ))}
                                   <span
-                                    key={school.name + '公办'}
+                                    key={school.schoolName + '公办'}
                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200"
                                   >
-                                    {school.nature === 'public' ? '公办' : '民办'}
+                                    {school.schoolNature === 'public' ? '公办' : '民办'}
                                   </span>
                                   {school.enrollmentRate !== 0 && (
                                     <span
-                                      key={school.name + '升学率'}
+                                      key={school.schoolName + '升学率'}
                                       className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
                                     >
                                       升学率{school.enrollmentRate}%
@@ -843,7 +1045,7 @@ const EducationalDetailPage: React.FC = () => {
                                   )}
                                   {school.level !== 'zhuan' && (
                                     <span
-                                      key={school.name + '保研率'}
+                                      key={school.schoolName + '保研率'}
                                       className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200"
                                     >
                                       保研率{school.enrollmentRate}%
@@ -851,7 +1053,7 @@ const EducationalDetailPage: React.FC = () => {
                                   )}
                                   {school.majorGroupId && (
                                     <button
-                                      key={school.name + '专业组'}
+                                      key={school.schoolName + '专业组'}
                                       onClick={() => handleViewMajorGroup(school)}
                                       className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200 transition-colors cursor-pointer"
                                     >
@@ -863,14 +1065,14 @@ const EducationalDetailPage: React.FC = () => {
                                     school.historyScores.length > 0 &&
                                     school.historyScores[0].studyPeriod && (
                                       <span
-                                        key={school.name + '学制'}
+                                        key={school.schoolName + '学制'}
                                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200"
                                       >
                                         学制{school.historyScores?.[0]?.studyPeriod}年
                                       </span>
                                     )}
                                   <span
-                                    key={school.name + '校区'}
+                                    key={school.schoolName + '校区'}
                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200"
                                   >
                                     {school.cityName}
@@ -901,33 +1103,34 @@ const EducationalDetailPage: React.FC = () => {
                   return (
                     <div className="space-y-4">
                       {sortedSchools.map((school) => {
-                        const schoolKey = `${school.code}_${majorCode}`;
+                        const schoolKey = `${school.schoolCode}_${majorCode}`;
                         const isAlternative = alternativeStatus[schoolKey]?.isAlternative || false;
                         const isLoading = loadingStatus[schoolKey];
 
                         return (
                           <div
-                            key={school.code}
+                            key={school.schoolCode}
                             className="border border-gray-200 overflow-hidden bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
                           >
                             {/* 院校头部 */}
                             <div className="p-4">
                               {/* 学校名称和备选按钮行 */}
                               <div className="flex items-center justify-between mb-3">
-                                <div className="flex-1 min-w-0">
+                                <div className="flex-1 min-w-0 flex items-center space-x-2">
                                   <span
                                     className="text-blue-600 text-lg font-bold cursor-pointer hover:text-blue-700 transition-colors duration-200 truncate block"
-                                    title={school.name}
+                                    title={school.schoolName}
                                     onClick={() => {
                                       navigator(
-                                        `/major/schooldetail?schoolCode=${school.code}&schoolname=${school.name}`
+                                        `/major/schooldetail?schoolCode=${school.schoolCode}&schoolname=${school.schoolName}`
                                       );
                                     }}
                                   >
-                                    {school.name.length > 10
-                                      ? `${school.name.substring(0, 10)}...`
-                                      : school.name}
+                                    {school.schoolName.length > 10
+                                      ? `${school.schoolName.substring(0, 10)}...`
+                                      : school.schoolName}
                                   </span>
+                                  {getRankdiffDom(school)}
                                 </div>
                                 <button
                                   className={`ml-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm ${
@@ -948,7 +1151,7 @@ const EducationalDetailPage: React.FC = () => {
                               <div className="flex flex-wrap gap-2 mb-3">
                                 {school.enrollmentRate !== 0 && (
                                   <span
-                                    key={school.name + '升学率'}
+                                    key={school.schoolName + '升学率'}
                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
                                   >
                                     升学率{school.enrollmentRate}%
@@ -956,7 +1159,7 @@ const EducationalDetailPage: React.FC = () => {
                                 )}
                                 {school.employmentRate !== 0 && (
                                   <span
-                                    key={school.name + '就业率'}
+                                    key={school.schoolName + '就业率'}
                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200"
                                   >
                                     就业率{school.employmentRate}%
@@ -964,40 +1167,40 @@ const EducationalDetailPage: React.FC = () => {
                                 )}
                                 {school.level !== 'zhuan' && (
                                   <span
-                                    key={school.name + '保研率'}
+                                    key={school.schoolName + '保研率'}
                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200"
                                   >
                                     保研率{school.enrollmentRate}%
                                   </span>
                                 )}
                                 <span
-                                  key={school.name + '专业组'}
+                                  key={school.schoolName + '专业组'}
                                   className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
                                 >
                                   039专业组
                                 </span>
                                 <span
-                                  key={school.name + '学制'}
+                                  key={school.schoolName + '学制'}
                                   className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200"
                                 >
                                   学制4年
                                 </span>
                                 <span
-                                  key={school.name + '学费'}
+                                  key={school.schoolName + '学费'}
                                   className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200"
                                 >
                                   学费5800元/年
                                 </span>
                                 <span
-                                  key={school.name + '公办'}
+                                  key={school.schoolName + '公办'}
                                   className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200"
                                 >
                                   公办
                                 </span>
                                 {/* 学校特色标签 */}
-                                {parseSchoolFeatures(school.features).map((feature, index) => (
+                                {parseSchoolFeatures(school.schoolFeature).map((feature, index) => (
                                   <span
-                                    key={`${school.name}-feature-${index}`}
+                                    key={`${school.schoolName}-feature-${index}`}
                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
                                   >
                                     {feature}
@@ -1008,7 +1211,7 @@ const EducationalDetailPage: React.FC = () => {
                                   school.historyScores.length > 0 &&
                                   school.historyScores[0].studyPeriod && (
                                     <span
-                                      key={school.name + '学制'}
+                                      key={school.schoolName + '学制'}
                                       className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200"
                                     >
                                       学制{school.historyScores[0].studyPeriod}

@@ -3,13 +3,13 @@
  * 只包含学校基本信息
  */
 export interface SchoolViewModel {
-  code: string;
+  schoolCode: string;
   name: string;
-  nature: string;
+  schoolNature: string;
   level: string;
   belong: string;
   categories: string;
-  features: string;
+  schoolFeature: string;
   provinceName: string;
   cityName: string;
   rankingOfRK: number | null;
@@ -23,13 +23,13 @@ export interface SchoolViewModel {
  */
 export function toSchoolViewModel(data: any): SchoolViewModel {
   return {
-    code: data.code,
+    schoolCode: data.code,
     name: data.name,
-    nature: data.nature,
+    schoolNature: data.nature,
     level: data.level,
     belong: data.belong,
     categories: data.categories,
-    features: data.features,
+    schoolFeature: data.features,
     provinceName: data.provinceName,
     cityName: data.cityName,
     rankingOfRK: data.rankingOfRK || null,
