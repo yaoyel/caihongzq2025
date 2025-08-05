@@ -18,6 +18,7 @@ interface SchoolWithRank {
   averageRank?: number;
   rankDiffPercentage?: number;
   group?: number;
+  isHighRange?: boolean; // 新增字段：标识是否为较高范围（原group=5的情况）
   [key: string]: any;
 }
 
@@ -288,26 +289,24 @@ export class ConfigController {
           
           // 确定分组（基于平均位次，用于sortByMajor=true时的排序）
           let group = 0; // 默认组（无分数或差异过大）
+          let isHighRange = false; // 新增字段：标识是否为较高范围
+          
           if (avgRank > 0) { // 只对有位次的学校进行分组
             // 30%到100%范围使用2024年位次与用户位次比较
             if (rank2024 && rank2024 > 0 && rank && rank > 0) {
               const rankDiffPercentage2024 = ((rank-rank2024) / rank2024) * 100;
               if (rankDiffPercentage2024 > 30 && rankDiffPercentage2024 <= 100) {
-                group = 5; // 30%到100%（较高范围）- 基于2024年位次
+                isHighRange = true; // 30%到100%（较高范围）- 基于2024年位次
               }
             }
             
-            // 其他分组使用平均位次比较
-            if (group === 0) { // 如果还没有分组，继续使用平均位次判断
-              if (rankDiffPercentage > 5 && rankDiffPercentage <= 30) {
-                group = 1; // 5%到30%（稍高）
-              } else if (rankDiffPercentage >= -10 && rankDiffPercentage <= 5) {
-                group = 2; // -10%到5%（最匹配）
-              } else if (rankDiffPercentage >= -30 && rankDiffPercentage < -10) {
-                group = 3; // -30%到-10%（稍低）
-              } else if (rankDiffPercentage >= -100 && rankDiffPercentage < -30) {
-                group = 4; // -100%到-30%（较低范围）- 新增
-              }
+            // 其他分组使用平均位次比较（不再受isHighRange影响）
+            if (rankDiffPercentage > 5 && rankDiffPercentage <= 30) {
+              group = 1; // 5%到30%（稍高）
+            } else if (rankDiffPercentage >= -10 && rankDiffPercentage <= 5) {
+              group = 2; // -10%到5%（最匹配）
+            } else if (rankDiffPercentage >= -30 && rankDiffPercentage < -10) {
+              group = 3; // -30%到-10%（稍低）
             }
           }
           
@@ -320,7 +319,8 @@ export class ConfigController {
             rankDiff,
             rankDiffPer,
             rank2024,
-            group
+            group,
+            isHighRange
           };
         });
         
@@ -356,13 +356,13 @@ export class ConfigController {
           
           // 对每个专业内的学校进行排序
           const sortedSchools = major.schools.sort((a: any, b: any) => {
-            // 首先按 group 排序（group 5 排在前面）
+            // 首先按 group 排序
             if (a.group !== b.group) {
               return (b.group || 0) - (a.group || 0);
             }
             
-            // 对于 group 5 的学校，优先显示国家级特征的学校
-            if (a.group === 5 && b.group === 5) {
+            // 对于 isHighRange 的学校，优先显示国家级特征的学校
+            if (a.isHighRange && b.isHighRange) {
               const aIsValid = a.features && (
                 a.features.includes('国家级示范') || 
                 a.features.includes('国家级骨干')
@@ -421,6 +421,7 @@ export class ConfigController {
                 rankDiff: school.rankDiff,
                 rankDiffPer: school.rankDiffPer,
                 group: school.group,
+                isHighRange: school.isHighRange,
                 historyScores: school.historyScores,
                 schoolFeature: school.features,
                 schoolType: school.schoolType,
@@ -482,13 +483,13 @@ export class ConfigController {
             return a.isTopFive ? -1 : 1;
           }
 
-          // 对于置顶的学校，筛选 group 为 5 且包含国家级特征的学校
+          // 对于置顶的学校，筛选 isHighRange 且包含国家级特征的学校
           if (a.isTopFive && b.isTopFive) {
-            const aIsValid = a.group === 5 && a.features && (
+            const aIsValid = a.isHighRange && a.features && (
               a.features.includes('国家级示范') || 
               a.features.includes('国家级骨干')
             );
-            const bIsValid = b.group === 5 && b.features && (
+            const bIsValid = b.isHighRange && b.features && (
               b.features.includes('国家级示范') || 
               b.features.includes('国家级骨干')
             );
@@ -579,7 +580,7 @@ export class ConfigController {
         // 选出置顶的学校和非置顶的学校
         const topFiveSchools = sortedAllSchools.filter(school => 
           school.isTopFive && 
-          school.group === 5 && 
+          school.isHighRange && 
           school.features && (
             school.features.includes('国家级示范') || 
             school.features.includes('国家级骨干')
@@ -606,6 +607,7 @@ export class ConfigController {
           rankDiff: school.rankDiff,
           rankDiffPer: school.rankDiffPer,
           group: school.group,
+          isHighRange: school.isHighRange,
           historyScores: school.historyScores,
           schoolFeature: school.features,
           schoolType: school.schoolType,
