@@ -23,6 +23,7 @@ interface SchoolMajor {
   isFirstClass: boolean;
   studyPeriod: string;
   score?: number;
+  developmentPotential?: number;
   averageRank?: number;
   rankDiffPercentage?: number;
   group?: number;
@@ -86,10 +87,13 @@ export class SchoolController {
       school.majors = school.majors.map((major: SchoolMajor) => {
         // 查找对应的排名信息
         const rankInfo = majorRank.find(rank => rank.majorcode === major.code);
+        // 查找对应的专业得分信息
+        const majorScore = majorScores.find(score => score.majorCode === major.code);
         
         return {
           ...major,
-          score: majorScores.find(score => score.majorCode === major.code)?.score || 0,
+          score: majorScore?.score || 0,
+          developmentPotential: majorScore?.developmentPotential || 0,
           // 添加排名相关信息
           averageRank: rankInfo?.averageRank || 0,
           rankDiffPercentage: rankInfo?.rankDiffPercentage || 0,
