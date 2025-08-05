@@ -1624,7 +1624,8 @@ const EducationalPage: React.FC = () => {
                                                   : schoolGroup.schoolName}
                                               </span>
                                               {/* 位次差显示 - 在入选志愿和备选志愿tab的按专业子tab中显示 */}
-                                              {(activeTab === 'selected' || activeTab === 'alternatives') &&
+                                              {(activeTab === 'selected' ||
+                                                activeTab === 'alternatives') &&
                                                 (sortTab as any) === 'major' &&
                                                 schoolGroup.majors[0]?.Rankdiff !== undefined &&
                                                 getRankdiffDom(schoolGroup.majors[0])}
@@ -1721,7 +1722,7 @@ const EducationalPage: React.FC = () => {
                                                     升学率{item.enrollmentRate}%
                                                   </span>
                                                 )}
-                                                {item.majorGroupName&& (
+                                                {item.majorGroupName && (
                                                   <button
                                                     key={item.schoolName + '专业组'}
                                                     onClick={() => handleViewMajorGroup(item)}
@@ -1882,7 +1883,7 @@ const EducationalPage: React.FC = () => {
                                               升学率{item.enrollmentRate}%
                                             </span>
                                           )}
-                                          { item.majorGroupName && (
+                                          {item.majorGroupName && (
                                             <button
                                               key={item.schoolName + '专业组'}
                                               onClick={() => handleViewMajorGroup(item)}
@@ -2098,7 +2099,7 @@ const EducationalPage: React.FC = () => {
                                   </span>
                                 )}
 
-                                {item.majorGroupName&& (
+                                {item.majorGroupName && (
                                   <button
                                     key={item.schoolName + '专业组'}
                                     onClick={() => handleViewMajorGroup(item)}
@@ -2135,7 +2136,11 @@ const EducationalPage: React.FC = () => {
                                     >
                                       上年较您
                                       <span
-                                        className={item.Rankdiff > 0 ? 'text-red-600 bg-red-100' : 'text-green-600 bg-green-100'}
+                                        className={
+                                          item.Rankdiff > 0
+                                            ? 'text-red-600 bg-red-100'
+                                            : 'text-green-600 bg-green-100'
+                                        }
                                       >
                                         {item.Rankdiff > 0
                                           ? `高${item.Rankdiff}位次/${Math.floor(item.RankdiffPer || 0)}%`
@@ -2396,7 +2401,7 @@ const EducationalPage: React.FC = () => {
                     <h5 className="font-semibold text-gray-900 mb-2">
                       4. 如果被调剂至组内其他专业，是否可接受？
                     </h5>
-                    {itemToSelect.majorGroupName && (
+                    {itemToSelect.majorGroupName ? (
                       <button
                         onClick={() => handleViewMajorGroup()}
                         className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
@@ -2404,6 +2409,8 @@ const EducationalPage: React.FC = () => {
                         <span className="mr-1">查看专业组</span>
                         <span className="text-xs">{'>>'}</span>
                       </button>
+                    ) : (
+                      '请自行查询并确认'
                     )}
                   </div>
                 </div>

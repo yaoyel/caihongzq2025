@@ -618,7 +618,7 @@ const AiVolunteerPage: React.FC = () => {
                   majorCode: major.code || '',
                   majorName: major.name || '',
                   schoolCode: school.schoolCode || '',
-                  schoolName: school.name || '',
+                  schoolName: school.schoolName || '',
                   priority: majorIndex * 1000 + schoolIndex, // 使用组合索引作为优先级
                   createdAt: new Date().toISOString(),
                   score: 0,
