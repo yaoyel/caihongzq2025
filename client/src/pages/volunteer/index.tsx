@@ -2583,13 +2583,19 @@ const EducationalPage: React.FC = () => {
                     <tr>
                       <th
                         className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
-                        style={{ width: '20%' }}
+                        style={{ width: '15%' }}
                       >
                         专业名称
                       </th>
                       <th
                         className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
-                        style={{ width: '12%' }}
+                        style={{ width: '15%' }}
+                      >
+                        专业说明
+                      </th>
+                      <th
+                        className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                        style={{ width: '10%' }}
                       >
                         专业代码
                       </th>
@@ -2651,6 +2657,12 @@ const EducationalPage: React.FC = () => {
                         </td>
                         <td
                           className="px-3 py-3 text-sm text-gray-700 truncate"
+                          title={item.majorNameDetail}
+                        >
+                          {item.majorNameDetail}
+                        </td>
+                        <td
+                          className="px-3 py-3 text-sm text-gray-700 truncate"
                           title={item.majorCode}
                         >
                           {item.majorCode}
@@ -2671,7 +2683,7 @@ const EducationalPage: React.FC = () => {
                           className="px-3 py-3 text-sm text-gray-700 truncate"
                           title={`${item.studyPeriod}年`}
                         >
-                          {item.studyPeriod}年
+                          {item.studyPeriod}
                         </td>
                         <td
                           className="px-3 py-3 text-sm text-gray-700 truncate"

@@ -5,10 +5,19 @@ import { SearchOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import BottomNav from '../comm/bottom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getMajorDetail } from '../../config';
-import { createMajorAlternative, getMajorAlternatives, cancelAlternative, getMajorGroup } from '../../config/volunteer';
+import {
+  createMajorAlternative,
+  getMajorAlternatives,
+  cancelAlternative,
+  getMajorGroup,
+} from '../../config/volunteer';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
-import { setAlternativeStatus, updateAlternativeStatus, updateLoadingStatus } from '../../store/slices/intentionDetailSlice';
+import {
+  setAlternativeStatus,
+  updateAlternativeStatus,
+  updateLoadingStatus,
+} from '../../store/slices/intentionDetailSlice';
 
 /**
  * 主页面组件
@@ -19,7 +28,7 @@ const MajorSchools: React.FC = () => {
   const majorName = searchParams.get('majorName');
   const type = searchParams.get('type');
   const [loading, setLoading] = useState(true); // 添加加载状态
-  
+
   console.log(majorCode, majorName, type, 'majorCode, majorName, type');
   //+5--5
   const [tuijianSchools1, setTuijianSchools1] = useState([]);
@@ -46,32 +55,34 @@ const MajorSchools: React.FC = () => {
 
   // 添加 Redux 相关
   const dispatch = useDispatch();
-  const { alternativeStatus, loadingStatus } = useSelector((state: RootState) => state.intentionDetail);
+  const { alternativeStatus, loadingStatus } = useSelector(
+    (state: RootState) => state.intentionDetail
+  );
 
   // 智能省份搜索函数
   const isProvinceMatch = (searchText: string, provinceName: string): boolean => {
     if (!searchText || !provinceName) return false;
-    
+
     const searchLower = searchText.toLowerCase();
     const provinceLower = provinceName.toLowerCase();
-    
+
     // 直接匹配
     if (provinceLower.includes(searchLower) || searchLower.includes(provinceLower)) {
       return true;
     }
-    
+
     // 处理带"省"字的搜索
     if (searchLower.endsWith('省')) {
       const searchWithoutProvince = searchLower.slice(0, -1); // 去掉"省"字
       return provinceLower.includes(searchWithoutProvince);
     }
-    
+
     // 处理带"市"字的搜索
     if (searchLower.endsWith('市')) {
       const searchWithoutCity = searchLower.slice(0, -1); // 去掉"市"字
       return provinceLower.includes(searchWithoutCity);
     }
-    
+
     return false;
   };
 
@@ -110,10 +121,12 @@ const MajorSchools: React.FC = () => {
   // 计算总项目数
   const getTotalItems = useCallback(() => {
     const filtered = getFilteredSchools();
-    return filtered.tuijianSchools1.length + 
-           filtered.tuijianSchools2.length + 
-           filtered.tuijianSchools3.length + 
-           filtered.tuijianSchools4.length;
+    return (
+      filtered.tuijianSchools1.length +
+      filtered.tuijianSchools2.length +
+      filtered.tuijianSchools3.length +
+      filtered.tuijianSchools4.length
+    );
   }, [getFilteredSchools]);
 
   // 点击外部关闭搜索提示
@@ -149,10 +162,18 @@ const MajorSchools: React.FC = () => {
         if (detailResponse && (detailResponse as any).code === 200) {
           if ((detailResponse as any).data) {
             if ((detailResponse as any).data.schools) {
-              setTuijianSchools1((detailResponse as any).data.schools.filter((s: any) => s.group === 2));
-              setTuijianSchools2((detailResponse as any).data.schools.filter((s: any) => s.group === 3));
-              setTuijianSchools3((detailResponse as any).data.schools.filter((s: any) => s.group === 1));
-              setTuijianSchools4((detailResponse as any).data.schools.filter((s: any) => s.group === 0));
+              setTuijianSchools1(
+                (detailResponse as any).data.schools.filter((s: any) => s.group === 2)
+              );
+              setTuijianSchools2(
+                (detailResponse as any).data.schools.filter((s: any) => s.group === 3)
+              );
+              setTuijianSchools3(
+                (detailResponse as any).data.schools.filter((s: any) => s.group === 1)
+              );
+              setTuijianSchools4(
+                (detailResponse as any).data.schools.filter((s: any) => s.group === 0)
+              );
             }
           }
         }
@@ -309,6 +330,27 @@ const MajorSchools: React.FC = () => {
       .filter((tag) => tag.length > 0);
   };
 
+  // 获取位次差信息显示组件
+  const getRankdiffDom = (school: any) => {
+    // 如果位次差为0或不存在，则不显示
+    if (!school.rankDiff || school.rankDiff === 0) {
+      return null;
+    }
+
+    return (
+      <span className="px-2 py-0.5 rounded text-xs font-bold">
+        上年较您
+        <span
+          className={school.rankDiff > 0 ? 'text-red-600 bg-red-100' : 'text-green-600 bg-green-100'}
+        >
+          {school.rankDiff > 0
+            ? `高${school.rankDiff}位次/${Math.floor(school.rankDiffPer || 0)}%`
+            : `低${Math.abs(school.rankDiff)}位次/${Math.floor(school.rankDiffPer || 0)}%`}
+        </span>
+      </span>
+    );
+  };
+
   const getHistoryScore = (historyScores: any) => {
     let htmlTemp = '';
     if (historyScores && historyScores.length > 0) {
@@ -317,7 +359,7 @@ const MajorSchools: React.FC = () => {
         if (index > 0) {
           htmlTemp += `<div class="border-t border-gray-200 my-4"></div>`;
         }
-        
+
         // 显示备注信息
         if (item.remark) {
           htmlTemp += `
@@ -403,8 +445,8 @@ const MajorSchools: React.FC = () => {
     const isAlternative = alternativeStatus[schoolKey]?.isAlternative || false;
     const isLoading = loadingStatus[schoolKey];
     return (
-              <div
-          key={school.schoolCode}
+      <div
+        key={school.schoolCode}
         className="border border-gray-200 mb-4 overflow-hidden bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
       >
         {/* 院校头部 */}
@@ -426,19 +468,22 @@ const MajorSchools: React.FC = () => {
                   : school.schoolName}
               </span>
             </div>
-            <button
-              className={`ml-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm ${
-                isAlternative
-                  ? 'bg-red-500 text-white hover:bg-red-600 hover:shadow-md'
-                  : isLoading
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-green-500 text-white hover:bg-green-600 hover:shadow-md'
-              }`}
-              onClick={() => handleAlternativeClick(school)}
-              disabled={isLoading}
-            >
-              {isLoading ? '处理中...' : isAlternative ? '移除' : '备选'}
-            </button>
+            <div className="flex items-center space-x-2">
+              {getRankdiffDom(school)}
+              <button
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm ${
+                  isAlternative
+                    ? 'bg-red-500 text-white hover:bg-red-600 hover:shadow-md'
+                    : isLoading
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-green-500 text-white hover:bg-green-600 hover:shadow-md'
+                }`}
+                onClick={() => handleAlternativeClick(school)}
+                disabled={isLoading}
+              >
+                {isLoading ? '处理中...' : isAlternative ? '移除' : '备选'}
+              </button>
+            </div>
           </div>
 
           {/* 学校标签行 */}
@@ -474,15 +519,7 @@ const MajorSchools: React.FC = () => {
                 保研率{school.enrollmentRate}%
               </span>
             )}
-            {school.majorGroupId && (
-              <button
-                key={school.schoolName + '专业组'}
-                onClick={() => handleViewMajorGroup(school)}
-                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200 transition-colors cursor-pointer"
-              >
-                {school.majorGroupName}专业组
-              </button>
-            )}
+
             {/* 学制标签 */}
             {school.historyScores &&
               school.historyScores.length > 0 &&
@@ -500,6 +537,19 @@ const MajorSchools: React.FC = () => {
             >
               {school.cityName || school.provinceName}
             </span>
+
+            {school.majorGroupName && (
+              <button
+                key={school.schoolName + '专业组'}
+                onClick={() => handleViewMajorGroup(school)}
+                className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-purple-500 text-white border-2 border-purple-400 hover:bg-purple-600 hover:border-purple-500 hover:shadow-md transition-all duration-200 cursor-pointer shadow-sm"
+                title="点击查看专业组详情"
+              >
+                <span className="mr-1">📋</span>
+                {school.majorGroupName}专业组
+                <span className="ml-1 text-xs">▶</span>
+              </button>
+            )}
           </div>
         </div>
         {/* 表格内容 */}
@@ -535,11 +585,8 @@ const MajorSchools: React.FC = () => {
 
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 40 }}>
-      
       <Top title={`${majorCode ?? ''}${majorName ?? ''}`} onBack={() => navigator(-1)} />
-      
 
-      
       <div className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3 min-h-screen">
         {/* 搜索组件 */}
         <div className="w-full max-w-xl bg-white rounded-2xl p-4 mb-3">
@@ -644,23 +691,36 @@ const MajorSchools: React.FC = () => {
                   <>
                     <div className="text-lg font-bold mb-2 flex items-center">
                       <span className="w-1.5 h-4 bg-blue-500 rounded-sm mr-2 inline-block" />
-                      全部招生院校 {filtered.tuijianSchools1.length + filtered.tuijianSchools2.length + filtered.tuijianSchools3.length + filtered.tuijianSchools4.length}所
+                      全部招生院校{' '}
+                      {filtered.tuijianSchools1.length +
+                        filtered.tuijianSchools2.length +
+                        filtered.tuijianSchools3.length +
+                        filtered.tuijianSchools4.length}
+                      所
                     </div>
 
                     {filtered.tuijianSchools1.length > 0 &&
-                      renderSchoolTop('比您高考分低10%到高5%位次段院校 (' + filtered.tuijianSchools1.length + '所)')}
+                      renderSchoolTop(
+                        '比您高考分低10%到高5%位次段院校 (' +
+                          filtered.tuijianSchools1.length +
+                          '所)'
+                      )}
                     {/* 院校招生信息列表 */}
                     <div className="space-y-4">
                       {filtered.tuijianSchools1.map((school) => renderSchool(school))}
                     </div>
                     {filtered.tuijianSchools2.length > 0 &&
-                      renderSchoolTop('比您高考分低30%到10%位次段院校 (' + filtered.tuijianSchools2.length + '所)')}
+                      renderSchoolTop(
+                        '比您高考分低30%到10%位次段院校 (' + filtered.tuijianSchools2.length + '所)'
+                      )}
                     {/* 院校招生信息列表 */}
                     <div className="space-y-4">
                       {filtered.tuijianSchools2.map((school) => renderSchool(school))}
                     </div>
                     {filtered.tuijianSchools3.length > 0 &&
-                      renderSchoolTop('比您高考分高5%到30%位次段院校(' + filtered.tuijianSchools3.length + '所)')}
+                      renderSchoolTop(
+                        '比您高考分高5%到30%位次段院校(' + filtered.tuijianSchools3.length + '所)'
+                      )}
                     {/* 院校招生信息列表 */}
                     <div className="space-y-4">
                       {filtered.tuijianSchools3.map((school) => renderSchool(school))}
