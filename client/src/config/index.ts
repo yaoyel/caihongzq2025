@@ -300,19 +300,52 @@ export const getScalesByElementsWithAnswers = async (
 
 // 院校信息接口类型定义
 interface SchoolDetail {
-  id: string;
+  schoolCode: string;
   name: string;
-  type: string;
-  location: string;
-  description: string;
-  features: string[];
-  admissionRequirements: string;
-  website?: string;
+  schoolNature: string;
+  level: string;
+  belong: string;
+  categories: string[];
+  schoolFeature: string;
+  provinceName: string;
+  cityName: string;
+  rankingOfRK?: number;
+  rankingOfXYH?: number;
+  schoolDetail?: {
+    code: string;
+    briefComment: string;
+    keyTags: string;
+    historyIntro: string;
+    advantageMajors: string;
+    nationalLabs: string;
+    provincialLabs: string;
+    seniorRecommendations: string;
+    disadvantages: string;
+    dataSource: string;
+  };
+  majors?: Array<{
+    id: number;
+    name: string;
+    code: string;
+    eduLevel: string;
+    level: number;
+    parentId: number;
+    isNationalFeature: boolean;
+    isProvinceFeature: boolean;
+    isImportant: boolean;
+    isFirstClass: boolean;
+    studyPeriod: string;
+    score?: number;
+    averageRank?: number;
+    rankDiffPercentage?: number;
+    group?: number;
+    historyScore?: any;
+  }>;
 }
 
 interface SchoolDetailResponse {
-  success: boolean;
-  message: string;
+  code: number;
+  message?: string;
   data: SchoolDetail;
 }
 

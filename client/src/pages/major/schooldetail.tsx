@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import Top from '../comm/top';
 import { Card } from 'antd';
@@ -13,7 +12,7 @@ const SchoolDetail: React.FC = () => {
   const schoolCode = searchParams.get('schoolCode');
   const schoolName = searchParams.get('schoolname');
   const navigator = useNavigate();
-  const [schoolDetailInfo, setSchoolDetail] = useState(null);
+  const [schoolDetailInfo, setSchoolDetail] = useState<any>(null);
   const sectionTitleStyle: React.CSSProperties = {
     background: '#2d6cf6',
     color: '#ffffff',
@@ -43,15 +42,20 @@ const SchoolDetail: React.FC = () => {
       //  setSchoolLoading(true);
       try {
         const response = await getSchoolDetail(schoolCode);
-        if (response && response.code === 200) {
+        console.log('学校详情响应:', response);
+        
+        // 服务器端现在返回标准格式 { code: 200, data: {...} }
+        if (response && response.code === 200 && response.data) {
           setSchoolDetail(response.data);
-          console.log(response.data);
-          if (response.data.majors) {
-            setTuijianSchools1(response.data.majors.filter((s) => s.group === 2));
-            setTuijianSchools2(response.data.majors.filter((s) => s.group === 3));
-            setTuijianSchools3(response.data.majors.filter((s) => s.group === 1));
-            setTuijianSchools4(response.data.majors.filter((s) => s.group === 0));
+          console.log('学校详情数据:', response.data);
+          if (response.data.majors && Array.isArray(response.data.majors)) {
+            setTuijianSchools1(response.data.majors.filter((s: any) => s.group === 2));
+            setTuijianSchools2(response.data.majors.filter((s: any) => s.group === 3));
+            setTuijianSchools3(response.data.majors.filter((s: any) => s.group === 1));
+            setTuijianSchools4(response.data.majors.filter((s: any) => s.group === 0));
           }
+        } else {
+          console.error('未获取到有效的学校数据:', response);
         }
       } catch (error) {
         console.error('获取院校信息失败:', error);
@@ -59,7 +63,9 @@ const SchoolDetail: React.FC = () => {
         // setSchoolLoading(false);
       }
     };
-    getSchools(schoolCode);
+    if (schoolCode) {
+      getSchools(schoolCode);
+    }
   }, [schoolCode]);
 
   const getSchoolHtml = (schoolBrief: string) => {
@@ -68,7 +74,7 @@ const SchoolDetail: React.FC = () => {
       try {
         const seniorTalkList = JSON.parse(schoolBrief);
         let html = '';
-        for (const [key, value] of Object.entries(seniorTalkList)) {
+        for (const [, value] of Object.entries(seniorTalkList)) {
           html += `<p class="text-gray-700 leading-relaxed mb-4">${value}</p>`;
         }
         return html;
@@ -122,7 +128,7 @@ const SchoolDetail: React.FC = () => {
 
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 40 }}>
-      <Top title={schoolName} onBack={() => navigator(-1)} />
+      <Top title={schoolName || ''} onBack={() => navigator(-1)} />
       <div className="bg-[#f7f7fa] flex flex-col justify-center items-start p-3">
         {/* 页面主卡片 */}
         <Card className="rounded-2xl w-full max-w-xl shadow" bodyStyle={{ padding: '24px 16px' }}>
@@ -132,15 +138,15 @@ const SchoolDetail: React.FC = () => {
           </div>
           <div className="border border-solid border-[#e5e6eb] p-3">
             {/* 专业一览 */}
-            {getDisadvantages(schoolDetailInfo?.schoolDetail?.briefComment, '院校简介')}
+            {getDisadvantages(schoolDetailInfo?.schoolDetail?.briefComment || '', '院校简介')}
             {/* 特色专业 */}
             {getFeatureMajors()}
             {/* 院校槽点 */}
-            {getDisadvantages(schoolDetailInfo?.schoolDetail?.disadvantages, '院校槽点')}
+            {getDisadvantages(schoolDetailInfo?.schoolDetail?.disadvantages || '', '院校槽点')}
             {/* 历史沿革 */}
-            {getDisadvantages(schoolDetailInfo?.schoolDetail?.historyIntro, '历史沿革')}
+            {getDisadvantages(schoolDetailInfo?.schoolDetail?.historyIntro || '', '历史沿革')}
             {/* 推荐理由 */}
-            {getDisadvantages(schoolDetailInfo?.schoolDetail?.seniorRecommendations, '推荐理由')}
+            {getDisadvantages(schoolDetailInfo?.schoolDetail?.seniorRecommendations || '', '推荐理由')}
             {/* 热爱专业 */}
             <div style={{ marginBottom: 24 }}>
               <div style={sectionTitleStyle}>热爱专业</div>

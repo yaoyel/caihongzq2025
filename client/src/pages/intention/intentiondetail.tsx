@@ -156,7 +156,6 @@ const EducationalDetailPage: React.FC = () => {
 
   // 位次差显示函数
   const getRankdiffDom = (school: any) => {
-    console.log(school);
     // 如果位次差为0或不存在，则不显示
     if (!school.rankDiff || school.rankDiff === 0) {
       return null;
@@ -259,8 +258,8 @@ const EducationalDetailPage: React.FC = () => {
     }
 
     // 使用requestAnimationFrame进行节流
-    if (!handleScroll.ticking) {
-      handleScroll.ticking = true;
+    if (!(handleScroll as any).ticking) {
+      (handleScroll as any).ticking = true;
       requestAnimationFrame(() => {
         // 只有当滚动位置真正改变时才保存
         if (scrollContainerRef.current && isInitialized) {
@@ -281,7 +280,7 @@ const EducationalDetailPage: React.FC = () => {
             }, 200);
           }
         }
-        handleScroll.ticking = false;
+        (handleScroll as any).ticking = false;
       });
     }
 
@@ -292,7 +291,7 @@ const EducationalDetailPage: React.FC = () => {
   }, [saveScrollPositionToRedux, scrollPositions, getScrollStorageKey, isInitialized]);
 
   // 初始化ticking属性
-  handleScroll.ticking = false;
+  (handleScroll as any).ticking = false;
 
   // 滚动到指定位次段的函数
   const scrollToGroup = useCallback((targetGroupNum: number) => {
@@ -1030,14 +1029,14 @@ const EducationalDetailPage: React.FC = () => {
                                     </span>
                                   ))}
                                   <span
-                                    key={school.schoolName + '公办'}
+                                    key={`${school.schoolCode}-公办-1`}
                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200"
                                   >
                                     {school.schoolNature === 'public' ? '公办' : '民办'}
                                   </span>
                                   {school.enrollmentRate !== 0 && (
                                     <span
-                                      key={school.schoolName + '升学率'}
+                                      key={`${school.schoolCode}-升学率-1`}
                                       className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
                                     >
                                       升学率{school.enrollmentRate}%
@@ -1045,7 +1044,7 @@ const EducationalDetailPage: React.FC = () => {
                                   )}
                                   {school.level !== 'zhuan' && (
                                     <span
-                                      key={school.schoolName + '保研率'}
+                                      key={`${school.schoolCode}-保研率-1`}
                                       className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200"
                                     >
                                       保研率{school.enrollmentRate}%
@@ -1053,7 +1052,7 @@ const EducationalDetailPage: React.FC = () => {
                                   )}
                                   {school.majorGroupId && (
                                     <button
-                                      key={school.schoolName + '专业组'}
+                                      key={`${school.schoolCode}-专业组-1`}
                                       onClick={() => handleViewMajorGroup(school)}
                                       className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200 transition-colors cursor-pointer"
                                     >
@@ -1065,7 +1064,7 @@ const EducationalDetailPage: React.FC = () => {
                                     school.historyScores.length > 0 &&
                                     school.historyScores[0].studyPeriod && (
                                       <span
-                                        key={school.schoolName + '学制'}
+                                        key={`${school.schoolCode}-学制-1`}
                                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200"
                                       >
                                         学制{school.historyScores?.[0]?.studyPeriod}年
@@ -1151,7 +1150,7 @@ const EducationalDetailPage: React.FC = () => {
                               <div className="flex flex-wrap gap-2 mb-3">
                                 {school.enrollmentRate !== 0 && (
                                   <span
-                                    key={school.schoolName + '升学率'}
+                                    key={`${school.schoolCode}-升学率-2`}
                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
                                   >
                                     升学率{school.enrollmentRate}%
@@ -1167,20 +1166,20 @@ const EducationalDetailPage: React.FC = () => {
                                 )}
                                 {school.level !== 'zhuan' && (
                                   <span
-                                    key={school.schoolName + '保研率'}
+                                    key={`${school.schoolCode}-保研率-2`}
                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200"
                                   >
                                     保研率{school.enrollmentRate}%
                                   </span>
                                 )}
                                 <span
-                                  key={school.schoolName + '专业组'}
+                                  key={`${school.schoolCode}-专业组-2`}
                                   className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
                                 >
                                   039专业组
                                 </span>
                                 <span
-                                  key={school.schoolName + '学制'}
+                                  key={`${school.schoolCode}-学制-2`}
                                   className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200"
                                 >
                                   学制4年
@@ -1192,7 +1191,7 @@ const EducationalDetailPage: React.FC = () => {
                                   学费5800元/年
                                 </span>
                                 <span
-                                  key={school.schoolName + '公办'}
+                                  key={`${school.schoolCode}-公办-2`}
                                   className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200"
                                 >
                                   公办
@@ -1211,7 +1210,7 @@ const EducationalDetailPage: React.FC = () => {
                                   school.historyScores.length > 0 &&
                                   school.historyScores[0].studyPeriod && (
                                     <span
-                                      key={school.schoolName + '学制'}
+                                      key={`${school.schoolCode}-学制-3`}
                                       className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200"
                                     >
                                       学制{school.historyScores[0].studyPeriod}

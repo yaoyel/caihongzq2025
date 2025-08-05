@@ -602,7 +602,7 @@ const AiVolunteerPage: React.FC = () => {
 
         // 调用API获取按专业排序的数据
         const nominateResponse = await nominate({ sortByMajor: true });
-
+        console.log(nominateResponse);
         if (nominateResponse && nominateResponse.code === 200) {
           // 当sortByMajor=true时，API返回的是majors数组而不是schools数组
           const majorsData = nominateResponse.data.majors || [];
@@ -617,23 +617,24 @@ const AiVolunteerPage: React.FC = () => {
                   id: `${school.id}_${major.code}`,
                   majorCode: major.code || '',
                   majorName: major.name || '',
-                  schoolCode: school.schoolCode || '',
-                  schoolName: school.schoolName || '',
+                  schoolCode: school.schoolCode || school.code || '',
+                  schoolName: school.schoolName || school.name || '',
                   priority: majorIndex * 1000 + schoolIndex, // 使用组合索引作为优先级
                   createdAt: new Date().toISOString(),
                   score: 0,
                   selected: false,
-                  historyScore: school.historyScores || [],
-                  group: school.group ,
-                  enrollmentRate: school.enrollmentRate ,
-                  employmentRate: school.employmentRate ,
-                  Rankdiff: school.rankDiff ,
-                  RankdiffPer: school.rankDiffPer ,
-                  schoolFeature: school.schoolFeature || '',
-                  schoolNature: school.schoolNature,
+                  historyScore: school.historyScores || school.historyScore || [],
+                  group: school.group || 0,
+                  enrollmentRate: school.enrollmentRate || 0,
+                  employmentRate: school.employmentRate || 0,
+                  Rankdiff: school.rankDiff || 0,
+                  RankdiffPer: school.rankDiffPer || 0,
+                  schoolFeature: school.schoolFeature || school.features || '',
+                  schoolNature: school.schoolNature || school.belong || '',
                   schoolLevel: '专科',
-                  majorGroupId: school.majorGroupId?.toString() || '',
-                  majorGroupName: school.majorGroupName || '',
+                  majorGroupId:
+                    school.majorGroupId?.toString() || major.majorGroupId?.toString() || '',
+                  majorGroupName: school.majorGroupName || major.majorGroupName || '',
                   schoolCity: school.cityName || '',
                   provinceName: school.provinceName || '',
                   cityName: school.cityName || '',
@@ -886,17 +887,17 @@ const AiVolunteerPage: React.FC = () => {
             majorCode: item.major?.code || '',
             majorName: item.major?.name || '',
             schoolCode: item.schoolCode || '', // 使用学校名称作为学校代码
-            schoolName: item.name || '',
+            schoolName: item.schoolName || '',
             priority: index + 1, // 使用索引作为优先级
             createdAt: new Date().toISOString(), // 使用当前时间
             score: 0, // 默认值，后续可以根据需要调整
             selected: false, // 默认未入选
             historyScore: item.historyScores || [],
-            group: item.group ,
-            enrollmentRate: item.enrollmentRate ,
+            group: item.group,
+            enrollmentRate: item.enrollmentRate,
             employmentRate: item.employmentRate,
-            Rankdiff: item.rankDiff , // 位次差
-            RankdiffPer: item.rankDiffPer , // 位次差百分比
+            Rankdiff: item.rankDiff, // 位次差
+            RankdiffPer: item.rankDiffPer, // 位次差百分比
             // 学校标签相关属性
             schoolFeature: item.schoolFeature || '', // 学校特色
             schoolNature: item.schoolNature, // 根据belong判断公办民办
@@ -907,7 +908,7 @@ const AiVolunteerPage: React.FC = () => {
             provinceName: item.provinceName || '', // 省份名称
             cityName: item.cityName || '', // 城市名称
             sortIndex: index, // 添加排序索引
-            developmentPotential: parseFloat(item.major?.developmentPotential || '0') , // 发展潜能
+            developmentPotential: parseFloat(item.major?.developmentPotential || '0'), // 发展潜能
             position: index, // 位置排序字段
             // 招生信息相关属性
             admissionsSite: '', // 默认值
@@ -1674,7 +1675,7 @@ const AiVolunteerPage: React.FC = () => {
                                                     升学率{item.enrollmentRate}%
                                                   </span>
                                                 )}
-                                                
+
                                                 {item.majorGroupName && (
                                                   <button
                                                     key={item.schoolName + '专业组'}
@@ -1819,7 +1820,7 @@ const AiVolunteerPage: React.FC = () => {
                                                 升学率{item.enrollmentRate}%
                                               </span>
                                             )}
-                                           
+
                                             {item.majorGroupName && (
                                               <button
                                                 key={item.schoolName + '专业组'}
@@ -1960,7 +1961,7 @@ const AiVolunteerPage: React.FC = () => {
                                     升学率{item.enrollmentRate}%
                                   </span>
                                 )}
-                       
+
                                 {item.majorGroupName && (
                                   <button
                                     key={item.schoolName + '专业组'}
@@ -2103,7 +2104,7 @@ const AiVolunteerPage: React.FC = () => {
                                       升学率{item.enrollmentRate}%
                                     </span>
                                   )}
-                                  
+
                                   {item.majorGroupName && (
                                     <button
                                       key={item.schoolName + '专业组'}

@@ -56,11 +56,11 @@ export class SchoolController {
    * @returns Promise<SchoolViewModel>
    */
   @Get('/:code') 
-  async getSchoolByCode(@Param('code') code: string, @Ctx() ctx: { state: { user?: { userId: number } } }): Promise<SchoolDetailViewModel | {}> { 
+  async getSchoolByCode(@Param('code') code: string, @Ctx() ctx: { state: { user?: { userId: number } } }): Promise<any> { 
     // 获取学校详细信息
     const school = await SchoolRedisService.getSchool(code);
     if (!school) {
-      return {};
+      return { code: 404, message: '学校不存在' };
     }
     if (!ctx?.state?.user?.userId) {
       console.error('未获取到用户信息，ctx.state:', ctx.state);
@@ -70,7 +70,7 @@ export class SchoolController {
     const userId = ctx.state.user.userId;
     const user = await this.userService.findOne(userId); 
     if (!user) {
-      throw new Error('用户不存在');
+      return { code: 404, message: '用户不存在' };
     }
 
     const majorRank = await SchoolRedisService.getMajorScores(code, user.province || '', user.rank || 0); 
@@ -107,8 +107,9 @@ export class SchoolController {
       });
     }
 
-    // 转换为完整视图模型
-    return toSchoolDetailViewModel(school);
+    // 转换为完整视图模型并返回标准格式
+    const schoolDetail = toSchoolDetailViewModel(school);
+    return { code: 200, data: schoolDetail };
   }
 
   /**
