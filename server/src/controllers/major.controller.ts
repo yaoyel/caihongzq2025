@@ -196,12 +196,14 @@ export class MajorController {
         user!.secondarySubjects?.split(',') || ['不限']
       );
 
+      console.log(enrollPlans);
+
       // 根据 enrollPlans 为 schools 添加 majorGroupId 和 majorGroupName
       if (Array.isArray(rawData.schools) && Array.isArray(enrollPlans)) {
         // 为每个学校添加 majorGroupId 和 majorGroupName
-        rawData.schools = rawData.schools.map((school: { id: number; schoolCode?: string } & SchoolViewModel) => {
+        rawData.schools = rawData.schools.map((school: { id: number; code?: string } & SchoolViewModel) => {
           // 在 enrollPlans 中查找对应的招生计划
-          const enrollPlan = enrollPlans.find(plan => plan.schoolCode === school.schoolCode);
+          const enrollPlan = enrollPlans.find(plan => plan.schoolCode === school.code);
           return {
             ...school,
             majorGroupId: enrollPlan?.majorGroup || null,
