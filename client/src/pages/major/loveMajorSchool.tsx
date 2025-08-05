@@ -85,7 +85,7 @@ const LoveMajorSchool: React.FC = () => {
             <span className="text-base mr-2">{major.code}</span>
             <span className="text-base mr-5">{major.name}</span>
           </span>
-          <span className="text-base mr-5">热爱能量 {Math.ceil(major.score * 100)} 分 ！</span>
+          <span className="text-base mr-5">发展潜能 {Math.ceil(major.score * 100)} 分 ！</span>
         </div>
       </div>
     );
@@ -129,7 +129,12 @@ const LoveMajorSchool: React.FC = () => {
           <Card className="rounded-2xl w-full max-w-xl shadow" bodyStyle={{ padding: '24px 16px' }}>
             <div className="text-lg font-bold mb-2 flex items-center">
               <span className="w-1.5 h-4 bg-blue-500 rounded-sm mr-2 inline-block" />
-              热爱专业 {tuijianSchools1.length + tuijianSchools2.length + tuijianSchools3.length} 个
+              热爱专业{' '}
+              {tuijianSchools1.length +
+                tuijianSchools2.length +
+                tuijianSchools3.length +
+                tuijianSchools4.length}{' '}
+              个
             </div>
 
             {majordwSelected.majordwSelecteds.length > 0 &&
@@ -138,40 +143,13 @@ const LoveMajorSchool: React.FC = () => {
               )}
             {/* 院校招生信息列表 */}
             <div className="w-full max-w-xl">
-              {geiQianBaifenZhi(majordwSelected.majordwSelecteds, 0.01).length > 0 && (
+              {/* {geiQianBaifenZhi(majordwSelected.majordwSelecteds, 0.01).length > 0 && (
                 <div className="text-blue-500 flex items-center  justify-between font-medium mr-5 cursor-pointer">
-                  [“热爱能量”前1%专业]
+                  [“发展潜能”前1%专业]
                 </div>
-              )}
+              )} */}
               {/* 模拟院校数据 */}
-              {geiQianBaifenZhi(majordwSelected.majordwSelecteds, 0.01).map((school) =>
-                renderSchool(school)
-              )}
-            </div>
-            {/* 院校招生信息列表 */}
-            <div className="w-full max-w-xl border-t border-gray-200 pt-2">
-              {geiQianBaifenZhi(majordwSelected.majordwSelecteds, 0.1).length > 0 && (
-                <div className="text-blue-500 flex items-center  justify-between font-medium mr-5 cursor-pointer">
-                  [“热爱能量”前10%专业]
-                </div>
-              )}
-              {/* 模拟院校数据 */}
-              {geiQianBaifenZhi(majordwSelected.majordwSelecteds, 0.1).map((school) =>
-                renderSchool(school)
-              )}
-            </div>
-
-            {/* 院校招生信息列表 */}
-            <div className="w-full max-w-xl border-t border-gray-200 pt-2">
-              {geiQianBaifenZhi(majordwSelected.majordwSelecteds, 0.2).length > 0 && (
-                <div className="text-blue-500 flex items-center  justify-between font-medium mr-5 cursor-pointer">
-                  [“热爱能量”前20%专业]
-                </div>
-              )}
-              {/* 模拟院校数据 */}
-              {geiQianBaifenZhi(majordwSelected.majordwSelecteds, 0.2).map((school) =>
-                renderSchool(school)
-              )}
+              {majordwSelected.majordwSelecteds.map((school) => renderSchool(school))}
             </div>
           </Card>
         </div>
@@ -189,81 +167,38 @@ const LoveMajorSchool: React.FC = () => {
         <Card className="rounded-2xl w-full max-w-xl shadow" bodyStyle={{ padding: '24px 16px' }}>
           <div className="text-lg font-bold mb-2 flex items-center">
             <span className="w-1.5 h-4 bg-blue-500 rounded-sm mr-2 inline-block" />
-            热爱专业 {tuijianSchools1.length + tuijianSchools2.length + tuijianSchools3.length} 个
+            热爱专业{' '}
+            {tuijianSchools1.length +
+              tuijianSchools2.length +
+              tuijianSchools3.length +
+              tuijianSchools4.length}{' '}
+            个
           </div>
 
           {tuijianSchools1.length > 0 &&
             renderSchoolTop(
-              '比您高考分低5%到高5%位次段专业 (' +
+              '比您高考分低10%到高5%位次段专业 (' +
                 geiQianBaifenZhi(tuijianSchools1, 0.01).length +
                 '个)'
             )}
           {/* 院校招生信息列表 */}
           <div className="w-full max-w-xl">
-            {tuijianSchools1 && tuijianSchools1.length > 0 && (
-              <div className="text-blue-500 flex items-center  justify-between font-medium mr-5 cursor-pointer">
-                [“热爱能量”前1%专业]{' '}
-                <span
-                  className="underline  hover:text-green-600"
-                  onClick={() =>
-                    setMajordwSelected({
-                      title: '比您高考分低5%到高5%位次段专业',
-                      majordwSelecteds: tuijianSchools1,
-                    })
-                  }
-                >
-                  查看更多{'>>'}
-                </span>
-              </div>
-            )}
             {/* 模拟院校数据 */}
-            {geiQianBaifenZhi(tuijianSchools1, 0.01).map((school) => renderSchool(school))}
+            {tuijianSchools1.map((school) => renderSchool(school))}
           </div>
           {tuijianSchools2.length > 0 &&
-            renderSchoolTop('比您高考分低15%到5%位次段专业 (' + tuijianSchools2.length + '个)')}
+            renderSchoolTop('比您高考分低30%到10%位次段专业 (' + tuijianSchools2.length + '个)')}
           {/* 院校招生信息列表 */}
           <div className="w-full max-w-xl">
-            {tuijianSchools2 && tuijianSchools2.length > 0 && (
-              <div className="text-blue-500 flex items-center  justify-between font-medium mr-5 cursor-pointer">
-                [“热爱能量”前1%专业]{' '}
-                <span
-                  className="underline  hover:text-green-600"
-                  onClick={() =>
-                    setMajordwSelected({
-                      title: '比您高考分低15%到5%位次段专业',
-                      majordwSelecteds: tuijianSchools2,
-                    })
-                  }
-                >
-                  查看更多{'>>'}
-                </span>
-              </div>
-            )}
             {/* 模拟院校数据 */}
-            {geiQianBaifenZhi(tuijianSchools2, 0.01).map((school) => renderSchool(school))}
+            {tuijianSchools2.map((school) => renderSchool(school))}
           </div>
           {tuijianSchools3.length > 0 &&
-            renderSchoolTop('比您高考分高5%到10%位次段专业 (' + tuijianSchools3.length + '个)')}
+            renderSchoolTop('比您高考分高5%到30%位次段专业 (' + tuijianSchools3.length + '个)')}
           {/* 院校招生信息列表 */}
           <div className="w-full max-w-xl">
-            {tuijianSchools3 && tuijianSchools3.length > 0 && (
-              <div className="text-blue-500 flex items-center  justify-between font-medium mr-5 cursor-pointer">
-                [“热爱能量”前1%专业]{' '}
-                <span
-                  className="underline  hover:text-green-600"
-                  onClick={() =>
-                    setMajordwSelected({
-                      title: '比您高考分高5%到10%位次段专业',
-                      majordwSelecteds: tuijianSchools3,
-                    })
-                  }
-                >
-                  查看更多{'>>'}
-                </span>
-              </div>
-            )}
             {/* 模拟院校数据 */}
-            {geiQianBaifenZhi(tuijianSchools3, 0.01).map((school) => renderSchool(school))}
+            {tuijianSchools3.map((school) => renderSchool(school))}
           </div>
           {tuijianSchools4.length > 0 &&
             renderSchoolTop('其他位次段专业 (' + tuijianSchools4.length + '个)')}

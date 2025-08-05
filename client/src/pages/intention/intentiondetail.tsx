@@ -168,8 +168,8 @@ const EducationalDetailPage: React.FC = () => {
           className={school.rankDiff > 0 ? 'text-red-600 bg-red-100' : 'text-green-600 bg-green-100'}
         >
           {school.rankDiff > 0
-            ? `高${school.rankDiff}位次/${Math.floor(school.RankdiffPer || 0)}%`
-            : `低${Math.abs(school.rankDiff)}位次/${Math.floor(school.RankdiffPer || 0)}%`}
+            ? `高${school.rankDiff}位次/${Math.floor(school.rankDiffPer || 0)}%`
+            : `低${Math.abs(school.rankDiff)}位次/${Math.floor(school.rankDiffPer || 0)}%`}
         </span>
       </span>
     );

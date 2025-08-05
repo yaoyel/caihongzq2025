@@ -160,7 +160,7 @@ const SchoolDetail: React.FC = () => {
                     )
                   }
                 >
-                  <span>1.-5%到+5%位次专业 {tuijianSchools1.length}个</span>
+                  <span>1.-10%到+5%位次专业 {tuijianSchools1.length}个</span>
                   <span className="mr-2">{'>'}</span>
                 </div>
                 <div
@@ -172,7 +172,7 @@ const SchoolDetail: React.FC = () => {
                     )
                   }
                 >
-                  <span>2.-15% 到-5%位次专业 {tuijianSchools2.length}个</span>
+                  <span>2.-30% 到-10%位次专业 {tuijianSchools2.length}个</span>
                   <span className="mr-2">{'>'}</span>
                 </div>
                 <div
@@ -184,7 +184,7 @@ const SchoolDetail: React.FC = () => {
                     )
                   }
                 >
-                  <span>3.+5%到+10%位次专业 {tuijianSchools3.length}个</span>
+                  <span>3.+5%到+30%位次专业 {tuijianSchools3.length}个</span>
                   <span className="mr-2">{'>'}</span>
                 </div>
                 <div

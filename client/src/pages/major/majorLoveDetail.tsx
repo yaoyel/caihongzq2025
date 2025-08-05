@@ -303,7 +303,7 @@ const MajorLoveDetail: React.FC = () => {
               <img src={zhaoshengyuanxiao} alt="招生院校" className="w-7 h-7 mr-2" />
               <span className="text-[#2d6cf6] font-bold text-base">招生院校</span>
               <span className="text-[#2d6cf6] font-bold ml-2">
-                {majorDetail?.schools?.filter((s) => s.group !== 0).length}所
+                {majorDetail?.schools?.length}所
               </span>
             </div>
             <div className="divide-y">
