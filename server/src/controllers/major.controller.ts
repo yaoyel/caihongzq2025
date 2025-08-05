@@ -195,8 +195,7 @@ export class MajorController {
         user!.preferredSubjects || '综合',
         user!.secondarySubjects?.split(',') || ['不限']
       );
-
-      console.log(enrollPlans);
+ 
 
       // 根据 enrollPlans 为 schools 添加 majorGroupId 和 majorGroupName
       if (Array.isArray(rawData.schools) && Array.isArray(enrollPlans)) {

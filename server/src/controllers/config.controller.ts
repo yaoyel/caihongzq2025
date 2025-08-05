@@ -6,7 +6,7 @@ import { MajorRedisService } from '../services/major.redis.service';
 import { UserService } from '../services/user.service';
 import { MajorScoreService } from '../services/major.service'; 
 import { PROVINCE_VOLUNTEER_COUNT } from '../config/province';
-
+ 
 /**
  * 带排名信息的学校接口
  */
@@ -235,7 +235,7 @@ export class ConfigController {
 
         // 获取该专业的招生计划数据
         const majorEnrollPlans = enrollPlansMap.get(majorDetail.code) || [];
-
+     
         // 根据 enrollPlans 为 schools 添加 majorGroupId 和 majorGroupName
         if (Array.isArray(majorDetail.schools) && Array.isArray(majorEnrollPlans)) {
           // 为每个学校添加 majorGroupId 和 majorGroupName
@@ -354,8 +354,14 @@ export class ConfigController {
         const sortedMajorDetails = processedMajorDetails.map((major, index) => {
           const isTopFive = index < 5; // 前五个专业为置顶
           
+          // 当 isSortByMajor 为 true 时，过滤掉 rankDiffPer 不在 -30 到 30 范围内的学校
+          const filteredSchools = major.schools.filter((school: any) => {
+            const rankDiffPer = school.rankDiffPer || 0;
+            return rankDiffPer >= -30 && rankDiffPer <= 30;
+          });
+          
           // 对每个专业内的学校进行排序
-          const sortedSchools = major.schools.sort((a: any, b: any) => {
+          const sortedSchools = filteredSchools.sort((a: any, b: any) => {
             // 首先按 group 排序
             if (a.group !== b.group) {
               return (b.group || 0) - (a.group || 0);
