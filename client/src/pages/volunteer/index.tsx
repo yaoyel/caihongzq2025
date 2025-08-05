@@ -1722,15 +1722,7 @@ const EducationalPage: React.FC = () => {
                                                     升学率{item.enrollmentRate}%
                                                   </span>
                                                 )}
-                                                {item.majorGroupName && (
-                                                  <button
-                                                    key={item.schoolName + '专业组'}
-                                                    onClick={() => handleViewMajorGroup(item)}
-                                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200 transition-colors cursor-pointer"
-                                                  >
-                                                    {item.majorGroupName}专业组
-                                                  </button>
-                                                )}
+
                                                 {/* 学制标签 */}
                                                 {item.historyScore &&
                                                   item.historyScore.length > 0 &&
@@ -1748,6 +1740,18 @@ const EducationalPage: React.FC = () => {
                                                 >
                                                   {getCityDisplayInfo(item)}
                                                 </span>
+                                                {item.majorGroupName && (
+                                                  <button
+                                                    key={item.schoolName + '专业组'}
+                                                    onClick={() => handleViewMajorGroup(item)}
+                                                    className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-purple-500 text-white border-2 border-purple-400 hover:bg-purple-600 hover:border-purple-500 hover:shadow-md transition-all duration-200 cursor-pointer shadow-sm"
+                                                    title="点击查看专业组详情"
+                                                  >
+                                                    <span className="mr-1">📋</span>
+                                                    {item.majorGroupName}专业组
+                                                    <span className="ml-1 text-xs">▶</span>
+                                                  </button>
+                                                )}
                                               </div>
                                             </div>
                                           ))}
@@ -1883,15 +1887,7 @@ const EducationalPage: React.FC = () => {
                                               升学率{item.enrollmentRate}%
                                             </span>
                                           )}
-                                          {item.majorGroupName && (
-                                            <button
-                                              key={item.schoolName + '专业组'}
-                                              onClick={() => handleViewMajorGroup(item)}
-                                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200 transition-colors cursor-pointer"
-                                            >
-                                              {item.majorGroupName}专业组
-                                            </button>
-                                          )}
+
                                           {/* 学制标签 */}
                                           {item.historyScore &&
                                             item.historyScore.length > 0 &&
@@ -1909,6 +1905,18 @@ const EducationalPage: React.FC = () => {
                                           >
                                             {getCityDisplayInfo(item)}
                                           </span>
+                                          {item.majorGroupName && (
+                                            <button
+                                              key={item.schoolName + '专业组'}
+                                              onClick={() => handleViewMajorGroup(item)}
+                                              className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-purple-500 text-white border-2 border-purple-400 hover:bg-purple-600 hover:border-purple-500 hover:shadow-md transition-all duration-200 cursor-pointer shadow-sm"
+                                              title="点击查看专业组详情"
+                                            >
+                                              <span className="mr-1">📋</span>
+                                              {item.majorGroupName}专业组
+                                              <span className="ml-1 text-xs">▶</span>
+                                            </button>
+                                          )}
                                         </div>
                                       </div>
                                     ))}
@@ -2099,15 +2107,6 @@ const EducationalPage: React.FC = () => {
                                   </span>
                                 )}
 
-                                {item.majorGroupName && (
-                                  <button
-                                    key={item.schoolName + '专业组'}
-                                    onClick={() => handleViewMajorGroup(item)}
-                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200 transition-colors cursor-pointer"
-                                  >
-                                    {item.majorGroupName}专业组
-                                  </button>
-                                )}
                                 {/* 学制标签 */}
                                 {item.historyScore &&
                                   item.historyScore.length > 0 &&
@@ -2148,6 +2147,19 @@ const EducationalPage: React.FC = () => {
                                       </span>
                                     </span>
                                   )}
+
+                                {item.majorGroupName && (
+                                  <button
+                                    key={item.schoolName + '专业组'}
+                                    onClick={() => handleViewMajorGroup(item)}
+                                    className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-purple-500 text-white border-2 border-purple-400 hover:bg-purple-600 hover:border-purple-500 hover:shadow-md transition-all duration-200 cursor-pointer shadow-sm"
+                                    title="点击查看专业组详情"
+                                  >
+                                    <span className="mr-1">📋</span>
+                                    {item.majorGroupName}专业组
+                                    <span className="ml-1 text-xs">▶</span>
+                                  </button>
+                                )}
                               </div>
 
                               {/* 历年分数表格 */}

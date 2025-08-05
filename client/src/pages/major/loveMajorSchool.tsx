@@ -42,16 +42,24 @@ const LoveMajorSchool: React.FC = () => {
           console.log(response.data);
           if (response.data.majors) {
             setTuijianSchools1(
-              response.data.majors.filter((s) => s.group === 2).sort((a, b) => b.score - a.score)
+              response.data.majors
+                .filter((s) => s.group === 2)
+                .sort((a, b) => b.developmentPotential - a.developmentPotential)
             );
             setTuijianSchools2(
-              response.data.majors.filter((s) => s.group === 3).sort((a, b) => b.score - a.score)
+              response.data.majors
+                .filter((s) => s.group === 3)
+                .sort((a, b) => b.developmentPotential - a.developmentPotential)
             );
             setTuijianSchools3(
-              response.data.majors.filter((s) => s.group === 1).sort((a, b) => b.score - a.score)
+              response.data.majors
+                .filter((s) => s.group === 1)
+                .sort((a, b) => b.developmentPotential - a.developmentPotential)
             );
             setTuijianSchools4(
-              response.data.majors.filter((s) => s.group === 0).sort((a, b) => b.score - a.score)
+              response.data.majors
+                .filter((s) => s.group === 0)
+                .sort((a, b) => b.developmentPotential - a.developmentPotential)
             );
           }
         }
@@ -85,7 +93,9 @@ const LoveMajorSchool: React.FC = () => {
             <span className="text-base mr-2">{major.code}</span>
             <span className="text-base mr-5">{major.name}</span>
           </span>
-          <span className="text-base mr-5">发展潜能 {Math.ceil(major.score * 100)} 分 ！</span>
+          <span className="text-base mr-5">
+            发展潜能 {Math.ceil(major.developmentPotential)} 分 ！
+          </span>
         </div>
       </div>
     );
