@@ -31,6 +31,7 @@ export interface SchoolMajorViewModel extends MajorViewModel {
   studyPeriod: number;          // 学制
   rank?: number;                // 排名
   score?: number;                // 分数
+  developmentPotential?: number; // 发展潜力
   averageRank?: number;
   rankDiffPercentage?: number;
   group?: number;
@@ -81,6 +82,7 @@ function toSchoolMajorViewModel(data: any): SchoolMajorViewModel {
     studyPeriod: data.studyPeriod || 4,
     rank: data.rank || undefined,
     score: data.score || undefined,
+    developmentPotential: data.developmentPotential || undefined,
     averageRank: data.averageRank || '',
     rankDiffPercentage: data.rankDiffPercentage || '',
     group: data.group || 0,
