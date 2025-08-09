@@ -1279,7 +1279,7 @@ export class MajorController {
         // 为没有潜能的专业设置developmentPotential为999
         majorGroupInfo.forEach(majorInfo => {
           if (!majorGroupInfoWithPotential.find(m => m.majorCode === majorInfo.majorCode)) {
-            majorInfo.developmentPotential = "999";
+            majorInfo.developmentPotential = "-";
           }
         });
       } 
