@@ -39,6 +39,8 @@ export interface MajorGroupViewModel {
   majorName: string;
   /** 年份 */
   year: number; 
+
+  developmentPotential: number;
 }
   
 /**
@@ -63,7 +65,8 @@ export function toMajorGroupViewModel(rawData: any): MajorGroupViewModel {
     majorGroupName: rawData.majorGroupName || '',
     majorNameDetail: rawData.majorNameDetail || '',
     majorName: rawData.majorName || '',
-    year: rawData.year || 0 
+    year: rawData.year || 0 ,
+    developmentPotential: rawData.developmentPotential || 0,
   };
 }
 

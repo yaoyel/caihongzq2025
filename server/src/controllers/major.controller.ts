@@ -1250,7 +1250,9 @@ export class MajorController {
    * @returns 专业组信息列表
    */
   @Get('/group/:majorGroupId')
-  async getMajorGroupInfo(@Param('majorGroupId') majorGroupId: number): Promise< MajorGroupViewModel[]> {
+  async getMajorGroupInfo(@Param('majorGroupId') majorGroupId: number,
+                          @Ctx() ctx: { state: { user?: { userId: number } } }
+                        ): Promise< MajorGroupViewModel[]> {
     try {
       // 参数验证
       if (!majorGroupId || majorGroupId <= 0) {
@@ -1260,6 +1262,27 @@ export class MajorController {
       // 调用Redis服务获取专业组信息
       const majorGroupInfo = await this.majorRedisService.getMajorGroupInfo(majorGroupId);
 
+      // 获取专业组内专业的潜能
+      const majorCodes = majorGroupInfo.map(major => major.majorCode);
+      const userId = ctx.state.user!.userId;
+      if (userId) { 
+        const majorGroupInfoWithPotential = await this.majorScoreService.calculateMajorScoresByCode(userId.toString(),  majorCodes);
+    
+        // 为有潜能的专业设置developmentPotential
+        majorGroupInfoWithPotential.forEach(major => {
+          const majorInfo = majorGroupInfo.find(m => m.majorCode === major.majorCode);
+          if (majorInfo) {
+            majorInfo.developmentPotential = major.developmentPotential;
+          }   
+        });
+        
+        // 为没有潜能的专业设置developmentPotential为999
+        majorGroupInfo.forEach(majorInfo => {
+          if (!majorGroupInfoWithPotential.find(m => m.majorCode === majorInfo.majorCode)) {
+            majorInfo.developmentPotential = "999";
+          }
+        });
+      } 
       return  toMajorGroupViewModels(majorGroupInfo);
 
     } catch (error: unknown) {
