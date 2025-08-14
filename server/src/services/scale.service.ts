@@ -36,6 +36,7 @@ export class ScaleService {
             .where('scale.elementId IN (:...elementIds)', { elementIds })
             .andWhere('scale.direction = :direction', { direction: '168' })
             .orderBy('scale.elementId', 'ASC')
+            .orderBy('scale.id', 'ASC')
             .addOrderBy('options.displayOrder', 'ASC')
             .getMany();
     }
