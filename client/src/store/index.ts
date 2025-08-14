@@ -4,6 +4,7 @@ import reportReducer from './slices/reportSlice';
 import majorListReducer from './slices/majorListSlice';
 import intentionDetailReducer from './slices/intentionDetailSlice';
 import aiVolunteerReducer from './slices/aiVolunteerSlice';
+import { scrollMiddleware } from './middleware/scrollMiddleware';
 
 export const store = configureStore({
   reducer: {
@@ -13,6 +14,8 @@ export const store = configureStore({
     intentionDetail: intentionDetailReducer,
     aiVolunteer: aiVolunteerReducer
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(scrollMiddleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
