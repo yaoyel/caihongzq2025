@@ -199,17 +199,16 @@ export class ConfigController {
       }
       
       const rank = user.rank;
-      const majors = (await this.majorScoreService.getTopDevelopmentPotentialMajors(ctx.state.user!.userId.toString())).filter(s=> s.lexue_score > 0);
-
+      const majors = (await this.majorScoreService.getTopDevelopmentPotentialMajors(ctx.state.user!.userId.toString(),user!.enrollType || '本科批')).filter(s=> s.lexue_score > 0);
+ 
       const volunteerCount = PROVINCE_VOLUNTEER_COUNT[user.province??""] || 0;
       const recommendCount = volunteerCount * 3;
       const majorDetails = await this.majorRedisService.getMajorDetails(majors.map(s=> s.majorCode),1,recommendCount);
       
       // 根据用户信息，从redis中查询专业对应的分数
       const historyScoreMap = await this.majorRedisService.getMultipleMajorScores(majors.map(s=>s.majorCode), user!.province || '北京', user!.preferredSubjects || '综合', user!.secondarySubjects || '');
-
-      const enrollPlansMap = await this.majorRedisService.getMultipleEnrollPlans(majors.map(s=>s.majorCode), user!.province || '北京', 2025, '专科批', '普通类', user!.preferredSubjects || '综合', user!.secondarySubjects?.split(',') || ['不限']);
-        
+ 
+      const enrollPlansMap = await this.majorRedisService.getMultipleEnrollPlans(majors.map(s=>s.majorCode), user!.province || '北京',   Number.parseInt(process.env.CURRENT_YEAR || '2025'), user!.enrollType || '本科批', '普通类', user!.preferredSubjects || '综合', user!.secondarySubjects?.split(',') || ['不限']);
       // 将 Map 转换为数组格式，便于后续处理
       const historyScore: any[] = [];
       historyScoreMap.forEach((scores, majorCode) => {
@@ -262,7 +261,9 @@ export class ConfigController {
         const processedSchools = majorDetail.schools.map((school: any) => {
           const schoolScores = majorHistoryScores.filter((score: any) => 
             score.schoolMajorId === school.id && 
-            (localBatchNames.length === 0 || localBatchNames.includes(score.batch))
+            (user.enrollType === '专科批' 
+              ? localBatchNames.includes(score.batch)
+              : !localBatchNames.includes(score.batch))
           );
           
           const avgRank = this.majorRedisService.getAverageRank(

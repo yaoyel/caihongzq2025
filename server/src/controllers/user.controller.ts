@@ -1,8 +1,9 @@
-import { JsonController, Post, Body, Get, Param, Authorized, Ctx, NotFoundError, Put } from 'routing-controllers';
+import { JsonController, Post, Body, Get, Param, Authorized, Ctx, NotFoundError, Put, QueryParams } from 'routing-controllers';
 import { OpenAPI } from 'routing-controllers-openapi';
 import { Service } from 'typedi';
 import { UserService } from '../services/user.service';
 import { UserViewModel } from '../view-models/user.view.model';
+import { ScoreRangeViewModel } from '../view-models/score-range.view.model';
 import { JwtUtil } from '../utils/jwt';
 
 @JsonController('/users')
@@ -162,6 +163,19 @@ export class UserController {
             if (updateData.rank !== undefined && (updateData.rank < 0)) {
                 throw new Error('无效的位次范围');
             }
+            
+            // 如果提供了分数和省份信息，查询录取类型
+            if (updateData.score !== undefined && updateData.province) {
+                const year = process.env.CURRENT_YEAR || '2025';
+                const typeName = updateData.preferredSubjects || '综合';
+                const enrollType = await this.userService.getEnrollTypeByScore(
+                    updateData.score, 
+                    updateData.province, 
+                    year, 
+                    typeName
+                );
+                updateData.enrollType = enrollType;
+            }
 
             const updatedUser = await this.userService.updateProfile(id, updateData);
 
@@ -216,6 +230,48 @@ export class UserController {
                 code: 500,
                 message: `生成token失败: ${error instanceof Error ? error.message : '未知错误'}`
             };
+        }
+    }
+
+    /**
+     * 获取分数范围信息
+     * @param provinceName 省份名称
+     * @param subjectType 科目类型
+     * @param scoreKey 分数键值
+     * @returns 分数范围信息
+     */
+    @Get('/scoreRange')
+    @OpenAPI({ summary: '获取分数范围信息' })
+    async getScoreRange(
+        @QueryParams() params: { provinceName: string; subjectType: string; score: string }
+    ): Promise<ScoreRangeViewModel | { code: number; message: string }> {
+        try {
+            const { provinceName, subjectType, score } = params;
+            const year = process.env.CURRENT_YEAR || '2025'; 
+            // 验证参数
+            if (!provinceName || !subjectType || !score) {
+                return { code: 400, message: '缺少必要参数：provinceName、subjectType、scoreKey' };
+            }
+  
+            const scoreRange = await this.userService.getScoreRange(provinceName, subjectType, score,year);
+
+            if (!scoreRange) {
+                throw new NotFoundError('未找到对应的分数范围信息');
+            }
+
+            // 转换为视图模型
+            const scoreRangeViewModel: ScoreRangeViewModel = {
+                num: scoreRange.num,
+                total: scoreRange.total,
+                rankRange: scoreRange.rankRange,
+                batchName: scoreRange.batchName,
+                controlScore: scoreRange.controlScore
+            };
+
+            return scoreRangeViewModel;
+        } catch (error) {
+            console.error('获取分数范围信息失败:', error);
+            throw new Error(`获取分数范围信息失败: ${error instanceof Error ? error.message : '未知错误'}`);
         }
     }
 }

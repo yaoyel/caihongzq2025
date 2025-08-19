@@ -1,14 +1,20 @@
 import { Service } from 'typedi';
 import { Repository } from 'typeorm';
 import { User } from '../entities/User';
+import { ScoreRange } from '../entities/ScoreRange';
+import { ProvincialControlLine } from '../entities/ProvincialControlLine';
 import { AppDataSource } from '../data-source';
 
 @Service()
 export class UserService {
     private userRepository: Repository<User>;
+    private scoreRangeRepository: Repository<ScoreRange>;
+    private provincialControlLineRepository: Repository<ProvincialControlLine>;
 
     constructor() {
         this.userRepository = AppDataSource.getRepository(User);
+        this.scoreRangeRepository = AppDataSource.getRepository(ScoreRange);
+        this.provincialControlLineRepository = AppDataSource.getRepository(ProvincialControlLine);
     }
 
     async login(code: string) {
@@ -159,6 +165,89 @@ export class UserService {
             return await userRepository.save(user);
         } catch (error) {
             console.error('更新用户信息失败:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * 根据省份名称、科目类型和分数键值获取分数范围信息
+     * @param provinceName 省份名称
+     * @param subjectType 科目类型
+     * @param scoreKey 分数键值
+     * @returns 分数范围信息
+     */
+    async getScoreRange(provinceName: string, subjectType: string, scoreKey: string,year:string) {
+        try {
+            console.log(`尝试获取分数范围信息，provinceName: ${provinceName}, subjectType: ${subjectType}, scoreKey: ${scoreKey}`);
+            
+            const scoreRange = await this.scoreRangeRepository.findOne({
+                where: {
+                    provinceName,
+                    subjectType,
+                    scoreKey,
+                    year: parseInt(year)
+                }
+            });
+
+            if (!scoreRange) {
+                console.log(`未找到分数范围信息，provinceName: ${provinceName}, subjectType: ${subjectType}, scoreKey: ${scoreKey}`);
+                return null;
+            }
+
+            console.log(`成功找到分数范围信息: ${JSON.stringify(scoreRange)}`);
+            return scoreRange;
+        } catch (error) {
+            console.error(`获取分数范围信息失败，provinceName: ${provinceName}, subjectType: ${subjectType}, scoreKey: ${scoreKey}`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * 根据用户分数查询录取类型
+     * @param userScore 用户分数
+     * @param province 省份
+     * @param year 年份
+     * @param typeName 科目类型
+     * @returns 录取类型
+     */
+    async getEnrollTypeByScore(userScore: number, province: string, year: string, typeName: string): Promise<string> {
+        try {
+            console.log(`尝试查询录取类型，userScore: ${userScore}, province: ${province}, year: ${year}, typeName: ${typeName}`);
+            
+            const result = await this.provincialControlLineRepository
+                .createQueryBuilder('pcl')
+                .select([
+                    'MAX(CASE WHEN pcl.batchName LIKE :undergraduatePattern THEN pcl.score END) AS undergraduate_score',
+                    'MAX(CASE WHEN pcl.batchName LIKE :collegePattern THEN pcl.score END) AS college_score'
+                ])
+                .where('pcl.province = :province', { province })
+                .andWhere('pcl.year = :year', { year })
+                .andWhere('pcl.typeName = :typeName', { typeName })
+                .setParameter('undergraduatePattern', '%本科%')
+                .setParameter('collegePattern', '%专科%')
+                .getRawOne();
+
+            if (!result) {
+                console.log(`未找到省份控制线数据，province: ${province}, year: ${year}, typeName: ${typeName}`);
+                return '未达到录取线';
+            }
+
+            const undergraduateScore = parseInt(result.undergraduate_score) || 0;
+            const collegeScore = parseInt(result.college_score) || 0;
+
+            let enrollType: string;
+            if (userScore >= undergraduateScore) {
+                enrollType = '本科';
+            } else if (userScore >= collegeScore) {
+                enrollType = '专科';
+            } else {
+                enrollType = '未达到录取线';
+            }
+
+            console.log(`查询录取类型成功，userScore: ${userScore}, undergraduateScore: ${undergraduateScore}, collegeScore: ${collegeScore}, enrollType: ${enrollType}`);
+            return enrollType;
+        } catch (error) {
+            console.error(`查询录取类型失败，userScore: ${userScore}, province: ${province}, year: ${year}, typeName: ${typeName}`, error);
             throw error;
         }
     }

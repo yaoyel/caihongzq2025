@@ -45,8 +45,11 @@ export class MajorScoreService {
    * @param userId 用户ID
    * @returns 专业得分列表，包含总分、乐学得分、善学得分和潜力值得分（仅本科专业）
    */
-  async calculateMajorScores(userId: string): Promise<MajorScore[]> {
+  async calculateMajorScores(userId: string,enrollType:string): Promise<MajorScore[]> { 
     // 使用原生SQL查询提升性能
+    const eduLevel = enrollType === '专科批' ? 'zhuan' : 'ben'; 
+    const operator = eduLevel !== 'zhuan' ? '<>' : '=';
+    console.log(eduLevel,operator,userId,enrollType);
     const result = await this.majorDetailRepository.query(`
         WITH user_answers AS (
         SELECT 
@@ -80,7 +83,7 @@ export class MajorScoreService {
         INNER JOIN elements e ON e.id = mea.element_id
         INNER JOIN scales s ON s.element_id = e.id
         LEFT JOIN user_answers ua ON ua.scale_id = s.id
-        WHERE s.id > 112 AND m.edu_level = 'zhuan'
+        WHERE s.id > 112 AND m.edu_level ${operator} 'zhuan' and m.edu_level is not null
       ),
       school_majors_count AS (
         SELECT 
@@ -189,7 +192,7 @@ export class MajorScoreService {
       SELECT 
         fs.major_code as "majorCode",
         fs.major_name as "majorName",
-		fs.major_brief as "majorBrief",
+		    fs.major_brief as "majorBrief",
         fs.edu_level as "eduLevel",
         fs.yanxue_deduction as "yanxueDeduction",
         fs.tiaozhan_deduction as "tiaozhanDeduction",
@@ -224,7 +227,9 @@ export class MajorScoreService {
    * @param majorCodes 专业代码数组
    * @returns 专业得分列表，包含总分和各项分数
    */
-  async calculateMajorScoresByCode(userId: string, majorCodes: string[]): Promise<MajorScore[]> {
+  async calculateMajorScoresByCode(userId: string, majorCodes: string[],enrollType:string): Promise<MajorScore[]> {
+    const eduLevel = enrollType === '专科批' ? 'zhuan' : 'ben'; 
+    const operator = eduLevel !== 'zhuan' ? '<>' : '=';
     const result = await this.majorDetailRepository.query(`
        WITH user_answers AS (
         SELECT 
@@ -258,7 +263,7 @@ export class MajorScoreService {
         INNER JOIN elements e ON e.id = mea.element_id
         INNER JOIN scales s ON s.element_id = e.id
         LEFT JOIN user_answers ua ON ua.scale_id = s.id
-        WHERE s.id > 112 AND md.code = ANY($2)
+        WHERE s.id > 112 AND md.code = ANY($2) and m.edu_level ${operator} 'zhuan' and m.edu_level is not null
       ),
       school_majors_count AS (
         SELECT 
@@ -402,7 +407,9 @@ export class MajorScoreService {
    * @param userId 用户ID
    * @returns 专业代码和发展潜力得分列表（按得分从高到低排序）
    */
-  async getTopDevelopmentPotentialMajors(userId: string): Promise<{majorCode: string, developmentpotential: number,lexue_score:number}[]> {
+  async getTopDevelopmentPotentialMajors(userId: string,enrollType:string): Promise<{majorCode: string, developmentpotential: number,lexue_score:number}[]> {
+    const eduLevel = enrollType === '专科批' ? 'zhuan' : 'ben'; 
+    const operator = eduLevel !== 'zhuan' ? '<>' : '=';
     // 使用优化的SQL查询，只获取必要的字段
     const result = await this.majorDetailRepository.query(`
          WITH user_answers AS (
@@ -437,7 +444,7 @@ export class MajorScoreService {
         INNER JOIN elements e ON e.id = mea.element_id
         INNER JOIN scales s ON s.element_id = e.id
         LEFT JOIN user_answers ua ON ua.scale_id = s.id
-        WHERE s.id > 112 AND m.edu_level = 'zhuan'
+        WHERE s.id > 112 AND m.edu_level ${operator} 'zhuan' and m.edu_level is not null
       ),
       school_majors_count AS (
         SELECT 

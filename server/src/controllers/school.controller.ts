@@ -81,7 +81,7 @@ export class SchoolController {
       const majorCodes = school.majors.map((major: SchoolMajor) => major.code);
       
       // 计算专业得分
-      const majorScores = await this.majorScoreService.calculateMajorScoresByCode(userId.toString(), majorCodes);
+      const majorScores = await this.majorScoreService.calculateMajorScoresByCode(userId.toString(), majorCodes,user!.enrollType || '本科批');
       
       // 将得分和排名信息添加到对应的专业信息中
       school.majors = school.majors.map((major: SchoolMajor) => {

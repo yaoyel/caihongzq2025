@@ -170,7 +170,7 @@ export class MajorController {
       }  
       
       // 获取用户的专业热爱值
-      const scores = await this.majorScoreService.calculateMajorScoresByCode(userId.toString(), [code]);
+      const scores = await this.majorScoreService.calculateMajorScoresByCode(userId.toString(), [code],user!.enrollType || '本科批');
       if (scores.length !== 0) {
               // 将专业分数信息添加到rawData中
        rawData.major.score = scores[0].score;
@@ -189,8 +189,8 @@ export class MajorController {
       const enrollPlans = await this.majorRedisService.getEnrollPlans(
         code,
         user!.province || '北京',
-        2025,
-        '专科批',
+        Number.parseInt(process.env.CURRENT_YEAR || '2025'),
+        user!.enrollType || '本科批',
         '普通类',
         user!.preferredSubjects || '综合',
         user!.secondarySubjects?.split(',') || ['不限']
@@ -209,8 +209,7 @@ export class MajorController {
             majorGroupName: enrollPlan?.majorGroupName || null
           };
         });
-      }
-
+      } 
       // 将历年分数数据添加到对应的学校对象中，并按位次分组排序
       if (!rank) {
         // 转换为视图模型并返回
@@ -340,7 +339,7 @@ export class MajorController {
         throw new Error('用户不存在');
       }
 
-      const {province, preferredSubjects, secondarySubjects} = user; 
+      const {province, preferredSubjects, secondarySubjects,enrollType} = user; 
       const firstSubject = preferredSubjects || '综合';      
       // 获取选科匹配的专业代码列表
       const secondSubjectsArray = (secondarySubjects || '').split(',').filter(Boolean);
@@ -355,7 +354,7 @@ export class MajorController {
       const matchingMajorCodeSet = new Set(matchingMajorCodes);
 
       // 计算所有专业的匹配得分， 并计算得分
-      const majorScores = await this.majorScoreService.calculateMajorScores(userId);
+      const majorScores = await this.majorScoreService.calculateMajorScores(userId,enrollType || '本科批');
 
       // 为每个专业添加匹配标记
       const scoresWithMatchingFlag = majorScores.map(score => ({
@@ -502,7 +501,7 @@ export class MajorController {
       );
 
       // 获取专业分数
-      const majorScores = await this.majorScoreService.calculateMajorScoresByCode(userId, body.codes);
+      const majorScores = await this.majorScoreService.calculateMajorScoresByCode(userId, body.codes,user!.enrollType || '本科批');
 
       // 将分数信息添加到对应的专业信息中
       const enrichedData = result.data.map(majorDetail => {
@@ -653,9 +652,11 @@ export class MajorController {
 
       // 获取专业分数
       const majorCodes = intentions.map(intention => intention.majorCode);
+      const user = await this.userService.findOne(ctx.state.user.userId);
       const scores = await this.majorScoreService.calculateMajorScoresByCode(
         ctx.state.user.userId.toString(),
-        majorCodes
+        majorCodes,
+        user!.enrollType || '本科批'
       );
 
       // 构建专业分数映射
@@ -989,7 +990,8 @@ export class MajorController {
       // 获取专业分数
       const scores = await this.majorScoreService.calculateMajorScoresByCode(
         ctx.state.user.userId.toString(),
-        majorCodes
+        majorCodes,
+        user!.enrollType || '本科批'
       );
 
       // 构建专业分数映射
@@ -1032,7 +1034,8 @@ export class MajorController {
 
       // 获取前20%发展潜力最高的专业
       const topDevelopmentMajors = await this.majorScoreService.getTopDevelopmentPotentialMajors(
-        ctx.state.user.userId.toString()
+        ctx.state.user.userId.toString(),
+        user!.enrollType || '本科批'
       );
 
       // 创建前20%专业代码的Set，用于快速查找
@@ -1265,8 +1268,9 @@ export class MajorController {
       // 获取专业组内专业的潜能
       const majorCodes = majorGroupInfo.map(major => major.majorCode);
       const userId = ctx.state.user!.userId;
-      if (userId) { 
-        const majorGroupInfoWithPotential = await this.majorScoreService.calculateMajorScoresByCode(userId.toString(),  majorCodes);
+      if (userId) {  
+        const user = await this.userService.findOne(userId);
+        const majorGroupInfoWithPotential = await this.majorScoreService.calculateMajorScoresByCode(userId.toString(),  majorCodes,user!.enrollType || '本科批');
     
         // 为有潜能的专业设置developmentPotential
         majorGroupInfoWithPotential.forEach(major => {
