@@ -3,9 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Modal, Button, Checkbox, message, Input, Tag } from 'antd';
 import { SearchOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../store';
 import {
-  setScrollPosition,
   setDisplayCount,
   setSortTab,
   setAlternativeStatus,
@@ -17,7 +15,17 @@ import {
   setPageKey,
   setIsReturning,
   setHasInitialized,
+  selectDisplayCount,
+  selectSortTab,
+  selectAlternativeStatus,
+  selectLoading,
+  selectLoadingStatus,
+  selectRecommendCount,
+  selectAlternatives,
+  selectPageKey,
+  selectHasInitialized,
 } from '../../store/slices/aiVolunteerSlice';
+import { useScrollManager } from '../../hooks/useScrollManager';
 
 import BottomNav from '../comm/bottom';
 import StartWelcomePage from '../selfassessment/startWelcome';
@@ -123,21 +131,29 @@ const AiVolunteerPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // 从 Redux 获取状态
-  const {
-    alternatives,
-    loading,
-    loadingStatus,
-    displayCount,
-    sortTab,
-    alternativeStatus,
-    recommendCount,
-    hasInitialized,
-    scrollPosition: reduxScrollPosition,
-  } = useSelector((state: RootState) => state.aiVolunteer);
+  // 从 Redux 获取状态 - 使用选择器
+  const alternatives = useSelector(selectAlternatives);
+  const loading = useSelector(selectLoading);
+  const loadingStatus = useSelector(selectLoadingStatus);
+  const displayCount = useSelector(selectDisplayCount);
+  const sortTab = useSelector(selectSortTab);
+  const alternativeStatus = useSelector(selectAlternativeStatus);
+  const recommendCount = useSelector(selectRecommendCount);
+  const hasInitialized = useSelector(selectHasInitialized);
+  const currentPageKey = useSelector(selectPageKey);
+
+  // 使用滚动管理hook
+  const scrollManager = useScrollManager({
+    pageKey: currentPageKey,
+    itemHeight: 200,
+    bufferSize: 5,
+    throttleDelay: 100,
+    enableVirtualScroll: true,
+  });
+
+
 
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // 搜索相关状态
   const [searchText, setSearchText] = useState('');
@@ -157,7 +173,7 @@ const AiVolunteerPage: React.FC = () => {
     (scrollPosition: number) => {
       setIsRestoringScroll(true);
 
-      // 获取页面实际高度 - 使用文档高度而不是xunigundong高度
+      // 使用window滚动
       const documentHeight = document.documentElement.scrollHeight;
       const windowHeight = window.innerHeight;
       const maxScrollPosition = documentHeight - windowHeight;
@@ -174,13 +190,12 @@ const AiVolunteerPage: React.FC = () => {
       }
 
       // 如果需要更多数据，先加载
-      const estimatedItemsNeeded = Math.ceil(scrollPosition / 200) + 10; // 每200px大约需要1个项目
-      const requiredItems = Math.max(estimatedItemsNeeded, 30); // 确保有足够的数据
+      const estimatedItemsNeeded = Math.ceil(scrollPosition / 200) + 10;
+      const requiredItems = Math.max(estimatedItemsNeeded, 30);
 
       if (requiredItems > displayCount) {
         dispatch(setDisplayCount(requiredItems));
 
-        // 等待数据加载完成后恢复滚动位置
         setTimeout(() => {
           requestAnimationFrame(() => {
             window.scrollTo(0, scrollPosition);
@@ -188,7 +203,6 @@ const AiVolunteerPage: React.FC = () => {
           });
         }, 300);
       } else {
-        // 数据足够，直接恢复
         requestAnimationFrame(() => {
           window.scrollTo(0, scrollPosition);
           setIsRestoringScroll(false);
@@ -221,27 +235,53 @@ const AiVolunteerPage: React.FC = () => {
         const itemHeight = 200;
         const estimatedScrollPosition = itemIndex * itemHeight;
 
-        // 获取页面实际高度
-        const documentHeight = document.documentElement.scrollHeight;
-        const windowHeight = window.innerHeight;
-        const maxScrollPosition = documentHeight - windowHeight;
+        // 查找xunigundong元素
+        const scrollElement = document.querySelector('.xunigundong');
+        
+        if (scrollElement) {
+          // 使用xunigundong元素的滚动
+          const maxScrollPosition = scrollElement.scrollHeight - scrollElement.clientHeight;
 
-        // 检查滚动位置是否超出页面高度
-        let finalScrollPosition = estimatedScrollPosition;
-        if (estimatedScrollPosition > maxScrollPosition) {
-          finalScrollPosition = maxScrollPosition;
-        }
+          // 检查滚动位置是否超出元素高度
+          let finalScrollPosition = estimatedScrollPosition;
+          if (estimatedScrollPosition > maxScrollPosition) {
+            finalScrollPosition = maxScrollPosition;
+          }
 
-        // 确保有足够的数据显示
-        const requiredItems = Math.max(itemIndex + 10, 30);
+          // 确保有足够的数据显示
+          const requiredItems = Math.max(itemIndex + 10, 30);
 
-        if (requiredItems > displayCount) {
-          dispatch(setDisplayCount(requiredItems));
-          setTimeout(() => {
-            window.scrollTo(0, finalScrollPosition);
-          }, 300);
+          if (requiredItems > displayCount) {
+            dispatch(setDisplayCount(requiredItems));
+            setTimeout(() => {
+              scrollElement.scrollTo(0, finalScrollPosition);
+            }, 300);
+          } else {
+            scrollElement.scrollTo(0, finalScrollPosition);
+          }
         } else {
-          window.scrollTo(0, finalScrollPosition);
+          // 降级到window滚动
+          const documentHeight = document.documentElement.scrollHeight;
+          const windowHeight = window.innerHeight;
+          const maxScrollPosition = documentHeight - windowHeight;
+
+          // 检查滚动位置是否超出页面高度
+          let finalScrollPosition = estimatedScrollPosition;
+          if (estimatedScrollPosition > maxScrollPosition) {
+            finalScrollPosition = maxScrollPosition;
+          }
+
+          // 确保有足够的数据显示
+          const requiredItems = Math.max(itemIndex + 10, 30);
+
+          if (requiredItems > displayCount) {
+            dispatch(setDisplayCount(requiredItems));
+            setTimeout(() => {
+              window.scrollTo(0, finalScrollPosition);
+            }, 300);
+          } else {
+            window.scrollTo(0, finalScrollPosition);
+          }
         }
       }
     },
@@ -267,18 +307,16 @@ const AiVolunteerPage: React.FC = () => {
   }, [showSearchTips]);
 
   // 生成页面唯一标识
-  const currentPageKey = useRef(`ai-volunteer-${Date.now()}`);
+  const pageKeyRef = useRef(`ai-volunteer-${Date.now()}`);
 
   // 滚动加载更多数据
   const handleScroll = useCallback(() => {
     if (isLoadingMore) return;
 
+    // 使用window滚动
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const scrollHeight = document.documentElement.scrollHeight;
     const clientHeight = window.innerHeight;
-
-    // 保存滚动位置到 Redux
-    dispatch(setScrollPosition(scrollTop));
 
     // 当滚动到底部时加载更多
     if (scrollTop + clientHeight >= scrollHeight - 200) {
@@ -292,6 +330,7 @@ const AiVolunteerPage: React.FC = () => {
 
   // 添加全局滚动监听
   useEffect(() => {
+    // 使用window滚动事件
     window.addEventListener('scroll', handleScroll);
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -301,9 +340,13 @@ const AiVolunteerPage: React.FC = () => {
   // 保存滚动位置到 localStorage
   useEffect(() => {
     const handleScroll = () => {
+      // 使用window滚动位置
       const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-      localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
-      dispatch(setScrollPosition(currentScrollPosition));
+      
+      // 只有当滚动位置大于50时才保存，避免保存顶部位置
+      if (currentScrollPosition > 50) {
+        localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+      }
     };
 
     // 节流处理滚动事件
@@ -329,30 +372,38 @@ const AiVolunteerPage: React.FC = () => {
   useEffect(() => {
     const handleBeforeUnload = () => {
       const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-      localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
-      sessionStorage.setItem('aiVolunteerFromDetail', 'true');
+      if (currentScrollPosition > 50) {
+        localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+        sessionStorage.setItem('aiVolunteerFromDetail', 'true');
+      }
     };
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
         const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-        localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
-        sessionStorage.setItem('aiVolunteerFromDetail', 'true');
+        if (currentScrollPosition > 50) {
+          localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+          sessionStorage.setItem('aiVolunteerFromDetail', 'true');
+        }
       }
     };
 
     // 监听页面离开事件
     const handlePageHide = () => {
       const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-      localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
-      sessionStorage.setItem('aiVolunteerFromDetail', 'true');
+      if (currentScrollPosition > 50) {
+        localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+        sessionStorage.setItem('aiVolunteerFromDetail', 'true');
+      }
     };
 
     // 监听路由变化
     const handleRouteChange = () => {
       const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-      localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
-      sessionStorage.setItem('aiVolunteerFromDetail', 'true');
+      if (currentScrollPosition > 50) {
+        localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+        sessionStorage.setItem('aiVolunteerFromDetail', 'true');
+      }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -381,14 +432,9 @@ const AiVolunteerPage: React.FC = () => {
         // 清除标记，避免重复恢复
         sessionStorage.removeItem('aiVolunteerFromDetail');
 
-        // 如果滚动位置为0，尝试从Redux获取
-        if (scrollPosition === 0) {
-          if (reduxScrollPosition > 0) {
-            preciseScrollRestore(reduxScrollPosition);
-            return;
-          } else {
-            return;
-          }
+        // 如果滚动位置为0或太小，不进行恢复
+        if (scrollPosition <= 50) {
+          return;
         }
 
         // 使用精确的滚动位置恢复机制
@@ -399,8 +445,10 @@ const AiVolunteerPage: React.FC = () => {
           scrollToItem(savedLastViewedItem);
           localStorage.removeItem('aiVolunteerLastViewedItem');
         } else {
-          // 使用滚动位置恢复
-          preciseScrollRestore(scrollPosition);
+          // 使用滚动位置恢复，添加延迟确保DOM已渲染
+          setTimeout(() => {
+            preciseScrollRestore(scrollPosition);
+          }, 500);
         }
       }
     }
@@ -413,6 +461,49 @@ const AiVolunteerPage: React.FC = () => {
     scrollToItem,
     isRestoringScroll,
   ]);
+
+  // 添加额外的滚动位置恢复检查
+  useEffect(() => {
+    if (!loading && hasInitialized && alternatives.length > 0) {
+      // 延迟检查是否有需要恢复的滚动位置
+      const timer = setTimeout(() => {
+        const savedScrollPosition = localStorage.getItem('aiVolunteerScrollPosition');
+        if (savedScrollPosition) {
+          const scrollPosition = parseInt(savedScrollPosition, 10);
+          if (scrollPosition > 0) {
+            window.scrollTo(0, scrollPosition);
+          }
+        }
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [loading, hasInitialized, alternatives.length]);
+
+  // 添加更可靠的滚动位置恢复机制
+  useEffect(() => {
+    if (!loading && hasInitialized && alternatives.length > 0) {
+      // 检查是否有保存的滚动位置且当前不在恢复状态
+      const savedScrollPosition = localStorage.getItem('aiVolunteerScrollPosition');
+      const isFromDetail = sessionStorage.getItem('aiVolunteerFromDetail') === 'true';
+      
+      if (savedScrollPosition && isFromDetail) {
+        const scrollPosition = parseInt(savedScrollPosition, 10);
+        if (scrollPosition > 50) {
+          // 使用多个延迟确保DOM完全渲染
+          setTimeout(() => {
+            window.scrollTo(0, scrollPosition);
+          }, 1500);
+          
+          setTimeout(() => {
+            window.scrollTo(0, scrollPosition);
+          }, 2000);
+        }
+      }
+    }
+  }, [loading, hasInitialized, alternatives.length]);
+
+
 
   // 页面离开时设置标记 - 已合并到上面的增强版中
 
@@ -445,11 +536,15 @@ const AiVolunteerPage: React.FC = () => {
   // 辅助函数：处理导航跳转，设置返回标记
   const handleNavigation = useCallback(
     (url: string, options?: { replace?: boolean }, itemId?: string) => {
-      // 设置标记，表示用户即将离开页面
-      sessionStorage.setItem('aiVolunteerFromDetail', 'true');
       // 保存当前滚动位置
       const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-      localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+      
+      // 只有当滚动位置大于50时才保存和设置返回标记
+      if (currentScrollPosition > 50) {
+        // 设置标记，表示用户即将离开页面
+        sessionStorage.setItem('aiVolunteerFromDetail', 'true');
+        localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
+      }
 
       // 如果提供了项目ID，保存最后查看的项目
       if (itemId) {
@@ -830,7 +925,7 @@ const AiVolunteerPage: React.FC = () => {
         dispatch(setLoading(true));
 
         // 设置页面标识
-        dispatch(setPageKey(currentPageKey.current));
+        dispatch(setPageKey(pageKeyRef.current));
 
         // 检查是否是从返回操作进入的页面
         const isBackNavigation = performance.getEntriesByType(
@@ -1335,7 +1430,7 @@ const AiVolunteerPage: React.FC = () => {
         showRestartButton={true}
       />
 
-      <div className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3 min-h-screen">
+      <div className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3">
         {/* 搜索组件 */}
         <div className="w-full max-w-xl bg-white rounded-2xl p-4 mb-3">
           <div className="space-y-3">
@@ -1468,7 +1563,14 @@ const AiVolunteerPage: React.FC = () => {
 
             {/* 备选志愿列表 - 使用虚拟滚动优化 */}
             {filteredData.length > 0 && (
-              <div ref={scrollContainerRef} className="w-full max-w-xl xunigundong">
+              <div 
+                ref={scrollManager.scrollContainerRef} 
+                className="w-full max-w-xl xunigundong"
+                style={{
+                  overflowX: 'hidden',
+                  position: 'relative'
+                }}
+              >
                 {displayedGroups.map((group) => {
                   // 检查是否为按专业分组的数据
                   const isMajorGroup = group.group <= -1000 && (group.result[0] as any).majorGroup;

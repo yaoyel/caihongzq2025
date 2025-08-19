@@ -128,8 +128,13 @@ body {
 }
 .page-bg-hasTop {
   height: calc(100vh - 120px);
-  overflow-y: auto;
+  overflow-y: visible;
   background: #f7f8fa;
   display: flex;
   flex-direction: column;
+}
+
+/* 确保xunigundong元素可以滚动 */
+.xunigundong {
+  /* 移除强制样式，让内联样式生效 */
 }
