@@ -3,8 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import top from '../../public/basic_info_top.png';
 import { EnvironmentOutlined } from '@ant-design/icons';
-import { Picker, Dialog } from 'antd-mobile';
-import { updateUserProfile, getCurrentUser } from '../../config';
+import { Picker, Dialog, SpinLoading } from 'antd-mobile';
+import { updateUserProfile, getCurrentUser, getScoreRange } from '../../config';
 /**
  * 高考志愿信息完善页面
  * 严格按照设计图尺寸、字体、间距等实现
@@ -81,6 +81,9 @@ const BasicInfo: React.FC = () => {
   const [rank, setRank] = useState('');
   const [showProvincePicker, setShowProvincePicker] = useState(false);
   const [scaleAnswerCount, setScaleAnswerCount] = useState(false);
+  // 新增：加载状态
+  const [isLoadingRank, setIsLoadingRank] = useState(false);
+  const [autoGetRankTimeout, setAutoGetRankTimeout] = useState<NodeJS.Timeout | null>(null);
   const userStr = localStorage.getItem('new-user');
   console.log(userStr);
 
@@ -116,6 +119,78 @@ const BasicInfo: React.FC = () => {
     };
     getScaleAnswerCount();
   }, []);
+
+  // 组件卸载时清理定时器
+  useEffect(() => {
+    return () => {
+      if (autoGetRankTimeout) {
+        clearTimeout(autoGetRankTimeout);
+      }
+    };
+  }, [autoGetRankTimeout]);
+
+  /**
+   * 自动获取高考排名
+   * @param scoreValue 高考分数
+   */
+  const autoGetRank = async (scoreValue: string) => {
+    if (!scoreValue || !province) return;
+    
+    // 确定科目类型
+    let subjectType = '';
+    if (province === '新疆' || province === '西藏') {
+      subjectType = firstSubject || '';
+    } else if (
+      province === '北京' ||
+      province === '天津' ||
+      province === '上海' ||
+      province === '山东' ||
+      province === '海南' ||
+      province === '浙江'
+    ) {
+      subjectType = '综合';
+    } else {
+      subjectType = firstSubject || '';
+    }
+
+    if (!subjectType) return;
+
+    try {
+      setIsLoadingRank(true);
+      const result = await getScoreRange(province, parseInt(scoreValue), subjectType);
+      
+      console.log('API返回的完整数据:', result);
+      
+      // 处理不同的数据结构
+      let rankValue = '';
+      
+      // 情况1: result.data.total (嵌套结构)
+      if (result.data && result.data.total) {
+        rankValue = result.data.total.toString();
+      }
+      // 情况2: result.total (直接结构)
+      else if (result.total) {
+        rankValue = result.total.toString();
+      }
+      // 情况3: result.data.data.total (双重嵌套)
+      else if (result.data && result.data.data && result.data.data.total) {
+        rankValue = result.data.data.total.toString();
+      }
+      else {
+        console.error('未找到 total 字段，完整返回数据:', result);
+        return;
+      }
+      
+      console.log('获取到的排名值:', rankValue);
+      setRank(rankValue);
+      console.log('自动获取排名成功');
+    } catch (error) {
+      console.error('自动获取排名失败:', error);
+      // 不显示错误提示，静默失败
+    } finally {
+      setIsLoadingRank(false);
+    }
+  };
 
   const updateProfile = async () => {
     let firstSubjectTemp = firstSubject;
@@ -228,9 +303,27 @@ const BasicInfo: React.FC = () => {
     // 只允许数字输入且大于0
     if (/^\d+$/.test(value) && parseInt(value) > 0) {
       setScore(value);
+      // 分数输入完成后，自动获取排名（使用防抖）
+      if (value.length >= 3) { // 至少输入3位数才触发
+        // 清除之前的定时器
+        if (autoGetRankTimeout) {
+          clearTimeout(autoGetRankTimeout);
+        }
+        // 设置新的定时器，延迟1秒后执行
+        const timeout = setTimeout(() => {
+          autoGetRank(value);
+        }, 1000);
+        setAutoGetRankTimeout(timeout);
+      }
     } else if (value === '') {
       // 允许清空输入框
       setScore(value);
+      setRank(''); // 清空排名
+      // 清除定时器
+      if (autoGetRankTimeout) {
+        clearTimeout(autoGetRankTimeout);
+        setAutoGetRankTimeout(null);
+      }
     }
   };
 
@@ -310,7 +403,13 @@ const BasicInfo: React.FC = () => {
                 className={`flex-1 h-[44px] rounded-full text-[18px] font-medium transition-all
                     ${firstSubject === subj.value ? 'bg-blue-600 text-white shadow' : 'bg-gray-100 text-gray-600'}
                   `}
-                onClick={() => setFirstSubject(subj.value)}
+                onClick={() => {
+                  setFirstSubject(subj.value);
+                  // 如果已有分数，重新获取排名
+                  if (score && score.length >= 3) {
+                    autoGetRank(score);
+                  }
+                }}
               >
                 {subj.label}
               </button>
@@ -400,7 +499,13 @@ const BasicInfo: React.FC = () => {
                   className={`flex-1 h-[44px] rounded-full text-[18px] font-medium transition-all
                     ${firstSubject === subj.value ? 'bg-blue-600 text-white shadow' : 'bg-gray-100 text-gray-600'}
                   `}
-                  onClick={() => setFirstSubject(subj.value)}
+                  onClick={() => {
+                    setFirstSubject(subj.value);
+                    // 如果已有分数，重新获取排名
+                    if (score && score.length >= 3) {
+                      autoGetRank(score);
+                    }
+                  }}
                 >
                   {subj.label}
                 </button>
@@ -485,23 +590,32 @@ const BasicInfo: React.FC = () => {
           <div className="flex items-center justify-between border-b border-gray-200">
             <label className="text-gray-900 text-[16px]">高考排名</label>
             <div className="flex items-center justify-end gap-2">
-              <input
-                type="text"
-                inputMode="numeric"
-                className="w-[120px] h-[36px] text-right  text-[16px] focus:outline-none"
-                placeholder="请输入位次"
-                value={rank}
-                onChange={handleRankChange}
-              />
-              <span className="text-gray-900 text-[15px]">{'>>'}</span>
+              {isLoadingRank ? (
+                <div className="flex items-center gap-2">
+                  <SpinLoading color="primary" style={{ fontSize: 14 }} />
+                  <span className="text-blue-500 text-[14px]">正在获取排名...</span>
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    className="w-[120px] h-[36px] text-right  text-[16px] focus:outline-none"
+                    placeholder="请输入位次"
+                    value={rank}
+                    onChange={handleRankChange}
+                  />
+                  <span className="text-gray-900 text-[15px]">{'>>'}</span>
+                </>
+              )}
             </div>
           </div>
         </div>
 
         {/* 说明文字 */}
         <div className="text-[14px] mt-1 flex items-center">
-          {/* <span className="text-blue-500 mr-1">*</span> */}
-          {/* <span className="text-gray-400">2024年{province}高考一分一段 名</span> */}
+          <span className="text-blue-500 mr-1">💡</span>
+          <span className="text-gray-400">输入分数后系统将自动获取排名位次</span>
         </div>
       </form>
 
@@ -535,6 +649,11 @@ const BasicInfo: React.FC = () => {
           setSecondSubject([]);
           setScore('');
           setRank('');
+          // 清除定时器
+          if (autoGetRankTimeout) {
+            clearTimeout(autoGetRankTimeout);
+            setAutoGetRankTimeout(null);
+          }
         }}
         title="选择省份"
       />

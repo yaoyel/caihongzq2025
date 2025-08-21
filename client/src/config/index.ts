@@ -33,6 +33,19 @@ declare global {
   }
 }
 
+// 基础接口类型定义
+interface GaokaoSubject {
+  province: string;
+  subjects: string[];
+  score?: number;
+}
+
+interface UpdateProfileResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+}
+
 // 从环境变量中获取API主机地址
 const getApiHost = () => {
   // 优先使用环境变量
@@ -75,6 +88,8 @@ export const api = {
     wechatCallback: '/wechat/callback',
     wechatPay: '/pay/transactions_jsapi',
     gaokaoConfig: '/config/gaokao', // 高考配置接口
+    scoreRange: (provinceName: string, score: number, subjectType: string) =>
+      `/users/scoreRange?provinceName=${encodeURIComponent(provinceName)}&score=${score}&subjectType=${encodeURIComponent(subjectType)}`,
   },
 };
 
@@ -654,3 +669,74 @@ export const updateGaokaoInfo = async (
 
   return updateUserProfile(userId, { gaokaoInfo });
 };
+
+// 位次信息接口类型定义
+interface ScoreRangeInfo {
+  num: number; // 当前分数段人数
+  total: number; // 高考排名（总位次）
+  batchName: string; // 批次名称
+  controlScore: number; // 控制分数线
+  rankRange: string; // 排名范围
+  message: string; // 操作结果消息
+}
+
+interface ScoreRangeResponse {
+  success?: boolean;
+  message?: string;
+  data?: ScoreRangeInfo;
+  // 也可能直接返回数据对象
+  num?: number;
+  total?: number;
+  batchName?: string;
+  controlScore?: number;
+  rankRange?: string;
+}
+
+/**
+ * 获取高考分数位次信息
+ * @param provinceName 省份名称
+ * @param score 高考分数
+ * @param subjectType 科目类型（如：物理、历史等）
+ * @returns Promise<ScoreRangeResponse>
+ */
+export const getScoreRange = async (
+  provinceName: string,
+  score: number,
+  subjectType: string
+): Promise<ScoreRangeResponse> => {
+  try {
+    const response = await axios.get<ScoreRangeResponse>(
+      getApiUrl(api.endpoints.scoreRange(provinceName, score, subjectType)),
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '获取位次信息失败');
+    }
+    throw error;
+  }
+};
+
+/*
+使用示例：
+
+// 获取湖南省物理类530分的位次信息
+const getRankInfo = async () => {
+  try {
+    const result = await getScoreRange('湖南', 530, '物理');
+    console.log('位次信息:', result.data);
+    // 输出示例：
+    // {
+    //   num: 1214,
+    //   total: 205496, // 高考排名
+    //   batchName: "本科批",
+    //   controlScore: 405,
+    //   rankRange: "204283-205496",
+    //   message: "操作成功"
+    // }
+  } catch (error) {
+    console.error('获取位次失败:', error.message);
+  }
+};
+*/
