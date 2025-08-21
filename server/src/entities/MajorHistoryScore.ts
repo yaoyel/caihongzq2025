@@ -16,6 +16,7 @@ import { SchoolMajor } from './SchoolMajor';
 @Entity('major_history_scores')
 @Index('idx_major_history_scores_school_major', ['schoolMajorId'])
 @Index('idx_major_history_scores_composite', ['schoolMajorId', 'province', 'subjectType', 'batch', 'subjectSelection'])
+@Index('idx_major_history_scores_province_subject_batch', ['province', 'subjectType', 'batch', 'subjectSelection'])
 export class MajorHistoryScore {
   /**
    * 主键ID，自增长
