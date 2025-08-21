@@ -237,9 +237,9 @@ export class UserService {
 
             let enrollType: string;
             if (userScore >= undergraduateScore) {
-                enrollType = '本科';
+                enrollType = '本科批';
             } else if (userScore >= collegeScore) {
-                enrollType = '专科';
+                enrollType = '专科批';
             } else {
                 enrollType = '未达到录取线';
             }
