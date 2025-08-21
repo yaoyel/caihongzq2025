@@ -123,7 +123,7 @@ export class MajorRedisService {
             // pattern: patterns[results.indexOf(result)], // 保留原始pattern，不带前缀
             // batch: batch || '所有批次'
           }))
-        );
+        ); 
         return allData; 
 
       // // 按2024年分数排序

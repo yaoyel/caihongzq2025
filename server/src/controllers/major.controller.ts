@@ -229,8 +229,10 @@ export class MajorController {
         const processedSchools = rawData.schools.map((school: { id: number } & SchoolViewModel) => {
           const schoolScores = historyScore.filter(score => 
             score.schoolMajorId === school.id && 
-            (localBatchNames.length === 0 || localBatchNames.includes(score.batch))
-          );
+            (user.enrollType === '专科批' 
+              ? localBatchNames.includes(score.batch)
+              : !localBatchNames.includes(score.batch))
+          ); 
           const avgRank = this.majorRedisService.getAverageRank(
             schoolScores.length > 0 ? schoolScores[0].historyScore as unknown as string : null
           );
