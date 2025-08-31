@@ -49,3 +49,36 @@ export const getAccessToken = async (): Promise<string> => {
     throw error;
   }
 }; 
+
+/**
+ * 从history_score中提取指定年份的位次信息
+ * @param historyScore 历史分数数据
+ * @param year 年份（可选，默认为2024）
+ * @returns 指定年份的位次，如果不存在或为空则返回null
+ */
+export function extractRank(historyScore: any, year: string = '2024'): number | null {
+  if (!historyScore || !Array.isArray(historyScore)) {
+    return null;
+  }
+
+  // 查找指定年份的数据
+  const yearData = historyScore.find((item: any) => item[year]);
+  if (!yearData || !yearData[year]) {
+    return null;
+  }
+
+  // 解析"分数,位次,招生人数"格式的数据
+  const parts = yearData[year].split(',');
+  if (parts.length < 2) {
+    return null;
+  }
+
+  const rankStr = parts[1].trim();
+  // 检查位次是否为空或"-"
+  if (!rankStr || rankStr === '-' || rankStr === '') {
+    return null;
+  }
+
+  const rank = parseInt(rankStr, 10);
+  return isNaN(rank) ? null : rank;
+} 

@@ -1,11 +1,12 @@
 import { GAOKAO_SUBJECT_CONFIG } from '../config/gaokao-subjects';
-import { Get, JsonController, Post, Body, Ctx, QueryParam } from 'routing-controllers';
+import { Get, JsonController, Post, Body, Ctx, QueryParam, Param } from 'routing-controllers';
 import { Service } from 'typedi';
 import RedisModule from '../redis/redis.module';
 import { MajorRedisService } from '../services/major.redis.service';
 import { UserService } from '../services/user.service';
 import { MajorScoreService } from '../services/major.service'; 
 import { PROVINCE_VOLUNTEER_COUNT } from '../config/province';
+import { extractRank } from '../utils/helper';
  
 /**
  * 带排名信息的学校接口
@@ -15,44 +16,12 @@ interface SchoolWithRank {
   code: string;
   name: string;
   historyScores?: any[];
-  averageRank?: number;
   rankDiffPercentage?: number;
-  group?: number;
-  isHighRange?: boolean; // 新增字段：标识是否为较高范围（原group=5的情况）
+  group?: number; 
   [key: string]: any;
 }
 
-/**
- * 从history_score中提取2024年的位次信息
- * @param historyScore 历史分数数据
- * @returns 2024年的位次，如果不存在或为空则返回null
- */
-function extract2024Rank(historyScore: any): number | null {
-  if (!historyScore || !Array.isArray(historyScore)) {
-    return null;
-  }
 
-  // 查找2024年的数据
-  const year2024Data = historyScore.find((item: any) => item['2024']);
-  if (!year2024Data || !year2024Data['2024']) {
-    return null;
-  }
-
-  // 解析"分数,位次,招生人数"格式的数据
-  const parts = year2024Data['2024'].split(',');
-  if (parts.length < 2) {
-    return null;
-  }
-
-  const rankStr = parts[1].trim();
-  // 检查位次是否为空或"-"
-  if (!rankStr || rankStr === '-' || rankStr === '') {
-    return null;
-  }
-
-  const rank = parseInt(rankStr, 10);
-  return isNaN(rank) ? null : rank;
-}
 
 /**
  * 配置控制器类
@@ -199,16 +168,21 @@ export class ConfigController {
       }
       
       const rank = user.rank;
-      const majors = (await this.majorScoreService.getTopDevelopmentPotentialMajors(ctx.state.user!.userId.toString(),user!.enrollType || '本科批')).filter(s=> s.lexue_score > 0);
- 
+      const computeMajors = await this.majorScoreService.getTopDevelopmentPotentialMajors(ctx.state.user!.userId.toString(),user!.enrollType || '本科批');
+      const majors = computeMajors.filter(s=> s.lexue_score > 0 && s.position === 'top');
+      const buttomMajors =  computeMajors.filter(s => s.position === 'bottom'); 
       const volunteerCount = PROVINCE_VOLUNTEER_COUNT[user.province??""] || 0;
       const recommendCount = volunteerCount * 3;
-      const majorDetails = await this.majorRedisService.getMajorDetails(majors.map(s=> s.majorCode),1,recommendCount);
+      // 先获取招生计划数据
+      const enrollPlansMap = await this.majorRedisService.getMultipleEnrollPlans(computeMajors.map(s=>s.majorCode), user!.province || '北京',   Number.parseInt(process.env.CURRENT_YEAR || '2025'), user!.enrollType || '本科批', '普通类', user!.preferredSubjects || '综合', user!.secondarySubjects?.split(',') || ['不限']);
+   
+      // 按照 majorGroup 分组，删除冲突的 majors 数据
+      const filteredMajors = this.filterConflictingMajors(majors, buttomMajors, enrollPlansMap);
+      // 使用过滤后的专业数据获取详细信息
+      const majorDetails = await this.majorRedisService.getMajorDetails(filteredMajors.map(s=> s.majorCode),1,recommendCount);
       
       // 根据用户信息，从redis中查询专业对应的分数
-      const historyScoreMap = await this.majorRedisService.getMultipleMajorScores(majors.map(s=>s.majorCode), user!.province || '北京', user!.preferredSubjects || '综合', user!.secondarySubjects || '');
- 
-      const enrollPlansMap = await this.majorRedisService.getMultipleEnrollPlans(majors.map(s=>s.majorCode), user!.province || '北京',   Number.parseInt(process.env.CURRENT_YEAR || '2025'), user!.enrollType || '本科批', '普通类', user!.preferredSubjects || '综合', user!.secondarySubjects?.split(',') || ['不限']);
+      const historyScoreMap = await this.majorRedisService.getMultipleMajorScores(filteredMajors.map(s=>s.majorCode), user!.province || '北京', user!.preferredSubjects || '综合', user!.secondarySubjects || '');
       // 将 Map 转换为数组格式，便于后续处理
       const historyScore: any[] = [];
       historyScoreMap.forEach((scores, majorCode) => {
@@ -222,7 +196,7 @@ export class ConfigController {
 
 
       // 处理每个专业的学校数据，添加历史分数信息并按位次分组排序
-      const processedMajorDetails = majorDetails.data.map((majorDetail: any) => {
+      const processedMajorDetails = majorDetails.data.map((majorDetail: any) => { 
         if (!majorDetail.schools || !Array.isArray(majorDetail.schools)) {
           return majorDetail;
         }
@@ -233,7 +207,7 @@ export class ConfigController {
         );
 
         // 获取该专业的招生计划数据
-        const majorEnrollPlans = enrollPlansMap.get(majorDetail.code) || [];
+        const majorEnrollPlans = enrollPlansMap.get(majorDetail.code) || []; 
      
         // 根据 enrollPlans 为 schools 添加 majorGroupId 和 majorGroupName
         if (Array.isArray(majorDetail.schools) && Array.isArray(majorEnrollPlans)) {
@@ -266,20 +240,18 @@ export class ConfigController {
               : !localBatchNames.includes(score.batch))
           );
           
-          const avgRank = this.majorRedisService.getAverageRank(
-            schoolScores.length > 0 ? schoolScores[0].historyScore as unknown as string : null
-          );
+
           
           // 计算与用户位次的差异百分比
           // 计算位次差异百分比：正值表示学校平均位次比用户位次好，负值表示较差
-          const rankDiffPercentage = avgRank === 0 ? 0 : ((avgRank - rank) / avgRank) * 100;
+          const rankDiffPercentage = 0;
           
           // 计算位次差值和位次差值百分比（与2024年位次比较）
           let rankDiff = 0;
           let rankDiffPer = 0;
           
           // 获取2024年的位次数据
-          const rank2024 = extract2024Rank(schoolScores.length > 0 ? schoolScores[0].historyScore : null);
+          const rank2024 = extractRank(schoolScores.length > 0 ? schoolScores[0].historyScore : null);
           
           if (rank && rank > 0 && rank2024 && rank2024 > 0) {
             // 计算位次差值（2024年位次 - 用户位次）
@@ -288,26 +260,26 @@ export class ConfigController {
             rankDiffPer = rank2024 > 0 ? (rankDiff / rank2024) * 100 : 0;
           }
           
-          // 确定分组（基于平均位次，用于sortByMajor=true时的排序）
-          let group = 0; // 默认组（无分数或差异过大）
+          // 确定分组（基于2024年位次，使用与suitable方法相同的分组逻辑）
+          let group = 9; // 默认组（其他位次段）
           let isHighRange = false; // 新增字段：标识是否为较高范围
           
-          if (avgRank > 0) { // 只对有位次的学校进行分组
-            // 30%到100%范围使用2024年位次与用户位次比较
-            if (rank2024 && rank2024 > 0 && rank && rank > 0) {
-              const rankDiffPercentage2024 = ((rank-rank2024) / rank2024) * 100;
-              if (rankDiffPercentage2024 > 30 && rankDiffPercentage2024 <= 100) {
-                isHighRange = true; // 30%到100%（较高范围）- 基于2024年位次
-              }
-            }
+          if (rank2024 && rank2024 > 0 && rank && rank > 0) { // 只对有位次的学校进行分组
             
-            // 其他分组使用平均位次比较（不再受isHighRange影响）
-            if (rankDiffPercentage > 5 && rankDiffPercentage <= 30) {
-              group = 1; // 5%到30%（稍高）
-            } else if (rankDiffPercentage >= -10 && rankDiffPercentage <= 5) {
-              group = 2; // -10%到5%（最匹配）
-            } else if (rankDiffPercentage >= -30 && rankDiffPercentage < -10) {
-              group = 3; // -30%到-10%（稍低）
+            // 根据位次差异确定分组
+            if (rankDiffPer >= 30 && rankDiffPer <= 100) {
+              group = 1; // +30%到+100%位次段
+              isHighRange = true; // 30%到100%（较高范围）
+            } else if (rankDiffPer >= 5 && rankDiffPer < 30) {
+              group = 2; // +5%到+30%位次段
+            } else if (rankDiffPer >= -10 && rankDiffPer < 5) {
+              group = 3; // （-10%）到+5%位次段
+            } else if (rankDiffPer >= -30 && rankDiffPer < -10) {
+              group = 4; // （-30%）到（-10%）位次段
+            } else if (rankDiffPer >= -100 && rankDiffPer < -30) {
+              group = 5; // （-100%）到（-30%）位次段
+            } else {
+              group = 9; // 其他位次段
             }
           }
           
@@ -315,7 +287,6 @@ export class ConfigController {
             ...school,
             historyScores: schoolScores,
             majorDisplayName: schoolScores.length > 0 ? schoolScores[0].planMajorName : null,
-            averageRank: avgRank,
             rankDiffPercentage,
             rankDiff,
             rankDiffPer,
@@ -355,75 +326,36 @@ export class ConfigController {
         const sortedMajorDetails = processedMajorDetails.map((major, index) => {
           const isTopFive = index < 5; // 前五个专业为置顶
           
-          // 当 isSortByMajor 为 true 时，过滤掉 rankDiffPer 不在 -30 到 30 范围内的学校
+          // 当 isSortByMajor 为 true 时，过滤掉不在合适范围内的学校
           const filteredSchools = major.schools.filter((school: any) => {
             const rankDiffPer = school.rankDiffPer || 0;
-            return rankDiffPer >= -30 && rankDiffPer <= 30;
+            // 保留在 -100% 到 +100% 范围内的学校
+            return rankDiffPer >= -100 && rankDiffPer <= 100;
           });
           
           // 对每个专业内的学校进行排序
           const sortedSchools = filteredSchools.sort((a: any, b: any) => {
             // 首先按 group 排序
             if (a.group !== b.group) {
-              return (b.group || 0) - (a.group || 0);
+              return a.group - b.group;
             }
             
-            // 对于 isHighRange 的学校，优先显示国家级特征的学校
-            if (a.isHighRange && b.isHighRange) {
-              const aIsValid = a.features && (
-                a.features.includes('国家级示范') || 
-                a.features.includes('国家级骨干')
-              );
-              const bIsValid = b.features && (
-                b.features.includes('国家级示范') || 
-                b.features.includes('国家级骨干')
-              );
-              
-              if (aIsValid !== bIsValid) {
-                return aIsValid ? -1 : 1;
-              }
-              
-              // // 如果都有效，按 averageRank 从高到低排序
-              // if (aIsValid && bIsValid) {
-              //   return (b.averageRank || 0) - (a.averageRank || 0);
-              // }
-            }
-            
-            // 优先显示 rankDiffPercentage 在 -30% 到 30% 范围内的学校
+            // 组内按照 rankDiffPer 进行排序（从高到低）
             const aRankDiff = a.rankDiffPer || 0;
             const bRankDiff = b.rankDiffPer || 0;
-            
-            const aInRange = aRankDiff >= -30 && aRankDiff <= 30;
-            const bInRange = bRankDiff >= -30 && bRankDiff <= 30;  
-            
-            // 如果两个学校都在范围内，按 rankDiffPercentage 从高到低排序
-            if (aInRange && bInRange) {
-              return bRankDiff - aRankDiff;
-            }
-            
-            // 如果只有一个在范围内，在范围内的排在前面
-            if (aInRange && !bInRange) return -1;
-            if (!aInRange && bInRange) return 1;
-            
-            // 如果都不在范围内，按 rankDiffPercentage 从高到低排序
-            if (!aInRange && !bInRange) {
-              return aRankDiff - bRankDiff;
-            }
-            
-            return 0;
+            return bRankDiff - aRankDiff;
           });
           
              return {
               code: major.code,
               name: major.major.name,
-              developmentPotential: majors.find(m => m.majorCode === major.code)?.developmentpotential || 0,
+              developmentPotential: filteredMajors.find(m => m.majorCode === major.code)?.developmentpotential || 0,
               schools: sortedSchools.map((school: any) => ({
                 id: school.id,
                 schoolName: school.name,  
                 schoolNature: school.nature,
                 displayName: school.majorDisplayName,
                 schoolCode: school.code, 
-                averageRank: school.averageRank,
                 rankDiffPercentage: school.rankDiffPercentage,
                 rankDiff: school.rankDiff,
                 rankDiffPer: school.rankDiffPer,
@@ -448,12 +380,52 @@ export class ConfigController {
         
         // 按专业的发展潜力排序
         const sortedByDevelopmentPotential = sortedMajorDetails.sort((a, b) => {
-          const aPotential = majors.find(m => m.majorCode === a.code)?.developmentpotential || 0;
-          const bPotential = majors.find(m => m.majorCode === b.code)?.developmentpotential || 0;
+          const aPotential = filteredMajors.find(m => m.majorCode === a.code)?.developmentpotential || 0;
+          const bPotential = filteredMajors.find(m => m.majorCode === b.code)?.developmentpotential || 0;
           return bPotential - aPotential;
         });
         
+        // 构建分组统计信息
+        const rankSegments = {
+          '1': { name: '+30%到+100%位次段', count: 0, data: [] as any[] },
+          '2': { name: '+5%到+30%位次段', count: 0, data: [] as any[] },
+          '3': { name: '（-10%）到+5%位次段', count: 0, data: [] as any[] },
+          '4': { name: '（-30%）到（-10%）位次段', count: 0, data: [] as any[] },
+          '5': { name: '（-100%）到（-30%）位次段', count: 0, data: [] as any[] },
+          '9': { name: '其他位次段', count: 0, data: [] as any[] }
+        };
+
+        // 统计各分组的学校数量
+        sortedByDevelopmentPotential.forEach(major => {
+          major.schools.forEach((school: any) => {
+            const groupKey = school.group.toString();
+            if (rankSegments[groupKey as keyof typeof rankSegments]) {
+              rankSegments[groupKey as keyof typeof rankSegments].count++;
+            } else {
+              rankSegments['9'].count++;
+            }
+          });
+        });
+
+        // 构建segmentStats
+        const segmentStats = {
+          totalCount: sortedByDevelopmentPotential.reduce((total, major) => total + major.schools.length, 0),
+          userRank: user.rank || 0,
+          segments: {
+            '1': { name: '+30%到+100%位次段', count: rankSegments['1'].count },
+            '2': { name: '+5%到+30%位次段', count: rankSegments['2'].count },
+            '3': { name: '（-10%）到+5%位次段', count: rankSegments['3'].count },
+            '4': { name: '（-30%）到（-10%）位次段', count: rankSegments['4'].count },
+            '5': { name: '（-100%）到（-30%）位次段', count: rankSegments['5'].count },
+            '9': { name: '其他位次段', count: rankSegments['9'].count }
+          }
+        };
+
+        // 对专业数据进行分组处理
+        // const majorsByGroup = this.transformMajorsByGroup(sortedByDevelopmentPotential);
+        
         return {  
+          segmentStats,
           user: {
             province: user.province,
             preferredSubjects: user.preferredSubjects,
@@ -462,13 +434,15 @@ export class ConfigController {
             score: user.score
           },
           volunteerCount,
-          recommendCount:sortedByDevelopmentPotential.length,
+          recommendCount: sortedByDevelopmentPotential.length,
           total: sortedByDevelopmentPotential.length,
-          majors: sortedByDevelopmentPotential // 返回按专业分组的数据
+          majors: sortedByDevelopmentPotential, // 返回按专业分组的数据
+          // majorsByGroup // 新增按分组显示的专业数据
         };
       } else {
+
         // 原有的逻辑：将所有学校展开并添加专业信息
-        const allSchools: any[] = [];
+        const allSchools: any[] = []; 
         processedMajorDetails.forEach((major, index) => {
           if (major.schools && Array.isArray(major.schools)) {
             const isTopFive = index < 5; // 前五个专业为置顶
@@ -490,95 +464,19 @@ export class ConfigController {
             return a.isTopFive ? -1 : 1;
           }
 
-          // 对于置顶的学校，筛选 isHighRange 且包含国家级特征的学校
-          if (a.isTopFive && b.isTopFive) {
-            const aIsValid = a.isHighRange && a.features && (
-              a.features.includes('国家级示范') || 
-              a.features.includes('国家级骨干')
-            );
-            const bIsValid = b.isHighRange && b.features && (
-              b.features.includes('国家级示范') || 
-              b.features.includes('国家级骨干')
-            );
-            
-            if (aIsValid !== bIsValid) {
-              return aIsValid ? -1 : 1;
-            }
-            
-            // 如果都有效，按2024年录取位次从高到低排序
-            if (aIsValid && bIsValid) {
-              // 获取2024年位次
-              const aRank2024 = extract2024Rank(a.historyScores?.length > 0 ? a.historyScores[0].historyScore : null);
-              const bRank2024 = extract2024Rank(b.historyScores?.length > 0 ? b.historyScores[0].historyScore : null);
-              
-              // 从高到低排序（位次数值越小越好）
-              return (aRank2024 || 0) - (bRank2024 || 0);
-            }
-          }
+ 
 
-            // 对于非置顶的学校，优先显示 rankDiffPercentage 在 -30% 到 30% 范围内的学校
-            if (!a.isTopFive && !b.isTopFive) {
-              // 首先将 averageRank 为 0 的排在后面
-              if ((a.averageRank || 0) === 0 && (b.averageRank || 0) !== 0) return 1;
-              if ((b.averageRank || 0) === 0 && (a.averageRank || 0) !== 0) return -1;
-              
-              // 使用已存储的2024年位次数据
-              const aRank2024 = a.rank2024 || 0;
-              const bRank2024 = b.rank2024 || 0;
-              
-              const aRankDiff = aRank2024 && rank ? ((aRank2024 - rank) / aRank2024) * 100 : 0;
-              const bRankDiff = bRank2024 && rank ? ((bRank2024 - rank) / bRank2024) * 100 : 0;
-              
-              const aInRange = aRankDiff >= -30 && aRankDiff <= 30;
-              const bInRange = bRankDiff >= -30 && bRankDiff <= 30;  
-            
-            // 如果两个学校都在范围内，按 rankDiffPercentage 从高到低排序
-            if (aInRange && bInRange) {
-              const aRank2024 = extract2024Rank(a.historyScores?.length > 0 ? a.historyScores[0].historyScore : null);
-              const bRank2024 = extract2024Rank(b.historyScores?.length > 0 ? b.historyScores[0].historyScore : null);
-              
-              // 从高到低排序（位次数值越小越好）
-              return (aRank2024 || 0) - (bRank2024 || 0);
+          // 对于非置顶的学校，按照 group 进行分组，组内按照 rankDiffPer 排序
+          if (!a.isTopFive && !b.isTopFive) {
+            // 首先按 group 排序
+            if (a.group !== b.group) {
+              return a.group - b.group;
             }
             
-            // 如果只有一个在范围内，在范围内的排在前面
-            if (aInRange && !bInRange) return -1;
-            if (!aInRange && bInRange) return 1;
-            
-            // 如果都不在范围内，按 rankDiffPercentage 从高到低排序
-            if (!aInRange && !bInRange) {
-              return bRankDiff - aRankDiff;
-            }
-            
-            // 如果有 enrollmentRate 和 employmentRate，按照 employmentRate*0.5 + enrollmentRate*0.5 倒序
-            if (a.enrollmentRate && a.employmentRate && b.enrollmentRate && b.employmentRate) {
-              const scoreA = (a.employmentRate * 0.5) + (a.enrollmentRate * 0.5);
-              const scoreB = (b.employmentRate * 0.5) + (b.enrollmentRate * 0.5);
-              return scoreB - scoreA;
-            }
-            
-            // 如果没有，按照 features 中的国家级标识排序
-            const getFeatureScore = (feature: string) => {
-              if (feature.includes('国家级示范')) return 3;
-              if (feature.includes('国家级骨干')) return 2;
-              if (feature.includes('双高计划')) return 1;
-              return 0;
-            };
-            
-            const scoreA = getFeatureScore(a.features || '');
-            const scoreB = getFeatureScore(b.features || '');
-            
-            if (scoreA !== scoreB) {
-              return scoreB - scoreA;
-            }
-            
-            // 如果 features 分数相同，其他 features 排在后面
-            const hasNationalFeatureA = scoreA > 0;
-            const hasNationalFeatureB = scoreB > 0;
-            
-            if (hasNationalFeatureA !== hasNationalFeatureB) {
-              return hasNationalFeatureA ? -1 : 1;
-            }
+            // 组内按照 rankDiffPer 进行排序（从高到低）
+            const aRankDiff = a.rankDiffPer || 0;
+            const bRankDiff = b.rankDiffPer || 0;
+            return bRankDiff - aRankDiff;
           }
 
           return 0;
@@ -588,15 +486,12 @@ export class ConfigController {
         const topFiveSchools = sortedAllSchools.filter(school => 
           school.isTopFive && 
           school.isHighRange && 
-          school.features && (
-            school.features.includes('国家级示范') || 
-            school.features.includes('国家级骨干')
-          )
-        );
+          school.features  
+        ); 
         const nonTopFiveSchools = sortedAllSchools.filter(school => 
           !school.isTopFive && 
-          school.rankDiffPer >= -30 && 
-          school.rankDiffPer <= 30
+          school.rankDiffPer >= -100 && 
+          school.rankDiffPer <= 100
         );
         const selectedNonTopFiveSchools = nonTopFiveSchools;//.slice(0, recommendCount);
         
@@ -609,7 +504,6 @@ export class ConfigController {
           schoolName: school.name,
           schoolCode: school.code,
           schoolNature: school.nature,
-          averageRank: school.averageRank,
           rankDiffPercentage: school.rankDiffPercentage,
           rankDiff: school.rankDiff,
           rankDiffPer: school.rankDiffPer,
@@ -633,14 +527,52 @@ export class ConfigController {
             code: school.majorCode,
             name: school.majorDisplayName || school.majorName,
             displayName: school.majorDisplayName,
-            developmentPotential: majors.find(m => m.majorCode === school.majorCode)?.developmentpotential || 0 
+            developmentPotential: filteredMajors.find(m => m.majorCode === school.majorCode)?.developmentpotential || 0 
           }
         }));
 
         // 计算实际返回的学校数量
         const actualTotal = schoolsWithMajor.length;
 
+        // 构建分组统计信息
+        const rankSegments = {
+          '1': { name: '+30%到+100%位次段', count: 0, data: [] as any[] },
+          '2': { name: '+5%到+30%位次段', count: 0, data: [] as any[] },
+          '3': { name: '（-10%）到+5%位次段', count: 0, data: [] as any[] },
+          '4': { name: '（-30%）到（-10%）位次段', count: 0, data: [] as any[] },
+          '5': { name: '（-100%）到（-30%）位次段', count: 0, data: [] as any[] },
+          '9': { name: '其他位次段', count: 0, data: [] as any[] }
+        };
+
+        // 统计各分组的学校数量
+        schoolsWithMajor.forEach((school: any) => {
+          const groupKey = school.group.toString();
+          if (rankSegments[groupKey as keyof typeof rankSegments]) {
+            rankSegments[groupKey as keyof typeof rankSegments].count++;
+          } else {
+            rankSegments['9'].count++;
+          }
+        });
+
+        // 构建segmentStats
+        const segmentStats = {
+          totalCount: actualTotal,
+          userRank: user.rank || 0,
+          segments: {
+            '1': { name: '+30%到+100%位次段', count: rankSegments['1'].count },
+            '2': { name: '+5%到+30%位次段', count: rankSegments['2'].count },
+            '3': { name: '（-10%）到+5%位次段', count: rankSegments['3'].count },
+            '4': { name: '（-30%）到（-10%）位次段', count: rankSegments['4'].count },
+            '5': { name: '（-100%）到（-30%）位次段', count: rankSegments['5'].count },
+            '9': { name: '其他位次段', count: rankSegments['9'].count }
+          }
+        };
+
+        // 对 schools 进行分组处理
+        const schoolsByGroup = this.transformSchoolsByGroup(schoolsWithMajor);
+        
         return {  
+          segmentStats,
           user: {
             province: user.province,
             preferredSubjects: user.preferredSubjects,
@@ -649,9 +581,10 @@ export class ConfigController {
             score: user.score
           },
           volunteerCount,
-          recommendCount:actualTotal,
+          recommendCount: actualTotal,
           total: actualTotal, // 更新为实际返回的学校数量
-          schools: schoolsWithMajor // 改为 schools 数组，每个学校单独显示
+          // schools: schoolsWithMajor, // 保持原有的 schools 数组
+          schoolsByGroup // 新增分组显示的数据
         };
       }
 
@@ -659,4 +592,393 @@ export class ConfigController {
       throw new Error('获取推荐专业失败');
     }
   }
-}
+
+  
+
+  /**
+   * 转换学校数据为指定格式
+   * @param school 学校数据
+   * @returns 转换后的学校数据
+   */
+  private transformSchoolData(school: any) {  
+    return {
+      schoolName: school.schoolName,
+      schoolCode: school.schoolCode,
+      schoolNature: school.schoolNature,
+      rankDiffPercentage: school.rankDiffPercentage,
+      rankDiff: school.rankDiff,
+      rankDiffPer: school.rankDiffPer,
+      group: school.group, 
+      historyScores: {
+        historyScore: school.historyScores,
+        planMajorName: school.planMajorName,
+        planNum: school.planNum,
+        subjectSelection: school.subjectSelection,
+        studyPeriod: school.studyPeriod,
+        tuition: school.tuition, 
+        majorCode: school.majorCode,
+        remark: school.remark,
+      },
+      schoolFeature: school.schoolFeatures, 
+      belong: school.schoolBelong,
+      category: school.schoolCategories,
+      provinceName: school.provinceName,
+      cityName: school.cityName,
+      enrollmentRate: school.enrollmentRate,
+      employmentRate: school.employmentRate, 
+      majorGroupId: school.majorGroupId,
+      majorGroupName: school.majorGroupName, 
+      major: {
+        code: school.majorCode,
+        name: school.planMajorName || school.majorName,
+        displayName: school.planMajorName
+      }
+    };
+  }
+
+  /**
+   * 转换位次段数据
+   * @param rankSegments 位次段数据
+   * @returns 转换后的位次段数据
+   */
+  private transformRankSegments(rankSegments: any) {
+    const segments = ['1', '2', '3', '4', '5', '9'];
+    const result: any = {};
+    
+    segments.forEach(segment => {
+      result[segment] = {
+        count: rankSegments[segment].count,
+        data: rankSegments[segment].data.map((school: any) => this.transformSchoolData(school))
+      };
+    });
+    
+    return result;
+  }
+
+  /**
+   * 对学校数据进行分组处理
+   * @param schools 学校数据数组
+   * @returns 按分组组织的学校数据
+   */
+  private transformSchoolsByGroup(schools: any[]) {
+    const segments = ['1', '2', '3', '4', '5', '9'];
+    const result: any = {};
+    
+    // 初始化分组结构
+    segments.forEach(segment => {
+      result[segment] = {
+        count: 0,
+        data: []
+      };
+    });
+    
+    // 按 group 分组学校数据
+    schools.forEach(school => {
+      const groupKey = school.group.toString();
+      if (result[groupKey]) {
+        result[groupKey].count++;
+        result[groupKey].data.push(school);
+      } else {
+        // 如果 group 不在预定义范围内，归类到 group 9
+        result['9'].count++;
+        result['9'].data.push(school);
+      }
+    });
+    
+    // 对每个分组内的数据按 rankDiffPer 排序（从高到低）
+    segments.forEach(segment => {
+      result[segment].data.sort((a: any, b: any) => {
+        const aRankDiff = a.rankDiffPer || 0;
+        const bRankDiff = b.rankDiffPer || 0;
+        return aRankDiff - bRankDiff;
+      });
+    });
+    
+    return result;
+  }
+
+  /**
+   * 过滤冲突的专业数据
+   * @param majors 主要专业数据
+   * @param buttomMajors 底部专业数据
+   * @param enrollPlansMap 招生计划映射
+   * @returns 过滤后的专业数据
+   */
+  private filterConflictingMajors(majors: any[], buttomMajors: any[], enrollPlansMap: Map<string, any[]>) {  
+    // 按 majorGroup 分组
+    const groupMap = new Map<string, { majors: string[], buttomMajors: string[] }>();   
+    // 处理 majors 数据
+    majors.forEach(major => { 
+      const enrollPlans = enrollPlansMap.get(major.majorCode) || [];
+      enrollPlans.forEach(plan => { 
+        const majorGroup = plan.majorGroup;
+        if (majorGroup) {
+          if (!groupMap.has(majorGroup)) {
+            groupMap.set(majorGroup, { majors: [], buttomMajors: [] });
+          }
+          groupMap.get(majorGroup)!.majors.push(major.majorCode);
+        }
+      });
+    });
+ 
+    // 处理 buttomMajors 数据
+    buttomMajors.forEach(major => { 
+      const enrollPlans = enrollPlansMap.get(major.majorCode) || []; 
+      enrollPlans.forEach(plan => { 
+        const majorGroup = plan.majorGroup;
+        if (majorGroup) {
+          if (!groupMap.has(majorGroup)) {
+            groupMap.set(majorGroup, { majors: [], buttomMajors: [] });
+          }
+          groupMap.get(majorGroup)!.buttomMajors.push(major.majorCode);
+        }
+      });
+    });
+    
+    // 找出冲突的 majorGroup（同时包含 majors 和 buttomMajors）
+    const conflictingGroups = new Set<string>();
+    groupMap.forEach((value, key) => {
+      if (value.majors.length > 0 && value.buttomMajors.length > 0) {
+        console.log(key,value.majors,value.buttomMajors);
+        conflictingGroups.add(key);
+      }
+    }); 
+
+    // 过滤掉冲突组中的 majors 数据
+    const filteredMajors = majors.filter(major => {
+      const enrollPlans = enrollPlansMap.get(major.majorCode) || [];
+      return !enrollPlans.some(plan => {
+        const majorGroup = plan.majorGroup;
+        return majorGroup && conflictingGroups.has(majorGroup);
+      });
+    });
+    
+    return filteredMajors;
+  }
+
+  /**
+   * 对专业数据进行分组处理
+   * @param majors 专业数据数组
+   * @returns 按分组组织的专业数据
+   */
+  private transformMajorsByGroup(majors: any[]) {
+    const segments = ['1', '2', '3', '4', '5', '9'];
+    const result: any = {};
+    
+    // 初始化分组结构
+    segments.forEach(segment => {
+      result[segment] = {
+        count: 0,
+        data: []
+      };
+    });
+    
+    // 按 group 分组专业数据
+    majors.forEach(major => {
+      // 统计该专业下各分组的学校数量
+      const groupCounts: { [key: string]: number } = {};
+      
+      major.schools.forEach((school: any) => {
+        const groupKey = school.group.toString();
+        groupCounts[groupKey] = (groupCounts[groupKey] || 0) + 1;
+      });
+      
+      // 将专业添加到包含学校最多的分组中
+      let maxGroup = '9';
+      let maxCount = 0;
+      
+      Object.keys(groupCounts).forEach(groupKey => {
+        if (groupCounts[groupKey] > maxCount) {
+          maxCount = groupCounts[groupKey];
+          maxGroup = groupKey;
+        }
+      });
+      
+      // 如果该分组存在，则添加到该分组
+      if (result[maxGroup]) {
+        result[maxGroup].count++;
+        result[maxGroup].data.push(major);
+      } else {
+        // 如果分组不存在，归类到 group 9
+        result['9'].count++;
+        result['9'].data.push(major);
+      }
+    });
+    
+    // 对每个分组内的数据按发展潜力排序（从高到低）
+    segments.forEach(segment => {
+      result[segment].data.sort((a: any, b: any) => {
+        const aPotential = a.developmentPotential || 0;
+        const bPotential = b.developmentPotential || 0;
+        return bPotential - aPotential;
+      });
+    });
+    
+    return result;
+  }
+
+  /**
+   * 获取适合的专业信息
+   * @param ctx 上下文，包含用户信息
+   * @param group 分组参数，默认为'1'，对应分组：
+   *   - '1': +30%到+100%位次段 (默认)
+   *   - '2': +5%到+30%位次段
+   *   - '3': （-10%）到+5%位次段
+   *   - '4': （-30%）到（-10%）位次段
+   *   - '5': （-100%）到（-30%）位次段
+   *   - '9': 其他位次段
+   */
+  @Get("/suitability")
+  async suitable(
+    @Ctx() ctx: { state: { user?: { userId: number } } },
+    @QueryParam('group') groupSelected?: string
+  ) { 
+    try {
+      const user = await this.userService.findOne(ctx.state.user!.userId);
+      const year = process.env.YEAR || '2025';
+      const matchSubjects = await RedisModule.getMatchingPatterns("major_scores",user!.preferredSubjects!, user!.secondarySubjects!.split(',') );
+      
+      // 处理 matchSubjects 数组，去掉下划线前面的内容，只保留后面的部分
+      const processedMatchSubjects = matchSubjects.map((subject: string) => {
+        const parts = subject.split('_');
+        return parts.length > 1 ? parts.slice(1).join('_') : subject;
+      });
+      
+      // 获取适合的专业信息
+      const suitableMajors = await this.majorScoreService.getSuitableMajors(
+        user!.province || '北京',
+        user!.preferredSubjects || '综合',
+        user!.enrollType || '本科批',
+        processedMatchSubjects,
+        year
+      ); 
+      
+      // 转换数据结构并计算分组信息
+      const transformedData = await Promise.all(suitableMajors.map(async (item: any) => {
+        // 解析历史分数数据
+        const historyScoreData = typeof item.historyscore === 'string' 
+          ? JSON.parse(item.historyscore) 
+          : item.historyscore;
+        
+        // 提取2024年位次
+        const rank2024 = extractRank(historyScoreData);
+  
+        
+        // 计算排名差异（如果提供了用户位次）
+        let rankDiff = 0;
+        let rankDiffPer = 0;
+        let group = 0;
+        let isHighRange = false;
+        
+        if (user!.rank && rank2024) {
+          rankDiff = user!.rank - rank2024;
+          rankDiffPer = ((user!.rank - rank2024) / rank2024) * 100;  
+          // 根据位次差异确定分组
+          if (rankDiffPer >= 30 && rankDiffPer <= 100) {
+            group = 1; // +30%到+100%位次段
+          } else if (rankDiffPer >= 5 && rankDiffPer < 30) {
+            group = 2; // +5%到+30%位次段
+          } else if (rankDiffPer >= -10 && rankDiffPer < 5) {
+            group = 3; // （-10%）到+5%位次段
+          } else if (rankDiffPer >= -30 && rankDiffPer < -10) {
+            group = 4; // （-30%）到（-10%）位次段
+          } else if (rankDiffPer >= -100 && rankDiffPer < -30) {
+            group = 5; // （-100%）到（-30%）位次段
+          } else {
+            group = 9; // 其他位次段
+          }
+        }
+        const result = { 
+          schoolName: item.schoolname,
+          schoolCode: item.schoolcode,
+          schoolNature: item.schoolnature,
+          rankDiff,
+          rankDiffPer,
+          group,
+          isHighRange,
+          historyScores:  {
+            historyScore: item.historyscore
+          } ,
+          schoolFeatures: item.schoolfeatures, 
+          schoolBelong: item.schoolbelong,
+          schoolCategories: item.schoolcategories,
+          provinceName: item.provincename,
+          cityName: item.cityname,
+          enrollmentRate: item.enrollmentrate,
+          employmentRate: item.employmentrate,
+          majorGroupName: item.majorgroupname,
+          majorGroupId: item.majorgroup, 
+          majorCode: item.majorcode,
+          planMajorName: item.planmajorname,
+          majorDisplayName: item.planmajorname,
+          planNum: item.plannum,
+          subjectSelection: item.subjectselection,
+          studyPeriod: item.studyperiod,
+          tuition: item.tuition, 
+          remark: item.remark,
+        }; 
+        return result;
+      }));
+      
+      // 直接基于转换后的数据进行分组统计
+      const rankSegments = {
+        '1': { name: '+30%到+100%位次段', count: 0, data: [] as any[] },
+        '2': { name: '+5%到+30%位次段', count: 0, data: [] as any[] },
+        '3': { name: '（-10%）到+5%位次段', count: 0, data: [] as any[] },
+        '4': { name: '（-30%）到（-10%）位次段', count: 0, data: [] as any[] },
+        '5': { name: '（-100%）到（-30%）位次段', count: 0, data: [] as any[] },
+        '9': { name: '其他位次段', count: 0, data: [] as any[] }
+      };
+
+      // 根据已计算的group字段进行分组
+      transformedData.forEach(item => {
+        const groupKey = item.group.toString();
+        if (rankSegments[groupKey as keyof typeof rankSegments]) {
+          rankSegments[groupKey as keyof typeof rankSegments].count++;
+          rankSegments[groupKey as keyof typeof rankSegments].data.push(item);
+        } else {
+          rankSegments['9'].count++;
+          rankSegments['9'].data.push(item);
+        }
+      });
+
+      // 对每个分组的数据按rank2024进行升序排序
+      Object.keys(rankSegments).forEach(key => {
+        rankSegments[key as keyof typeof rankSegments].data.sort((a: any, b: any) => {
+          const rankA = a.rankDiffPer || 0;
+          const rankB = b.rankDiffPer || 0;
+          return rankA - rankB; // 升序排序
+        });
+      });
+
+      // 构建segmentStats
+      const segmentStats = {
+        totalCount: transformedData.length,
+        userRank: user!.rank || 0,
+        segments: {
+          '1': { name: '+30%到+100%位次段', count: rankSegments['1'].count },
+          '2': { name: '+5%到+30%位次段', count: rankSegments['2'].count },
+          '3': { name: '（-10%）到+5%位次段', count: rankSegments['3'].count },
+          '4': { name: '（-30%）到（-10%）位次段', count: rankSegments['4'].count },
+          '5': { name: '（-100%）到（-30%）位次段', count: rankSegments['5'].count },
+          '9': { name: '其他位次段', count: rankSegments['9'].count }
+        }
+      };
+      
+      // 确定要返回的分组，默认为2
+      const targetGroup = groupSelected || '1';
+      const rankSegmentTrans =this.transformRankSegments(rankSegments);
+      
+      // 转换最终返回的数据结构
+      return {
+        segmentStats, 
+        // 返回指定分组的数据
+        targetGroup: targetGroup,
+        targetGroupData: rankSegmentTrans[targetGroup as keyof typeof rankSegments] || rankSegments['1']
+      };
+     
+    } catch (error: any) {
+      throw new Error('获取推荐专业失败' +error.message) ;
+    }
+  }
+} 
