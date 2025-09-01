@@ -219,7 +219,7 @@ export class MajorController {
           }
           
           // 确定分组
-          let group = 9; // 默认组（无分数或差异过大）
+          let group = 6; // 默认组（无分数或差异过大）
           if (rank2024 && rank2024 > 0 && rank && rank > 0) { // 只对有位次的学校进行分组
             
             // 根据位次差异确定分组
@@ -234,7 +234,7 @@ export class MajorController {
             } else if (rankDiffPer >= -100 && rankDiffPer < -30) {
               group = 5; // （-100%）到（-30%）位次段
             } else {
-              group = 9; // 其他位次段
+              group = 6; // 其他位次段
             }
           }
           
@@ -750,7 +750,7 @@ export class MajorController {
           }
           
           // 确定分组（基于2024年位次，使用与suitable方法相同的分组逻辑）
-          let group = 9; // 默认组（其他位次段）
+          let group = 6; // 默认组（其他位次段）
           let isHighRange = false; // 新增字段：标识是否为较高范围
           
           if (rank2024 && rank2024 > 0 && rank && rank > 0) { // 只对有位次的学校进行分组
@@ -768,7 +768,7 @@ export class MajorController {
             } else if (rankDiffPer >= -100 && rankDiffPer < -30) {
               group = 5; // （-100%）到（-30%）位次段
             } else {
-              group = 9; // 其他位次段
+              group = 6; // 其他位次段
             }
           }
           
@@ -869,7 +869,7 @@ export class MajorController {
           '3': { name: '（-10%）到+5%位次段', count: 0, data: [] as any[] },
           '4': { name: '（-30%）到（-10%）位次段', count: 0, data: [] as any[] },
           '5': { name: '（-100%）到（-30%）位次段', count: 0, data: [] as any[] },
-          '9': { name: '其他位次段', count: 0, data: [] as any[] }
+          '6': { name: '其他位次段', count: 0, data: [] as any[] }
         };
 
         // 统计各分组的学校数量
@@ -878,7 +878,7 @@ export class MajorController {
           if (rankSegments[groupKey as keyof typeof rankSegments]) {
             rankSegments[groupKey as keyof typeof rankSegments].count++;
           } else {
-            rankSegments['9'].count++;
+            rankSegments['6'].count++;
           }
         });
 
@@ -1562,7 +1562,7 @@ export class MajorController {
     
     // 对每个分组内的学校进行rankSegments处理，只返回学校ID
     const processRankSegments = (schoolsInGroup: any[]) => {
-      const segments = ['1', '2', '3', '4', '5', '9'];
+      const segments = ['1', '2', '3', '4', '5', '6'];
       const result: any = {};
       
       // 初始化分组结构
@@ -1581,8 +1581,8 @@ export class MajorController {
           result[groupKey].schoolIds.push(school.id);
         } else {
           // 如果 group 不在预定义范围内，归类到 group 9
-          result['9'].count++;
-          result['9'].schoolIds.push(school.id);
+          result['6'].count++;
+          result['6'].schoolIds.push(school.id);
         }
       });
       
@@ -1624,7 +1624,7 @@ export class MajorController {
   }
 
   private transformSchoolsByGroup(schools: any[]) {
-    const segments = ['1', '2', '3', '4', '5', '9'];
+    const segments = ['1', '2', '3', '4', '5', '6'];
     const result: any = {};
     
     // 初始化分组结构
@@ -1643,8 +1643,8 @@ export class MajorController {
         result[groupKey].data.push(school);
       } else {
         // 如果 group 不在预定义范围内，归类到 group 9
-        result['9'].count++;
-        result['9'].data.push(school);
+        result['6'].count++;
+        result['6'].data.push(school);
       }
     });
     
