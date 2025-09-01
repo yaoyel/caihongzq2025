@@ -308,38 +308,44 @@ export class MajorController {
     
     const prefix = getGroupPrefix(scoreField);
     
-    return {
-      "1": {
+    return [
+      {
+        groupId: "1",
         description: `${prefix}前1%专业`,
         count: top1Percent,
         majorCodes: sortedScores.slice(0, top1Percent).map(s => s.majorCode)
       },
-      "2": {
+      {
+        groupId: "2",
         description: `${prefix}前1%-5%专业`,
         count: top5Percent - top1Percent,
         majorCodes: sortedScores.slice(top1Percent, top5Percent).map(s => s.majorCode)
       },
-      "3": {
+      {
+        groupId: "3",
         description: `${prefix}前5%-10%专业`,
         count: top10Percent - top5Percent,
         majorCodes: sortedScores.slice(top5Percent, top10Percent).map(s => s.majorCode)
       },
-      "4": {
+      {
+        groupId: "4",
         description: `${prefix}前10%-20%专业`,
         count: top20Percent - top10Percent,
         majorCodes: sortedScores.slice(top10Percent, top20Percent).map(s => s.majorCode)
       },
-      "5": {
+      {
+        groupId: "5",
         description: `${prefix}前20%-80%专业`,
         count: total - top20Percent - bottom20Percent,
         majorCodes: sortedScores.slice(top20Percent, total - bottom20Percent).map(s => s.majorCode)
       },
-      "6": {
+      {
+        groupId: "6",
         description: `${prefix}后20%专业`,
         count: bottom20Percent,
         majorCodes: sortedScores.slice(total - bottom20Percent).map(s => s.majorCode)
       }
-    };
+    ];
   }
 
   /**
