@@ -160,6 +160,7 @@ export class ConfigController {
   async RecommendMajor(
     @Ctx() ctx: { state: { user?: { userId: number } } },
     @QueryParam('sortByMajor') sortByMajor?: string,
+    @QueryParam('group') groupSelected?: string,
   ) {
     try {
       const user = await this.userService.findOne(ctx.state.user!.userId);
@@ -407,25 +408,32 @@ export class ConfigController {
           });
         });
 
-        // 构建segmentStats
-        const segmentStats = {
-          totalCount: sortedByDevelopmentPotential.reduce((total, major) => total + major.schools.length, 0),
-          userRank: user.rank || 0,
-          segments: {
-            '1': { name: '+30%到+100%位次段', count: rankSegments['1'].count },
-            '2': { name: '+5%到+30%位次段', count: rankSegments['2'].count },
-            '3': { name: '（-10%）到+5%位次段', count: rankSegments['3'].count },
-            '4': { name: '（-30%）到（-10%）位次段', count: rankSegments['4'].count },
-            '5': { name: '（-100%）到（-30%）位次段', count: rankSegments['5'].count },
-            '9': { name: '其他位次段', count: rankSegments['9'].count }
-          }
-        };
+        // 构建segmentStats数组格式
+        const segmentStats = [
+          { groupId: '1', name: '+30%到+100%位次段', count: rankSegments['1'].count },
+          { groupId: '2', name: '+5%到+30%位次段', count: rankSegments['2'].count },
+          { groupId: '3', name: '（-10%）到+5%位次段', count: rankSegments['3'].count },
+          { groupId: '4', name: '（-30%）到（-10%）位次段', count: rankSegments['4'].count },
+          { groupId: '5', name: '（-100%）到（-30%）位次段', count: rankSegments['5'].count },
+          { groupId: '9', name: '其他位次段', count: rankSegments['9'].count }
+        ];
 
+        // 确定要返回的分组，默认为1
+        const targetGroupId = groupSelected || '1';
+        
         // 对专业数据进行分组处理
         // const majorsByGroup = this.transformMajorsByGroup(sortedByDevelopmentPotential);
         
         return {  
           segmentStats,
+          // 返回指定分组的数据，格式为 {groupId:"1",count:0,data:[]}
+          targetGroup: {
+            groupId: targetGroupId,
+            count: rankSegments[targetGroupId as keyof typeof rankSegments]?.count || 0,
+            data: sortedByDevelopmentPotential.filter(major => 
+              major.schools.some((school: any) => school.group.toString() === targetGroupId)
+            )
+          },
           user: {
             province: user.province,
             preferredSubjects: user.preferredSubjects,
@@ -435,8 +443,8 @@ export class ConfigController {
           },
           volunteerCount,
           recommendCount: sortedByDevelopmentPotential.length,
-          total: sortedByDevelopmentPotential.length,
-          majors: sortedByDevelopmentPotential, // 返回按专业分组的数据
+          // total: sortedByDevelopmentPotential.length,
+          // majors: sortedByDevelopmentPotential, // 返回按专业分组的数据
           // majorsByGroup // 新增按分组显示的专业数据
         };
       } else {
@@ -554,25 +562,30 @@ export class ConfigController {
           }
         });
 
-        // 构建segmentStats
-        const segmentStats = {
-          totalCount: actualTotal,
-          userRank: user.rank || 0,
-          segments: {
-            '1': { name: '+30%到+100%位次段', count: rankSegments['1'].count },
-            '2': { name: '+5%到+30%位次段', count: rankSegments['2'].count },
-            '3': { name: '（-10%）到+5%位次段', count: rankSegments['3'].count },
-            '4': { name: '（-30%）到（-10%）位次段', count: rankSegments['4'].count },
-            '5': { name: '（-100%）到（-30%）位次段', count: rankSegments['5'].count },
-            '9': { name: '其他位次段', count: rankSegments['9'].count }
-          }
-        };
+        // 构建segmentStats数组格式
+        const segmentStats = [
+          { groupId: '1', name: '+30%到+100%位次段', count: rankSegments['1'].count },
+          { groupId: '2', name: '+5%到+30%位次段', count: rankSegments['2'].count },
+          { groupId: '3', name: '（-10%）到+5%位次段', count: rankSegments['3'].count },
+          { groupId: '4', name: '（-30%）到（-10%）位次段', count: rankSegments['4'].count },
+          { groupId: '5', name: '（-100%）到（-30%）位次段', count: rankSegments['5'].count },
+          { groupId: '9', name: '其他位次段', count: rankSegments['9'].count }
+        ];
 
         // 对 schools 进行分组处理
         const schoolsByGroup = this.transformSchoolsByGroup(schoolsWithMajor);
         
+        // 确定要返回的分组，默认为1
+        const targetGroupId = groupSelected || '1';
+        
         return {  
           segmentStats,
+          // 返回指定分组的数据，格式为 {groupId:"1",count:0,data:[]}
+          targetGroup: schoolsByGroup[targetGroupId] || {
+            groupId: targetGroupId,
+            count: 0,
+            data: []
+          },
           user: {
             province: user.province,
             preferredSubjects: user.preferredSubjects,
@@ -582,9 +595,9 @@ export class ConfigController {
           },
           volunteerCount,
           recommendCount: actualTotal,
-          total: actualTotal, // 更新为实际返回的学校数量
+          // total: actualTotal, // 更新为实际返回的学校数量
           // schools: schoolsWithMajor, // 保持原有的 schools 数组
-          schoolsByGroup // 新增分组显示的数据
+          // schoolsByGroup // 新增分组显示的数据
         };
       }
 
@@ -639,7 +652,7 @@ export class ConfigController {
   /**
    * 转换位次段数据
    * @param rankSegments 位次段数据
-   * @returns 转换后的位次段数据
+   * @returns 转换后的位次段数据，格式为 {groupId:"1",count:0,data:[]}
    */
   private transformRankSegments(rankSegments: any) {
     const segments = ['1', '2', '3', '4', '5', '9'];
@@ -647,6 +660,7 @@ export class ConfigController {
     
     segments.forEach(segment => {
       result[segment] = {
+        groupId: segment,
         count: rankSegments[segment].count,
         data: rankSegments[segment].data.map((school: any) => this.transformSchoolData(school))
       };
@@ -658,7 +672,7 @@ export class ConfigController {
   /**
    * 对学校数据进行分组处理
    * @param schools 学校数据数组
-   * @returns 按分组组织的学校数据
+   * @returns 按分组组织的学校数据，格式为 {groupId:"1",count:0,data:[]}
    */
   private transformSchoolsByGroup(schools: any[]) {
     const segments = ['1', '2', '3', '4', '5', '9'];
@@ -667,6 +681,7 @@ export class ConfigController {
     // 初始化分组结构
     segments.forEach(segment => {
       result[segment] = {
+        groupId: segment,
         count: 0,
         data: []
       };
@@ -836,7 +851,7 @@ export class ConfigController {
     try {
       const user = await this.userService.findOne(ctx.state.user!.userId);
       const year = process.env.YEAR || '2025';
-      const matchSubjects = await RedisModule.getMatchingPatterns("major_scores",user!.preferredSubjects!, user!.secondarySubjects!.split(',') );
+      const matchSubjects = await RedisModule.getMatchingPatterns("major_scores",user!.preferredSubjects || '综合', user!.secondarySubjects ? user!.secondarySubjects.split(',') : [] );
       
       // 处理 matchSubjects 数组，去掉下划线前面的内容，只保留后面的部分
       const processedMatchSubjects = matchSubjects.map((subject: string) => {
@@ -951,30 +966,29 @@ export class ConfigController {
         });
       });
 
-      // 构建segmentStats
-      const segmentStats = {
-        totalCount: transformedData.length,
-        userRank: user!.rank || 0,
-        segments: {
-          '1': { name: '+30%到+100%位次段', count: rankSegments['1'].count },
-          '2': { name: '+5%到+30%位次段', count: rankSegments['2'].count },
-          '3': { name: '（-10%）到+5%位次段', count: rankSegments['3'].count },
-          '4': { name: '（-30%）到（-10%）位次段', count: rankSegments['4'].count },
-          '5': { name: '（-100%）到（-30%）位次段', count: rankSegments['5'].count },
-          '9': { name: '其他位次段', count: rankSegments['9'].count }
-        }
-      };
+      // 构建segmentStats数组格式
+      const segmentStats = [
+        { groupId: '1', name: '+30%到+100%位次段', count: rankSegments['1'].count },
+        { groupId: '2', name: '+5%到+30%位次段', count: rankSegments['2'].count },
+        { groupId: '3', name: '（-10%）到+5%位次段', count: rankSegments['3'].count },
+        { groupId: '4', name: '（-30%）到（-10%）位次段', count: rankSegments['4'].count },
+        { groupId: '5', name: '（-100%）到（-30%）位次段', count: rankSegments['5'].count },
+        { groupId: '9', name: '其他位次段', count: rankSegments['9'].count }
+      ];
       
-      // 确定要返回的分组，默认为2
-      const targetGroup = groupSelected || '1';
-      const rankSegmentTrans =this.transformRankSegments(rankSegments);
+      // 确定要返回的分组，默认为1
+      const targetGroupId = groupSelected || '1';
+      const rankSegmentTrans = this.transformRankSegments(rankSegments);
       
       // 转换最终返回的数据结构
       return {
         segmentStats, 
-        // 返回指定分组的数据
-        targetGroup: targetGroup,
-        targetGroupData: rankSegmentTrans[targetGroup as keyof typeof rankSegments] || rankSegments['1']
+        // 返回指定分组的数据，格式为 {groupId:"1",count:0,data:[]}
+        targetGroup: {
+          groupId: targetGroupId,
+          count: rankSegments[targetGroupId as keyof typeof rankSegments]?.count || 0,
+          data: rankSegmentTrans[targetGroupId as keyof typeof rankSegments]?.data || []
+        }
       };
      
     } catch (error: any) {
