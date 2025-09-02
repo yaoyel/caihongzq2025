@@ -660,8 +660,8 @@ export class MajorController {
       }
       
       const rank = user.rank;
-      const majors = await this.majorScoreService.calculateMajorScoresByCode(ctx.state.user!.userId.toString(),intentions.map(s=>s.majorCode),user!.enrollType || '本科批');
-  
+      const allMajors = await this.majorScoreService.calculateMajorScores(ctx.state.user!.userId.toString(),user!.enrollType || '本科批');
+      const majors = allMajors.filter(s=>intentions.map(s=>s.majorCode).includes(s.majorCode));
       // 先获取招生计划数据
       const enrollPlansMap = await this.majorRedisService.getMultipleEnrollPlans(majors.map(s=>s.majorCode), user!.province || '北京',   Number.parseInt(process.env.CURRENT_YEAR || '2025'), user!.enrollType || '本科批', '普通类', user!.preferredSubjects || '综合', user!.secondarySubjects?.split(',') || ['不限']);
     
@@ -888,17 +888,17 @@ export class MajorController {
         
         // 按照不同专业评分维度进行分组
         const schoolsByMajorScore = {
-          developmentPotential: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'developmentPotential'),
-          score: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'score'),
-          opportunityScore: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'opportunityScore'),
-          lexueScore: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'lexueScore'),
-          shanxueScore: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'shanxueScore'),
-          yanxueDeduction: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'yanxueDeduction'),
-          tiaozhanDeduction: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'tiaozhanDeduction'),
-          academicDevelopmentScore: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'academicDevelopmentScore'),
-          careerDevelopmentScore: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'careerDevelopmentScore'),
-          industryProspectsScore: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'industryProspectsScore'),
-          growthPotentialScore: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'growthPotentialScore')
+          developmentPotential: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'developmentPotential'),
+          score: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'score'),
+          opportunityScore: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'opportunityScore'),
+          lexueScore: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'lexueScore'),
+          shanxueScore: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'shanxueScore'),
+          yanxueDeduction: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'yanxueDeduction'),
+          tiaozhanDeduction: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'tiaozhanDeduction'),
+          academicDevelopmentScore: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'academicDevelopmentScore'),
+          careerDevelopmentScore: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'careerDevelopmentScore'),
+          industryProspectsScore: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'industryProspectsScore'),
+          growthPotentialScore: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'growthPotentialScore')
         };
 
         // 构建segmentStats - 包含位次分组和专业评分维度分组
