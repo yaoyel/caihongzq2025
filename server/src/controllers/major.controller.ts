@@ -1568,31 +1568,49 @@ export class MajorController {
    * @returns 分组结果
    */
   private groupSchoolsByMajorScore(schools: any[], majors: any[], scoreField: string) {
-    // 创建专业代码到专业信息的映射
-    const majorMap = new Map<string, any>();
-    majors.forEach(major => {
-      majorMap.set(major.majorCode, major);
+    // 按 majors 中的 scoreField 进行排序
+    const sortedMajors = [...majors].sort((a, b) => (b[scoreField] || 0) - (a[scoreField] || 0));
+    const totalMajors = sortedMajors.length;
+    
+    // 根据 majors 的排序结果计算分组边界
+    const top1Percent = Math.max(1, Math.floor(totalMajors * 0.01));
+    const top5Percent = Math.max(1, Math.floor(totalMajors * 0.05));
+    const top10Percent = Math.max(1, Math.floor(totalMajors * 0.10));
+    const top20Percent = Math.max(1, Math.floor(totalMajors * 0.20));
+    const bottom20Percent = Math.max(1, Math.floor(totalMajors * 0.20));
+    
+    // 创建专业代码到分组的映射
+    const majorToGroup = new Map<string, string>();
+    
+    // 为每个专业分配分组
+    sortedMajors.forEach((major, index) => {
+      let groupId = '6'; // 默认分组
+      
+      if (index < top1Percent) {
+        groupId = '1';
+      } else if (index < top5Percent) {
+        groupId = '2';
+      } else if (index < top10Percent) {
+        groupId = '3';
+      } else if (index < top20Percent) {
+        groupId = '4';
+      } else if (index < totalMajors - bottom20Percent) {
+        groupId = '5';
+      } else {
+        groupId = '6';
+      }
+      
+      majorToGroup.set(major.majorCode, groupId);
     });
     
-    // 为每个学校添加对应的专业信息
+    // 为每个学校添加对应的分组信息
     const schoolsWithMajorInfo = schools.map(school => {
-      const majorInfo = majorMap.get(school.majorCode);
+      const groupId = majorToGroup.get(school.majorCode) || '6';
       return {
         ...school,
-        majorScore: majorInfo ? majorInfo[scoreField] || 0 : 0
+        groupId: groupId
       };
     });
-    
-    // 按专业评分排序
-    const sortedSchools = [...schoolsWithMajorInfo].sort((a, b) => b.majorScore - a.majorScore);
-    const total = sortedSchools.length;
-    
-    // 计算分组边界
-    const top1Percent = Math.max(1, Math.floor(total * 0.01));
-    const top5Percent = Math.max(1, Math.floor(total * 0.05));
-    const top10Percent = Math.max(1, Math.floor(total * 0.10));
-    const top20Percent = Math.max(1, Math.floor(total * 0.20));
-    const bottom20Percent = Math.max(1, Math.floor(total * 0.20));
     
     // 根据评分字段确定分组名称前缀
     const getGroupPrefix = (field: string) => {
@@ -1643,36 +1661,56 @@ export class MajorController {
       return result;
     };
     
+    // 根据分组ID收集学校
+    const schoolsByGroup = {
+      '1': [] as any[],
+      '2': [] as any[],
+      '3': [] as any[],
+      '4': [] as any[],
+      '5': [] as any[],
+      '6': [] as any[]
+    };
+    
+    // 将学校分配到对应的分组
+    schoolsWithMajorInfo.forEach(school => {
+      const groupId = school.groupId;
+      if (schoolsByGroup[groupId as keyof typeof schoolsByGroup]) {
+        schoolsByGroup[groupId as keyof typeof schoolsByGroup].push(school);
+      } else {
+        schoolsByGroup['6'].push(school);
+      }
+    });
+    
     return {
       "1": {
         description: `${prefix}前1%专业`,
-        count: top1Percent,
-        schools: processRankSegments(sortedSchools.slice(0, top1Percent))
+        count: schoolsByGroup['1'].length,
+        schools: processRankSegments(schoolsByGroup['1'])
       },
       "2": {
         description: `${prefix}前1%-5%专业`,
-        count: top5Percent - top1Percent,
-        schools: processRankSegments(sortedSchools.slice(top1Percent, top5Percent))
+        count: schoolsByGroup['2'].length,
+        schools: processRankSegments(schoolsByGroup['2'])
       },
       "3": {
         description: `${prefix}前5%-10%专业`,
-        count: top10Percent - top5Percent,
-        schools: processRankSegments(sortedSchools.slice(top5Percent, top10Percent))
+        count: schoolsByGroup['3'].length,
+        schools: processRankSegments(schoolsByGroup['3'])
       },
       "4": {
         description: `${prefix}前10%-20%专业`,
-        count: top20Percent - top10Percent,
-        schools: processRankSegments(sortedSchools.slice(top10Percent, top20Percent))
+        count: schoolsByGroup['4'].length,
+        schools: processRankSegments(schoolsByGroup['4'])
       },
       "5": {
         description: `${prefix}前20%-80%专业`,
-        count: total - top20Percent - bottom20Percent,
-        schools: processRankSegments(sortedSchools.slice(top20Percent, total - bottom20Percent))
+        count: schoolsByGroup['5'].length,
+        schools: processRankSegments(schoolsByGroup['5'])
       },
       "6": {
         description: `${prefix}后20%专业`,
-        count: bottom20Percent,
-        schools: processRankSegments(sortedSchools.slice(total - bottom20Percent))
+        count: schoolsByGroup['6'].length,
+        schools: processRankSegments(schoolsByGroup['6'])
       }
     };
   }
