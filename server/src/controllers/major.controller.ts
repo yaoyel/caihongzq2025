@@ -1604,8 +1604,8 @@ export class MajorController {
     });
     
     // 为每个学校添加对应的分组信息
-    const schoolsWithMajorInfo = schools.map(school => {
-      const groupId = majorToGroup.get(school.majorCode) || '6';
+    const schoolsWithMajorInfo = schools.map(school => { 
+      const groupId = majorToGroup.get(school.major.code) || '6';
       return {
         ...school,
         groupId: groupId
