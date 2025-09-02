@@ -1170,6 +1170,23 @@ export class MajorController {
     totalPages: number;
     volunteerCount: number;
     topDevelopmentCount: number;
+    topDevelopmentMajors: Array<{
+      majorCode: string;
+      majorName: string;
+      developmentPotential: number;
+    }>;
+    groupedByDevelopmentPotential: Array<{
+      groupId: string;
+      description: string;
+      count: number;
+      alternativeIds: number[];
+    }>;
+    groupedByRankDiffPer: Array<{
+      groupId: string;
+      description: string;
+      count: number;
+      alternativeIds: number[];
+    }>;
   }> {
     try {
       if (!ctx.state.user?.userId) {
@@ -1259,11 +1276,20 @@ export class MajorController {
         developmentPotential: majorScoreDetails[alternative.majorCode]?.developmentPotential || 0 
       }));
 
-      // 获取前20%发展潜力最高的专业
-      const topDevelopmentMajors = (await this.majorScoreService.getTopDevelopmentPotentialMajors(
+      // 获取所有专业的发展潜力排名信息（只调用一次）
+      const allDevelopmentRankings = await this.majorScoreService.getTopDevelopmentPotentialMajors(
         ctx.state.user.userId.toString(),
         user!.enrollType || '本科批'
-      )).filter(major => major.position === 'top');
+      );
+
+      // 获取前20%发展潜力最高的专业，并转换为期望的格式
+      const topDevelopmentMajors = allDevelopmentRankings
+        .filter(major => major.position === 'top')
+        .map(major => ({
+          majorCode: major.majorCode,
+          majorName: major.majorName,
+          developmentPotential: major.developmentpotential || 0
+        }));
 
       // 创建前20%专业代码的Set，用于快速查找
       const topDevelopmentMajorSet = new Set(
@@ -1277,13 +1303,25 @@ export class MajorController {
           .map(alternative => alternative.majorCode)
       ).size;
 
+      // 按照 developmentPotential 进行分组，复用排名信息
+      const groupedByDevelopmentPotential = this.groupAlternativesByDevelopmentPotential(
+        alternativeViewModels,
+        allDevelopmentRankings
+      );
+
+      // 按照 rankDiffPer 进行分组
+      const groupedByRankDiffPer = this.groupAlternativesByRankDiffPer(alternativeViewModels);
+
       return {
         total,
         volunteerCount: volunteerCount,
         data: alternativeViewModels,
         currentPage: page,
         totalPages,
-        topDevelopmentCount
+        topDevelopmentCount,
+        topDevelopmentMajors,
+        groupedByDevelopmentPotential,
+        groupedByRankDiffPer
       };
 
     } catch (error: unknown) {
@@ -1622,6 +1660,257 @@ export class MajorController {
         schools: processRankSegments(sortedSchools.slice(total - bottom20Percent))
       }
     };
+  }
+
+  /**
+   * 根据发展潜力对备选方案进行分组
+   * @param alternatives 备选方案列表
+   * @param developmentRankings 专业发展潜力排名信息
+   * @returns 分组结果，格式为 {groupId:"1",count:0,data:[]}
+   */
+  private groupAlternativesByDevelopmentPotential(
+    alternatives: AlternativeViewModel[], 
+    developmentRankings: Array<{majorCode: string, percentRange: string}>
+  ) { 
+    // 初始化分组结构
+    const groups = {
+      '1': { count: 0, alternativeIds: [] as number[] }, // 前1%
+      '2': { count: 0, alternativeIds: [] as number[] }, // 前1%-5%
+      '3': { count: 0, alternativeIds: [] as number[] }, // 前5%-10%
+      '4': { count: 0, alternativeIds: [] as number[] }, // 前10%-20%
+      '5': { count: 0, alternativeIds: [] as number[] }, // 前20%-80%
+      '6': { count: 0, alternativeIds: [] as number[] }, // 后20%
+      '9': { count: 0, alternativeIds: [] as number[] }  // 其他
+    };
+    
+    // 创建专业代码到排名分组的映射
+    const majorCodeToGroup = new Map<string, string>();
+    developmentRankings.forEach(ranking => {
+      majorCodeToGroup.set(ranking.majorCode, ranking.percentRange);
+    }); 
+    
+    // 遍历备选方案，根据专业代码匹配排名分组
+    alternatives.forEach(alternative => {
+      const groupId = majorCodeToGroup.get(alternative.majorCode);
+      if (groupId && groups[groupId as keyof typeof groups]) {
+        groups[groupId as keyof typeof groups].count++;
+        groups[groupId as keyof typeof groups].alternativeIds.push(alternative.id);
+      } else {
+        // 如果没有找到匹配的分组，放入"其他"组
+        groups['9'].count++;
+        groups['9'].alternativeIds.push(alternative.id);
+      }
+    });
+    
+    // 为每个发展潜力分组创建 RankdiffPer 子分组
+    const createRankDiffSubgroups = (alternativeIds: number[]) => {
+      // 获取这些备选方案
+      const relevantAlternatives = alternatives.filter(alt => alternativeIds.includes(alt.id));
+      
+      // 创建 RankdiffPer 子分组
+      const rankDiffSubgroups = {
+        '1': { count: 0, alternativeIds: [] as number[] }, // +30%到+100%位次段
+        '2': { count: 0, alternativeIds: [] as number[] }, // +5%到+30%位次段
+        '3': { count: 0, alternativeIds: [] as number[] }, // （-10%）到+5%位次段
+        '4': { count: 0, alternativeIds: [] as number[] }, // （-30%）到（-10%）位次段
+        '5': { count: 0, alternativeIds: [] as number[] }, // （-100%）到（-30%）位次段
+        '6': { count: 0, alternativeIds: [] as number[] }  // 其他位次段
+      };
+      
+      // 根据 RankdiffPer 值进行子分组
+      relevantAlternatives.forEach(alternative => {
+        const rankDiffPer = alternative.RankdiffPer || 0;
+        
+        if (rankDiffPer >= 30 && rankDiffPer <= 100) {
+          rankDiffSubgroups['1'].count++;
+          rankDiffSubgroups['1'].alternativeIds.push(alternative.id);
+        } else if (rankDiffPer >= 5 && rankDiffPer < 30) {
+          rankDiffSubgroups['2'].count++;
+          rankDiffSubgroups['2'].alternativeIds.push(alternative.id);
+        } else if (rankDiffPer >= -10 && rankDiffPer < 5) {
+          rankDiffSubgroups['3'].count++;
+          rankDiffSubgroups['3'].alternativeIds.push(alternative.id);
+        } else if (rankDiffPer >= -30 && rankDiffPer < -10) {
+          rankDiffSubgroups['4'].count++;
+          rankDiffSubgroups['4'].alternativeIds.push(alternative.id);
+        } else if (rankDiffPer >= -100 && rankDiffPer < -30) {
+          rankDiffSubgroups['5'].count++;
+          rankDiffSubgroups['5'].alternativeIds.push(alternative.id);
+        } else {
+          rankDiffSubgroups['6'].count++;
+          rankDiffSubgroups['6'].alternativeIds.push(alternative.id);
+        }
+      });
+      
+      return [
+        {
+          groupId: "1",
+          description: "+30%到+100%位次段",
+          count: rankDiffSubgroups['1'].count,
+          alternativeIds: rankDiffSubgroups['1'].alternativeIds
+        },
+        {
+          groupId: "2",
+          description: "+5%到+30%位次段",
+          count: rankDiffSubgroups['2'].count,
+          alternativeIds: rankDiffSubgroups['2'].alternativeIds
+        },
+        {
+          groupId: "3",
+          description: "（-10%）到+5%位次段",
+          count: rankDiffSubgroups['3'].count,
+          alternativeIds: rankDiffSubgroups['3'].alternativeIds
+        },
+        {
+          groupId: "4",
+          description: "（-30%）到（-10%）位次段",
+          count: rankDiffSubgroups['4'].count,
+          alternativeIds: rankDiffSubgroups['4'].alternativeIds
+        },
+        {
+          groupId: "5",
+          description: "（-100%）到（-30%）位次段",
+          count: rankDiffSubgroups['5'].count,
+          alternativeIds: rankDiffSubgroups['5'].alternativeIds
+        },
+        {
+          groupId: "6",
+          description: "其他位次段",
+          count: rankDiffSubgroups['6'].count,
+          alternativeIds: rankDiffSubgroups['6'].alternativeIds
+        }
+      ];
+    };
+    
+    // 返回分组结果，每个分组包含 RankdiffPer 子分组
+    return [
+      {
+        groupId: "1",
+        description: "发展潜能前1%专业",
+        count: groups['1'].count,
+        alternativeIds: groups['1'].alternativeIds,
+        rankDiffSubgroups: createRankDiffSubgroups(groups['1'].alternativeIds)
+      },
+      {
+        groupId: "2",
+        description: "发展潜能前1%-5%专业",
+        count: groups['2'].count,
+        alternativeIds: groups['2'].alternativeIds,
+        rankDiffSubgroups: createRankDiffSubgroups(groups['2'].alternativeIds)
+      },
+      {
+        groupId: "3",
+        description: "发展潜能前5%-10%专业",
+        count: groups['3'].count,
+        alternativeIds: groups['3'].alternativeIds,
+        rankDiffSubgroups: createRankDiffSubgroups(groups['3'].alternativeIds)
+      },
+      {
+        groupId: "4",
+        description: "发展潜能前10%-20%专业",
+        count: groups['4'].count,
+        alternativeIds: groups['4'].alternativeIds,
+        rankDiffSubgroups: createRankDiffSubgroups(groups['4'].alternativeIds)
+      },
+      {
+        groupId: "5",
+        description: "发展潜能前20%-80%专业",
+        count: groups['5'].count,
+        alternativeIds: groups['5'].alternativeIds,
+        rankDiffSubgroups: createRankDiffSubgroups(groups['5'].alternativeIds)
+      },
+      {
+        groupId: "6",
+        description: "发展潜能后20%专业",
+        count: groups['6'].count,
+        alternativeIds: groups['6'].alternativeIds,
+        rankDiffSubgroups: createRankDiffSubgroups(groups['6'].alternativeIds)
+      }
+    ];
+  }
+
+  /**
+   * 根据位次差值百分比对备选方案进行分组
+   * @param alternatives 备选方案列表
+   * @returns 分组结果，格式为 {groupId:"1",count:0,data:[]}
+   */
+  private groupAlternativesByRankDiffPer(alternatives: AlternativeViewModel[]) {
+    const total = alternatives.length;
+    
+    // 按照位次差值百分比范围进行分组
+    const rankDiffGroups = {
+      '1': { count: 0, alternativeIds: [] as number[] }, // +30%到+100%位次段
+      '2': { count: 0, alternativeIds: [] as number[] }, // +5%到+30%位次段
+      '3': { count: 0, alternativeIds: [] as number[] }, // （-10%）到+5%位次段
+      '4': { count: 0, alternativeIds: [] as number[] }, // （-30%）到（-10%）位次段
+      '5': { count: 0, alternativeIds: [] as number[] }, // （-100%）到（-30%）位次段
+      '6': { count: 0, alternativeIds: [] as number[] }  // 其他位次段
+    };
+    
+    // 遍历备选方案，根据 rankDiffPer 值进行分组
+    alternatives.forEach(alternative => {
+      const rankDiffPer = alternative.RankdiffPer || 0;
+      
+      if (rankDiffPer >= 30 && rankDiffPer <= 100) {
+        rankDiffGroups['1'].count++;
+        rankDiffGroups['1'].alternativeIds.push(alternative.id);
+      } else if (rankDiffPer >= 5 && rankDiffPer < 30) {
+        rankDiffGroups['2'].count++;
+        rankDiffGroups['2'].alternativeIds.push(alternative.id);
+      } else if (rankDiffPer >= -10 && rankDiffPer < 5) {
+        rankDiffGroups['3'].count++;
+        rankDiffGroups['3'].alternativeIds.push(alternative.id);
+      } else if (rankDiffPer >= -30 && rankDiffPer < -10) {
+        rankDiffGroups['4'].count++;
+        rankDiffGroups['4'].alternativeIds.push(alternative.id);
+      } else if (rankDiffPer >= -100 && rankDiffPer < -30) {
+        rankDiffGroups['5'].count++;
+        rankDiffGroups['5'].alternativeIds.push(alternative.id);
+      } else {
+        rankDiffGroups['6'].count++;
+        rankDiffGroups['6'].alternativeIds.push(alternative.id);
+      }
+    });
+    
+    // 返回分组结果
+    return [
+      {
+        groupId: "1",
+        description: "+30%到+100%位次段",
+        count: rankDiffGroups['1'].count,
+        alternativeIds: rankDiffGroups['1'].alternativeIds
+      },
+      {
+        groupId: "2",
+        description: "+5%到+30%位次段",
+        count: rankDiffGroups['2'].count,
+        alternativeIds: rankDiffGroups['2'].alternativeIds
+      },
+      {
+        groupId: "3",
+        description: "（-10%）到+5%位次段",
+        count: rankDiffGroups['3'].count,
+        alternativeIds: rankDiffGroups['3'].alternativeIds
+      },
+      {
+        groupId: "4",
+        description: "（-30%）到（-10%）位次段",
+        count: rankDiffGroups['4'].count,
+        alternativeIds: rankDiffGroups['4'].alternativeIds
+      },
+      {
+        groupId: "5",
+        description: "（-100%）到（-30%）位次段",
+        count: rankDiffGroups['5'].count,
+        alternativeIds: rankDiffGroups['5'].alternativeIds
+      },
+      {
+        groupId: "6",
+        description: "其他位次段",
+        count: rankDiffGroups['6'].count,
+        alternativeIds: rankDiffGroups['6'].alternativeIds
+      }
+    ];
   }
 
   private transformSchoolsByGroup(schools: any[]) {
