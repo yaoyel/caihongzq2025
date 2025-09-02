@@ -403,11 +403,11 @@ export class MajorScoreService {
   }
   
      /**
-    * 获取前20%和后20%发展潜力的专业代码和得分
+    * 获取所有专业的发展潜力排名和百分比范围
     * @param userId 用户ID
-    * @returns 专业代码和发展潜力得分列表（包含前20%和后20%）
+    * @returns 专业代码、发展潜力得分、乐学得分、位置标记和百分比范围列表
     */
-   async getTopDevelopmentPotentialMajors(userId: string,enrollType:string): Promise<{majorCode: string, developmentpotential: number,lexue_score:number,position:string}[]> {
+   async getTopDevelopmentPotentialMajors(userId: string,enrollType:string): Promise<{majorCode: string, majorName: string, developmentpotential: number,lexue_score:number,position:string,percentRange:string}[]> {
     const eduLevel = enrollType === '专科批' ? 'zhuan' : 'ben'; 
     const operator = eduLevel !== 'zhuan' ? '<>' : '=';
     // 使用优化的SQL查询，只获取必要的字段
@@ -554,6 +554,7 @@ export class MajorScoreService {
          SELECT 
            fs.lexue_score,
            fs.major_code,
+           fs.major_name,
            ROUND(CAST((fs.academic_development_raw + fs.career_development_raw +
 	     	ROUND((COALESCE(fs.career_development_raw, 0) + COALESCE(fs.growth_potential_raw, 0)) /50 * 25 * 0.5 + COALESCE(fs.industry_prospects_score, 0) / 100 * 25 * 0.5)
 		       + fs.growth_potential_raw) / 2 + fs.base_score * 100 / 2 AS NUMERIC))::NUMERIC as developmentPotential,
@@ -569,15 +570,23 @@ export class MajorScoreService {
        SELECT 
          rs.lexue_score,
          rs.major_code as "majorCode",
+         rs.major_name as "majorName",
          rs.developmentPotential,
          CASE 
            WHEN rs.rank_desc <= CEIL(rs.total_count * 0.2) THEN 'top'
            WHEN rs.rank_asc <= CEIL(rs.total_count * 0.2) THEN 'bottom'
-         END as position
+         END as position,
+         CASE 
+           WHEN rs.rank_desc <= CEIL(rs.total_count * 0.01) THEN '1'
+           WHEN rs.rank_desc <= CEIL(rs.total_count * 0.05) THEN '2'
+           WHEN rs.rank_desc <= CEIL(rs.total_count * 0.10) THEN '3'
+           WHEN rs.rank_desc <= CEIL(rs.total_count * 0.20) THEN '4'
+           WHEN rs.rank_desc > CEIL(rs.total_count * 0.20) AND rs.rank_desc <= CEIL(rs.total_count * 0.80) THEN '5'
+           WHEN rs.rank_asc <= CEIL(rs.total_count * 0.20) THEN '6'
+           ELSE '9'
+         END as "percentRange"
        FROM ranked_scores rs
-       WHERE rs.rank_desc <= CEIL(rs.total_count * 0.2) 
-          OR rs.rank_asc <= CEIL(rs.total_count * 0.2)
-          order by rs.developmentpotential desc
+       ORDER BY rs.developmentPotential DESC
     `, [userId]);
 
     return result;
@@ -595,7 +604,7 @@ export class MajorScoreService {
       console.log(eduLevel,operator,userId,enrollType);
       const result = await this.majorDetailRepository.query(`
        with user_scores as (
-	WITH user_answers AS (
+	     WITH user_answers AS (
         SELECT 
           s.id as scale_id,
           sa.score as score,

@@ -262,7 +262,7 @@ export class ConfigController {
           }
           
           // 确定分组（基于2024年位次，使用与suitable方法相同的分组逻辑）
-          let group = 9; // 默认组（其他位次段）
+          let group = 6; // 默认组（其他位次段）
           let isHighRange = false; // 新增字段：标识是否为较高范围
           
           if (rank2024 && rank2024 > 0 && rank && rank > 0) { // 只对有位次的学校进行分组
@@ -280,7 +280,7 @@ export class ConfigController {
             } else if (rankDiffPer >= -100 && rankDiffPer < -30) {
               group = 5; // （-100%）到（-30%）位次段
             } else {
-              group = 9; // 其他位次段
+              group = 6; // 其他位次段
             }
           }
           
@@ -393,7 +393,7 @@ export class ConfigController {
           '3': { name: '（-10%）到+5%位次段', count: 0, data: [] as any[] },
           '4': { name: '（-30%）到（-10%）位次段', count: 0, data: [] as any[] },
           '5': { name: '（-100%）到（-30%）位次段', count: 0, data: [] as any[] },
-          '9': { name: '其他位次段', count: 0, data: [] as any[] }
+          '6': { name: '其他位次段', count: 0, data: [] as any[] }
         };
 
         // 统计各分组的学校数量
@@ -403,7 +403,7 @@ export class ConfigController {
             if (rankSegments[groupKey as keyof typeof rankSegments]) {
               rankSegments[groupKey as keyof typeof rankSegments].count++;
             } else {
-              rankSegments['9'].count++;
+              rankSegments['6'].count++;
             }
           });
         });
@@ -415,7 +415,7 @@ export class ConfigController {
           { groupId: '3', name: '（-10%）到+5%位次段', count: rankSegments['3'].count },
           { groupId: '4', name: '（-30%）到（-10%）位次段', count: rankSegments['4'].count },
           { groupId: '5', name: '（-100%）到（-30%）位次段', count: rankSegments['5'].count },
-          { groupId: '9', name: '其他位次段', count: rankSegments['9'].count }
+          { groupId: '6', name: '其他位次段', count: rankSegments['6'].count }
         ];
 
         // 确定要返回的分组，默认为1
@@ -549,7 +549,7 @@ export class ConfigController {
           '3': { name: '（-10%）到+5%位次段', count: 0, data: [] as any[] },
           '4': { name: '（-30%）到（-10%）位次段', count: 0, data: [] as any[] },
           '5': { name: '（-100%）到（-30%）位次段', count: 0, data: [] as any[] },
-          '9': { name: '其他位次段', count: 0, data: [] as any[] }
+          '6': { name: '其他位次段', count: 0, data: [] as any[] }
         };
 
         // 统计各分组的学校数量
@@ -558,7 +558,7 @@ export class ConfigController {
           if (rankSegments[groupKey as keyof typeof rankSegments]) {
             rankSegments[groupKey as keyof typeof rankSegments].count++;
           } else {
-            rankSegments['9'].count++;
+            rankSegments['6'].count++;
           }
         });
 
@@ -569,7 +569,7 @@ export class ConfigController {
           { groupId: '3', name: '（-10%）到+5%位次段', count: rankSegments['3'].count },
           { groupId: '4', name: '（-30%）到（-10%）位次段', count: rankSegments['4'].count },
           { groupId: '5', name: '（-100%）到（-30%）位次段', count: rankSegments['5'].count },
-          { groupId: '9', name: '其他位次段', count: rankSegments['9'].count }
+          { groupId: '6', name: '其他位次段', count: rankSegments['6'].count }
         ];
 
         // 对 schools 进行分组处理
@@ -655,7 +655,7 @@ export class ConfigController {
    * @returns 转换后的位次段数据，格式为 {groupId:"1",count:0,data:[]}
    */
   private transformRankSegments(rankSegments: any) {
-    const segments = ['1', '2', '3', '4', '5', '9'];
+    const segments = ['1', '2', '3', '4', '5', '6'];
     const result: any = {};
     
     segments.forEach(segment => {
@@ -675,7 +675,7 @@ export class ConfigController {
    * @returns 按分组组织的学校数据，格式为 {groupId:"1",count:0,data:[]}
    */
   private transformSchoolsByGroup(schools: any[]) {
-    const segments = ['1', '2', '3', '4', '5', '9'];
+    const segments = ['1', '2', '3', '4', '5', '6'];
     const result: any = {};
     
     // 初始化分组结构
@@ -695,8 +695,8 @@ export class ConfigController {
         result[groupKey].data.push(school);
       } else {
         // 如果 group 不在预定义范围内，归类到 group 9
-        result['9'].count++;
-        result['9'].data.push(school);
+        result['6'].count++;
+        result['6'].data.push(school);
       }
     });
     
@@ -777,7 +777,7 @@ export class ConfigController {
    * @returns 按分组组织的专业数据
    */
   private transformMajorsByGroup(majors: any[]) {
-    const segments = ['1', '2', '3', '4', '5', '9'];
+    const segments = ['1', '2', '3', '4', '5', '6'];
     const result: any = {};
     
     // 初始化分组结构
@@ -799,7 +799,7 @@ export class ConfigController {
       });
       
       // 将专业添加到包含学校最多的分组中
-      let maxGroup = '9';
+      let maxGroup = '6';
       let maxCount = 0;
       
       Object.keys(groupCounts).forEach(groupKey => {
@@ -815,8 +815,8 @@ export class ConfigController {
         result[maxGroup].data.push(major);
       } else {
         // 如果分组不存在，归类到 group 9
-        result['9'].count++;
-        result['9'].data.push(major);
+        result['6'].count++;
+        result['6'].data.push(major);
       }
     });
     
@@ -841,7 +841,7 @@ export class ConfigController {
    *   - '3': （-10%）到+5%位次段
    *   - '4': （-30%）到（-10%）位次段
    *   - '5': （-100%）到（-30%）位次段
-   *   - '9': 其他位次段
+   *   - '6': 其他位次段
    */
   @Get("/suitability")
   async suitable(
@@ -900,7 +900,7 @@ export class ConfigController {
           } else if (rankDiffPer >= -100 && rankDiffPer < -30) {
             group = 5; // （-100%）到（-30%）位次段
           } else {
-            group = 9; // 其他位次段
+            group = 6; // 其他位次段
           }
         }
         const result = { 
@@ -942,7 +942,7 @@ export class ConfigController {
         '3': { name: '（-10%）到+5%位次段', count: 0, data: [] as any[] },
         '4': { name: '（-30%）到（-10%）位次段', count: 0, data: [] as any[] },
         '5': { name: '（-100%）到（-30%）位次段', count: 0, data: [] as any[] },
-        '9': { name: '其他位次段', count: 0, data: [] as any[] }
+        '6': { name: '其他位次段', count: 0, data: [] as any[] }
       };
 
       // 根据已计算的group字段进行分组
@@ -952,8 +952,8 @@ export class ConfigController {
           rankSegments[groupKey as keyof typeof rankSegments].count++;
           rankSegments[groupKey as keyof typeof rankSegments].data.push(item);
         } else {
-          rankSegments['9'].count++;
-          rankSegments['9'].data.push(item);
+          rankSegments['6'].count++;
+          rankSegments['6'].data.push(item);
         }
       });
 
@@ -973,7 +973,7 @@ export class ConfigController {
         { groupId: '3', name: '（-10%）到+5%位次段', count: rankSegments['3'].count },
         { groupId: '4', name: '（-30%）到（-10%）位次段', count: rankSegments['4'].count },
         { groupId: '5', name: '（-100%）到（-30%）位次段', count: rankSegments['5'].count },
-        { groupId: '9', name: '其他位次段', count: rankSegments['9'].count }
+        { groupId: '6', name: '其他位次段', count: rankSegments['6'].count }
       ];
       
       // 确定要返回的分组，默认为1
