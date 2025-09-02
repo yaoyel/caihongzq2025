@@ -2,14 +2,12 @@ import { Controller, Ctx, Get, Param, JsonController, QueryParam, Post, Body, De
 import { MajorRedisService } from '../services/major.redis.service';
 import { MajorDetailViewModel, toMajorDetailViewModel, BaseMajorDetailViewModel } from '../view-models/major.view.model';
 import { Service } from 'typedi';
-import { MajorScoreService } from '../services/major.service';
-import { UserMajorScoresViewModel, toUserMajorScoresViewModel } from '../view-models/major.score.view.model';
+import { MajorScoreService } from '../services/major.service'; 
 import { User } from '../entities/User';
 import { AppDataSource } from '../data-source';
 import { UserService } from '../services/user.service';
 import { SchoolViewModel } from '../view-models/base.school.view.model';
-import { Intention } from '../entities/Intention';
-import { IntentionViewModel, toIntentionViewModels } from '../view-models/intention.view.model';
+import { Intention } from '../entities/Intention'; 
 import { Alternative } from '../entities/Alternative';
 import { AlternativeViewModel, toAlternativeViewModel } from '../view-models/altrmative.view.model';
 import { MajorGroupViewModel, toMajorGroupViewModels } from '../view-models/major.group.view,model';
@@ -785,10 +783,13 @@ export class MajorController {
         });
         
     
-
+        const filteredSchools = processedSchools.filter((school: SchoolWithRank) => 
+          school.historyScores && school.historyScores.length > 0
+        );
+        
         return {
           ...majorDetail,
-          schools: processedSchools
+          schools: filteredSchools
         };
       }); 
 
