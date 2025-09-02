@@ -888,17 +888,17 @@ export class MajorController {
         
         // 按照不同专业评分维度进行分组
         const schoolsByMajorScore = {
-          developmentPotential: this.groupSchoolsByMajorScore(schoolsWithMajor, 'developmentPotential'),
-          score: this.groupSchoolsByMajorScore(schoolsWithMajor, 'score'),
-          opportunityScore: this.groupSchoolsByMajorScore(schoolsWithMajor, 'opportunityScore'),
-          lexueScore: this.groupSchoolsByMajorScore(schoolsWithMajor, 'lexueScore'),
-          shanxueScore: this.groupSchoolsByMajorScore(schoolsWithMajor, 'shanxueScore'),
-          yanxueDeduction: this.groupSchoolsByMajorScore(schoolsWithMajor, 'yanxueDeduction'),
-          tiaozhanDeduction: this.groupSchoolsByMajorScore(schoolsWithMajor, 'tiaozhanDeduction'),
-          academicDevelopmentScore: this.groupSchoolsByMajorScore(schoolsWithMajor, 'academicDevelopmentScore'),
-          careerDevelopmentScore: this.groupSchoolsByMajorScore(schoolsWithMajor, 'careerDevelopmentScore'),
-          industryProspectsScore: this.groupSchoolsByMajorScore(schoolsWithMajor, 'industryProspectsScore'),
-          growthPotentialScore: this.groupSchoolsByMajorScore(schoolsWithMajor, 'growthPotentialScore')
+          developmentPotential: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'developmentPotential'),
+          score: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'score'),
+          opportunityScore: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'opportunityScore'),
+          lexueScore: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'lexueScore'),
+          shanxueScore: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'shanxueScore'),
+          yanxueDeduction: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'yanxueDeduction'),
+          tiaozhanDeduction: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'tiaozhanDeduction'),
+          academicDevelopmentScore: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'academicDevelopmentScore'),
+          careerDevelopmentScore: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'careerDevelopmentScore'),
+          industryProspectsScore: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'industryProspectsScore'),
+          growthPotentialScore: this.groupSchoolsByMajorScore(schoolsWithMajor, majors, 'growthPotentialScore')
         };
 
         // 构建segmentStats - 包含位次分组和专业评分维度分组
@@ -1567,9 +1567,24 @@ export class MajorController {
    * @param scoreField 评分字段名
    * @returns 分组结果
    */
-  private groupSchoolsByMajorScore(schools: any[], scoreField: string) {
-    // 按指定字段排序
-    const sortedSchools = [...schools].sort((a, b) => b.major[scoreField] - a.major[scoreField]);
+  private groupSchoolsByMajorScore(schools: any[], majors: any[], scoreField: string) {
+    // 创建专业代码到专业信息的映射
+    const majorMap = new Map<string, any>();
+    majors.forEach(major => {
+      majorMap.set(major.majorCode, major);
+    });
+    
+    // 为每个学校添加对应的专业信息
+    const schoolsWithMajorInfo = schools.map(school => {
+      const majorInfo = majorMap.get(school.majorCode);
+      return {
+        ...school,
+        majorScore: majorInfo ? majorInfo[scoreField] || 0 : 0
+      };
+    });
+    
+    // 按专业评分排序
+    const sortedSchools = [...schoolsWithMajorInfo].sort((a, b) => b.majorScore - a.majorScore);
     const total = sortedSchools.length;
     
     // 计算分组边界
@@ -1608,7 +1623,7 @@ export class MajorController {
       segments.forEach(segment => {
         result[segment] = {
           count: 0,
-          schoolIds: []
+          ids: []
         };
       });
       
@@ -1617,11 +1632,11 @@ export class MajorController {
         const groupKey = school.group.toString();
         if (result[groupKey]) {
           result[groupKey].count++;
-          result[groupKey].schoolIds.push(school.id);
+          result[groupKey].ids.push(school.id);
         } else {
           // 如果 group 不在预定义范围内，归类到 group 9
           result['6'].count++;
-          result['6'].schoolIds.push(school.id);
+          result['6'].ids.push(school.id);
         }
       });
       
