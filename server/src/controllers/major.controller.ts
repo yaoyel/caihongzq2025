@@ -1165,7 +1165,7 @@ export class MajorController {
     @QueryParam('pageSize') pageSize: number = 1000
   ): Promise<{
     total: number;
-    data: AlternativeViewModel[];
+    alternatives: AlternativeViewModel[];
     currentPage: number;
     totalPages: number;
     volunteerCount: number;
@@ -1315,7 +1315,7 @@ export class MajorController {
       return {
         total,
         volunteerCount: volunteerCount,
-        data: alternativeViewModels,
+        alternatives: alternativeViewModels,
         currentPage: page,
         totalPages,
         topDevelopmentCount,
@@ -1640,6 +1640,7 @@ export class MajorController {
       // 初始化分组结构
       segments.forEach(segment => {
         result[segment] = {
+          groupId: segment,
           count: 0,
           ids: []
         };
@@ -1652,15 +1653,19 @@ export class MajorController {
           result[groupKey].count++;
           result[groupKey].ids.push(school.id);
         } else {
-          // 如果 group 不在预定义范围内，归类到 group 9
+          // 如果 group 不在预定义范围内，归类到 group 6
           result['6'].count++;
           result['6'].ids.push(school.id);
         }
       });
       
-      return result;
+      // 返回数组格式，每个元素包含 groupId
+      return Object.values(result).map((segment: any) => ({
+        groupId: segment.groupId,
+        count: segment.count,
+        ids: segment.ids
+      }));
     };
-    
     // 根据分组ID收集学校
     const schoolsByGroup = {
       '1': [] as any[],
@@ -1681,38 +1686,44 @@ export class MajorController {
       }
     });
     
-    return {
-      "1": {
+    return [
+      {
+        groupId: "1",
         description: `${prefix}前1%专业`,
         count: schoolsByGroup['1'].length,
         schools: processRankSegments(schoolsByGroup['1'])
       },
-      "2": {
+      {
+        groupId: "2",
         description: `${prefix}前1%-5%专业`,
         count: schoolsByGroup['2'].length,
         schools: processRankSegments(schoolsByGroup['2'])
       },
-      "3": {
+      {
+        groupId: "3",
         description: `${prefix}前5%-10%专业`,
         count: schoolsByGroup['3'].length,
         schools: processRankSegments(schoolsByGroup['3'])
       },
-      "4": {
+      {
+        groupId: "4",
         description: `${prefix}前10%-20%专业`,
         count: schoolsByGroup['4'].length,
         schools: processRankSegments(schoolsByGroup['4'])
       },
-      "5": {
+      {
+        groupId: "5",
         description: `${prefix}前20%-80%专业`,
         count: schoolsByGroup['5'].length,
         schools: processRankSegments(schoolsByGroup['5'])
       },
-      "6": {
+      {
+        groupId: "6",
         description: `${prefix}后20%专业`,
         count: schoolsByGroup['6'].length,
         schools: processRankSegments(schoolsByGroup['6'])
       }
-    };
+    ];
   }
 
   /**

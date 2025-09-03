@@ -24,8 +24,8 @@ interface SchoolMajor {
   studyPeriod: string;
   score?: number;
   developmentPotential?: number;
-  averageRank?: number;
-  rankDiffPercentage?: number;
+  rank2024?: number;
+  rankDiffPer?: number;
   group?: number;
   historyScore?: any;
 }
@@ -74,21 +74,46 @@ export class SchoolController {
       return { code: 404, message: '用户不存在' };
     }
 
-    const majorRank = await SchoolRedisService.getMajorScores(code, user.province || '', user.rank || 0); 
+    const majorRank = await SchoolRedisService.getMajorScores(code, user.province || ''); 
     // 如果学校有专业信息，计算专业匹配得分
     if (school.majors && school.majors.length > 0) {
       // 获取所有专业代码
       const majorCodes = school.majors.map((major: SchoolMajor) => major.code);
       
       // 计算专业得分
-      const majorScores = await this.majorScoreService.calculateMajorScoresByCode(userId.toString(), majorCodes,user!.enrollType || '本科批');
+      const majorScores = await this.majorScoreService.calculateMajorScoresByCode(userId.toString(), majorCodes, user!.enrollType || '本科批');
       
-      // 将得分和排名信息添加到对应的专业信息中
+      // 将得分和排名信息添加到对应的专业信息中，并处理分组逻辑
       school.majors = school.majors.map((major: SchoolMajor) => {
         // 查找对应的排名信息
         const rankInfo = majorRank.find(rank => rank.majorcode === major.code);
         // 查找对应的专业得分信息
         const majorScore = majorScores.find(score => score.majorCode === major.code);
+        
+        // 计算与用户位次的差异百分比
+        let rankDiffPer = 0;
+        if (user.rank && rankInfo?.rank2024) {
+          rankDiffPer = ((user.rank - rankInfo.rank2024) / user.rank) * 100;
+        }
+        
+        // 确定分组 - 业务逻辑放在Controller层
+        let group = 6; // 默认组（其他位次段）
+        
+        if (user.rank && rankInfo?.rank2024) {
+          if (rankDiffPer >= 30 && rankDiffPer <= 100) {
+            group = 1; // +30%到+100%位次段（学校位次比用户好很多）
+          } else if (rankDiffPer >= 5 && rankDiffPer < 30) {
+            group = 2; // +5%到+30%位次段（学校位次比用户好一些）
+          } else if (rankDiffPer >= -10 && rankDiffPer < 5) {
+            group = 3; // （-10%）到+5%位次段（学校位次与用户相近）
+          } else if (rankDiffPer >= -30 && rankDiffPer < -10) {
+            group = 4; // （-30%）到（-10%）位次段（学校位次比用户差一些）
+          } else if (rankDiffPer >= -100 && rankDiffPer < -30) {
+            group = 5; // （-100%）到（-30%）位次段（学校位次比用户差很多）
+          } else {
+            group = 6; // 其他位次段（超出上述范围）
+          }
+        }
         
         return {
           ...major,
@@ -96,18 +121,18 @@ export class SchoolController {
           developmentPotential: majorScore?.developmentPotential || 0,
           // 添加排名相关信息
           averageRank: rankInfo?.averageRank || 0,
-          rankDiffPercentage: rankInfo?.rankDiffPercentage || 0,
-          group: rankInfo?.group || 0,
+          rankDiffPer: rankDiffPer,
+          group: group,
           historyScore: rankInfo?.historyscore || null
         };
       }).sort((a: SchoolMajor, b: SchoolMajor) => {
-        // 首先按分组排序（组2最优先，然后是组3，组1，最后是组0）
-        const groupOrder = [2, 3, 1, 0];
-        const groupDiff = groupOrder.indexOf(a.group || 0) - groupOrder.indexOf(b.group || 0);
-        if (groupDiff !== 0) return groupDiff;
+        // 首先按分组排序（组1最优先，然后是组2，组3，组4，组5，最后是组6）
+        if ((a.group || 0) !== (b.group || 0)) {
+          return (a.group || 0) - (b.group || 0);
+        }
         
-        // 在同一分组内，按位次差异的绝对值排序
-        return Math.abs(a.rankDiffPercentage || 0) - Math.abs(b.rankDiffPercentage || 0);
+        // 在同一分组内，按位次差异的绝对值排序（差异越小越靠前）
+        return Math.abs(a.rankDiffPer || 0) - Math.abs(b.rankDiffPer || 0);
       });
     }
 
