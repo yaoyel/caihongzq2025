@@ -1,5 +1,6 @@
 import RedisModule from '../redis/redis.module';
 import { getAverageRank } from '../common/utils';
+import { extractRank } from '../utils/helper';
 
 /**
  * 学校Redis服务
@@ -69,7 +70,13 @@ export class SchoolRedisService {
    * @param rank 用户位次
    * @returns Promise<any[]> 专业分数列表（已分组排序）
    */
-  static async getMajorScores(schoolCode: string, province: string, rank: number): Promise<any[]> {
+  /**
+   * 获取指定学校和省份的专业分数信息（仅数据查询，不包含业务逻辑）
+   * @param schoolCode 学校代码
+   * @param province 省份
+   * @returns Promise<any[]> 专业分数列表（原始数据）
+   */
+  static async getMajorScores(schoolCode: string, province: string): Promise<any[]> {
     const client = RedisModule.getClient();
     const key = `school_scores:${schoolCode}_${province}`;
     const scores = await client.lRange(key, 0, -1);
@@ -78,44 +85,13 @@ export class SchoolRedisService {
 
     return scores.map(score => {
       const scoreData = JSON.parse(score);
-      const avgRank = this.getAverageRank(scoreData.historyscore); // 注意这里使用 historyscore
+      const rank2024 =  extractRank(scoreData.length > 0 ? scoreData[0].historyScore : null);
+          
       
-      // 计算与用户位次的差异百分比
-      let rankDiffPercentage = 0;
-      if (rank > 0 && avgRank > 0) {
-        rankDiffPercentage =  ((rank - avgRank) / rank) * 100;
-      }
-      
-      // 确定分组
-      let group = 0; // 默认组（无分数或差异过大）
-      
-      if (avgRank > 0 && rank > 0) {
-        const absDiff = Math.abs(rankDiffPercentage);
-        if (absDiff <= 5) {
-          group = 2; // 最匹配（-5% ~ 5%）
-        } else if (rankDiffPercentage > 5 && rankDiffPercentage <= 10) {
-          group = 1; // 稍高（5% ~ 10%）
-        } else if (rankDiffPercentage < -5 && rankDiffPercentage >= -15) {
-          group = 3; // 稍低（-15% ~ -5%）
-        }
-      }
-
-      console.log('位次差异:', rankDiffPercentage, '分组:', group);
-
       return {
         ...scoreData,
-        averageRank: avgRank || 0,
-        rankDiffPercentage: rankDiffPercentage || 0,
-        group
+        rank2024: rank2024 || 0
       };
-    }).sort((a, b) => {
-      // 首先按分组排序（组2最优先，然后是组3，组1，最后是组0）
-      const groupOrder = [2, 3, 1, 0];
-      const groupDiff = groupOrder.indexOf(a.group) - groupOrder.indexOf(b.group);
-      if (groupDiff !== 0) return groupDiff;
-      
-      // 在同一分组内，按位次差异的绝对值排序（差异越小越靠前）
-      return Math.abs(a.rankDiffPercentage) - Math.abs(b.rankDiffPercentage);
     });
   }
 }

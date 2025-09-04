@@ -419,7 +419,7 @@ export class ConfigController {
         ];
 
         // 确定要返回的分组，默认为1
-        const targetGroupId = groupSelected || '1';
+        const targetGroupId = groupSelected ;
         
         // 对专业数据进行分组处理
         // const majorsByGroup = this.transformMajorsByGroup(sortedByDevelopmentPotential);
@@ -430,9 +430,9 @@ export class ConfigController {
           targetGroup: {
             groupId: targetGroupId,
             count: rankSegments[targetGroupId as keyof typeof rankSegments]?.count || 0,
-            data: sortedByDevelopmentPotential.filter(major => 
+            data: targetGroupId ? sortedByDevelopmentPotential.filter(major => 
               major.schools.some((school: any) => school.group.toString() === targetGroupId)
-            )
+            ) : sortedByDevelopmentPotential
           },
           user: {
             province: user.province,
@@ -576,16 +576,12 @@ export class ConfigController {
         const schoolsByGroup = this.transformSchoolsByGroup(schoolsWithMajor);
         
         // 确定要返回的分组，默认为1
-        const targetGroupId = groupSelected || '1';
+        const targetGroupId = groupSelected ;
         
         return {  
           segmentStats,
-          // 返回指定分组的数据，格式为 {groupId:"1",count:0,data:[]}
-          targetGroup: schoolsByGroup[targetGroupId] || {
-            groupId: targetGroupId,
-            count: 0,
-            data: []
-          },
+          // 返回指定分组的数据，格式为 [{groupId:"1",count:0,data:[]}]
+          targetGroup: targetGroupId ? schoolsByGroup.find((group: any) => group.groupId === targetGroupId) : schoolsByGroup,
           user: {
             province: user.province,
             preferredSubjects: user.preferredSubjects,
@@ -652,7 +648,7 @@ export class ConfigController {
   /**
    * 转换位次段数据
    * @param rankSegments 位次段数据
-   * @returns 转换后的位次段数据，格式为 {groupId:"1",count:0,data:[]}
+   * @returns 转换后的位次段数据数组，格式为 [{groupId:"1",count:0,data:[]}]
    */
   private transformRankSegments(rankSegments: any) {
     const segments = ['1', '2', '3', '4', '5', '6'];
@@ -666,13 +662,14 @@ export class ConfigController {
       };
     });
     
-    return result;
+    // 转换为数组格式
+    return Object.values(result);
   }
 
   /**
    * 对学校数据进行分组处理
    * @param schools 学校数据数组
-   * @returns 按分组组织的学校数据，格式为 {groupId:"1",count:0,data:[]}
+   * @returns 按分组组织的学校数据数组，格式为 [{groupId:"1",count:0,data:[]}]
    */
   private transformSchoolsByGroup(schools: any[]) {
     const segments = ['1', '2', '3', '4', '5', '6'];
@@ -694,7 +691,7 @@ export class ConfigController {
         result[groupKey].count++;
         result[groupKey].data.push(school);
       } else {
-        // 如果 group 不在预定义范围内，归类到 group 9
+        // 如果 group 不在预定义范围内，归类到 group 6
         result['6'].count++;
         result['6'].data.push(school);
       }
@@ -709,7 +706,8 @@ export class ConfigController {
       });
     });
     
-    return result;
+    // 转换为数组格式
+    return Object.values(result);
   }
 
   /**
@@ -719,7 +717,7 @@ export class ConfigController {
    * @param enrollPlansMap 招生计划映射
    * @returns 过滤后的专业数据
    */
-  private filterConflictingMajors(majors: any[], buttomMajors: any[], enrollPlansMap: Map<string, any[]>) {  
+  private filterConflictingMajors(majors: any[], buttomMajors: any[], enrollPlansMap: Map<string, any[]>) {   
     // 按 majorGroup 分组
     const groupMap = new Map<string, { majors: string[], buttomMajors: string[] }>();   
     // 处理 majors 数据
@@ -867,6 +865,7 @@ export class ConfigController {
         processedMatchSubjects,
         year
       ); 
+ 
       
       // 转换数据结构并计算分组信息
       const transformedData = await Promise.all(suitableMajors.map(async (item: any) => {
@@ -911,9 +910,7 @@ export class ConfigController {
           rankDiffPer,
           group,
           isHighRange,
-          historyScores:  {
-            historyScore: item.historyscore
-          } ,
+          historyScores:  item.historyscore,
           schoolFeatures: item.schoolfeatures, 
           schoolBelong: item.schoolbelong,
           schoolCategories: item.schoolcategories,
@@ -931,7 +928,7 @@ export class ConfigController {
           studyPeriod: item.studyperiod,
           tuition: item.tuition, 
           remark: item.remark,
-        }; 
+        };  
         return result;
       }));
       
@@ -987,7 +984,7 @@ export class ConfigController {
         targetGroup: {
           groupId: targetGroupId,
           count: rankSegments[targetGroupId as keyof typeof rankSegments]?.count || 0,
-          data: rankSegmentTrans[targetGroupId as keyof typeof rankSegments]?.data || []
+          data: (rankSegmentTrans.find((group: any) => group.groupId === targetGroupId) as any)?.data || []
         }
       };
      
