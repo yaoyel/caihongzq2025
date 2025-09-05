@@ -2,7 +2,13 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect } from 'react';
 import { Input, Button, Modal, message, Spin, Tabs, Checkbox } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { SearchOutlined, StarOutlined, StarFilled, DownOutlined, UpOutlined } from '@ant-design/icons';
+import {
+  SearchOutlined,
+  StarOutlined,
+  StarFilled,
+  DownOutlined,
+  UpOutlined,
+} from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import {
@@ -11,6 +17,7 @@ import {
   setActiveOpportunitySubTab,
 } from '../../store/slices/majorListSlice';
 import BottomNav from '../comm/bottom';
+import CommonSelect, { SelectOptionData } from '../comm/CommonSelect';
 import { getUserMajorScores, callWechatPay } from '../../config';
 import {
   toggleMajorIntention,
@@ -181,7 +188,9 @@ const MajorPage: React.FC = () => {
   const { activeTab, activeSubTab, activeOpportunitySubTab } = useSelector(
     (state: RootState) => state.majorList
   );
-
+  // 发展潜能选择相关状态
+  const [selectedDevelopmentGroup, setSelectedDevelopmentGroup] = useState<string>('');
+  const [developmentOptions, setDevelopmentOptions] = useState<SelectOptionData[]>([]);
   // 计算当前实际要渲染的专业数据
   const displayMajors = majors.slice(0, currentPage * pageSize);
 
@@ -309,6 +318,139 @@ const MajorPage: React.FC = () => {
   }, [activeTab, activeSubTab, activeOpportunitySubTab, originalMajors, sortMajors]);
 
   /**
+   * 根据当前tab状态获取对应的分组数据源类型
+   * @returns 分组数据源类型
+   */
+  const getCurrentGroupDataSource = useCallback(() => {
+    // 如果是热爱能量tab
+    if (activeTab === 'passion') {
+      if (activeSubTab === 'le') {
+        return 'lexueScore'; // 乐学
+      } else if (activeSubTab === 'shan') {
+        return 'shanxueScore'; // 善学
+      } else if (activeSubTab === 'yan') {
+        return 'yanxueDeduction'; // 厌学
+      } else if (activeSubTab === 'zu') {
+        return 'tiaozhanDeduction'; // 阻学
+      } else {
+        return 'score'; // 热爱能量（无子tab选中）
+      }
+    }
+    // 如果是机遇指数tab
+    else if (activeTab === 'opportunity') {
+      if (activeOpportunitySubTab === 'academic') {
+        return 'academicDevelopmentScore'; // 学业发展
+      } else if (activeOpportunitySubTab === 'career') {
+        return 'careerDevelopmentScore'; // 职业回报
+      } else if (activeOpportunitySubTab === 'industry') {
+        return 'industryProspectsScore'; // 产业前景
+      } else if (activeOpportunitySubTab === 'growth') {
+        return 'growthPotentialScore'; // 成长空间
+      } else {
+        return 'opportunityScore'; // 机遇指数（无子tab选中）
+      }
+    }
+    // 默认返回发展潜能
+    return 'developmentPotential';
+  }, [activeTab, activeSubTab, activeOpportunitySubTab]);
+
+  /**
+   * 根据当前tab状态获取对应的提示词
+   * @returns 提示词文本
+   */
+  const getPlaceholderText = useCallback(() => {
+    // 如果是热爱能量tab
+    if (activeTab === 'passion') {
+      if (activeSubTab === 'le') {
+        return '选择乐学范围';
+      } else if (activeSubTab === 'shan') {
+        return '选择善学范围';
+      } else if (activeSubTab === 'yan') {
+        return '选择厌学范围';
+      } else if (activeSubTab === 'zu') {
+        return '选择阻学范围';
+      } else {
+        return '选择热爱能量范围';
+      }
+    } else if (activeTab === 'opportunity') {
+      if (activeOpportunitySubTab === 'academic') {
+        return '选择学业发展范围';
+      } else if (activeOpportunitySubTab === 'career') {
+        return '选择职业回报范围';
+      } else if (activeOpportunitySubTab === 'industry') {
+        return '选择产业前景范围';
+      } else if (activeOpportunitySubTab === 'growth') {
+        return '选择成长空间范围';
+      } else {
+        return '选择机遇指数范围';
+      }
+    }
+    // 默认返回发展潜能
+    return '选择发展潜能范围';
+  }, [activeTab, activeSubTab, activeOpportunitySubTab]);
+
+  /**
+   * 根据当前tab状态更新发展潜能选择器的选项数据
+   */
+  const updateDevelopmentOptions = useCallback(() => {
+    const cachedGroupedResults = sessionStorage.getItem('major-list-grouped-results');
+    if (cachedGroupedResults) {
+      try {
+        const groupedResults = JSON.parse(cachedGroupedResults);
+        const dataSource = getCurrentGroupDataSource();
+        
+        // 根据数据源类型获取对应的分组数据
+        let sourceData = null;
+        if (dataSource === 'developmentPotential' && groupedResults.developmentPotential) {
+          sourceData = groupedResults.developmentPotential;
+        } else if (dataSource === 'score' && groupedResults.score) {
+          sourceData = groupedResults.score;
+        } else if (dataSource === 'lexueScore' && groupedResults.lexueScore) {
+          sourceData = groupedResults.lexueScore;
+        } else if (dataSource === 'shanxueScore' && groupedResults.shanxueScore) {
+          sourceData = groupedResults.shanxueScore;
+        } else if (dataSource === 'yanxueDeduction' && groupedResults.yanxueDeduction) {
+          sourceData = groupedResults.yanxueDeduction;
+        } else if (dataSource === 'tiaozhanDeduction' && groupedResults.tiaozhanDeduction) {
+          sourceData = groupedResults.tiaozhanDeduction;
+        } else if (dataSource === 'opportunityScore' && groupedResults.opportunityScore) {
+          sourceData = groupedResults.opportunityScore;
+        } else if (dataSource === 'academicDevelopmentScore' && groupedResults.academicDevelopmentScore) {
+          sourceData = groupedResults.academicDevelopmentScore;
+        } else if (dataSource === 'careerDevelopmentScore' && groupedResults.careerDevelopmentScore) {
+          sourceData = groupedResults.careerDevelopmentScore;
+        } else if (dataSource === 'industryProspectsScore' && groupedResults.industryProspectsScore) {
+          sourceData = groupedResults.industryProspectsScore;
+        } else if (dataSource === 'growthPotentialScore' && groupedResults.growthPotentialScore) {
+          sourceData = groupedResults.growthPotentialScore;
+        }
+
+        if (sourceData && Array.isArray(sourceData)) {
+          const optionsData = sourceData.map((group: any) => ({
+            id: group.groupId,
+            label: group.description,
+            count: group.count,
+          }));
+          setDevelopmentOptions(optionsData);
+        } else {
+          setDevelopmentOptions([]);
+        }
+      } catch (error) {
+        console.error('解析分组数据失败:', error);
+        setDevelopmentOptions([]);
+      }
+    }
+  }, [getCurrentGroupDataSource]);
+
+  // 当tab状态变化时，更新发展潜能选择器的选项数据并清除选择
+  useEffect(() => {
+    // 清除当前选择状态
+    setSelectedDevelopmentGroup('');
+    // 更新选项数据
+    updateDevelopmentOptions();
+  }, [activeTab, activeSubTab, activeOpportunitySubTab, updateDevelopmentOptions]);
+
+  /**
    * 检查专业是否已收藏
    * @param majorCode 专业代码
    * @returns 是否已收藏
@@ -381,7 +523,14 @@ const MajorPage: React.FC = () => {
         if (response && response.code === 200) {
           // 获取所有分数数据
           const scores = (response.data && response.data.scores) || [];
+          const groupedResults = (response.data && response.data.groupedResults) || {};
+          // const calculatedAt = response.data && response.data.calculatedAt;
 
+          // 为后续过滤功能保存分组数据到 sessionStorage
+          if (groupedResults && Object.keys(groupedResults).length > 0) {
+            sessionStorage.setItem('major-list-grouped-results', JSON.stringify(groupedResults));
+            // 分组数据已保存到 sessionStorage，通过 updateDevelopmentOptions 函数处理
+          }
           if (isLoadMore) {
             // 加载更多：追加数据
             const newOriginalMajors = [...originalMajors, ...scores];
@@ -439,7 +588,7 @@ const MajorPage: React.FC = () => {
     try {
       const response = await getMajorIntentions();
       if (response && response.code === 200) {
-        const intentions = response.data || [];
+        const intentions = response.data.schoolsWithMajor || [];
         setMajorIntentions(intentions);
         // 缓存收藏数据到 sessionStorage
         sessionStorage.setItem('major-list-cached-intentions', JSON.stringify(intentions));
@@ -796,6 +945,81 @@ const MajorPage: React.FC = () => {
   }, [originalMajors, sortMajors]);
 
   /**
+   * 处理发展潜能选择
+   */
+  const handleDevelopmentSelect = useCallback(
+    (groupId: string) => {
+      setSelectedDevelopmentGroup(groupId);
+      setCurrentPage(1);
+      setHasMore(true);
+
+      // 从 sessionStorage 获取分组数据
+      const cachedGroupedResults = sessionStorage.getItem('major-list-grouped-results');
+      if (cachedGroupedResults) {
+        try {
+          const groupedResults = JSON.parse(cachedGroupedResults);
+          const dataSource = getCurrentGroupDataSource();
+          
+          // 根据数据源类型获取对应的分组数据
+          let sourceData = null;
+          if (dataSource === 'developmentPotential' && groupedResults.developmentPotential) {
+            sourceData = groupedResults.developmentPotential;
+          } else if (dataSource === 'score' && groupedResults.score) {
+            sourceData = groupedResults.score;
+          } else if (dataSource === 'lexueScore' && groupedResults.lexueScore) {
+            sourceData = groupedResults.lexueScore;
+          } else if (dataSource === 'shanxueScore' && groupedResults.shanxueScore) {
+            sourceData = groupedResults.shanxueScore;
+          } else if (dataSource === 'yanxueDeduction' && groupedResults.yanxueDeduction) {
+            sourceData = groupedResults.yanxueDeduction;
+          } else if (dataSource === 'tiaozhanDeduction' && groupedResults.tiaozhanDeduction) {
+            sourceData = groupedResults.tiaozhanDeduction;
+          } else if (dataSource === 'opportunityScore' && groupedResults.opportunityScore) {
+            sourceData = groupedResults.opportunityScore;
+          } else if (dataSource === 'academicDevelopmentScore' && groupedResults.academicDevelopmentScore) {
+            sourceData = groupedResults.academicDevelopmentScore;
+          } else if (dataSource === 'careerDevelopmentScore' && groupedResults.careerDevelopmentScore) {
+            sourceData = groupedResults.careerDevelopmentScore;
+          } else if (dataSource === 'industryProspectsScore' && groupedResults.industryProspectsScore) {
+            sourceData = groupedResults.industryProspectsScore;
+          } else if (dataSource === 'growthPotentialScore' && groupedResults.growthPotentialScore) {
+            sourceData = groupedResults.growthPotentialScore;
+          }
+
+          if (sourceData && Array.isArray(sourceData)) {
+            const selectedGroup = sourceData.find((group: any) => group.groupId === groupId);
+            if (selectedGroup && selectedGroup.majorCodes) {
+              // 根据选中的分组过滤专业列表
+              const filteredMajors = originalMajors.filter((major: any) =>
+                selectedGroup.majorCodes.includes(major.majorCode)
+              );
+              const sortedData = sortMajors(filteredMajors);
+              setMajors(sortedData);
+              return;
+            }
+          }
+        } catch (error) {
+          console.error('解析分组数据失败:', error);
+        }
+      }
+
+      // 如果无法获取分组数据，显示所有专业
+      const sortedData = sortMajors(originalMajors);
+      setMajors(sortedData);
+    },
+    [originalMajors, sortMajors, getCurrentGroupDataSource]
+  );
+
+  /**
+   * 清除发展潜能选择
+   */
+  const handleDevelopmentClear = useCallback(() => {
+    setSelectedDevelopmentGroup('');
+    setCurrentPage(1);
+    setHasMore(true);
+    const sortedData = sortMajors(originalMajors);
+    setMajors(sortedData);
+  }, [originalMajors, sortMajors]); /**
    * 切换收藏状态
    */
   const toggleFavorite = useCallback(
@@ -1046,7 +1270,7 @@ const MajorPage: React.FC = () => {
    * 切换tab说明文字的展开收起状态
    */
   const toggleTabDescription = useCallback(() => {
-    setIsTabDescriptionExpanded(prev => !prev);
+    setIsTabDescriptionExpanded((prev) => !prev);
   }, []);
 
   return (
@@ -1083,7 +1307,7 @@ const MajorPage: React.FC = () => {
             fontSize: '16px',
           }}
           allowClear
-        />
+        />{' '}
         <Button
           type="primary"
           shape="round"
@@ -1092,12 +1316,34 @@ const MajorPage: React.FC = () => {
         >
           搜索
         </Button>
+        {/* 发展潜能选择器 */}
+        <div
+          style={{
+            position: 'fixed',
+            top: '68px',
+            left: 0,
+            right: 0,
+            zIndex: 999,
+            background: '#fff',
+            borderBottom: '1px solid #f0f0f0',
+            padding: '8px 16px',
+          }}
+        >
+          <CommonSelect
+            data={developmentOptions} 
+            placeholder={getPlaceholderText()}
+            onSelect={handleDevelopmentSelect}
+            onClear={handleDevelopmentClear}
+            allowClear={true}
+            showCount={true}
+            width="100%"
+          />
+        </div>
       </div>
 
       {/* 为固定搜索栏留出空间 */}
-      <div style={{ height: '68px' }}></div>
+      <div style={{ height: '116px' }}></div>
 
-      {/* 为固定选项卡区域留出空间 */}
       <div
         style={{
           height: (() => {
@@ -1124,7 +1370,7 @@ const MajorPage: React.FC = () => {
       <div
         style={{
           position: 'fixed',
-          top: '68px',
+          top: '115px',
           left: 0,
           right: 0,
           zIndex: 999,
@@ -1414,10 +1660,10 @@ const MajorPage: React.FC = () => {
         style={{
           height: (() => {
             // 基础高度计算
-            let baseHeight = 220; // 搜索栏 + 主选项卡
+            let baseHeight = 280; // 搜索栏 + 发展潜能选择器 + 主选项卡
 
             if (activeTab === 'passion' || activeTab === 'opportunity') {
-              baseHeight = 240; // 搜索栏 + 主选项卡 + 子选项卡
+              baseHeight = 300; // 搜索栏 + 发展潜能选择器 + 主选项卡 + 子选项卡
 
               // 如果有子Tab说明文字，需要额外增加高度
               if (
@@ -1487,77 +1733,14 @@ const MajorPage: React.FC = () => {
             }}
             onClick={toggleTabDescription}
           >
-          {/* 装饰性背景元素 */}
-          <div
-            style={{
-              position: 'absolute',
-              top: '-20px',
-              right: '-20px',
-              width: '60px',
-              height: '60px',
-              borderRadius: '50%',
-              background: (() => {
-                switch (activeTab) {
-                  case 'development':
-                    return 'rgba(59, 130, 246, 0.1)';
-                  case 'passion':
-                    return 'rgba(239, 68, 68, 0.1)';
-                  case 'opportunity':
-                    return 'rgba(16, 185, 129, 0.1)';
-                  default:
-                    return 'rgba(0, 0, 0, 0.05)';
-                }
-              })(),
-              transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-              transform: isTabDescriptionExpanded ? 'scale(1.2)' : 'scale(1)',
-              opacity: isTabDescriptionExpanded ? 0.8 : 0.5,
-            }}
-          />
-          
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              color: (() => {
-                switch (activeTab) {
-                  case 'development':
-                    return '#1e40af';
-                  case 'passion':
-                    return '#dc2626';
-                  case 'opportunity':
-                    return '#059669';
-                  default:
-                    return '#374151';
-                }
-              })(),
-              fontSize: '15px',
-              fontWeight: 600,
-              lineHeight: '1.6',
-              position: 'relative',
-              zIndex: 1,
-            }}
-          >
+            {/* 装饰性背景元素 */}
             <div
               style={{
-                flex: 1,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'normal',
-                maxHeight: isTabDescriptionExpanded ? '200px' : '24px',
-                transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                opacity: isTabDescriptionExpanded ? 1 : 0.8,
-              }}
-            >
-              {getTabDescription()}
-            </div>
-            <div
-              style={{
-                marginLeft: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                padding: '4px',
+                position: 'absolute',
+                top: '-20px',
+                right: '-20px',
+                width: '60px',
+                height: '60px',
                 borderRadius: '50%',
                 background: (() => {
                   switch (activeTab) {
@@ -1571,24 +1754,87 @@ const MajorPage: React.FC = () => {
                       return 'rgba(0, 0, 0, 0.05)';
                   }
                 })(),
-                transform: isTabDescriptionExpanded ? 'scale(1.1)' : 'scale(1)',
+                transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                transform: isTabDescriptionExpanded ? 'scale(1.2)' : 'scale(1)',
+                opacity: isTabDescriptionExpanded ? 0.8 : 0.5,
+              }}
+            />
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                color: (() => {
+                  switch (activeTab) {
+                    case 'development':
+                      return '#1e40af';
+                    case 'passion':
+                      return '#dc2626';
+                    case 'opportunity':
+                      return '#059669';
+                    default:
+                      return '#374151';
+                  }
+                })(),
+                fontSize: '15px',
+                fontWeight: 600,
+                lineHeight: '1.6',
+                position: 'relative',
+                zIndex: 1,
               }}
             >
               <div
                 style={{
-                  transition: 'all 0.3s ease',
-                  transform: isTabDescriptionExpanded ? 'rotate(0deg)' : 'rotate(0deg)',
+                  flex: 1,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'normal',
+                  maxHeight: isTabDescriptionExpanded ? '200px' : '24px',
+                  transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                  opacity: isTabDescriptionExpanded ? 1 : 0.8,
                 }}
               >
-                {isTabDescriptionExpanded ? (
-                  <UpOutlined style={{ fontSize: '14px' }} />
-                ) : (
-                  <DownOutlined style={{ fontSize: '14px' }} />
-                )}
+                {getTabDescription()}
+              </div>
+              <div
+                style={{
+                  marginLeft: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                  padding: '4px',
+                  borderRadius: '50%',
+                  background: (() => {
+                    switch (activeTab) {
+                      case 'development':
+                        return 'rgba(59, 130, 246, 0.1)';
+                      case 'passion':
+                        return 'rgba(239, 68, 68, 0.1)';
+                      case 'opportunity':
+                        return 'rgba(16, 185, 129, 0.1)';
+                      default:
+                        return 'rgba(0, 0, 0, 0.05)';
+                    }
+                  })(),
+                  transform: isTabDescriptionExpanded ? 'scale(1.1)' : 'scale(1)',
+                }}
+              >
+                <div
+                  style={{
+                    transition: 'all 0.3s ease',
+                    transform: isTabDescriptionExpanded ? 'rotate(0deg)' : 'rotate(0deg)',
+                  }}
+                >
+                  {isTabDescriptionExpanded ? (
+                    <UpOutlined style={{ fontSize: '14px' }} />
+                  ) : (
+                    <DownOutlined style={{ fontSize: '14px' }} />
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
         )}
 
         {/* 专业列表卡片 */}
@@ -2096,6 +2342,7 @@ const MajorPage: React.FC = () => {
                 >
                   查看全部专业
                 </Button>
+                搜索
               </div>
             ) : (
               // 暂无数据提示
@@ -2126,6 +2373,7 @@ const MajorPage: React.FC = () => {
                 >
                   重新加载
                 </Button>
+                搜索
               </div>
             )}
           </div>
@@ -2149,6 +2397,7 @@ const MajorPage: React.FC = () => {
           >
             查看更多
           </Button>
+          搜索
         </div>
       )}
 
@@ -2214,6 +2463,7 @@ const MajorPage: React.FC = () => {
           >
             {payLoading ? '支付中...' : '立即支付'}
           </Button>
+          搜索
         </div>
       </Modal>
 
@@ -2336,6 +2586,7 @@ const MajorPage: React.FC = () => {
             >
               我知道了
             </Button>
+            搜索
           </div>
         </div>
       </Modal>

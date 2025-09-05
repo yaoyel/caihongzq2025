@@ -90,8 +90,8 @@ const App: React.FC = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<LoginPage />} />
-      <Route path="/defaultpage" element={<DefaultPage />} />
+      {/* <Route path="/" element={<LoginPage />} /> */}
+      <Route path="/" element={<DefaultPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/home" element={<HomePage />} />
       <Route path="/assessment" element={<AssessmentPage />} />

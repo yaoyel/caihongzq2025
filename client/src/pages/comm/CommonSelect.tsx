@@ -54,6 +54,7 @@ const CommonSelect: React.FC<CommonSelectProps> = ({
   optionRenderer,
   defaultValue
 }) => {
+
   // 当前选中的值
   const [selectedValue, setSelectedValue] = useState<string>(defaultValue || '');
 
@@ -65,7 +66,7 @@ const CommonSelect: React.FC<CommonSelectProps> = ({
         onSelect(defaultValue, defaultOption);
       }
     }
-  }, [defaultValue, data, onSelect]);
+  }, [defaultValue, data]); // 移除 onSelect 依赖，避免无限循环
 
   /**
    * 处理选择事件
@@ -127,6 +128,7 @@ const CommonSelect: React.FC<CommonSelectProps> = ({
     }))
   ];
 
+
   return (
     <div className={`${styles.commonSelect} ${className}`} style={{ width }}>
       <Picker
@@ -151,12 +153,22 @@ const CommonSelect: React.FC<CommonSelectProps> = ({
             {allowClear && selectedValue && (
               <div 
                 className={styles.clearButton}
+                style={{
+                  width: '60px',
+                  height: '20px',
+                  background: '#2563eb',
+                  borderRadius: '10px',
+                  color: '#fff',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleClear();
                 }}
               >
-                ✕
+                ✕清除
               </div>
             )}
           </div>

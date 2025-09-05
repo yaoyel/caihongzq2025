@@ -1,11 +1,10 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Modal, Button, Checkbox, message, Input, Tag } from 'antd';
+import { Modal, message, Input, Tag } from 'antd';
 import { SearchOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   setDisplayCount,
-  setSortTab,
   setAlternativeStatus,
   updateAlternativeStatus,
   setLoading,
@@ -16,7 +15,6 @@ import {
   setIsReturning,
   setHasInitialized,
   selectDisplayCount,
-  selectSortTab,
   selectAlternativeStatus,
   selectLoading,
   selectLoadingStatus,
@@ -30,19 +28,21 @@ import { useScrollManager } from '../../hooks/useScrollManager';
 import BottomNav from '../comm/bottom';
 import StartWelcomePage from '../selfassessment/startWelcome';
 import Top from '../comm/top';
+import CommonSelect from '../comm/CommonSelect';
 import {
   cancelAlternative,
-  nominate,
   createMajorAlternative,
   getMajorAlternatives,
   getMajorGroup,
+  getSuitability,
+  nominate,
 } from '../../config/volunteer';
 
 // 定义备选志愿项的类型（扩展自 API 返回的数据）
 interface AlternativeItem {
   id: string;
-  majorCode: string;
-  majorName: string;
+  code: string;
+  name: string;
   schoolCode: string;
   schoolName: string;
   priority: number;
@@ -73,10 +73,65 @@ interface AlternativeItem {
   admissionsPhone?: string; // 招生电话
 }
 
+// 定义包含 count 和 groupId 的包装对象类型
+interface AlternativeGroup {
+  groupId: string;
+  count: number;
+  data: AlternativeItem[];
+}
+
+// 通用数据转换函数：将API返回的数据转换为AlternativeGroup类型
+const convertToAlternativeGroup = (item: any): AlternativeGroup => {
+  // 从 targetGroup 数组中提取数据
+  const groupId = item.groupId || item.group?.toString() || '0';
+  const count = item.count || 0;
+
+  // 转换 data 数组中的每个项目
+  const data = (item.data || []).map(
+    (dataItem: any, index: number): AlternativeItem => ({
+      id: `${dataItem.schoolCode}_${dataItem.major?.code || 'unknown'}_${index}`,
+      code: dataItem.major?.code || '', // 专业代码
+      name: dataItem.major?.name || '', // 专业名称
+      schoolCode: dataItem.schoolCode?.toString() || '',
+      schoolName: dataItem.schoolName || '',
+      priority: index + 1,
+      createdAt: new Date().toISOString(),
+      score: 0,
+      selected: false,
+      historyScore: dataItem.historyScores || [],
+      group: dataItem.group || dataItem.groupId || 0,
+      enrollmentRate: dataItem.enrollmentRate,
+      employmentRate: dataItem.employmentRate,
+      Rankdiff: dataItem.rankDiff,
+      RankdiffPer: dataItem.rankDiffPer,
+      schoolFeature: dataItem.schoolFeatures || '',
+      schoolNature: dataItem.schoolNature === 'public' ? 'public' : 'private',
+      schoolLevel: '专科',
+      majorGroupId: dataItem.majorGroupId?.toString() || '',
+      majorGroupName: dataItem.majorGroupName || '',
+      schoolCity: dataItem.cityName || '',
+      provinceName: dataItem.provinceName || '',
+      cityName: dataItem.cityName || '',
+      sortIndex: index,
+      developmentPotential: 0,
+      position: index,
+      admissionsSite: '',
+      admissionsPhone: '',
+    })
+  );
+
+  return {
+    groupId,
+    count,
+    data,
+  };
+};
+
 // 定义分组后的备选志愿类型
 interface GroupedAlternatives {
-  group: number;
+  group: number | string;
   result: AlternativeItem[];
+  count?: number; // 添加 count 字段
 }
 
 // 定义按学校分组的类型
@@ -107,26 +162,6 @@ interface MajorGroupItem {
   year: number;
 }
 
-// 定义按专业分组的类型
-interface MajorGroup {
-  majorCode: string;
-  majorName: string;
-  schools: SchoolGroup[];
-  rankGroups?: {
-    groupIndex: number;
-    groupName: string;
-    schools: SchoolGroup[];
-  }[];
-  isExpanded?: boolean; // 是否展开
-}
-
-// 定义按专业分组的备选志愿类型
-interface MajorGroupedAlternatives {
-  majorCode: string;
-  majorName: string;
-  result: AlternativeItem[];
-}
-
 const AiVolunteerPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -136,7 +171,6 @@ const AiVolunteerPage: React.FC = () => {
   const loading = useSelector(selectLoading);
   const loadingStatus = useSelector(selectLoadingStatus);
   const displayCount = useSelector(selectDisplayCount);
-  const sortTab = useSelector(selectSortTab);
   const alternativeStatus = useSelector(selectAlternativeStatus);
   const recommendCount = useSelector(selectRecommendCount);
   const hasInitialized = useSelector(selectHasInitialized);
@@ -151,14 +185,16 @@ const AiVolunteerPage: React.FC = () => {
     enableVirtualScroll: true,
   });
 
-
-
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // 搜索相关状态
   const [searchText, setSearchText] = useState('');
   const [selectedSchoolNature, setSelectedSchoolNature] = useState<string>('all');
+  const [selectedRankSegment, setSelectedRankSegment] = useState<string>('all');
   const [showSearchTips, setShowSearchTips] = useState(false);
+  // 添加缓存状态，避免重复加载相同数据
+  const [lastLoadedGroupId, setLastLoadedGroupId] = useState<string | undefined>(undefined);
+  const [activeTab, setActiveTab] = useState<'all' | 'smart'>('all'); // 默认选择"全部可选"tab
 
   // 添加精确的滚动位置恢复机制
   const [isRestoringScroll, setIsRestoringScroll] = useState(false);
@@ -237,7 +273,7 @@ const AiVolunteerPage: React.FC = () => {
 
         // 查找xunigundong元素
         const scrollElement = document.querySelector('.xunigundong');
-        
+
         if (scrollElement) {
           // 使用xunigundong元素的滚动
           const maxScrollPosition = scrollElement.scrollHeight - scrollElement.clientHeight;
@@ -342,7 +378,7 @@ const AiVolunteerPage: React.FC = () => {
     const handleScroll = () => {
       // 使用window滚动位置
       const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-      
+
       // 只有当滚动位置大于50时才保存，避免保存顶部位置
       if (currentScrollPosition > 50) {
         localStorage.setItem('aiVolunteerScrollPosition', currentScrollPosition.toString());
@@ -486,7 +522,7 @@ const AiVolunteerPage: React.FC = () => {
       // 检查是否有保存的滚动位置且当前不在恢复状态
       const savedScrollPosition = localStorage.getItem('aiVolunteerScrollPosition');
       const isFromDetail = sessionStorage.getItem('aiVolunteerFromDetail') === 'true';
-      
+
       if (savedScrollPosition && isFromDetail) {
         const scrollPosition = parseInt(savedScrollPosition, 10);
         if (scrollPosition > 50) {
@@ -494,7 +530,7 @@ const AiVolunteerPage: React.FC = () => {
           setTimeout(() => {
             window.scrollTo(0, scrollPosition);
           }, 1500);
-          
+
           setTimeout(() => {
             window.scrollTo(0, scrollPosition);
           }, 2000);
@@ -503,19 +539,7 @@ const AiVolunteerPage: React.FC = () => {
     }
   }, [loading, hasInitialized, alternatives.length]);
 
-
-
   // 页面离开时设置标记 - 已合并到上面的增强版中
-
-  // 弹框相关状态
-  const [isTipModalVisible, setIsTipModalVisible] = useState(false);
-  const [userChoices, setUserChoices] = useState({
-    choice1: false,
-    choice2: false,
-  });
-
-  // 添加按专业排序加载状态
-  const [isLoadingMajorData, setIsLoadingMajorData] = useState(false);
 
   // 添加专业组详情相关状态
   const [showMajorGroupDialog, setShowMajorGroupDialog] = useState(false);
@@ -526,19 +550,25 @@ const AiVolunteerPage: React.FC = () => {
     schoolName: string;
   } | null>(null);
 
-  const groupNames = [
-    '其他位次段院校',
-    '（+5%）到（+30%）位次段院校',
-    '（-10%）到+（+5%）位次段院校',
-    '（-30%） 到 （-10%）位次段院校',
-  ];
+  // 添加位次段统计数据状态
+  const [segmentStats, setSegmentStats] = useState<
+    Array<{
+      groupId: string;
+      name: string;
+      count: number;
+    }>
+  >([]);
+
+  // 添加智能推荐数据状态
+  const [smartRecommendData, setSmartRecommendData] = useState<AlternativeGroup[]>([]);
+  const [smartRecommendLoading, setSmartRecommendLoading] = useState(false);
 
   // 辅助函数：处理导航跳转，设置返回标记
   const handleNavigation = useCallback(
     (url: string, options?: { replace?: boolean }, itemId?: string) => {
       // 保存当前滚动位置
       const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-      
+
       // 只有当滚动位置大于50时才保存和设置返回标记
       if (currentScrollPosition > 50) {
         // 设置标记，表示用户即将离开页面
@@ -556,36 +586,6 @@ const AiVolunteerPage: React.FC = () => {
     },
     [navigate, saveLastViewedItem]
   );
-
-  // 处理用户选择变化
-  const handleChoiceChange = useCallback((choice: 'choice1' | 'choice2', checked: boolean) => {
-    setUserChoices((prev) => ({
-      ...prev,
-      [choice]: checked,
-    }));
-  }, []);
-
-  // 处理提示弹窗确认
-  const handleTipModalConfirm = useCallback(() => {
-    // 根据用户选择设置不同的存储策略
-    if (userChoices.choice1) {
-      // 今天不显示
-      const today = new Date().toDateString();
-      localStorage.setItem('volunteer-tip-last-shown', today);
-    }
-
-    if (userChoices.choice2) {
-      // 以后都不显示
-      localStorage.setItem('volunteer-tip-never-show', 'true');
-    }
-
-    setIsTipModalVisible(false);
-  }, [userChoices]);
-
-  // 处理提示弹窗关闭
-  const handleTipModalClose = useCallback(() => {
-    setIsTipModalVisible(false);
-  }, []);
 
   // 按学校分组数据
   const groupBySchool = (items: AlternativeItem[]): SchoolGroup[] => {
@@ -605,253 +605,6 @@ const AiVolunteerPage: React.FC = () => {
 
     return Array.from(schoolMap.values());
   };
-
-  // 按专业分组数据
-  const groupByMajor = (items: AlternativeItem[]): MajorGroupedAlternatives[] => {
-    const majorMap = new Map<string, AlternativeItem[]>();
-
-    items.forEach((item) => {
-      const majorKey = `${item.majorCode}_${item.majorName}`;
-      if (!majorMap.has(majorKey)) {
-        majorMap.set(majorKey, []);
-      }
-      majorMap.get(majorKey)!.push(item);
-    });
-
-    return Array.from(majorMap.entries()).map(([majorKey, result]) => {
-      const [majorCode, majorName] = majorKey.split('_', 2);
-      return {
-        majorCode,
-        majorName,
-        result,
-      };
-    });
-  };
-
-  // 按专业分组并按位次段分组学校
-  const groupByMajorAndRank = (items: AlternativeItem[]): MajorGroup[] => {
-    const majorGroups = groupByMajor(items);
-
-    return majorGroups.map((majorGroup) => {
-      // 按位次段分组学校
-      const rankGroups = new Map<number, AlternativeItem[]>();
-
-      majorGroup.result.forEach((item) => {
-        const group = item.group || 0;
-        if (!rankGroups.has(group)) {
-          rankGroups.set(group, []);
-        }
-        rankGroups.get(group)!.push(item);
-      });
-
-      // 按指定顺序[2,3,1,0]组织位次段，每个位次段包含该位次段下的所有学校
-      const orderedRankGroups = [2, 3, 1, 0]
-        .map((groupIndex) => {
-          const items = rankGroups.get(groupIndex) || [];
-
-          // 按学校分组
-          const schoolMap = new Map<string, AlternativeItem[]>();
-          items.forEach((item) => {
-            if (!schoolMap.has(item.schoolCode)) {
-              schoolMap.set(item.schoolCode, []);
-            }
-            schoolMap.get(item.schoolCode)!.push(item);
-          });
-
-          // 创建学校组，每个学校组包含该位次段下的所有专业
-          const schools = Array.from(schoolMap.entries()).map(([schoolCode, schoolItems]) => {
-            const firstItem = schoolItems[0];
-            return {
-              schoolCode,
-              schoolName: firstItem.schoolName,
-              majors: schoolItems,
-              isExpanded: false,
-            };
-          });
-
-          return {
-            groupIndex,
-            groupName: groupNames[groupIndex],
-            schools,
-          };
-        })
-        .filter((rankGroup) => rankGroup.schools.length > 0); // 只保留有学校的位次段
-
-      return {
-        majorCode: majorGroup.majorCode,
-        majorName: majorGroup.majorName,
-        schools: [], // 保持兼容性，但实际使用rankGroups
-        rankGroups: orderedRankGroups,
-        isExpanded: false,
-      };
-    });
-  };
-
-  // 处理排序Tab切换
-  const handleSortTabChange = async (tab: 'major' | 'rankDiff') => {
-    // 如果切换到按专业排序，需要重新调用API
-    if (tab === 'major') {
-      try {
-        setIsLoadingMajorData(true);
-        dispatch(setLoading(true));
-
-        // 调用API获取按专业排序的数据
-        const nominateResponse = await nominate({ sortByMajor: true });
-        console.log(nominateResponse);
-        if (nominateResponse && nominateResponse.code === 200) {
-          // 当sortByMajor=true时，API返回的是majors数组而不是schools数组
-          const majorsData = nominateResponse.data.majors || [];
-
-          // 将API返回的专业数据转换为我们的格式
-          const convertedData: AlternativeItem[] = [];
-          console.log('majorsData', majorsData);
-          majorsData.forEach((major: any, majorIndex: number) => {
-            if (major.schools && Array.isArray(major.schools)) {
-              major.schools.forEach((school: any, schoolIndex: number) => {
-                convertedData.push({
-                  id: `${school.id}_${major.code}`,
-                  majorCode: major.code || '',
-                  majorName: major.name || '',
-                  schoolCode: school.schoolCode || school.code || '',
-                  schoolName: school.schoolName || school.name || '',
-                  priority: majorIndex * 1000 + schoolIndex, // 使用组合索引作为优先级
-                  createdAt: new Date().toISOString(),
-                  score: 0,
-                  selected: false,
-                  historyScore: school.historyScores || school.historyScore || [],
-                  group: school.group || 0,
-                  enrollmentRate: school.enrollmentRate || 0,
-                  employmentRate: school.employmentRate || 0,
-                  Rankdiff: school.rankDiff || 0,
-                  RankdiffPer: school.rankDiffPer || 0,
-                  schoolFeature: school.schoolFeature || school.features || '',
-                  schoolNature: school.schoolNature || school.belong || '',
-                  schoolLevel: '专科',
-                  majorGroupId:
-                    school.majorGroupId?.toString() || major.majorGroupId?.toString() || '',
-                  majorGroupName: school.majorGroupName || major.majorGroupName || '',
-                  schoolCity: school.cityName || '',
-                  provinceName: school.provinceName || '',
-                  cityName: school.cityName || '',
-                  sortIndex: majorIndex * 1000 + schoolIndex,
-                  developmentPotential: parseFloat(major.developmentPotential || '0'),
-                  position: majorIndex * 1000 + schoolIndex,
-                  admissionsSite: '',
-                  admissionsPhone: '',
-                });
-              });
-            }
-          });
-
-          // 按专业分组数据
-          const majorGroups = groupByMajorAndRank(convertedData);
-
-          // 转换为GroupedAlternatives格式
-          const groupedData = majorGroups.map((majorGroup, index) => ({
-            group: -1000 - index,
-            result:
-              majorGroup.rankGroups?.flatMap((rankGroup) =>
-                rankGroup.schools.flatMap((school) => school.majors)
-              ) || [],
-            majorGroup: majorGroup,
-          }));
-
-          // 更新Redux状态
-          dispatch(setAlternatives(groupedData));
-
-          // 保存按专业排序的数据到localStorage
-          localStorage.setItem('aiVolunteerMajorData', JSON.stringify(groupedData));
-        }
-      } catch (error) {
-        message.error('获取按专业排序数据失败，请重试');
-      } finally {
-        setIsLoadingMajorData(false);
-        dispatch(setLoading(false));
-      }
-    }
-
-    // 更新排序Tab
-    dispatch(setSortTab(tab));
-  };
-
-  // 根据当前排序Tab对数据进行排序
-  const getSortedData = useCallback(
-    (data: GroupedAlternatives[]) => {
-      switch (sortTab) {
-        case 'major': {
-          // 从localStorage获取按专业排序的数据
-          const majorDataStr = localStorage.getItem('aiVolunteerMajorData');
-          if (majorDataStr) {
-            try {
-              const majorData = JSON.parse(majorDataStr);
-              return majorData;
-            } catch (error) {
-              // 解析按专业排序数据失败
-            }
-          }
-
-          // 如果无法获取按专业排序数据，则使用当前数据进行分组
-          const allData = data.flatMap((group) => group.result);
-          const majorGroups = groupByMajorAndRank(allData);
-
-          // 按发展潜能排序专业组
-          const sortedMajorGroups = majorGroups.sort((a, b) => {
-            const aMaxPotential = Math.max(
-              ...(a.rankGroups?.flatMap((rankGroup) =>
-                rankGroup.schools.flatMap((school) =>
-                  school.majors.map((major) => major.developmentPotential || 0)
-                )
-              ) || [0])
-            );
-            const bMaxPotential = Math.max(
-              ...(b.rankGroups?.flatMap((rankGroup) =>
-                rankGroup.schools.flatMap((school) =>
-                  school.majors.map((major) => major.developmentPotential || 0)
-                )
-              ) || [0])
-            );
-            return bMaxPotential - aMaxPotential;
-          });
-
-          // 转换为原有的GroupedAlternatives格式，但使用特殊的group标识
-          return sortedMajorGroups.map((majorGroup, index) => ({
-            group: -1000 - index, // 使用负数避免与位次段分组冲突
-            result:
-              majorGroup.rankGroups?.flatMap((rankGroup) =>
-                rankGroup.schools.flatMap((school) => school.majors)
-              ) || [],
-            majorGroup: majorGroup, // 添加专业组信息
-          }));
-        }
-        case 'rankDiff': {
-          // 使用原始API返回的数据顺序，不进行任何排序
-          // 从localStorage获取原始顺序数据
-          const originalDataStr = localStorage.getItem('aiVolunteerOriginalData');
-          if (originalDataStr) {
-            try {
-              const originalData = JSON.parse(originalDataStr);
-              return originalData;
-            } catch (error) {
-              // 解析原始数据失败
-            }
-          }
-
-          // 如果无法获取原始数据，则使用当前数据但不进行排序
-          const allRankDiffData = data.flatMap((group) => group.result);
-          return [
-            {
-              group: -1000, // 使用负数避免与位次段分组冲突
-              result: allRankDiffData,
-            },
-          ];
-        }
-        default:
-          // 按位次段分组排列（保持原有逻辑）
-          return data;
-      }
-    },
-    [sortTab]
-  );
 
   // 智能省份搜索函数
   const isProvinceMatch = (searchText: string, provinceName: string): boolean => {
@@ -880,17 +633,157 @@ const AiVolunteerPage: React.FC = () => {
     return false;
   };
 
+  // 加载智能推荐数据
+  const loadSmartRecommendData = useCallback(async () => {
+    if (activeTab === 'smart' && smartRecommendData.length === 0) {
+      try {
+        setSmartRecommendLoading(true);
+        const response = await nominate();
+
+        if (response && response.code === 200) {
+          // 处理智能推荐数据
+          // 根据实际API返回的数据结构访问数据
+          const nominateData = (response as any).data.targetGroup || [];
+
+          // 检查segmentStats数据结构
+          const segmentStatsData = (response as any).data?.segmentStats || [];
+
+          // 保存segmentStats数据到状态，供位次段筛选使用
+          setSegmentStats(segmentStatsData);
+
+          // 转换数据格式 - 使用通用转换函数
+          const convertedData: AlternativeGroup[] = nominateData.map((item: any) =>
+            convertToAlternativeGroup(item)
+          );
+
+          setSmartRecommendData(convertedData);
+
+          // 更新推荐数量
+          const recommendCount =
+            (response as any).data?.recommendCount ||
+            (response as any).data?.targetGroup?.count ||
+            0;
+          if (recommendCount !== undefined) {
+            dispatch(setRecommendCount(recommendCount));
+          }
+        }
+      } catch (error) {
+        console.error('加载智能推荐数据失败:', error);
+        message.error('加载智能推荐数据失败');
+      } finally {
+        setSmartRecommendLoading(false);
+      }
+    }
+  }, [activeTab, smartRecommendData.length, dispatch]);
+
+  // 构建位次段筛选选项
+  const buildRankSegmentOptions = useCallback(() => {
+    // 构建位次段选项
+    const options: { id: string; label: string; count: number }[] = [];
+
+    // 根据当前tab选择数据源
+    if (activeTab === 'smart') {
+      // 智能推荐tab：优先使用segmentStats数据，如果没有则从智能推荐数据中统计
+      if (segmentStats && segmentStats.length > 0) {
+        // 使用segmentStats数据构建选项，显示所有位次段（包括没有数据的）
+        segmentStats.forEach((stat) => {
+          options.push({
+            id: stat.groupId,
+            label: stat.name,
+            count: stat.count,
+          });
+        });
+      } else {
+        // 如果没有segmentStats数据，从智能推荐数据中统计位次段
+        const smartSegmentStats = new Map<number, number>();
+        smartRecommendData.forEach((group) => {
+          const groupId = parseInt(group.groupId) || 0;
+          smartSegmentStats.set(groupId, (smartSegmentStats.get(groupId) || 0) + group.count);
+        });
+
+        // 转换为筛选选项
+        smartSegmentStats.forEach((count, groupId) => {
+          if (count > 0) {
+            const groupName = getGroupName(groupId);
+            options.push({
+              id: groupId.toString(),
+              label: groupName,
+              count: count,
+            });
+          }
+        });
+      }
+    } else {
+      // 全部可选tab：优先使用segmentStats数据，如果没有则从alternatives数据中统计
+      if (segmentStats && segmentStats.length > 0) {
+        segmentStats.forEach((stat) => {
+          options.push({
+            id: stat.groupId,
+            label: stat.name,
+            count: stat.count,
+          });
+        });
+      } else if (alternatives && alternatives.length > 0) {
+        // 从alternatives数据中统计位次段
+        const alternativesSegmentStats = new Map<number, number>();
+        alternatives.forEach((group) => {
+          if (group.result && group.result.length > 0) {
+            group.result.forEach((item: AlternativeItem) => {
+              const groupId = item.group || 0;
+              alternativesSegmentStats.set(
+                groupId,
+                (alternativesSegmentStats.get(groupId) || 0) + 1
+              );
+            });
+          }
+        });
+
+        // 转换为筛选选项
+        alternativesSegmentStats.forEach((count, groupId) => {
+          if (count > 0) {
+            const groupName = getGroupName(groupId);
+            options.push({
+              id: groupId.toString(),
+              label: groupName,
+              count: count,
+            });
+          }
+        });
+      }
+    }
+
+    return options;
+  }, [activeTab, smartRecommendData, segmentStats, alternatives]);
+
+  // 获取位次段名称的辅助函数
+  const getGroupName = (groupId: number): string => {
+    // 直接从 segmentStats 中查找对应的名称
+    const stat = segmentStats.find((stat) => stat.groupId === groupId.toString());
+    if (stat) {
+      return stat.name;
+    }
+    // 如果找不到，返回默认名称
+    return `位次段${groupId}`;
+  };
+
+  // 监听tab切换，加载智能推荐数据
+  useEffect(() => {
+    if (activeTab === 'smart') {
+      loadSmartRecommendData();
+    }
+  }, [activeTab, loadSmartRecommendData]);
+
   // 搜索过滤逻辑
   const filterDataBySearch = useCallback(
     (data: AlternativeItem[]) => {
-      return data.filter((item) => {
+      const filteredData = data.filter((item) => {
         // 搜索文本过滤
         const searchLower = searchText.toLowerCase();
         const matchesSearch =
           searchText === '' ||
           item.schoolName.toLowerCase().includes(searchLower) ||
-          item.majorName.toLowerCase().includes(searchLower) ||
-          item.majorCode.toLowerCase().includes(searchLower) ||
+          item.name.toLowerCase().includes(searchLower) ||
+          item.code.toLowerCase().includes(searchLower) ||
           getCityDisplayInfo(item).toLowerCase().includes(searchLower) ||
           (item.provinceName && isProvinceMatch(searchText, item.provinceName));
 
@@ -898,28 +791,324 @@ const AiVolunteerPage: React.FC = () => {
         const matchesNature =
           selectedSchoolNature === 'all' || item.schoolNature === selectedSchoolNature;
 
-        return matchesSearch && matchesNature;
+        // 位次段过滤
+        const matchesRankSegment =
+          selectedRankSegment === 'all' ||
+          item.group?.toString() === selectedRankSegment ||
+          // 兼容字符串类型的groupId
+          (typeof item.group === 'string' && item.group === selectedRankSegment) ||
+          // 兼容数字类型的groupId
+          (typeof item.group === 'number' && item.group.toString() === selectedRankSegment);
+
+        return matchesSearch && matchesNature && matchesRankSegment;
       });
+
+      return filteredData;
     },
-    [searchText, selectedSchoolNature]
+    [searchText, selectedSchoolNature, selectedRankSegment]
   );
 
   // 根据当前Tab过滤数据
   const getFilteredData = useCallback(() => {
-    // 备选志愿页面显示所有志愿（包括未入选的）
-    const sortedData = getSortedData(alternatives);
+    // 根据当前选中的tab页过滤数据
+    if (activeTab === 'smart') {
+      // 智能推荐tab：显示智能推荐的数据
+      if (smartRecommendData.length === 0) {
+        return [];
+      }
 
-    // 应用搜索过滤
-    return sortedData
-      .map((group: GroupedAlternatives) => ({
-        ...group,
-        result: filterDataBySearch(group.result),
-      }))
-      .filter((group: GroupedAlternatives) => group.result.length > 0);
-  }, [alternatives, getSortedData, filterDataBySearch]);
+      // 应用搜索过滤到智能推荐数据
+      // 将 AlternativeGroup[] 转换为 AlternativeItem[] 用于过滤
+      const allSmartItems: AlternativeItem[] = smartRecommendData.flatMap((group) => group.data);
+      const filteredSmartItems = filterDataBySearch(allSmartItems);
 
+
+
+      // 将过滤后的数据重新按位次段分组，并保留 count 信息
+      const smartGroupedData: GroupedAlternatives[] = [];
+      
+      // 从原始 smartRecommendData 中获取每个分组的 count 信息
+      smartRecommendData.forEach((groupData) => {
+        const groupId = groupData.groupId;
+        const groupItems = filteredSmartItems.filter(item => item.group?.toString() === groupId);
+        
+        if (groupItems.length > 0) {
+          smartGroupedData.push({
+            group: parseInt(groupId) || groupId,
+            result: groupItems,
+            count: groupItems.length, // 使用过滤后的实际数量
+          });
+        }
+      });
+
+      // 对分组进行排序：根据segmentStats中的groupId顺序进行排序
+      // 如果segmentStats有数据，按照其顺序排序；否则使用默认排序
+      if (segmentStats && segmentStats.length > 0) {
+        // 创建groupId到索引的映射
+        const groupOrderMap = new Map<string, number>();
+        segmentStats.forEach((stat: any, index: number) => {
+          groupOrderMap.set(stat.groupId, index);
+        });
+
+        return smartGroupedData.sort((a, b) => {
+          const aOrder = groupOrderMap.get(a.group?.toString() || '') ?? 999;
+          const bOrder = groupOrderMap.get(b.group?.toString() || '') ?? 999;
+          return aOrder - bOrder;
+        });
+      } else {
+        // 默认排序：2 -> 3 -> 1 -> 0
+        return smartGroupedData.sort((a, b) => {
+          const orderMap: { [key: string]: number } = { '2': 0, '3': 1, '1': 2, '0': 3 };
+          const aOrder = orderMap[a.group?.toString() || ''] ?? 999;
+          const bOrder = orderMap[b.group?.toString() || ''] ?? 999;
+          return aOrder - bOrder;
+        });
+      }
+    } else {
+      // 全部可选tab：显示所有志愿（包括未入选的）
+      // 直接使用原始数据，不进行排序
+      const sortedData = alternatives;
+
+      // 应用搜索过滤
+      const filteredData = sortedData
+        .map((group: GroupedAlternatives) => ({
+          ...group,
+          result: filterDataBySearch(group.result),
+        }))
+        .filter((group: GroupedAlternatives) => group.result.length > 0);
+
+      return filteredData;
+    }
+
+    // 默认返回空数组，避免undefined错误
+    return [];
+  }, [alternatives, filterDataBySearch, activeTab, smartRecommendData]);
+
+  // 优化的数据加载函数
+  const loadSuitabilityData = useCallback(
+    async (groupId?: string) => {
+      // 添加基本的缓存检查，防止重复加载
+      const currentGroupId = groupId || 'all';
+      if (hasInitialized && lastLoadedGroupId === currentGroupId) {
+        return true;
+      }
+
+      try {
+        dispatch(setLoading(true));
+
+        // 调用 getSuitability API 获取数据
+        const apiGroupId = groupId ? Number(groupId) : undefined;
+        const suitabilityResponse = await getSuitability(apiGroupId);
+
+        if (suitabilityResponse && suitabilityResponse.code === 200) {
+          // 服务器返回的数据结构是 { segmentStats, targetGroup, data, count }
+          const suitabilityData = suitabilityResponse.data.targetGroup;
+          const suitabilitySegmentStats = suitabilityResponse.data.segmentStats || [];
+
+          // 从API响应中获取推荐志愿数量
+          const apiRecommendCount = suitabilityResponse.data.targetGroup.count;
+          if (apiRecommendCount !== undefined) {
+            dispatch(setRecommendCount(apiRecommendCount));
+          }
+
+          // 将 API 返回的数据转换为我们的类型
+          const convertedData: AlternativeGroup[] = [convertToAlternativeGroup(suitabilityData)];
+
+          // 按位次段分组
+          const groupByCategory = (
+            arr: AlternativeItem[],
+            key: keyof AlternativeItem
+          ): GroupedAlternatives[] => {
+            const groupedMap = arr.reduce(
+              (map: Map<any, AlternativeItem[]>, item: AlternativeItem) => {
+                const groupValue = item[key];
+                if (!map.has(groupValue)) {
+                  map.set(groupValue, []);
+                }
+                map.get(groupValue)!.push(item);
+                return map;
+              },
+              new Map()
+            );
+
+            return Array.from(groupedMap).map(([category, result]) => ({
+              group: category,
+              result,
+            }));
+          };
+
+          // 将 AlternativeGroup[] 转换为 AlternativeItem[] 用于分组
+          const allItems: AlternativeItem[] = convertedData.flatMap((group) => group.data);
+          const alternativesGroup = groupByCategory(allItems, 'group');
+
+          // 对分组进行排序：根据segmentStats中的groupId顺序进行排序
+          let sortedAlternativesGroup;
+          if (suitabilitySegmentStats && suitabilitySegmentStats.length > 0) {
+            const groupOrderMap = new Map<string, number>();
+            suitabilitySegmentStats.forEach((stat: any, index: number) => {
+              groupOrderMap.set(stat.groupId, index);
+            });
+
+            sortedAlternativesGroup = alternativesGroup.sort((a, b) => {
+              const aOrder = groupOrderMap.get(a.group?.toString() || '') ?? 999;
+              const bOrder = groupOrderMap.get(b.group?.toString() || '') ?? 999;
+              return aOrder - bOrder;
+            });
+          } else {
+            // 默认排序：2 -> 3 -> 1 -> 0
+            sortedAlternativesGroup = alternativesGroup.sort((a, b) => {
+              const orderMap: { [key: string]: number } = { '2': 0, '3': 1, '1': 2, '0': 3 };
+              const aOrder = orderMap[a.group?.toString() || ''] ?? 999;
+              const bOrder = orderMap[b.group?.toString() || ''] ?? 999;
+              return aOrder - bOrder;
+            });
+          }
+
+          // 保存原始顺序数据
+          const originalOrderData = [
+            {
+              group: -999,
+              result: allItems,
+            },
+          ];
+
+          // 更新Redux状态
+          const finalData = groupId
+            ? [
+                {
+                  group: Number(groupId),
+                  result: allItems,
+                },
+              ]
+            : sortedAlternativesGroup;
+
+          dispatch(setAlternatives(finalData));
+
+          localStorage.setItem('aiVolunteerOriginalData', JSON.stringify(originalOrderData));
+
+          // 更新segmentStats数据，供位次段筛选使用
+          setSegmentStats(suitabilitySegmentStats);
+
+          // 更新缓存状态
+          setLastLoadedGroupId(groupId || 'all');
+
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.error('加载志愿数据失败:', error);
+        message.error('加载志愿数据失败');
+        return false;
+      } finally {
+        dispatch(setLoading(false));
+      }
+    },
+    [dispatch, hasInitialized, lastLoadedGroupId]
+  );
+
+  // 定位到特定分组的函数 - 用于智能推荐tab的位次段筛选
+  const scrollToSpecificGroup = useCallback(
+    (groupId: string) => {
+      // 根据当前tab选择数据源
+      const currentData = activeTab === 'smart' ? smartRecommendData : alternatives;
+      
+      // 查找对应分组的位置
+      const targetGroup = currentData.find((group) => group.group?.toString() === groupId);
+      
+      if (targetGroup) {
+        // 计算分组在页面中的位置
+        let groupPosition = 0;
+        let found = false;
+        
+        for (const group of currentData) {
+          if (group.group?.toString() === groupId) {
+            found = true;
+            break;
+          }
+          // 估算每个分组的高度（包括标题栏和内容）
+          const groupHeight = 100 + (group.result?.length || 0) * 200;
+          groupPosition += groupHeight;
+        }
+        
+        if (found) {
+          // 滚动到对应位置
+          setTimeout(() => {
+            window.scrollTo({
+              top: groupPosition,
+              behavior: 'smooth'
+            });
+          }, 100);
+        }
+      }
+    },
+    [activeTab, smartRecommendData, alternatives]
+  );
+
+  // 位次段选择回调函数 - 根据当前tab选择不同的处理逻辑
+  const handleRankSegmentChange = useCallback(
+    async (groupId: string) => {
+      // 添加基本的防抖检查，防止无限循环
+      if (loading) {
+        return;
+      }
+
+      // 更新本地状态
+      setSelectedRankSegment(groupId);
+
+      if (activeTab === 'smart') {
+        // 智能推荐tab：直接定位到对应分组位置，不请求API
+        if (groupId === 'all') {
+          // 选择全部时，滚动到顶部
+          window.scrollTo(0, 0);
+        } else {
+          // 定位到特定分组
+          scrollToSpecificGroup(groupId);
+        }
+      } else {
+        // 全部可选tab：需要请求API加载数据
+        // 检查是否需要重新加载数据
+        if (groupId === selectedRankSegment && alternatives.length > 0) {
+          const currentGroupData = alternatives.find((group) => group.group?.toString() === groupId);
+          if (currentGroupData && currentGroupData.result.length > 0) {
+            return;
+          }
+        }
+
+        try {
+          setLastLoadedGroupId(groupId); // 设置缓存，防止重复调用
+          // 根据选中的位次段加载数据
+          await loadSuitabilityData(groupId === 'all' ? undefined : groupId);
+        } catch (error) {
+          console.error('位次段选择数据更新失败:', error);
+        }
+      }
+    },
+    [loadSuitabilityData, loading, selectedRankSegment, activeTab, alternatives, scrollToSpecificGroup]
+  );
+
+  // 获取已备选志愿状态的函数
+  const loadAlternativeStatus = useCallback(async () => {
+    try {
+      const alternativesResponse = await getMajorAlternatives();
+      if (alternativesResponse && alternativesResponse.code === 200) {
+        const alternatives = alternativesResponse.data?.data || [];
+        const alternativeMap: { [key: string]: { isAlternative: boolean; id?: string } } = {};
+
+        // 构建已备选学校的映射
+        alternatives.forEach((item: any) => {
+          const schoolKey = `${item.schoolCode}_${item.code}`;
+          alternativeMap[schoolKey] = { isAlternative: true, id: item.id };
+        });
+
+        dispatch(setAlternativeStatus(alternativeMap));
+      }
+    } catch (error) {
+      console.error('获取备选状态失败:', error);
+    }
+  }, [dispatch]);
+
+  // 优化的页面初始化逻辑
   useEffect(() => {
-    // 页面初始化逻辑
     const initializePage = async () => {
       try {
         dispatch(setLoading(true));
@@ -937,128 +1126,20 @@ const AiVolunteerPage: React.FC = () => {
           dispatch(setIsReturning(true));
         }
 
-        // 获取自动推荐的志愿
-        const nominateResponse = await nominate();
+        // 加载初始数据
+        const success = await loadSuitabilityData();
 
-        // 处理自动推荐志愿数据
-        if (nominateResponse && nominateResponse.code === 200) {
-          // 服务器返回的数据结构是 { schools, total, volunteerCount, recommendCount }
-          const nominateData = nominateResponse.data.schools || [];
-
-          // 从API响应中获取推荐志愿数量
-          const apiRecommendCount = nominateResponse.data.recommendCount;
-          if (apiRecommendCount !== undefined) {
-            dispatch(setRecommendCount(apiRecommendCount));
-          }
-
+        if (success) {
           // 获取已备选志愿状态
-          try {
-            const alternativesResponse = await getMajorAlternatives();
-            if (alternativesResponse && alternativesResponse.code === 200) {
-              const alternatives = alternativesResponse.data?.data || [];
-              const alternativeMap: { [key: string]: { isAlternative: boolean; id?: string } } = {};
+          await loadAlternativeStatus();
 
-              // 构建已备选学校的映射
-              alternatives.forEach((item: any) => {
-                const schoolKey = `${item.schoolCode}_${item.majorCode}`;
-                alternativeMap[schoolKey] = { isAlternative: true, id: item.id };
-              });
-
-              dispatch(setAlternativeStatus(alternativeMap));
-            }
-          } catch (error) {
-            // 获取备选状态失败
-          }
-
-          // 设置高发展潜能专业数量（根据发展潜能计算）
-          const topDevelopmentCount = nominateData.filter(
-            (item: any) => item.major && parseFloat(item.major.developmentPotential || '0') > 70
-          ).length;
+          // 设置高发展潜能专业数量
+          const topDevelopmentCount = 0;
           localStorage.setItem('topDevelopmentCount', topDevelopmentCount.toString());
-
-          // 将 API 返回的数据转换为我们的类型
-          const convertedData: AlternativeItem[] = nominateData.map((item: any, index: number) => ({
-            id: `${item.id}_${item.major?.code || 'unknown'}`,
-            majorCode: item.major?.code || '',
-            majorName: item.major?.name || '',
-            schoolCode: item.schoolCode || '', // 使用学校名称作为学校代码
-            schoolName: item.schoolName || '',
-            priority: index + 1, // 使用索引作为优先级
-            createdAt: new Date().toISOString(), // 使用当前时间
-            score: 0, // 默认值，后续可以根据需要调整
-            selected: false, // 默认未入选
-            historyScore: item.historyScores || [],
-            group: item.group,
-            enrollmentRate: item.enrollmentRate,
-            employmentRate: item.employmentRate,
-            Rankdiff: item.rankDiff, // 位次差
-            RankdiffPer: item.rankDiffPer, // 位次差百分比
-            // 学校标签相关属性
-            schoolFeature: item.schoolFeature || '', // 学校特色
-            schoolNature: item.schoolNature, // 根据belong判断公办民办
-            schoolLevel: '专科', // 根据实际情况调整
-            majorGroupId: item.majorGroupId?.toString() || '', // 专业组ID
-            majorGroupName: item.majorGroupName || '', // 专业组名称
-            schoolCity: item.cityName || '', // 学校所在城市
-            provinceName: item.provinceName || '', // 省份名称
-            cityName: item.cityName || '', // 城市名称
-            sortIndex: index, // 添加排序索引
-            developmentPotential: parseFloat(item.major?.developmentPotential || '0'), // 发展潜能
-            position: index, // 位置排序字段
-            // 招生信息相关属性
-            admissionsSite: '', // 默认值
-            admissionsPhone: '', // 默认值
-          }));
-
-          // 为了保持API返回的原始顺序，我们需要保存原始数据
-          // 同时也要支持按位次段分组的功能
-          const originalData = convertedData; // 保存原始顺序的数据
-
-          const groupByCategory = (
-            arr: AlternativeItem[],
-            key: keyof AlternativeItem
-          ): GroupedAlternatives[] => {
-            const groupedMap = arr.reduce(
-              (map: Map<any, AlternativeItem[]>, item: AlternativeItem) => {
-                const groupValue = item[key];
-                if (!map.has(groupValue)) {
-                  map.set(groupValue, []); // 初始化该分类的数组
-                }
-                map.get(groupValue)!.push(item); // 添加当前项到对应分类
-                return map;
-              },
-              new Map()
-            );
-
-            // 转换为目标格式
-            return Array.from(groupedMap).map(([category, result]) => ({
-              group: category,
-              result,
-            }));
-          };
-          const alternativesGroup = groupByCategory(convertedData, 'group');
-
-          // 对分组进行排序：2 -> 3 -> 1 -> 0
-          const sortedAlternativesGroup = alternativesGroup.sort((a, b) => {
-            const orderMap: { [key: number]: number } = { 2: 0, 3: 1, 1: 2, 0: 3 };
-            return orderMap[a.group] - orderMap[b.group];
-          });
-
-          // 同时保存原始顺序的数据，用于rankDiff模式
-          const originalOrderData = [
-            {
-              group: -999, // 使用特殊标识表示原始顺序
-              result: originalData,
-            },
-          ];
-
-          // 将原始顺序数据也存储到Redux中，以便rankDiff模式使用
-          dispatch(setAlternatives(sortedAlternativesGroup));
-          // 将原始顺序数据存储到localStorage中，供rankDiff模式使用
-          localStorage.setItem('aiVolunteerOriginalData', JSON.stringify(originalOrderData));
         }
       } catch (error) {
-        // 页面初始化失败
+        console.error('页面初始化失败:', error);
+        message.error('页面初始化失败');
       } finally {
         dispatch(setLoading(false));
         dispatch(setHasInitialized(true));
@@ -1066,46 +1147,54 @@ const AiVolunteerPage: React.FC = () => {
     };
 
     initializePage();
+  }, [dispatch, loadSuitabilityData, loadAlternativeStatus]);
 
-    // 检查是否需要显示提示框
-    const neverShow = localStorage.getItem('volunteer-tip-never-show');
-    if (!neverShow) {
-      // 检查今天是否已经显示过
-      const today = new Date().toDateString();
-      const lastShownDate = localStorage.getItem('volunteer-tip-last-shown');
-      if (lastShownDate !== today) {
-        // 显示弹窗
-        const timer = setTimeout(() => {
-          setIsTipModalVisible(true);
-        }, 1000);
-
-        return () => clearTimeout(timer);
-      }
+  // 渲染空状态提示 - 根据tab页状态显示不同内容
+  const renderEmptyState = () => {
+    // 根据当前选中的tab页显示不同的空状态提示
+    if (activeTab === 'smart') {
+      return (
+        <div className="w-full max-w-xl bg-white rounded-2xl p-6 text-center">
+          <div className="mb-4">
+            <div className="text-gray-400 text-6xl mb-4">🤖</div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">暂无智能推荐</h3>
+            <p className="text-gray-500 text-sm mb-6">
+              当前没有符合您条件的智能推荐志愿，请尝试调整搜索条件或切换到&quot;全部可选&quot;查看所有志愿。
+            </p>
+            <button
+              onClick={() => setActiveTab('all')}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              查看全部志愿
+            </button>
+          </div>
+        </div>
+      );
     }
-  }, [dispatch]);
 
-  // 渲染空状态提示
-  const renderEmptyState = () => (
-    <div className="w-full max-w-xl bg-white rounded-2xl  p-6 text-center">
-      <div className="mb-4">
-        <div className="text-gray-400 text-6xl mb-4">🎯</div>
-        <h3 className="text-lg font-bold text-gray-900 mb-2">暂无备选志愿</h3>
-        <p className="text-gray-500 text-sm mb-6">
-          您还没有任何备选志愿，快去意向页面选择您感兴趣的院校和专业吧！
-        </p>
+    // 默认显示全部可选的空状态
+    return (
+      <div className="w-full max-w-xl bg-white rounded-2xl p-6 text-center">
+        <div className="mb-4">
+          <div className="text-gray-400 text-6xl mb-4">🎯</div>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">暂无可选志愿</h3>
+          <p className="text-gray-500 text-sm mb-6">
+            您还没有任何可选志愿，快去录入您的个人信息吧！
+          </p>
+          <button
+            onClick={() => handleNavigation('/basicInfo')}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            录入个人信息
+          </button>
+        </div>
       </div>
-      <button
-        onClick={() => handleNavigation('/intention')}
-        className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-      >
-        去意向页面备选
-      </button>
-    </div>
-  );
+    );
+  };
 
   // 处理备选按钮点击
   const handleAlternativeClick = async (item: AlternativeItem) => {
-    const itemKey = `${item.schoolCode}_${item.majorCode}`;
+    const itemKey = `${item.schoolCode}_${item.code}`;
     const currentStatus = alternativeStatus[itemKey];
 
     // 如果正在加载中，直接返回
@@ -1150,8 +1239,8 @@ const AiVolunteerPage: React.FC = () => {
 
         // 调用创建备选志愿接口
         const response = await createMajorAlternative({
-          majorCode: item.majorCode,
-          majorName: item.majorName,
+          majorCode: item.code,
+          majorName: item.name,
           schoolCode: item.schoolCode,
           schoolName: item.schoolName,
           schoolFeature: item.schoolFeature || '',
@@ -1425,7 +1514,14 @@ const AiVolunteerPage: React.FC = () => {
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 40 }}>
       <Top
-        title={'AI推荐志愿' + recommendCount + '个'}
+        title={
+          (activeTab === 'all' ? '全部可选志愿' : '智能推荐') +
+          (activeTab === 'smart' 
+            ? smartRecommendData.reduce((total, group) => total + (group.count || 0), 0)
+            : segmentStats.reduce((total, stat) => total + stat.count, 0)
+          ) +
+          '个'
+        }
         onBack={() => window.history.back()}
         showRestartButton={true}
       />
@@ -1494,21 +1590,51 @@ const AiVolunteerPage: React.FC = () => {
                 民办
               </Tag>
             </div>
+
+            {/* 位次段筛选 */}
+            <div className="flex flex-wrap gap-2">
+              <span className="text-sm font-medium text-gray-700 mr-2">位次段：</span>
+              <CommonSelect
+                data={buildRankSegmentOptions()}
+                placeholder={activeTab === 'smart' ? "选择位次段快速定位" : "选择位次段"}
+                onSelect={(value) => handleRankSegmentChange(value)}
+                onClear={() => handleRankSegmentChange('all')}
+                defaultValue={selectedRankSegment}
+                width="200px"
+                showCount={true}
+              />
+              {/* 根据当前tab显示不同的提示 */}
+              {activeTab === 'smart' && (
+                <div className="w-full mt-2 text-xs text-blue-600 bg-blue-50 p-2 rounded-lg">
+                  💡 智能推荐模式下，位次段筛选将直接定位到对应分组位置，无需重新加载数据
+                </div>
+              )}
+              {activeTab === 'all' && (
+                <div className="w-full mt-2 text-xs text-green-600 bg-green-50 p-2 rounded-lg">
+                  💡 全部可选模式下，位次段筛选将重新加载对应数据
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* 搜索结果统计 */}
-        {(searchText || selectedSchoolNature !== 'all') && (
+        {(searchText || selectedSchoolNature !== 'all' || selectedRankSegment !== 'all') && (
           <div className="w-full max-w-xl bg-blue-50 rounded-2xl p-3 mb-3">
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center space-x-2">
                 <span className="text-blue-600 font-medium">搜索结果：</span>
-                <span className="text-blue-800">找到 {totalItems} 个志愿</span>
+                <span className="text-blue-800">
+                  找到 {totalItems} 个志愿
+                  {activeTab === 'smart' && <span className="text-blue-600 ml-2">(智能推荐)</span>}
+                  {activeTab === 'all' && <span className="text-blue-600 ml-2">(全部可选)</span>}
+                </span>
               </div>
               <button
                 onClick={() => {
                   setSearchText('');
                   setSelectedSchoolNature('all');
+                  setSelectedRankSegment('all');
                 }}
                 className="text-blue-600 hover:text-blue-800 text-sm underline"
               >
@@ -1518,38 +1644,55 @@ const AiVolunteerPage: React.FC = () => {
           </div>
         )}
 
-        {/* 排序Tab选项卡 - 独立的card */}
-        <div className="w-full max-w-xl bg-white rounded-2xl p-4 mb-0">
-          <div className="flex gap-2 flex-wrap">
+        {/* 标签页切换 - 优化用户体验 */}
+        <div className="w-full max-w-xl bg-white rounded-2xl p-2 mb-3">
+          {/* Tab切换按钮 */}
+          <div className="flex space-x-2 bg-gradient-to-r from-blue-50 to-purple-50 p-1 rounded-xl border border-blue-100">
             <button
-              onClick={() => handleSortTabChange('rankDiff')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                sortTab === 'rankDiff'
-                  ? 'bg-blue-500 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              className={`flex-1 py-1.5 px-3 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${
+                activeTab === 'all'
+                  ? 'bg-white text-blue-700 shadow-md border-2 border-blue-300 scale-105'
+                  : 'text-gray-700 hover:text-blue-600 hover:bg-white/60'
               }`}
+              onClick={() => {
+                setActiveTab('all');
+                // 切换到全部可选tab时，重置位次段筛选为全部
+                setSelectedRankSegment('all');
+              }}
             >
-              按位次差
+              <div className="flex items-center justify-center space-x-2">
+                <span className="text-base">📋</span>
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-medium">全部可选</span>
+                  <span className="text-xs font-normal opacity-75">查看所有志愿</span>
+                </div>
+              </div>
             </button>
-
             <button
-              onClick={() => handleSortTabChange('major')}
-              disabled={isLoadingMajorData}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                sortTab === 'major'
-                  ? 'bg-blue-500 text-white shadow-md'
-                  : isLoadingMajorData
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              className={`flex-1 py-1.5 px-3 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${
+                activeTab === 'smart'
+                  ? 'bg-white text-purple-700 shadow-md border-2 border-purple-300 scale-105'
+                  : 'text-gray-700 hover:text-purple-600 hover:bg-white/60'
               }`}
+              onClick={() => {
+                setActiveTab('smart');
+                // 切换到智能推荐tab时，重置位次段筛选为全部
+                setSelectedRankSegment('all');
+              }}
             >
-              {isLoadingMajorData ? '加载中...' : '按专业'}
+              <div className="flex items-center justify-center space-x-2">
+                <span className="text-base">🤖</span>
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-medium">智能推荐</span>
+                  <span className="text-xs font-normal opacity-75">AI精选推荐</span>
+                </div>
+              </div>
             </button>
           </div>
         </div>
 
         {/* 加载状态 */}
-        {loading && (
+        {(loading || (activeTab === 'smart' && smartRecommendLoading)) && (
           <div className="w-full max-w-xl bg-white rounded-2xl mt-3 p-6 text-center">
             <div className="text-gray-500">加载中...</div>
           </div>
@@ -1563,557 +1706,49 @@ const AiVolunteerPage: React.FC = () => {
 
             {/* 备选志愿列表 - 使用虚拟滚动优化 */}
             {filteredData.length > 0 && (
-              <div 
-                ref={scrollManager.scrollContainerRef} 
+              <div
+                ref={scrollManager.scrollContainerRef}
                 className="w-full max-w-xl xunigundong"
                 style={{
                   overflowX: 'hidden',
-                  position: 'relative'
+                  position: 'relative',
                 }}
               >
                 {displayedGroups.map((group) => {
-                  // 检查是否为按专业分组的数据
-                  const isMajorGroup = group.group <= -1000 && (group.result[0] as any).majorGroup;
+                  // 按位次段分组的数据
+                  const schoolGroups = groupBySchool(group.result);
 
-                  let schoolGroups: SchoolGroup[];
-                  let rankGroups: any[] = [];
-
-                  if (isMajorGroup) {
-                    // 按专业分组的数据
-                    const majorGroup = (group.result[0] as any).majorGroup as MajorGroup;
-                    rankGroups = majorGroup?.rankGroups || [];
-                    schoolGroups = rankGroups.flatMap((rankGroup) => rankGroup.schools);
-                  } else {
-                    // 按位次段分组的数据
-                    schoolGroups = groupBySchool(group.result);
-                  }
-
-                  // 按专业排序时显示所有学校，其他排序时也显示所有学校
-                  const displaySchools = schoolGroups;
+                  // 获取位次段名称
+                  const getGroupDisplayName = (groupId: number | string) => {
+                    if (segmentStats && segmentStats.length > 0) {
+                      const stat = segmentStats.find((s) => s.groupId === groupId.toString());
+                      return stat ? stat.name : `位次段${groupId}`;
+                    }
+                    return `位次段${groupId}`;
+                  };
 
                   return (
                     <div
                       key={group.group + 'group'}
-                      className={
-                        sortTab === 'major'
-                          ? 'w-full max-w-xl bg-white rounded-2xl  mt-3'
-                          : 'w-full max-w-xl bg-white rounded-2xl  mt-3 p-2'
-                      }
+                      className="w-full max-w-xl bg-white rounded-2xl mt-3 overflow-hidden"
                     >
-                      {/* 按专业排序时显示层级结构 */}
-                      {sortTab === 'major' ? (
-                        <div className="w-full max-w-xl bg-white rounded-2xl  mt-3">
-                          {/* 专业信息头部 - 完全按照intentiondetail.tsx的样式 */}
-                          <div
-                            className="flex items-center justify-between bg-[#dee9fd] rounded-t-xl p-4 mb-1"
-                            onClick={() => {
-                              if (isMajorGroup && (group.result[0] as any).majorGroup) {
-                                const majorGroup = (group.result[0] as any)
-                                  .majorGroup as MajorGroup;
-                                handleNavigation(
-                                  `/major/majorlovedetail?majorCode=${majorGroup.majorCode}&&majorName=${majorGroup.majorName}&score=${majorGroup.rankGroups?.[0]?.schools?.[0]?.majors?.[0]?.score || 0}&isFavorite=true`,
-                                  { replace: false }
-                                );
-                              }
-                            }}
-                          >
-                            <div className="flex items-center">
-                              <span className="text-blue-600 text-base font-bold mr-3">
-                                {isMajorGroup && (group.result[0] as any).majorGroup
-                                  ? (group.result[0] as any).majorGroup.majorCode
-                                  : group.result[0]?.majorCode}
-                              </span>
-                              <span className="text-blue-700 text-base font-bold">
-                                {(() => {
-                                  const majorName =
-                                    isMajorGroup && (group.result[0] as any).majorGroup
-                                      ? (group.result[0] as any).majorGroup.majorName
-                                      : group.result[0]?.majorName || '';
-                                  return majorName.length > 8
-                                    ? `${majorName.substring(0, 8)}...`
-                                    : majorName;
-                                })()}{' '}
-                              </span>
-                              <span className="ml-2 text-gray-400">&gt;</span>
-                            </div>
-                            <div className="flex items-center">
-                              <span className="text-gray-900 font-bold mr-2">发展潜能</span>
-                              <span className="text-blue-700 font-bold text-base">
-                                {Math.ceil(
-                                  (isMajorGroup && (group.result[0] as any).majorGroup
-                                    ? (group.result[0] as any).majorGroup.rankGroups?.[0]
-                                        ?.schools?.[0]?.majors?.[0]?.developmentPotential
-                                    : group.result[0]?.developmentPotential) || 0
-                                )}
-                                分！
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="space-y-2 p-2">
-                            {/* 位次段分组显示 */}
-                            {isMajorGroup &&
-                            (group.result[0] as any).majorGroup &&
-                            rankGroups.length > 0 ? (
-                              rankGroups.map((rankGroup) => {
-                                const filteredSchools = rankGroup.schools;
-
-                                // 如果没有学校，不显示该位次段
-                                if (filteredSchools.length === 0) {
-                                  return null;
-                                }
-
-                                return (
-                                  <div key={rankGroup.groupIndex} className="mb-5">
-                                    {/* 位次段标题 */}
-                                    <div className="flex items-center justify-between font-bold mb-4 text-sm border-b border-solid pb-3 border-gray-200 pr-0">
-                                      <div className="flex items-center">
-                                        <span className="text-gray-900">
-                                          {' '}
-                                          {rankGroup.groupName}{' '}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center">
-                                        <span className="text-gray-600 text-sm mr-1">
-                                          {rankGroup.schools.length}所院校
-                                        </span>
-                                      </div>
-                                    </div>
-
-                                    {/* 该位次段的院校列表 */}
-                                    {rankGroup.schools.map((schoolGroup: SchoolGroup) => (
-                                      <div
-                                        key={schoolGroup.schoolCode}
-                                        className="border border-gray-200 mb-4 overflow-hidden bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
-                                      >
-                                        {/* 院校头部 */}
-                                        <div className="p-4">
-                                          {/* 学校名称和操作按钮行 */}
-                                          <div className="flex items-center justify-between mb-3">
-                                            <div className="flex-1 min-w-0">
-                                              <span
-                                                className="text-blue-600 text-lg font-bold cursor-pointer hover:text-blue-700 transition-colors duration-200 truncate block"
-                                                title={schoolGroup.schoolName}
-                                                onClick={() => {
-                                                  handleNavigation(
-                                                    `/major/schooldetail?schoolCode=${schoolGroup.schoolCode}&schoolname=${schoolGroup.schoolName}`
-                                                  );
-                                                }}
-                                              >
-                                                {schoolGroup.schoolName.length > 10
-                                                  ? `${schoolGroup.schoolName.substring(0, 10)}...`
-                                                  : schoolGroup.schoolName}
-                                              </span>
-                                            </div>
-                                            {/* 操作按钮 */}
-                                            <div className="flex space-x-2">
-                                              {schoolGroup.majors.map((item: any) => {
-                                                const itemKey = `${item.schoolCode}_${item.majorCode}`;
-                                                const isAlternative =
-                                                  alternativeStatus[itemKey]?.isAlternative ||
-                                                  false;
-                                                const isLoading = loadingStatus[itemKey];
-
-                                                return (
-                                                  <button
-                                                    key={item.id}
-                                                    className={`ml-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm ${
-                                                      isAlternative
-                                                        ? 'bg-red-500 text-white hover:bg-red-600 hover:shadow-md'
-                                                        : isLoading
-                                                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                          : 'bg-green-500 text-white hover:bg-green-600 hover:shadow-md'
-                                                    }`}
-                                                    onClick={() => handleAlternativeClick(item)}
-                                                    disabled={isLoading}
-                                                  >
-                                                    {isLoading
-                                                      ? '处理中...'
-                                                      : isAlternative
-                                                        ? '移除'
-                                                        : '备选'}
-                                                  </button>
-                                                );
-                                              })}
-                                            </div>
-                                          </div>
-
-                                          {/* 专业信息行 */}
-                                          {schoolGroup.majors.map((item: any) => (
-                                            <div key={item.id}>
-                                              <div className="flex items-center justify-between mb-3">
-                                                <div className="flex items-center">
-                                                  <span className="text-blue-700 text-sm mr-2">
-                                                    {item.majorCode} {item.majorName}
-                                                  </span>
-                                                </div>
-                                                <div className="flex items-center space-x-2">
-                                                  {getRankdiffDom(item)}
-                                                </div>
-                                              </div>
-                                              <div className="flex flex-wrap gap-2 mb-3">
-                                                {/* 学校特色标签 */}
-                                                {parseSchoolFeatures(item.schoolFeature).map(
-                                                  (feature, index) => (
-                                                    <span
-                                                      key={`${item.schoolName}-feature-${index}`}
-                                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
-                                                    >
-                                                      {feature}
-                                                    </span>
-                                                  )
-                                                )}
-                                                <span
-                                                  key={item.schoolName + '公办'}
-                                                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200"
-                                                >
-                                                  {item.schoolNature === 'public' ? '公办' : '民办'}
-                                                </span>
-                                                {item.enrollmentRate && item.enrollmentRate > 0 && (
-                                                  <span
-                                                    key={item.schoolName + '升学率'}
-                                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
-                                                  >
-                                                    升学率{item.enrollmentRate}%
-                                                  </span>
-                                                )}
-
-                                                {/* 学制标签 */}
-                                                {item.historyScore &&
-                                                  item.historyScore.length > 0 &&
-                                                  item.historyScore[0].studyPeriod && (
-                                                    <span
-                                                      key={item.schoolName + '学制'}
-                                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200"
-                                                    >
-                                                      学制{item.historyScore[0].studyPeriod}年
-                                                    </span>
-                                                  )}
-                                                <span
-                                                  key={item.schoolName + '校区'}
-                                                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200"
-                                                >
-                                                  {getCityDisplayInfo(item)}
-                                                </span>
-                                                {item.majorGroupName && (
-                                                  <button
-                                                    key={item.schoolName + '专业组'}
-                                                    onClick={() => handleViewMajorGroup(item)}
-                                                    className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-purple-500 text-white border-2 border-purple-400 hover:bg-purple-600 hover:border-purple-500 hover:shadow-md transition-all duration-200 cursor-pointer shadow-sm"
-                                                    title="点击查看专业组详情"
-                                                  >
-                                                    <span className="mr-1">📋</span>
-                                                    {item.majorGroupName}专业组
-                                                    <span className="ml-1 text-xs">▶</span>
-                                                  </button>
-                                                )}
-                                              </div>
-                                            </div>
-                                          ))}
-                                        </div>
-
-                                        {/* 历年分数表格 */}
-                                        {schoolGroup.majors.map((item: any) => (
-                                          <div
-                                            key={item.id}
-                                            className="px-4 pb-4 bg-gray-50 rounded-b-lg"
-                                            dangerouslySetInnerHTML={{
-                                              __html: getHistoryScore(item?.historyScore || []),
-                                            }}
-                                          ></div>
-                                        ))}
-                                      </div>
-                                    ))}
-                                  </div>
-                                );
-                              })
-                            ) : (
-                              // 如果没有位次段分组，显示简单的学校列表
-                              <div className="space-y-4">
-                                {displaySchools.map((schoolGroup: SchoolGroup) => (
-                                  <div
-                                    key={schoolGroup.schoolCode}
-                                    className="border border-gray-200 mb-4 overflow-hidden bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
-                                  >
-                                    {/* 院校头部 */}
-                                    <div className="p-4">
-                                      {/* 学校名称和操作按钮行 */}
-                                      <div className="flex items-center justify-between mb-3">
-                                        <div className="flex-1 min-w-0">
-                                          <span
-                                            className="text-blue-600 text-lg font-bold cursor-pointer hover:text-blue-700 transition-colors duration-200 truncate block"
-                                            title={schoolGroup.schoolName}
-                                            onClick={() => {
-                                              handleNavigation(
-                                                `/major/schooldetail?schoolCode=${schoolGroup.schoolCode}&schoolname=${schoolGroup.schoolName}`
-                                              );
-                                            }}
-                                          >
-                                            {schoolGroup.schoolName.length > 10
-                                              ? `${schoolGroup.schoolName.substring(0, 10)}...`
-                                              : schoolGroup.schoolName}
-                                          </span>
-                                        </div>
-                                        {/* 操作按钮 */}
-                                        <div className="flex space-x-2">
-                                          {schoolGroup.majors.map((item: any) => {
-                                            const itemKey = `${item.schoolCode}_${item.majorCode}`;
-                                            const isAlternative =
-                                              alternativeStatus[itemKey]?.isAlternative || false;
-                                            const isLoading = loadingStatus[itemKey];
-
-                                            return (
-                                              <button
-                                                key={item.id}
-                                                className={`ml-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm ${
-                                                  isAlternative
-                                                    ? 'bg-red-500 text-white hover:bg-red-600 hover:shadow-md'
-                                                    : isLoading
-                                                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                      : 'bg-green-500 text-white hover:bg-green-600 hover:shadow-md'
-                                                }`}
-                                                onClick={() => handleAlternativeClick(item)}
-                                                disabled={isLoading}
-                                              >
-                                                {isLoading
-                                                  ? '处理中...'
-                                                  : isAlternative
-                                                    ? '移除'
-                                                    : '备选'}
-                                              </button>
-                                            );
-                                          })}
-                                        </div>
-                                      </div>
-
-                                      {/* 专业信息行 */}
-                                      {schoolGroup.majors.map((item: any) => (
-                                        <div key={item.id}>
-                                          <div className="flex items-center justify-between mb-3">
-                                            <div className="flex items-center">
-                                              <span className="text-blue-700 text-sm mr-2">
-                                                {item.majorCode} {item.majorName}
-                                              </span>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
-                                              {getRankdiffDom(item)}
-                                            </div>
-                                          </div>
-                                          <div className="flex flex-wrap gap-2 mb-3">
-                                            {/* 学校特色标签 */}
-                                            {parseSchoolFeatures(item.schoolFeature).map(
-                                              (feature, index) => (
-                                                <span
-                                                  key={`${item.schoolName}-feature-${index}`}
-                                                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
-                                                >
-                                                  {feature}
-                                                </span>
-                                              )
-                                            )}
-                                            <span
-                                              key={item.schoolName + '公办'}
-                                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200"
-                                            >
-                                              {item.schoolNature === 'public' ? '公办' : '民办'}
-                                            </span>
-                                            {item.enrollmentRate && item.enrollmentRate > 0 && (
-                                              <span
-                                                key={item.schoolName + '升学率'}
-                                                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
-                                              >
-                                                升学率{item.enrollmentRate}%
-                                              </span>
-                                            )}
-
-                                            {/* 学制标签 */}
-                                            {item.historyScore &&
-                                              item.historyScore.length > 0 &&
-                                              item.historyScore[0].studyPeriod && (
-                                                <span
-                                                  key={item.schoolName + '学制'}
-                                                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200"
-                                                >
-                                                  学制{item.historyScore[0].studyPeriod}年
-                                                </span>
-                                              )}
-                                            <span
-                                              key={item.schoolName + '校区'}
-                                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200"
-                                            >
-                                              {getCityDisplayInfo(item)}
-                                            </span>
-                                            {item.majorGroupName && (
-                                              <button
-                                                key={item.schoolName + '专业组'}
-                                                onClick={() => handleViewMajorGroup(item)}
-                                                className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-purple-500 text-white border-2 border-purple-400 hover:bg-purple-600 hover:border-purple-500 hover:shadow-md transition-all duration-200 cursor-pointer shadow-sm"
-                                                title="点击查看专业组详情"
-                                              >
-                                                <span className="mr-1">📋</span>
-                                                {item.majorGroupName}专业组
-                                                <span className="ml-1 text-xs">▶</span>
-                                              </button>
-                                            )}
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-
-                                    {/* 历年分数表格 */}
-                                    {schoolGroup.majors.map((item: any) => (
-                                      <div
-                                        key={item.id}
-                                        className="px-4 pb-4 bg-gray-50 rounded-b-lg"
-                                        dangerouslySetInnerHTML={{
-                                          __html: getHistoryScore(item?.historyScore || []),
-                                        }}
-                                      ></div>
-                                    ))}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                      {/* 位次段标题栏 - 仅显示信息，不可点击 */}
+                      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <span className="text-lg font-bold">
+                              {getGroupDisplayName(group.group)}
+                            </span>
+                            <span className="text-sm opacity-90 bg-white/20 px-2 py-1 rounded-full">
+                              {group.count || 0} 个志愿
+                            </span>
                           </div>
                         </div>
-                      ) : sortTab === 'rankDiff' ? (
-                        /* 按位次差排序时的列表显示 */
-                        <div className="w-full max-w-xl bg-white rounded-2xl">
-                          {group.result.map((item: any) => (
-                            <div
-                              key={item.id}
-                              className="mb-4 border-b border-gray-200 pb-4 last:border-b-0"
-                            >
-                              {/* 学校名称 */}
-                              <div className="flex items-center justify-between mb-3">
-                                <span
-                                  className="text-blue-600 text-lg font-bold cursor-pointer hover:text-blue-700 transition-colors duration-200"
-                                  onClick={() => {
-                                    handleNavigation(
-                                      `/major/schooldetail?schoolCode=${item.schoolCode}&schoolname=${item.schoolName}`
-                                    );
-                                  }}
-                                >
-                                  {item.schoolName}
-                                </span>
-                                <button
-                                  className={`px-3 py-1 rounded text-sm font-medium transition-all duration-200 ${(() => {
-                                    const itemKey = `${item.schoolCode}_${item.majorCode}`;
-                                    const isAlternative =
-                                      alternativeStatus[itemKey]?.isAlternative || false;
-                                    const isLoading = loadingStatus[itemKey];
-                                    return isAlternative
-                                      ? 'bg-red-500 text-white hover:bg-red-600'
-                                      : isLoading
-                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                        : 'bg-green-500 text-white hover:bg-green-600';
-                                  })()}`}
-                                  onClick={() => handleAlternativeClick(item)}
-                                  disabled={(() => {
-                                    const itemKey = `${item.schoolCode}_${item.majorCode}`;
-                                    return loadingStatus[itemKey];
-                                  })()}
-                                >
-                                  {(() => {
-                                    const itemKey = `${item.schoolCode}_${item.majorCode}`;
-                                    const isAlternative =
-                                      alternativeStatus[itemKey]?.isAlternative || false;
-                                    const isLoading = loadingStatus[itemKey];
-                                    return isLoading
-                                      ? '处理中...'
-                                      : isAlternative
-                                        ? '移除'
-                                        : '备选';
-                                  })()}
-                                </button>
-                              </div>
+                      </div>
 
-                              {/* 专业信息 */}
-                              <div className="flex items-center justify-between mb-3">
-                                <span
-                                  className="text-blue-700 text-sm cursor-pointer hover:text-blue-800"
-                                  onClick={() => {
-                                    handleNavigation(
-                                      `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isFavorite=true`,
-                                      { replace: false }
-                                    );
-                                  }}
-                                >
-                                  {item.majorCode} {item.majorName}
-                                </span>
-                                {getRankdiffDom(item)}
-                              </div>
-
-                              {/* 学校标签行 */}
-                              <div className="flex flex-wrap gap-2 mb-3">
-                                {/* 学校特色标签 */}
-                                {parseSchoolFeatures(item.schoolFeature).map((feature, index) => (
-                                  <span
-                                    key={`${item.schoolName}-feature-${index}`}
-                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
-                                  >
-                                    {feature}
-                                  </span>
-                                ))}
-                                <span
-                                  key={item.schoolName + '公办'}
-                                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200"
-                                >
-                                  {item.schoolNature === 'public' ? '公办' : '民办'}
-                                </span>
-                                {item.enrollmentRate && item.enrollmentRate > 0 && (
-                                  <span
-                                    key={item.schoolName + '升学率'}
-                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
-                                  >
-                                    升学率{item.enrollmentRate}%
-                                  </span>
-                                )}
-
-                                {/* 学制标签 */}
-                                {item.historyScore &&
-                                  item.historyScore.length > 0 &&
-                                  item.historyScore[0].studyPeriod && (
-                                    <span
-                                      key={item.schoolName + '学制'}
-                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200"
-                                    >
-                                      学制{item.historyScore[0].studyPeriod}年
-                                    </span>
-                                  )}
-                                <span
-                                  key={item.schoolName + '校区'}
-                                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200"
-                                >
-                                  {getCityDisplayInfo(item)}
-                                </span>
-                                {item.majorGroupName && (
-                                  <button
-                                    key={item.schoolName + '专业组'}
-                                    onClick={() => handleViewMajorGroup(item)}
-                                    className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-purple-500 text-white border-2 border-purple-400 hover:bg-purple-600 hover:border-purple-500 hover:shadow-md transition-all duration-200 cursor-pointer shadow-sm"
-                                    title="点击查看专业组详情"
-                                  >
-                                    <span className="mr-1">📋</span>
-                                    {item.majorGroupName}专业组
-                                    <span className="ml-1 text-xs">▶</span>
-                                  </button>
-                                )}
-                              </div>
-
-                              {/* 历年分数表格 */}
-                              <div
-                                className="bg-gray-50 rounded-b-lg"
-                                dangerouslySetInnerHTML={{
-                                  __html: getHistoryScore(item?.historyScore || []),
-                                }}
-                              ></div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        /* 原有的渲染逻辑（位次段排序等） */
-                        displaySchools.map((schoolGroup) => (
+                      {/* 位次段内容 */}
+                      <div className="p-2">
+                        {schoolGroups.map((schoolGroup) => (
                           <div key={schoolGroup.schoolCode} className="mb-4">
                             {/* 学校与基本信息 */}
                             <div
@@ -2139,18 +1774,18 @@ const AiVolunteerPage: React.FC = () => {
                                 <div className="flex items-center justify-between mt-2">
                                   <div className="flex items-center">
                                     <span
-                                      className={`text-blue-700 text-[14px] mr-2 ${item.majorName.length > 8 ? 'cursor-pointer hover:text-blue-800' : ''}`}
+                                      className={`text-blue-700 text-[14px] mr-2 ${item.name.length > 8 ? 'cursor-pointer hover:text-blue-800' : ''}`}
                                       onClick={() => {
                                         handleNavigation(
-                                          `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isFavorite=true`,
+                                          `/major/majorlovedetail?majorCode=${item.code}&&majorName=${item.name}&score=${item.score}&isFavorite=true`,
                                           { replace: false } // 不使用 replace，保持正常的导航历史
                                         );
                                       }}
                                     >
-                                      {item.majorCode}{' '}
-                                      {item.majorName.length > 5
-                                        ? item.majorName.substring(0, 5) + '...'
-                                        : item.majorName}
+                                      {item.code}{' '}
+                                      {item.name.length > 5
+                                        ? item.name.substring(0, 5) + '...'
+                                        : item.name}
                                     </span>
                                   </div>
                                   <div className="flex items-center space-x-2">
@@ -2159,7 +1794,7 @@ const AiVolunteerPage: React.FC = () => {
 
                                     <button
                                       className={`px-3 py-1 rounded ${(() => {
-                                        const itemKey = `${item.schoolCode}_${item.majorCode}`;
+                                        const itemKey = `${item.schoolCode}_${item.code}`;
                                         const isAlternative =
                                           alternativeStatus[itemKey]?.isAlternative || false;
                                         const isLoading = loadingStatus[itemKey];
@@ -2171,12 +1806,12 @@ const AiVolunteerPage: React.FC = () => {
                                       })()}`}
                                       onClick={() => handleAlternativeClick(item)}
                                       disabled={(() => {
-                                        const itemKey = `${item.schoolCode}_${item.majorCode}`;
+                                        const itemKey = `${item.schoolCode}_${item.code}`;
                                         return loadingStatus[itemKey];
                                       })()}
                                     >
                                       {(() => {
-                                        const itemKey = `${item.schoolCode}_${item.majorCode}`;
+                                        const itemKey = `${item.schoolCode}_${item.code}`;
                                         const isAlternative =
                                           alternativeStatus[itemKey]?.isAlternative || false;
                                         const isLoading = loadingStatus[itemKey];
@@ -2217,16 +1852,14 @@ const AiVolunteerPage: React.FC = () => {
                                   )}
 
                                   {/* 学制标签 */}
-                                  {item.historyScore &&
-                                    item.historyScore.length > 0 &&
-                                    item.historyScore[0].studyPeriod && (
-                                      <span
-                                        key={item.schoolName + '学制'}
-                                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200"
-                                      >
-                                        学制{item.historyScore[0].studyPeriod}年
-                                      </span>
-                                    )}
+                                  {item.studyPeriod && (
+                                    <span
+                                      key={item.schoolName + '学制'}
+                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200"
+                                    >
+                                      学制{item.studyPeriod}年
+                                    </span>
+                                  )}
                                   <span
                                     key={item.schoolName + '校区'}
                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200"
@@ -2257,22 +1890,22 @@ const AiVolunteerPage: React.FC = () => {
                               </div>
                             ))}
                           </div>
-                        ))
-                      )}
+                        ))}
+                      </div>
                     </div>
                   );
                 })}
 
                 {/* 加载更多提示 */}
                 {isLoadingMore && (
-                  <div className="w-full max-w-xl bg-white rounded-2xl  mt-3 p-6 text-center">
+                  <div className="w-full max-w-xl bg-white rounded-2xl mt-3 p-6 text-center">
                     <div className="text-gray-500">加载中...</div>
                   </div>
                 )}
 
                 {/* 显示更多按钮 */}
                 {!isLoadingMore && displayCount < totalItems && (
-                  <div className="w-full max-w-xl bg-white rounded-2xl  mt-3 p-6 text-center">
+                  <div className="w-full max-w-xl bg-white rounded-2xl mt-3 p-6 text-center">
                     <button
                       onClick={() => {
                         setIsLoadingMore(true);
@@ -2281,7 +1914,7 @@ const AiVolunteerPage: React.FC = () => {
                           setIsLoadingMore(false);
                         }, 500);
                       }}
-                      className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                      className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg"
                     >
                       加载更多 ({totalItems - displayCount} 个剩余)
                     </button>
@@ -2303,91 +1936,6 @@ const AiVolunteerPage: React.FC = () => {
           window.location.href = '/educational';
         }}
       />
-
-      {/* 提示弹窗 */}
-      <Modal
-        title={
-          <div
-            style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}
-          >
-            💡 Ai志愿填报说明
-          </div>
-        }
-        open={isTipModalVisible}
-        onCancel={handleTipModalClose}
-        footer={null}
-        width={400}
-        centered
-        className="rounded-2xl"
-        style={{ top: '20%', zIndex: 10000 }}
-      >
-        <div style={{ padding: '20px 0' }}>
-          <div
-            style={{
-              padding: '16px 0',
-              lineHeight: '1.8',
-              fontSize: '14px',
-              color: '#333',
-            }}
-          >
-            <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#2563eb' }}>
-              点击&quot;备选&quot;按钮，该院校专业将进入&quot;志愿&quot;频道，作为&quot;备选志愿&quot;，供进一步筛选确认。
-            </div>
-          </div>
-
-          {/* 底部复选框选项 */}
-          <div
-            style={{
-              marginTop: '20px',
-              padding: '16px 20px',
-              background: '#f8f9fa',
-              borderRadius: '8px',
-              border: '1px solid #e9ecef',
-            }}
-          >
-            <div
-              style={{ marginBottom: '12px', fontSize: '14px', fontWeight: 'bold', color: '#333' }}
-            >
-              请选择您的偏好（可多选）：
-            </div>
-            <div style={{ marginBottom: '8px' }}>
-              <Checkbox
-                checked={userChoices.choice1}
-                onChange={(e) => handleChoiceChange('choice1', e.target.checked)}
-                style={{ fontSize: '13px' }}
-              >
-                今天不显示此提示
-              </Checkbox>
-            </div>
-            <div>
-              <Checkbox
-                checked={userChoices.choice2}
-                onChange={(e) => handleChoiceChange('choice2', e.target.checked)}
-                style={{ fontSize: '13px' }}
-              >
-                以后都不显示此提示
-              </Checkbox>
-            </div>
-          </div>
-
-          <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <Button
-              type="primary"
-              onClick={handleTipModalConfirm}
-              style={{
-                background: '#2563eb',
-                border: 'none',
-                borderRadius: '20px',
-                height: '40px',
-                width: '120px',
-                fontSize: '16px',
-              }}
-            >
-              我知道了
-            </Button>
-          </div>
-        </div>
-      </Modal>
 
       {/* 专业组详情弹窗 */}
       <Modal
