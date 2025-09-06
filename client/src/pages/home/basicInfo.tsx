@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import top from '../../public/basic_info_top.png';
 import { EnvironmentOutlined } from '@ant-design/icons';
 import { Picker, Dialog, SpinLoading } from 'antd-mobile';
@@ -73,6 +73,9 @@ const provinces = [
 
 const BasicInfo: React.FC = () => {
   const navigator = useNavigate();
+  const [searchParams] = useSearchParams();
+  const type = searchParams.get('type');
+
   // 省份、科目、分数、排名等状态
   const [province, setProvince] = useState('北京');
   const [firstSubject, setFirstSubject] = useState('');
@@ -135,7 +138,7 @@ const BasicInfo: React.FC = () => {
    */
   const autoGetRank = async (scoreValue: string) => {
     if (!scoreValue || !province) return;
-    
+
     // 确定科目类型
     let subjectType = '';
     if (province === '新疆' || province === '西藏') {
@@ -158,12 +161,12 @@ const BasicInfo: React.FC = () => {
     try {
       setIsLoadingRank(true);
       const result = await getScoreRange(province, parseInt(scoreValue), subjectType);
-      
+
       console.log('API返回的完整数据:', result);
-      
+
       // 处理不同的数据结构
       let rankValue = '';
-      
+
       // 情况1: result.data.total (嵌套结构)
       if (result.data && result.data.total) {
         rankValue = result.data.total.toString();
@@ -175,12 +178,11 @@ const BasicInfo: React.FC = () => {
       // 情况3: result.data.data.total (双重嵌套)
       else if (result.data && result.data.data && result.data.data.total) {
         rankValue = result.data.data.total.toString();
-      }
-      else {
+      } else {
         console.error('未找到 total 字段，完整返回数据:', result);
         return;
       }
-      
+
       console.log('获取到的排名值:', rankValue);
       setRank(rankValue);
       console.log('自动获取排名成功');
@@ -267,27 +269,10 @@ const BasicInfo: React.FC = () => {
         rank: Number(rank),
       });
       if (gaokaoConfigResponse && gaokaoConfigResponse.code === 200) {
-        console.log(scaleAnswerCount, 'scaleAnswerCount');
-        if (scaleAnswerCount && Number(scaleAnswerCount) !== 168) {
-          Dialog.alert({
-            content: '考生信息更新成功，请填写自评问卷',
-            confirmText: '填写自评问卷',
-            onConfirm: () => {
-              navigator('/major/list');
-            },
-          });
+        if (type === 'college') {
+          navigator('/volunteer/aiVolunteer');
         } else {
-          Dialog.confirm({
-            content: '考生信息更新成功',
-            confirmText: 'AI推荐志愿',
-            cancelText: '自主探索更具发展潜能专业',
-            onConfirm: () => {
-              navigator('/volunteer/aiVolunteer');
-            },
-            onCancel: () => {
-              navigator('/major/list');
-            },
-          });
+          navigator('/selfassessment');
         }
       }
     } catch (error) {
@@ -304,7 +289,8 @@ const BasicInfo: React.FC = () => {
     if (/^\d+$/.test(value) && parseInt(value) > 0) {
       setScore(value);
       // 分数输入完成后，自动获取排名（使用防抖）
-      if (value.length >= 3) { // 至少输入3位数才触发
+      if (value.length >= 3) {
+        // 至少输入3位数才触发
         // 清除之前的定时器
         if (autoGetRankTimeout) {
           clearTimeout(autoGetRankTimeout);

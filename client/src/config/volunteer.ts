@@ -54,6 +54,8 @@ export const api = {
     schoolCharters: (schoolCode: string) => `/schools/${schoolCode}/charters`,
     // 自动生成志愿接口
     nominate: '/config/nominate',
+    // 全部可选志愿接口
+    suitability: (group?: number) => `/config/suitability${group ? `?group=${group}` : ''}`,
   },
 };
 
@@ -557,6 +559,103 @@ export const nominate = async (options?: {
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(error.response?.data?.message || '自动生成志愿失败');
+    }
+    throw error;
+  }
+};
+
+// 全部可选志愿接口类型定义 - 更新为新的数据结构
+interface SuitabilityMajor {
+  code: string;
+  name: string;
+  developmentPotential: string;
+  schools?: SuitabilitySchool[];
+  majorGroupId?: number;
+  majorGroupName?: string;
+  rankDiff?: number;
+  rankDiffPer?: number;
+  rankDiffPercentage?: number;
+}
+
+interface SuitabilitySchool {
+  id: number;
+  name: string;
+  averageRank: number;
+  belong: string;
+  cityName: string;
+  provinceName: string;
+  employmentRate: number | null;
+  enrollmentRate: number | null;
+  features: string;
+  group: number;
+  historyScores: any[];
+  isTopFive: boolean;
+  major: SuitabilityMajor;
+}
+
+// 新的数据结构类型定义
+interface SuitabilityDataItem {
+  schoolName: string;
+  schoolCode: string;
+  schoolNature: string;
+  rankDiff: number;
+  rankDiffPer: number;
+  group: number;
+  isHighRange: boolean;
+  historyScores: {
+    historyScore: any;
+  };
+  schoolFeatures: string;
+  schoolBelong: string;
+  schoolCategories: string;
+  provinceName: string;
+  cityName: string;
+  enrollmentRate: number | null;
+  employmentRate: number | null;
+  majorGroupName: string;
+  majorGroupId: number;
+  majorCode: string;
+  planMajorName: string;
+  majorDisplayName: string;
+  planNum: number;
+  subjectSelection: string;
+  studyPeriod: string;
+  tuition: string;
+  remark: string;
+}
+
+interface SuitabilityResponse {
+  code: number;
+  message: string;
+  data: {
+    segmentStats: Array<{
+      groupId: string;
+      name: string;
+      count: number;
+    }>;
+    targetGroup: {
+      groupId: string;
+      count: number;
+      data: SuitabilityDataItem[];
+    };
+  };
+}
+
+/**
+ * 获取全部可选志愿
+ * @param group 组别参数（可选）
+ * @returns Promise<SuitabilityResponse>
+ */
+export const getSuitability = async (group?: number): Promise<SuitabilityResponse> => {
+  try {
+    const response = await axios.get<SuitabilityResponse>(
+      getApiUrl(api.endpoints.suitability(group)),
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '获取全部可选志愿失败');
     }
     throw error;
   }
