@@ -27,7 +27,7 @@ import { useScrollManager } from '../../hooks/useScrollManager';
 
 import BottomNav from '../comm/bottom';
 import StartWelcomePage from '../selfassessment/startWelcome';
-import Top from '../comm/top';
+
 import CommonSelect from '../comm/CommonSelect';
 import {
   cancelAlternative,
@@ -113,7 +113,7 @@ const convertToAlternativeGroup = (item: any): AlternativeGroup => {
       provinceName: dataItem.provinceName || '',
       cityName: dataItem.cityName || '',
       sortIndex: index,
-      developmentPotential: 0,
+      developmentPotential: dataItem.major?.developmentPotential || 0,
       position: index,
       admissionsSite: '',
       admissionsPhone: '',
@@ -172,7 +172,7 @@ const AiVolunteerPage: React.FC = () => {
   const loadingStatus = useSelector(selectLoadingStatus);
   const displayCount = useSelector(selectDisplayCount);
   const alternativeStatus = useSelector(selectAlternativeStatus);
-  const recommendCount = useSelector(selectRecommendCount);
+
   const hasInitialized = useSelector(selectHasInitialized);
   const currentPageKey = useSelector(selectPageKey);
 
@@ -822,16 +822,14 @@ const AiVolunteerPage: React.FC = () => {
       const allSmartItems: AlternativeItem[] = smartRecommendData.flatMap((group) => group.data);
       const filteredSmartItems = filterDataBySearch(allSmartItems);
 
-
-
       // 将过滤后的数据重新按位次段分组，并保留 count 信息
       const smartGroupedData: GroupedAlternatives[] = [];
-      
+
       // 从原始 smartRecommendData 中获取每个分组的 count 信息
       smartRecommendData.forEach((groupData) => {
         const groupId = groupData.groupId;
-        const groupItems = filteredSmartItems.filter(item => item.group?.toString() === groupId);
-        
+        const groupItems = filteredSmartItems.filter((item) => item.group?.toString() === groupId);
+
         if (groupItems.length > 0) {
           smartGroupedData.push({
             group: parseInt(groupId) || groupId,
@@ -1011,15 +1009,15 @@ const AiVolunteerPage: React.FC = () => {
     (groupId: string) => {
       // 根据当前tab选择数据源
       const currentData = activeTab === 'smart' ? smartRecommendData : alternatives;
-      
+
       // 查找对应分组的位置
       const targetGroup = currentData.find((group) => group.group?.toString() === groupId);
-      
+
       if (targetGroup) {
         // 计算分组在页面中的位置
         let groupPosition = 0;
         let found = false;
-        
+
         for (const group of currentData) {
           if (group.group?.toString() === groupId) {
             found = true;
@@ -1029,13 +1027,13 @@ const AiVolunteerPage: React.FC = () => {
           const groupHeight = 100 + (group.result?.length || 0) * 200;
           groupPosition += groupHeight;
         }
-        
+
         if (found) {
           // 滚动到对应位置
           setTimeout(() => {
             window.scrollTo({
               top: groupPosition,
-              behavior: 'smooth'
+              behavior: 'smooth',
             });
           }, 100);
         }
@@ -1068,7 +1066,9 @@ const AiVolunteerPage: React.FC = () => {
         // 全部可选tab：需要请求API加载数据
         // 检查是否需要重新加载数据
         if (groupId === selectedRankSegment && alternatives.length > 0) {
-          const currentGroupData = alternatives.find((group) => group.group?.toString() === groupId);
+          const currentGroupData = alternatives.find(
+            (group) => group.group?.toString() === groupId
+          );
           if (currentGroupData && currentGroupData.result.length > 0) {
             return;
           }
@@ -1083,7 +1083,14 @@ const AiVolunteerPage: React.FC = () => {
         }
       }
     },
-    [loadSuitabilityData, loading, selectedRankSegment, activeTab, alternatives, scrollToSpecificGroup]
+    [
+      loadSuitabilityData,
+      loading,
+      selectedRankSegment,
+      activeTab,
+      alternatives,
+      scrollToSpecificGroup,
+    ]
   );
 
   // 获取已备选志愿状态的函数
@@ -1512,20 +1519,64 @@ const AiVolunteerPage: React.FC = () => {
   };
 
   return (
-    <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 40 }}>
-      <Top
-        title={
-          (activeTab === 'all' ? '全部可选志愿' : '智能推荐') +
-          (activeTab === 'smart' 
-            ? smartRecommendData.reduce((total, group) => total + (group.count || 0), 0)
-            : segmentStats.reduce((total, stat) => total + stat.count, 0)
-          ) +
-          '个'
-        }
-        onBack={() => window.history.back()}
-        showRestartButton={true}
-      />
+    <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 50 }}>
+      <div className="top-container">
+        {/* 顶部导航条 */}
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
+          <div className="flex items-center justify-between px-4 py-3">
+            {/* 返回按钮 */}
+            <button
+              onClick={() => window.history.back()}
+              className="flex items-center justify-center w-8 h-8 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
 
+            {/* 标签页 - 居中显示 */}
+            <div className="flex items-center space-x-6 absolute left-1/2 transform -translate-x-1/2">
+              <button
+                className={`text-sm font-medium transition-colors ${
+                  activeTab === 'all'
+                    ? 'text-blue-600 border-b-2 border-blue-600 pb-1'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                onClick={() => setActiveTab('all')}
+              >
+                全部可选
+              </button>
+              <button
+                className={`text-sm font-medium transition-colors ${
+                  activeTab === 'smart'
+                    ? 'text-blue-600 border-b-2 border-blue-600 pb-1'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                onClick={() => setActiveTab('smart')}
+              >
+                智能推荐
+              </button>
+            </div>
+            <div className="flex items-right ">
+              <button
+                className="text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                onClick={() => {
+                  // 重启自评逻辑
+                  localStorage.removeItem('scaleAnswerCount');
+                  window.location.href = '/selfassessment';
+                }}
+              >
+                重启自评
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
       <div className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3">
         {/* 搜索组件 */}
         <div className="w-full max-w-xl bg-white rounded-2xl p-4 mb-3">
@@ -1596,7 +1647,7 @@ const AiVolunteerPage: React.FC = () => {
               <span className="text-sm font-medium text-gray-700 mr-2">位次段：</span>
               <CommonSelect
                 data={buildRankSegmentOptions()}
-                placeholder={activeTab === 'smart' ? "选择位次段快速定位" : "选择位次段"}
+                placeholder={activeTab === 'smart' ? '选择位次段快速定位' : '选择位次段'}
                 onSelect={(value) => handleRankSegmentChange(value)}
                 onClear={() => handleRankSegmentChange('all')}
                 defaultValue={selectedRankSegment}
@@ -1644,53 +1695,6 @@ const AiVolunteerPage: React.FC = () => {
           </div>
         )}
 
-        {/* 标签页切换 - 优化用户体验 */}
-        <div className="w-full max-w-xl bg-white rounded-2xl p-2 mb-3">
-          {/* Tab切换按钮 */}
-          <div className="flex space-x-2 bg-gradient-to-r from-blue-50 to-purple-50 p-1 rounded-xl border border-blue-100">
-            <button
-              className={`flex-1 py-1.5 px-3 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${
-                activeTab === 'all'
-                  ? 'bg-white text-blue-700 shadow-md border-2 border-blue-300 scale-105'
-                  : 'text-gray-700 hover:text-blue-600 hover:bg-white/60'
-              }`}
-              onClick={() => {
-                setActiveTab('all');
-                // 切换到全部可选tab时，重置位次段筛选为全部
-                setSelectedRankSegment('all');
-              }}
-            >
-              <div className="flex items-center justify-center space-x-2">
-                <span className="text-base">📋</span>
-                <div className="flex flex-col items-start">
-                  <span className="text-sm font-medium">全部可选</span>
-                  <span className="text-xs font-normal opacity-75">查看所有志愿</span>
-                </div>
-              </div>
-            </button>
-            <button
-              className={`flex-1 py-1.5 px-3 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${
-                activeTab === 'smart'
-                  ? 'bg-white text-purple-700 shadow-md border-2 border-purple-300 scale-105'
-                  : 'text-gray-700 hover:text-purple-600 hover:bg-white/60'
-              }`}
-              onClick={() => {
-                setActiveTab('smart');
-                // 切换到智能推荐tab时，重置位次段筛选为全部
-                setSelectedRankSegment('all');
-              }}
-            >
-              <div className="flex items-center justify-center space-x-2">
-                <span className="text-base">🤖</span>
-                <div className="flex flex-col items-start">
-                  <span className="text-sm font-medium">智能推荐</span>
-                  <span className="text-xs font-normal opacity-75">AI精选推荐</span>
-                </div>
-              </div>
-            </button>
-          </div>
-        </div>
-
         {/* 加载状态 */}
         {(loading || (activeTab === 'smart' && smartRecommendLoading)) && (
           <div className="w-full max-w-xl bg-white rounded-2xl mt-3 p-6 text-center">
@@ -1699,7 +1703,7 @@ const AiVolunteerPage: React.FC = () => {
         )}
 
         {/* 备选志愿列表 */}
-        {!loading && (
+        {!loading && !(activeTab === 'smart' && smartRecommendLoading) && (
           <>
             {/* 空状态提示 */}
             {filteredData.length === 0 && renderEmptyState()}
@@ -1842,6 +1846,15 @@ const AiVolunteerPage: React.FC = () => {
                                   >
                                     {item.schoolNature === 'public' ? '公办' : '民办'}
                                   </span>
+
+                                  {item.developmentPotential > 0 && (
+                                    <span
+                                      key={item.schoolName + '发展潜能'}
+                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200"
+                                    >
+                                      发展潜能{item.developmentPotential}分
+                                    </span>
+                                  )}
                                   {item.enrollmentRate && item.enrollmentRate > 0 && (
                                     <span
                                       key={item.schoolName + '升学率'}

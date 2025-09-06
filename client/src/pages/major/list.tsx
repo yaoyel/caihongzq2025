@@ -24,6 +24,7 @@ import {
   cancelMajorIntention,
   getMajorIntentions,
 } from '../../config/volunteer';
+import Top from '../comm/top';
 import './list.css'; // 可根据需要自定义样式
 
 /**
@@ -183,7 +184,8 @@ const MajorPage: React.FC = () => {
   });
   // tab说明文字展开状态
   const [isTabDescriptionExpanded, setIsTabDescriptionExpanded] = useState(false);
-  // 使用Redux管理tab状态
+  // 添加新的顶部导航条 tab 状态
+  const [topActiveTab, setTopActiveTab] = useState<'all' | 'favorite'>('all');  // 使用Redux管理tab状态
   const dispatch = useDispatch();
   const { activeTab, activeSubTab, activeOpportunitySubTab } = useSelector(
     (state: RootState) => state.majorList
@@ -192,7 +194,13 @@ const MajorPage: React.FC = () => {
   const [selectedDevelopmentGroup, setSelectedDevelopmentGroup] = useState<string>('');
   const [developmentOptions, setDevelopmentOptions] = useState<SelectOptionData[]>([]);
   // 计算当前实际要渲染的专业数据
-  const displayMajors = majors.slice(0, currentPage * pageSize);
+  const displayMajors = (() => {
+    let filteredMajors = majors;
+    if (topActiveTab === 'favorite') {
+      filteredMajors = majors.filter((major: any) => isMajorFavorite(major.majorCode));
+    }
+    return filteredMajors.slice(0, currentPage * pageSize);
+  })();
 
   // 在组件内添加ref
   const listAreaRef = useRef<HTMLDivElement>(null);
@@ -317,6 +325,12 @@ const MajorPage: React.FC = () => {
     }
   }, [activeTab, activeSubTab, activeOpportunitySubTab, originalMajors, sortMajors]);
 
+  // 当顶部 tab 切换时，重置分页状态
+  useEffect(() => {
+    setCurrentPage(1);
+    setHasMore(true);
+  }, [topActiveTab]);
+
   /**
    * 根据当前tab状态获取对应的分组数据源类型
    * @returns 分组数据源类型
@@ -398,7 +412,7 @@ const MajorPage: React.FC = () => {
       try {
         const groupedResults = JSON.parse(cachedGroupedResults);
         const dataSource = getCurrentGroupDataSource();
-        
+
         // 根据数据源类型获取对应的分组数据
         let sourceData = null;
         if (dataSource === 'developmentPotential' && groupedResults.developmentPotential) {
@@ -415,11 +429,20 @@ const MajorPage: React.FC = () => {
           sourceData = groupedResults.tiaozhanDeduction;
         } else if (dataSource === 'opportunityScore' && groupedResults.opportunityScore) {
           sourceData = groupedResults.opportunityScore;
-        } else if (dataSource === 'academicDevelopmentScore' && groupedResults.academicDevelopmentScore) {
+        } else if (
+          dataSource === 'academicDevelopmentScore' &&
+          groupedResults.academicDevelopmentScore
+        ) {
           sourceData = groupedResults.academicDevelopmentScore;
-        } else if (dataSource === 'careerDevelopmentScore' && groupedResults.careerDevelopmentScore) {
+        } else if (
+          dataSource === 'careerDevelopmentScore' &&
+          groupedResults.careerDevelopmentScore
+        ) {
           sourceData = groupedResults.careerDevelopmentScore;
-        } else if (dataSource === 'industryProspectsScore' && groupedResults.industryProspectsScore) {
+        } else if (
+          dataSource === 'industryProspectsScore' &&
+          groupedResults.industryProspectsScore
+        ) {
           sourceData = groupedResults.industryProspectsScore;
         } else if (dataSource === 'growthPotentialScore' && groupedResults.growthPotentialScore) {
           sourceData = groupedResults.growthPotentialScore;
@@ -959,7 +982,7 @@ const MajorPage: React.FC = () => {
         try {
           const groupedResults = JSON.parse(cachedGroupedResults);
           const dataSource = getCurrentGroupDataSource();
-          
+
           // 根据数据源类型获取对应的分组数据
           let sourceData = null;
           if (dataSource === 'developmentPotential' && groupedResults.developmentPotential) {
@@ -976,11 +999,20 @@ const MajorPage: React.FC = () => {
             sourceData = groupedResults.tiaozhanDeduction;
           } else if (dataSource === 'opportunityScore' && groupedResults.opportunityScore) {
             sourceData = groupedResults.opportunityScore;
-          } else if (dataSource === 'academicDevelopmentScore' && groupedResults.academicDevelopmentScore) {
+          } else if (
+            dataSource === 'academicDevelopmentScore' &&
+            groupedResults.academicDevelopmentScore
+          ) {
             sourceData = groupedResults.academicDevelopmentScore;
-          } else if (dataSource === 'careerDevelopmentScore' && groupedResults.careerDevelopmentScore) {
+          } else if (
+            dataSource === 'careerDevelopmentScore' &&
+            groupedResults.careerDevelopmentScore
+          ) {
             sourceData = groupedResults.careerDevelopmentScore;
-          } else if (dataSource === 'industryProspectsScore' && groupedResults.industryProspectsScore) {
+          } else if (
+            dataSource === 'industryProspectsScore' &&
+            groupedResults.industryProspectsScore
+          ) {
             sourceData = groupedResults.industryProspectsScore;
           } else if (dataSource === 'growthPotentialScore' && groupedResults.growthPotentialScore) {
             sourceData = groupedResults.growthPotentialScore;
@@ -1274,19 +1306,73 @@ const MajorPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="page-bg text-gray-900">
+    <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 50 }}>
+      <div className="top-container">
+        {/* 顶部导航条 */}
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
+          <div className="flex items-center justify-between px-4 py-3">
+            {/* 返回按钮 */}
+            <button
+              onClick={() => window.history.back()}
+              className="flex items-center justify-center w-8 h-8 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
+
+            {/* 标签页 - 居中显示 */}
+            <div className="flex items-center space-x-6 absolute left-1/2 transform -translate-x-1/2">
+              <button
+                className={`text-sm font-medium transition-colors ${
+                  topActiveTab === 'all'
+                    ? 'text-blue-600 border-b-2 border-blue-600 pb-1'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                onClick={() => setTopActiveTab('all')}
+              >
+                全部专业
+              </button>
+              <button
+                className={`text-sm font-medium transition-colors ${
+                  topActiveTab === 'favorite'
+                    ? 'text-blue-600 border-b-2 border-blue-600 pb-1'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                onClick={() => setTopActiveTab('favorite')}
+              >
+                意向专业
+              </button>
+            </div>
+            <div className="flex items-right ">
+              <button
+                className="text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                onClick={handleRefresh}
+              >
+                刷新
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+        
       {/* 顶部搜索栏 */}
       <div
         className="major-search-bar"
         style={{
           position: 'fixed',
-          top: 0,
+          top: 60,
           left: 0,
           right: 0,
           zIndex: 1000,
           display: 'flex',
           alignItems: 'center',
-          padding: '24px 16px 8px 16px',
+          padding: '8px 16px',
           background: '#fff',
           borderBottom: '1px solid #f0f0f0',
         }}
@@ -1320,7 +1406,7 @@ const MajorPage: React.FC = () => {
         <div
           style={{
             position: 'fixed',
-            top: '68px',
+            top: '105px',
             left: 0,
             right: 0,
             zIndex: 999,
@@ -1330,7 +1416,7 @@ const MajorPage: React.FC = () => {
           }}
         >
           <CommonSelect
-            data={developmentOptions} 
+            data={developmentOptions}
             placeholder={getPlaceholderText()}
             onSelect={handleDevelopmentSelect}
             onClear={handleDevelopmentClear}
@@ -1342,7 +1428,7 @@ const MajorPage: React.FC = () => {
       </div>
 
       {/* 为固定搜索栏留出空间 */}
-      <div style={{ height: '116px' }}></div>
+      <div style={{ height: '152px' }}></div>
 
       <div
         style={{
@@ -1370,7 +1456,7 @@ const MajorPage: React.FC = () => {
       <div
         style={{
           position: 'fixed',
-          top: '115px',
+          top: '150px',
           left: 0,
           right: 0,
           zIndex: 999,
@@ -1660,10 +1746,10 @@ const MajorPage: React.FC = () => {
         style={{
           height: (() => {
             // 基础高度计算
-            let baseHeight = 280; // 搜索栏 + 发展潜能选择器 + 主选项卡
+            let baseHeight = 300; // 搜索栏 + 发展潜能选择器 + 主选项卡
 
             if (activeTab === 'passion' || activeTab === 'opportunity') {
-              baseHeight = 300; // 搜索栏 + 发展潜能选择器 + 主选项卡 + 子选项卡
+              baseHeight = 320; // 搜索栏 + 发展潜能选择器 + 主选项卡 + 子选项卡
 
               // 如果有子Tab说明文字，需要额外增加高度
               if (
@@ -1686,7 +1772,7 @@ const MajorPage: React.FC = () => {
         ) && (
           <div
             style={{
-              margin: '16px 16px 8px 16px',
+              margin: '8px 16px 8px 16px',
               padding: '16px 20px',
               background: (() => {
                 switch (activeTab) {

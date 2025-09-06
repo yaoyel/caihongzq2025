@@ -282,7 +282,7 @@ const BasicInfo: React.FC = () => {
             confirmText: 'AI推荐志愿',
             cancelText: '自主探索更具发展潜能专业',
             onConfirm: () => {
-              navigator('/university/recUnis');
+              navigator('/volunteer/aiVolunteer');
             },
             onCancel: () => {
               navigator('/major/list');
