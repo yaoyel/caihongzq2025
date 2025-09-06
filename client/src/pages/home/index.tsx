@@ -1,7 +1,9 @@
-import React from 'react';
+// @ts-nocheck
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Button } from 'antd-mobile';
 import { StarOutline, FileOutline, ClockCircleOutline, AddSquareOutline } from 'antd-mobile-icons';
+import { getCurrentUser } from '../../config';
 import logo from '../../../public/icons/logo.jpg';
 
 const DefaultPage: React.FC = () => {
@@ -9,15 +11,36 @@ const DefaultPage: React.FC = () => {
 
   // 处理院校查询按钮点击
   const handleCollegeSearch = () => {
-    // 跳转到院校查询页面
-    navigate('/basicInfo');
+    // 如果用户考试信息存在且分数大于0，则跳转到院校查询页面
+    if (userInfo && userInfo.score > 0) {
+      // 跳转到院校查询页面
+      navigate('/volunteer/aiVolunteer');
+    } else {
+      navigate('/basicInfo?type=college');
+    }
   };
 
   // 处理自评按钮点击
   const handleSelfAssessment = () => {
-    // 跳转到自评页面
-    navigate('/basicInfo');
+    if (userInfo && userInfo.score > 0) {
+      // 跳转到自评页面
+      navigate('/selfassessment');
+    } else {
+      navigate('/basicInfo?type=selfassessment');
+    }
   };
+
+  const [userInfo, setUserInfo] = useState({});
+
+  useEffect(() => {
+    const getUserInfo = async () => {
+      const user = await getCurrentUser();
+      if (user.code == 200 && user.data) {
+        setUserInfo(user.data);
+      }
+    };
+    getUserInfo();
+  }, []);
 
   return (
     <div className="h-screen bg-white flex flex-col items-center px-4 py-6 overflow-y-auto">
@@ -26,24 +49,18 @@ const DefaultPage: React.FC = () => {
         <div className="flex items-center mb-3 lg:mb-4">
           {/* Logo图标 */}
           <div className="w-10 h-10 lg:w-12 lg:h-12 mr-3 lg:mr-4 flex-shrink-0">
-            <img 
-              src={logo} 
-              alt="逆袭智选志愿" 
-              className="w-full h-full object-cover rounded-lg"
-            />
+            <img src={logo} alt="逆袭智选志愿" className="w-full h-full object-cover rounded-lg" />
           </div>
-          
+
           {/* 标题文字 */}
           <div className="flex-1">
             <h1 className="text-lg lg:text-xl font-bold text-blue-600 mb-0.5 lg:mb-1">
               逆袭智选志愿
             </h1>
-            <p className="text-xs lg:text-sm text-gray-600">
-              你的分数，不止一个选择
-            </p>
+            <p className="text-xs lg:text-sm text-gray-600">你的分数，不止一个选择</p>
           </div>
         </div>
-        
+
         {/* 分隔线 */}
         <div className="w-full h-px bg-gray-200"></div>
       </div>
@@ -82,7 +99,7 @@ const DefaultPage: React.FC = () => {
             <p className="text-base lg:text-lg text-gray-700 mb-3 lg:mb-4">
               以高考为起点,培育&ldquo;热爱的种子&rdquo;,逆袭未来!
             </p>
-            
+
             {/* 注意事项列表 */}
             <div className="mb-3 lg:mb-4 space-y-1.5 lg:space-y-2">
               <div className="flex items-start">
@@ -99,9 +116,7 @@ const DefaultPage: React.FC = () => {
               </div>
               <div className="flex items-start">
                 <AddSquareOutline className="text-orange-500 mt-1 lg:mt-1.5 mr-2 flex-shrink-0" />
-                <span className="text-sm lg:text-lg text-gray-600">
-                  3. 本问卷仅限学生本人作答!
-                </span>
+                <span className="text-sm lg:text-lg text-gray-600">3. 本问卷仅限学生本人作答!</span>
               </div>
             </div>
 
@@ -122,9 +137,7 @@ const DefaultPage: React.FC = () => {
       <Card className="w-full max-w-md mt-6 lg:mt-8 bg-white rounded-lg shadow-sm">
         <div className="p-4 lg:p-6 text-center">
           <div className="w-12 lg:w-16 h-px bg-gray-300 mx-auto mb-2 lg:mb-3"></div>
-          <p className="text-xs lg:text-sm text-gray-600">
-            智能推荐 · 精准定位 · 全程规划
-          </p>
+          <p className="text-xs lg:text-sm text-gray-600">智能推荐 · 精准定位 · 全程规划</p>
         </div>
       </Card>
     </div>

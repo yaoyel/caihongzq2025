@@ -104,7 +104,7 @@ const convertToAlternativeGroup = (item: any): AlternativeGroup => {
       employmentRate: dataItem.employmentRate,
       Rankdiff: dataItem.rankDiff,
       RankdiffPer: dataItem.rankDiffPer,
-      schoolFeature: dataItem.schoolFeatures || '',
+      schoolFeature: dataItem.schoolFeature || '',
       schoolNature: dataItem.schoolNature === 'public' ? 'public' : 'private',
       schoolLevel: '专科',
       majorGroupId: dataItem.majorGroupId?.toString() || '',
@@ -1395,7 +1395,7 @@ const AiVolunteerPage: React.FC = () => {
               <div class="bg-blue-50 px-4 py-3 border-b border-gray-200">
                 <h4 class="text-sm font-semibold text-blue-800 flex items-center">
                   <span class="mr-2">📊</span>
-                  历年录取分数
+                  历年录取分数&nbsp;&nbsp;${item.batch ? item.batch : ''}&nbsp;&nbsp;${item.tuition > 0 ? item.tuition + '元/学年' : ''}
                 </h4>
               </div>
               <div class="overflow-x-auto">
