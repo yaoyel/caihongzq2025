@@ -975,16 +975,45 @@ export class ConfigController {
       
       // 确定要返回的分组，默认为1
       const targetGroupId = groupSelected || '1';
-      const rankSegmentTrans = this.transformRankSegments(rankSegments);
       
+      // 获取指定分组的专业代码
+      const targetGroupData = rankSegments[targetGroupId as keyof typeof rankSegments];
+      const targetGroupMajorCodes = targetGroupData ? targetGroupData.data.map((item: any) => item.majorCode) : [];
+
+      // 查询对应分组的专业的分数
+      const majorScores = targetGroupMajorCodes.length > 0 
+        ? await this.majorScoreService.calculateMajorScoresByCode(user!.id.toString(), targetGroupMajorCodes, user!.enrollType || '本科批')
+        : [];
+      
+      // 创建专业分数映射表，便于快速查找
+      const majorScoresMap = new Map();
+      majorScores.forEach(score => {
+        majorScoresMap.set(score.majorCode, score);
+      });
+      
+      // 只转换目标分组的数据，并将developmentPotential加入到对应的数据中
+      const targetGroupTransformed = targetGroupData ? {
+        groupId: targetGroupId,
+        count: targetGroupData.count,
+        data: targetGroupData.data.map((school: any) => {
+          const transformedSchool = this.transformSchoolData(school) as any;
+          // 根据majorCode查找对应的专业分数，并添加developmentPotential
+          const majorScore = majorScoresMap.get(school.majorCode);
+          if (majorScore && transformedSchool.major) {
+            transformedSchool.major.developmentPotential = majorScore.developmentPotential;
+          }
+          return transformedSchool;
+        })
+      } : null;
       // 转换最终返回的数据结构
+
       return {
         segmentStats, 
         // 返回指定分组的数据，格式为 {groupId:"1",count:0,data:[]}
-        targetGroup: {
+        targetGroup: targetGroupTransformed || {
           groupId: targetGroupId,
-          count: rankSegments[targetGroupId as keyof typeof rankSegments]?.count || 0,
-          data: (rankSegmentTrans.find((group: any) => group.groupId === targetGroupId) as any)?.data || []
+          count: 0,
+          data: []
         }
       };
      
