@@ -1632,38 +1632,92 @@ export class MajorController {
     
     const prefix = getGroupPrefix(scoreField);
     
-    // 对每个分组内的学校进行rankSegments处理，只返回学校ID
+    // 对每个分组内的学校进行rankSegments处理，包含位次段分组和录取率/就业率分组
     const processRankSegments = (schoolsInGroup: any[]) => {
       const segments = ['1', '2', '3', '4', '5', '6'];
       const result: any = {};
       
+      // 生成segment名称 - 根据位次段分组规则
+      const getSegmentName = (segment: string) => {
+        const segmentNames: { [key: string]: string } = {
+          '1': '+30%到+100%位次段',
+          '2': '+5%到+30%位次段',
+          '3': '（-10%）到+5%位次段',
+          '4': '（-30%）到（-10%）位次段',
+          '5': '（-100%）到（-30%）位次段',
+          '6': '其他位次段'
+        };
+        return segmentNames[segment] || `分组${segment}`;
+      };
+
+      // 计算录取率和就业率的中位数，用于分组
+      const calculateMedian = (values: number[]) => {
+        if (values.length === 0) return 0;
+        const sorted = values.filter(v => v > 0).sort((a, b) => a - b);
+        const mid = Math.floor(sorted.length / 2);
+        return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+      };
+
+      // 获取所有学校的录取率和就业率数据
+      const enrollmentRates = schoolsInGroup.map(school => school.enrollmentRate || 0);
+      const employmentRates = schoolsInGroup.map(school => school.employmentRate || 0);
+      
+      const enrollmentMedian = calculateMedian(enrollmentRates);
+      const employmentMedian = calculateMedian(employmentRates);
+
       // 初始化分组结构
       segments.forEach(segment => {
         result[segment] = {
           groupId: segment,
+          name: getSegmentName(segment),
           count: 0,
-          ids: []
+          ids: [],
+          enrollmentRate: [
+            { type: "high", name: "录取率前50%", count: 0, ids: [] },
+            { type: "low", name: "录取率后50%", count: 0, ids: [] }
+          ],
+          employmentRate: [
+            { type: "high", name: "就业率前50%", count: 0, ids: [] },
+            { type: "low", name: "就业率后50%", count: 0, ids: [] }
+          ]
         };
       });
       
-      // 按 group 分组学校数据，只保存学校ID
+      // 按 group 分组学校数据，并同时进行录取率和就业率分组
       schoolsInGroup.forEach(school => {
         const groupKey = school.group.toString();
-        if (result[groupKey]) {
-          result[groupKey].count++;
-          result[groupKey].ids.push(school.id);
+        const targetGroup = result[groupKey] || result['6'];
+        
+        targetGroup.count++;
+        targetGroup.ids.push(school.id);
+        
+        // 录取率分组
+        if (school.enrollmentRate >= enrollmentMedian) {
+          targetGroup.enrollmentRate[0].count++;
+          targetGroup.enrollmentRate[0].ids.push(school.id);
         } else {
-          // 如果 group 不在预定义范围内，归类到 group 6
-          result['6'].count++;
-          result['6'].ids.push(school.id);
+          targetGroup.enrollmentRate[1].count++;
+          targetGroup.enrollmentRate[1].ids.push(school.id);
+        }
+        
+        // 就业率分组
+        if (school.employmentRate >= employmentMedian) {
+          targetGroup.employmentRate[0].count++;
+          targetGroup.employmentRate[0].ids.push(school.id);
+        } else {
+          targetGroup.employmentRate[1].count++;
+          targetGroup.employmentRate[1].ids.push(school.id);
         }
       });
       
-      // 返回数组格式，每个元素包含 groupId
+      // 返回数组格式，每个元素包含完整的分组信息
       return Object.values(result).map((segment: any) => ({
         groupId: segment.groupId,
+        name: segment.name,
         count: segment.count,
-        ids: segment.ids
+        ids: segment.ids,
+        enrollmentRate: segment.enrollmentRate,
+        employmentRate: segment.employmentRate
       }));
     };
     // 根据分组ID收集学校
@@ -1691,37 +1745,37 @@ export class MajorController {
         groupId: "1",
         description: `${prefix}前1%专业`,
         count: schoolsByGroup['1'].length,
-        schools: processRankSegments(schoolsByGroup['1'])
+        schoolsByRank: processRankSegments(schoolsByGroup['1'])
       },
       {
         groupId: "2",
         description: `${prefix}前1%-5%专业`,
         count: schoolsByGroup['2'].length,
-        schools: processRankSegments(schoolsByGroup['2'])
+        schoolsByRank: processRankSegments(schoolsByGroup['2'])
       },
       {
         groupId: "3",
         description: `${prefix}前5%-10%专业`,
         count: schoolsByGroup['3'].length,
-        schools: processRankSegments(schoolsByGroup['3'])
+        schoolsByRank: processRankSegments(schoolsByGroup['3'])
       },
       {
         groupId: "4",
         description: `${prefix}前10%-20%专业`,
         count: schoolsByGroup['4'].length,
-        schools: processRankSegments(schoolsByGroup['4'])
+        schoolsByRank: processRankSegments(schoolsByGroup['4'])
       },
       {
         groupId: "5",
         description: `${prefix}前20%-80%专业`,
         count: schoolsByGroup['5'].length,
-        schools: processRankSegments(schoolsByGroup['5'])
+        schoolsByRank: processRankSegments(schoolsByGroup['5'])
       },
       {
         groupId: "6",
         description: `${prefix}后20%专业`,
         count: schoolsByGroup['6'].length,
-        schools: processRankSegments(schoolsByGroup['6'])
+        schoolsByRank: processRankSegments(schoolsByGroup['6'])
       }
     ];
   }
