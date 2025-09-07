@@ -2,12 +2,12 @@ import { Controller, Ctx, Get, Param, JsonController, QueryParam, Post, Body, De
 import { MajorRedisService } from '../services/major.redis.service';
 import { MajorDetailViewModel, toMajorDetailViewModel, BaseMajorDetailViewModel } from '../view-models/major.view.model';
 import { Service } from 'typedi';
-import { MajorScoreService } from '../services/major.service'; 
+import { MajorScoreService } from '../services/major.service';
 import { User } from '../entities/User';
 import { AppDataSource } from '../data-source';
 import { UserService } from '../services/user.service';
 import { SchoolViewModel } from '../view-models/base.school.view.model';
-import { Intention } from '../entities/Intention'; 
+import { Intention } from '../entities/Intention';
 import { Alternative } from '../entities/Alternative';
 import { AlternativeViewModel, toAlternativeViewModel } from '../view-models/altrmative.view.model';
 import { MajorGroupViewModel, toMajorGroupViewModels } from '../view-models/major.group.view,model';
@@ -279,10 +279,7 @@ export class MajorController {
     const sortedScores = [...scores].sort((a, b) => b[scoreField] - a[scoreField]);
     const total = sortedScores.length;
     
-    // 计算分组边界
-    const top1Percent = Math.max(1, Math.floor(total * 0.01));
-    const top5Percent = Math.max(1, Math.floor(total * 0.05));
-    const top10Percent = Math.max(1, Math.floor(total * 0.10));
+    // 计算分组边界 - 前20%、20%-80%、后20%
     const top20Percent = Math.max(1, Math.floor(total * 0.20));
     const bottom20Percent = Math.max(1, Math.floor(total * 0.20));
     
@@ -309,36 +306,18 @@ export class MajorController {
     return [
       {
         groupId: "1",
-        description: `${prefix}前1%专业`,
-        count: top1Percent,
-        majorCodes: sortedScores.slice(0, top1Percent).map(s => s.majorCode)
+        description: `${prefix}前20%专业`,
+        count: top20Percent,
+        majorCodes: sortedScores.slice(0, top20Percent).map(s => s.majorCode)
       },
       {
         groupId: "2",
-        description: `${prefix}前1%-5%专业`,
-        count: top5Percent - top1Percent,
-        majorCodes: sortedScores.slice(top1Percent, top5Percent).map(s => s.majorCode)
-      },
-      {
-        groupId: "3",
-        description: `${prefix}前5%-10%专业`,
-        count: top10Percent - top5Percent,
-        majorCodes: sortedScores.slice(top5Percent, top10Percent).map(s => s.majorCode)
-      },
-      {
-        groupId: "4",
-        description: `${prefix}前10%-20%专业`,
-        count: top20Percent - top10Percent,
-        majorCodes: sortedScores.slice(top10Percent, top20Percent).map(s => s.majorCode)
-      },
-      {
-        groupId: "5",
-        description: `${prefix}前20%-80%专业`,
+        description: `${prefix}20%-80%专业`,
         count: total - top20Percent - bottom20Percent,
         majorCodes: sortedScores.slice(top20Percent, total - bottom20Percent).map(s => s.majorCode)
       },
       {
-        groupId: "6",
+        groupId: "3",
         description: `${prefix}后20%专业`,
         count: bottom20Percent,
         majorCodes: sortedScores.slice(total - bottom20Percent).map(s => s.majorCode)
@@ -786,7 +765,7 @@ export class MajorController {
         const filteredSchools = processedSchools.filter((school: SchoolWithRank) => 
           school.historyScores && school.historyScores.length > 0
         );
-        
+
         return {
           ...majorDetail,
           schools: filteredSchools
@@ -1180,6 +1159,12 @@ export class MajorController {
       description: string;
       count: number;
       alternativeIds: number[];
+      rankDiffSubgroups: Array<{
+        groupId: string;
+        description: string;
+        count: number;
+        alternativeIds: number[];
+      }>;
     }>;
     groupedByRankDiffPer: Array<{
       groupId: string;
@@ -1634,18 +1619,15 @@ export class MajorController {
     
     // 对每个分组内的学校进行rankSegments处理，包含位次段分组和录取率/就业率分组
     const processRankSegments = (schoolsInGroup: any[]) => {
-      const segments = ['1', '2', '3', '4', '5', '6'];
+      const segments = ['1', '2', '3'];
       const result: any = {};
       
       // 生成segment名称 - 根据位次段分组规则
       const getSegmentName = (segment: string) => {
         const segmentNames: { [key: string]: string } = {
           '1': '+30%到+100%位次段',
-          '2': '+5%到+30%位次段',
-          '3': '（-10%）到+5%位次段',
-          '4': '（-30%）到（-10%）位次段',
-          '5': '（-100%）到（-30%）位次段',
-          '6': '其他位次段'
+          '2': '（-10%）到+30%位次段',
+          '3': '（-100%）到（-10%）位次段'
         };
         return segmentNames[segment] || `分组${segment}`;
       };
@@ -1664,7 +1646,7 @@ export class MajorController {
       
       const enrollmentMedian = calculateMedian(enrollmentRates);
       const employmentMedian = calculateMedian(employmentRates);
-
+      
       // 初始化分组结构
       segments.forEach(segment => {
         result[segment] = {
@@ -1686,7 +1668,7 @@ export class MajorController {
       // 按 group 分组学校数据，并同时进行录取率和就业率分组
       schoolsInGroup.forEach(school => {
         const groupKey = school.group.toString();
-        const targetGroup = result[groupKey] || result['6'];
+        const targetGroup = result[groupKey] || result['3'];
         
         targetGroup.count++;
         targetGroup.ids.push(school.id);
@@ -1720,62 +1702,48 @@ export class MajorController {
         employmentRate: segment.employmentRate
       }));
     };
-    // 根据分组ID收集学校
+    // 根据分组ID收集学校 - 前20%、20%-80%、后20%
     const schoolsByGroup = {
       '1': [] as any[],
       '2': [] as any[],
-      '3': [] as any[],
-      '4': [] as any[],
-      '5': [] as any[],
-      '6': [] as any[]
+      '3': [] as any[]
     };
     
-    // 将学校分配到对应的分组
+    // 将学校分配到对应的分组 - 将原来的6个分组映射到3个分组
     schoolsWithMajorInfo.forEach(school => {
-      const groupId = school.groupId;
-      if (schoolsByGroup[groupId as keyof typeof schoolsByGroup]) {
-        schoolsByGroup[groupId as keyof typeof schoolsByGroup].push(school);
+      const originalGroupId = school.groupId;
+      let newGroupId: string;
+      
+      // 映射规则：1,2,3,4 -> 1 (前20%)，5 -> 2 (20%-80%)，6 -> 3 (后20%)
+      if (['1', '2', '3', '4'].includes(originalGroupId)) {
+        newGroupId = '1'; // 前20%
+      } else if (originalGroupId === '5') {
+        newGroupId = '2'; // 20%-80%
       } else {
-        schoolsByGroup['6'].push(school);
+        newGroupId = '3'; // 后20%
       }
+      
+      schoolsByGroup[newGroupId as keyof typeof schoolsByGroup].push(school);
     });
     
     return [
       {
         groupId: "1",
-        description: `${prefix}前1%专业`,
+        description: `${prefix}前20%专业`,
         count: schoolsByGroup['1'].length,
         schoolsByRank: processRankSegments(schoolsByGroup['1'])
       },
       {
         groupId: "2",
-        description: `${prefix}前1%-5%专业`,
+        description: `${prefix}20%-80%专业`,
         count: schoolsByGroup['2'].length,
         schoolsByRank: processRankSegments(schoolsByGroup['2'])
       },
       {
         groupId: "3",
-        description: `${prefix}前5%-10%专业`,
+        description: `${prefix}后20%专业`,
         count: schoolsByGroup['3'].length,
         schoolsByRank: processRankSegments(schoolsByGroup['3'])
-      },
-      {
-        groupId: "4",
-        description: `${prefix}前10%-20%专业`,
-        count: schoolsByGroup['4'].length,
-        schoolsByRank: processRankSegments(schoolsByGroup['4'])
-      },
-      {
-        groupId: "5",
-        description: `${prefix}前20%-80%专业`,
-        count: schoolsByGroup['5'].length,
-        schoolsByRank: processRankSegments(schoolsByGroup['5'])
-      },
-      {
-        groupId: "6",
-        description: `${prefix}后20%专业`,
-        count: schoolsByGroup['6'].length,
-        schoolsByRank: processRankSegments(schoolsByGroup['6'])
       }
     ];
   }
@@ -1790,14 +1758,11 @@ export class MajorController {
     alternatives: AlternativeViewModel[], 
     developmentRankings: Array<{majorCode: string, percentRange: string}>
   ) { 
-    // 初始化分组结构
+    // 初始化分组结构 - 前20%、20%-80%、后20%
     const groups = {
-      '1': { count: 0, alternativeIds: [] as number[] }, // 前1%
-      '2': { count: 0, alternativeIds: [] as number[] }, // 前1%-5%
-      '3': { count: 0, alternativeIds: [] as number[] }, // 前5%-10%
-      '4': { count: 0, alternativeIds: [] as number[] }, // 前10%-20%
-      '5': { count: 0, alternativeIds: [] as number[] }, // 前20%-80%
-      '6': { count: 0, alternativeIds: [] as number[] }, // 后20%
+      '1': { count: 0, alternativeIds: [] as number[] }, // 前20%
+      '2': { count: 0, alternativeIds: [] as number[] }, // 20%-80%
+      '3': { count: 0, alternativeIds: [] as number[] }, // 后20%
       '9': { count: 0, alternativeIds: [] as number[] }  // 其他
     };
     
@@ -1809,15 +1774,22 @@ export class MajorController {
     
     // 遍历备选方案，根据专业代码匹配排名分组
     alternatives.forEach(alternative => {
-      const groupId = majorCodeToGroup.get(alternative.majorCode);
-      if (groupId && groups[groupId as keyof typeof groups]) {
-        groups[groupId as keyof typeof groups].count++;
-        groups[groupId as keyof typeof groups].alternativeIds.push(alternative.id);
+      const originalGroupId = majorCodeToGroup.get(alternative.majorCode);
+      let newGroupId: string;
+      
+      // 映射规则：1,2,3,4 -> 1 (前20%)，5 -> 2 (20%-80%)，6 -> 3 (后20%)
+      if (['1', '2', '3', '4'].includes(originalGroupId || '')) {
+        newGroupId = '1'; // 前20%
+      } else if (originalGroupId === '5') {
+        newGroupId = '2'; // 20%-80%
+      } else if (originalGroupId === '6') {
+        newGroupId = '3'; // 后20%
       } else {
-        // 如果没有找到匹配的分组，放入"其他"组
-        groups['9'].count++;
-        groups['9'].alternativeIds.push(alternative.id);
+        newGroupId = '9'; // 其他
       }
+      
+      groups[newGroupId as keyof typeof groups].count++;
+      groups[newGroupId as keyof typeof groups].alternativeIds.push(alternative.id);
     });
     
     // 为每个发展潜力分组创建 RankdiffPer 子分组
@@ -1904,45 +1876,24 @@ export class MajorController {
     return [
       {
         groupId: "1",
-        description: "发展潜能前1%专业",
+        description: "发展潜能前20%专业",
         count: groups['1'].count,
         alternativeIds: groups['1'].alternativeIds,
         rankDiffSubgroups: createRankDiffSubgroups(groups['1'].alternativeIds)
       },
       {
         groupId: "2",
-        description: "发展潜能前1%-5%专业",
+        description: "发展潜能20%-80%专业",
         count: groups['2'].count,
         alternativeIds: groups['2'].alternativeIds,
         rankDiffSubgroups: createRankDiffSubgroups(groups['2'].alternativeIds)
       },
       {
         groupId: "3",
-        description: "发展潜能前5%-10%专业",
+        description: "发展潜能后20%专业",
         count: groups['3'].count,
         alternativeIds: groups['3'].alternativeIds,
         rankDiffSubgroups: createRankDiffSubgroups(groups['3'].alternativeIds)
-      },
-      {
-        groupId: "4",
-        description: "发展潜能前10%-20%专业",
-        count: groups['4'].count,
-        alternativeIds: groups['4'].alternativeIds,
-        rankDiffSubgroups: createRankDiffSubgroups(groups['4'].alternativeIds)
-      },
-      {
-        groupId: "5",
-        description: "发展潜能前20%-80%专业",
-        count: groups['5'].count,
-        alternativeIds: groups['5'].alternativeIds,
-        rankDiffSubgroups: createRankDiffSubgroups(groups['5'].alternativeIds)
-      },
-      {
-        groupId: "6",
-        description: "发展潜能后20%专业",
-        count: groups['6'].count,
-        alternativeIds: groups['6'].alternativeIds,
-        rankDiffSubgroups: createRankDiffSubgroups(groups['6'].alternativeIds)
       }
     ];
   }
