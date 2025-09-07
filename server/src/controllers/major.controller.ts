@@ -1619,15 +1619,18 @@ export class MajorController {
     
     // 对每个分组内的学校进行rankSegments处理，包含位次段分组和录取率/就业率分组
     const processRankSegments = (schoolsInGroup: any[]) => {
-      const segments = ['1', '2', '3'];
+      const segments = ['1', '2', '3', '4', '5', '6'];
       const result: any = {};
       
       // 生成segment名称 - 根据位次段分组规则
       const getSegmentName = (segment: string) => {
         const segmentNames: { [key: string]: string } = {
           '1': '+30%到+100%位次段',
-          '2': '（-10%）到+30%位次段',
-          '3': '（-100%）到（-10%）位次段'
+          '2': '+5%到+30%位次段',
+          '3': '（-10%）到+5%位次段',
+          '4': '（-30%）到（-10%）位次段',
+          '5': '（-100%）到（-30%）位次段',
+          '6': '其他位次段'
         };
         return segmentNames[segment] || `分组${segment}`;
       };
