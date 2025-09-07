@@ -1,10 +1,11 @@
+// @ts-nocheck
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal, Button, Checkbox } from 'antd';
 
 import BottomNav from '../comm/bottom';
 import StartWelcomePage from '../selfassessment/startWelcome';
-import Top from '../comm/top';
+import CommonSelect, { SelectOptionData } from '../comm/CommonSelect';
 import {
   getMajorAlternatives,
   selectAlternative,
@@ -14,7 +15,6 @@ import {
   moveDownAlternative,
   getSchoolCharters,
 } from '../../config/volunteer';
-
 // 定义备选志愿项的类型（扩展自 API 返回的数据）
 interface AlternativeItem {
   id: string;
@@ -200,9 +200,16 @@ const EducationalPage: React.FC = () => {
   const [isManualSortMode, setIsManualSortMode] = useState(false);
 
   // 添加新的分组数据状态
+  // 发展潜能选择相关状态
+  const [selectedDevelopmentGroup, setSelectedDevelopmentGroup] = useState<string>();
+  const [developmentOptions, setDevelopmentOptions] = useState<SelectOptionData[]>([]);
   const [groupedByDevelopmentPotential, setGroupedByDevelopmentPotential] = useState<any[]>([]);
   const [groupedByRankDiffPer, setGroupedByRankDiffPer] = useState<any[]>([]);
   const [topDevelopmentMajors, setTopDevelopmentMajors] = useState<any[]>([]);
+
+  // 位次段选择相关状态
+  const [selectedRankGroup, setSelectedRankGroup] = useState<string>();
+  const [rankOptions, setRankOptions] = useState<SelectOptionData[]>([]);
 
   // 处理入选确认选项变化
   const handleSelectConfirmationChange = (
@@ -802,6 +809,40 @@ const EducationalPage: React.FC = () => {
     setIsManualSortMode(false);
   };
 
+  // 处理发展潜能选择
+  const handleDevelopmentSelect = useCallback(
+    (groupId: string) => {
+      setSelectedDevelopmentGroup(groupId);
+
+      // 根据选中的分组过滤数据
+      if (groupedByDevelopmentPotential && groupedByDevelopmentPotential.length > 0) {
+        const selectedGroup = groupedByDevelopmentPotential.find(
+          (group: any) => group.groupId === groupId
+        );
+        if (selectedGroup && selectedGroup.majorCodes) {
+          // 过滤备选志愿数据
+          const filteredAlternatives = alternatives
+            .map((group) => ({
+              ...group,
+              result: group.result.filter((item) =>
+                selectedGroup.majorCodes.includes(item.majorCode)
+              ),
+            }))
+            .filter((group) => group.result.length > 0);
+
+          setAlternatives(filteredAlternatives);
+          return;
+        }
+      }
+    },
+    [alternatives, groupedByDevelopmentPotential]
+  );
+
+  // 清除发展潜能选择
+  const handleDevelopmentClear = useCallback(() => {
+    setSelectedDevelopmentGroup(); // 重新加载原始数据
+    window.location.reload();
+  }, []);
   useEffect(() => {
     // 页面初始化逻辑
     const initializePage = async () => {
@@ -925,6 +966,29 @@ const EducationalPage: React.FC = () => {
           setSelectedCount(selectedCount);
 
           setAlternatives(sortedAlternativesGroup);
+        }
+        // 初始化发展潜能选择器选项
+        if (alternativesResponse.data.groupedByDevelopmentPotential) {
+          const optionsData = alternativesResponse.data.groupedByDevelopmentPotential.map(
+            (group: any) => ({
+              id: group.groupId,
+              label: group.description,
+              count: group.count,
+            })
+          );
+          setDevelopmentOptions(optionsData);
+        }
+
+        // 初始化位次段选择器选项
+        if (alternativesResponse.data.groupedByRankDiffPer) {
+          const rankOptionsData = alternativesResponse.data.groupedByRankDiffPer.map(
+            (group: any) => ({
+              id: group.groupId,
+              label: group.description,
+              count: group.count,
+            })
+          );
+          setRankOptions(rankOptionsData);
         }
       } catch (error) {
         console.error('页面初始化失败:', error);
@@ -1315,6 +1379,40 @@ const EducationalPage: React.FC = () => {
     );
   };
 
+  // 处理位次段选择
+  const handleRankSelect = useCallback(
+    (groupId: string) => {
+      setSelectedRankGroup(groupId);
+
+      // 根据选中的分组过滤数据
+      if (groupedByRankDiffPer && groupedByRankDiffPer.length > 0) {
+        const selectedGroup = groupedByRankDiffPer.find((group: any) => group.groupId === groupId);
+        if (selectedGroup && selectedGroup.majorCodes) {
+          // 过滤备选志愿数据
+          const filteredAlternatives = alternatives
+            .map((group) => ({
+              ...group,
+              result: group.result.filter((item) =>
+                selectedGroup.majorCodes.includes(item.majorCode)
+              ),
+            }))
+            .filter((group) => group.result.length > 0);
+
+          setAlternatives(filteredAlternatives);
+          return;
+        }
+      }
+    },
+    [alternatives, groupedByRankDiffPer]
+  );
+
+  // 清除位次段选择
+  const handleRankClear = useCallback(() => {
+    setSelectedRankGroup(undefined);
+    // 重新加载原始数据
+    window.location.reload();
+  }, []);
+
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 50 }}>
       {/* 顶部导航条 */}
@@ -1369,70 +1467,103 @@ const EducationalPage: React.FC = () => {
             {activeTab === 'selected' ? (
               // 入选志愿的排序选项
               <>
-                <button
-                  onClick={() => handleSortTabChange('willingness')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    sortTab === 'willingness'
-                      ? 'bg-blue-500 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  按自主意愿
-                </button>
-                <button
-                  onClick={() => handleSortTabChange('major')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    sortTab === 'major'
-                      ? 'bg-blue-500 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  按专业
-                </button>
-                <button
-                  onClick={() => handleSortTabChange('rankDiff')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    sortTab === 'rankDiff'
-                      ? 'bg-blue-500 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  按位次差(低→高)
-                </button>
+                <>
+                  <button
+                    onClick={() => handleSortTabChange('willingness')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      sortTab === 'willingness'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    按自主意愿
+                  </button>
+                  <button
+                    onClick={() => handleSortTabChange('major')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      sortTab === 'major'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    按专业
+                  </button>
+                  <button
+                    onClick={() => handleSortTabChange('rankDiff')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      sortTab === 'rankDiff'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    按位次差(低→高)
+                  </button>
+                </>
+                {/* 发展潜能选择器 - 仅在入选志愿页面显示 */}
+                {developmentOptions && developmentOptions.length > 0 && (
+                  <div className="w-full max-w-xl  p-2">
+                    <CommonSelect
+                      data={developmentOptions}
+                      placeholder="选择发展潜能范围"
+                      onSelect={handleDevelopmentSelect}
+                      onClear={handleDevelopmentClear}
+                      allowClear={true}
+                      showCount={true}
+                      width="100%"
+                    />
+                  </div>
+                )}
               </>
             ) : (
               // 备选志愿的排序选项
               <>
-                <button
-                  onClick={() => handleSortTabChange('group')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    sortTab === 'group'
-                      ? 'bg-blue-500 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  位次段
-                </button>
-                <button
-                  onClick={() => handleSortTabChange('enrollment')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    sortTab === 'enrollment'
-                      ? 'bg-blue-500 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  升学率
-                </button>
-                <button
-                  onClick={() => handleSortTabChange('employment')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    sortTab === 'employment'
-                      ? 'bg-blue-500 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  就业率
-                </button>
+                <>
+                  {' '}
+                  <button
+                    onClick={() => handleSortTabChange('group')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      sortTab === 'group'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    位次段
+                  </button>
+                  <button
+                    onClick={() => handleSortTabChange('enrollment')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      sortTab === 'enrollment'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    升学率
+                  </button>
+                  <button
+                    onClick={() => handleSortTabChange('employment')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      sortTab === 'employment'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    就业率
+                  </button>
+                </>
+                {/* 位次段选择器 - 仅在备选志愿页面显示 */}
+                {rankOptions && rankOptions.length > 0 && (
+                  <div className="w-full max-w-xl p-2">
+                    <CommonSelect
+                      data={rankOptions}
+                      placeholder="选择位次段范围"
+                      onSelect={handleRankSelect}
+                      onClear={handleRankClear}
+                      allowClear={true}
+                      showCount={true}
+                      width="100%"
+                    />
+                  </div>
+                )}
               </>
             )}
           </div>

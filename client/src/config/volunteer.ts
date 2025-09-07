@@ -184,18 +184,51 @@ interface MajorAlternativeItem {
   admissionsPhone?: string; // 招生电话
 }
 
+// 发展潜能分组数据接口定义
+interface DevelopmentPotentialGroup {
+  groupId: string;
+  description: string;
+  count: number;
+  alternativeIds: number[];
+  rankDiffSubgroups: Array<{
+    groupId: string;
+    description: string;
+    count: number;
+    alternativeIds: number[];
+  }>;
+}
+
+// 位次差分组数据接口定义
+interface RankDiffPerGroup {
+  groupId: string;
+  description: string;
+  count: number;
+  alternativeIds: number[];
+}
+
+// 高发展潜能专业接口定义
+interface TopDevelopmentMajor {
+  majorCode: string;
+  majorName: string;
+  developmentPotential: number;
+}
+
 interface MajorAlternativesResponse {
   code: number;
   message: string;
   data: {
     total: number;
-    data: MajorAlternativeItem[];
+    alternatives: MajorAlternativeItem[];
     currentPage: number;
     totalPages: number;
     volunteerCount: number;
     topDevelopmentCount: number;
+    topDevelopmentMajors: TopDevelopmentMajor[];
+    groupedByDevelopmentPotential: DevelopmentPotentialGroup[];
+    groupedByRankDiffPer: RankDiffPerGroup[];
   };
 }
+
 
 /**
  * 获取用户所有备选志愿
