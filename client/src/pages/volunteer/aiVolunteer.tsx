@@ -18,7 +18,6 @@ import {
   selectAlternativeStatus,
   selectLoading,
   selectLoadingStatus,
-  selectRecommendCount,
   selectAlternatives,
   selectPageKey,
   selectHasInitialized,
@@ -1542,7 +1541,7 @@ const AiVolunteerPage: React.FC = () => {
             {/* 标签页 - 居中显示 */}
             <div className="flex items-center space-x-6 absolute left-1/2 transform -translate-x-1/2">
               <button
-                className={`text-sm font-medium transition-colors ${
+                className={`text-base font-medium transition-colors ${
                   activeTab === 'all'
                     ? 'text-blue-600 border-b-2 border-blue-600 pb-1'
                     : 'text-gray-500 hover:text-gray-700'
@@ -1564,7 +1563,7 @@ const AiVolunteerPage: React.FC = () => {
             </div>
             <div className="flex items-right ">
               <button
-                className="text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-base font-medium text-gray-500 hover:text-gray-700 transition-colors"
                 onClick={() => {
                   // 重启自评逻辑
                   localStorage.removeItem('scaleAnswerCount');

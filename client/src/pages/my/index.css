@@ -1,0 +1,199 @@
+/* 个人信息页面样式 */
+.my-page {
+  min-height: 100vh;
+  background-color: #ffffff;
+  padding: 16px;
+}
+
+/* 个人信息卡片样式 */
+.profile-card {
+  margin-bottom: 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: none;
+}
+
+.profile-card .ant-card-body {
+  padding: 20px;
+}
+
+.profile-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* 头像区域样式 */
+.avatar-section {
+  position: relative;
+}
+
+.avatar-container {
+  position: relative;
+  display: inline-block;
+}
+
+.user-avatar {
+  border: 2px solid #e8e8e8;
+}
+
+.avatar-change-btn {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 12px;
+  font-size: 12px;
+  height: 24px;
+  padding: 0 8px;
+  background-color: #1890ff;
+  border-color: #1890ff;
+  box-shadow: 0 2px 4px rgba(24, 144, 255, 0.3);
+}
+
+.avatar-change-btn:hover {
+  background-color: #40a9ff;
+  border-color: #40a9ff;
+}
+
+/* 用户信息区域样式 */
+.user-info {
+  flex: 1;
+}
+
+.name-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.user-name {
+  margin: 0 !important;
+  color: #262626;
+  font-weight: 600;
+}
+
+.edit-name-btn {
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8c8c8c;
+}
+
+.edit-name-btn:hover {
+  color: #1890ff;
+}
+
+.user-id {
+  color: #8c8c8c;
+  font-size: 14px;
+}
+
+/* 功能卡片区域样式 */
+.info-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.info-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.info-card .ant-card-body {
+  padding: 16px 20px;
+}
+
+.card-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-info {
+  flex: 1;
+}
+
+.card-title {
+  margin: 0 0 8px 0 !important;
+  color: #262626;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.card-description {
+  color: #8c8c8c;
+  font-size: 14px;
+  line-height: 1.4;
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* 高考信息特殊样式 */
+.gaokao-details {
+  margin-top: 8px;
+}
+
+.gaokao-year {
+  color: #1890ff;
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.gaokao-target {
+  color: #595959;
+  font-size: 13px;
+}
+
+.card-arrow {
+  color: #bfbfbf;
+  font-size: 16px;
+  margin-left: 12px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .my-page {
+    padding: 12px;
+  }
+  
+  .profile-content {
+    gap: 12px;
+  }
+  
+  .user-avatar {
+    width: 64px !important;
+    height: 64px !important;
+  }
+  
+  .avatar-change-btn {
+    font-size: 11px;
+    height: 20px;
+    padding: 0 6px;
+  }
+  
+  .user-name {
+    font-size: 18px;
+  }
+  
+  .card-title {
+    font-size: 15px;
+  }
+  
+  .card-description {
+    font-size: 13px;
+  }
+}

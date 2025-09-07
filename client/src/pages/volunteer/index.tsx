@@ -199,6 +199,11 @@ const EducationalPage: React.FC = () => {
   const [manualSortData, setManualSortData] = useState<AlternativeItem[]>([]);
   const [isManualSortMode, setIsManualSortMode] = useState(false);
 
+  // 添加新的分组数据状态
+  const [groupedByDevelopmentPotential, setGroupedByDevelopmentPotential] = useState<any[]>([]);
+  const [groupedByRankDiffPer, setGroupedByRankDiffPer] = useState<any[]>([]);
+  const [topDevelopmentMajors, setTopDevelopmentMajors] = useState<any[]>([]);
+
   // 处理入选确认选项变化
   const handleSelectConfirmationChange = (
     key: keyof typeof selectConfirmations,
@@ -807,8 +812,9 @@ const EducationalPage: React.FC = () => {
 
         // 处理已备选志愿数据
         if (alternativesResponse && alternativesResponse.code === 200) {
-          // 服务器返回的数据结构是 { total, data, currentPage, totalPages, volunteerCount }
-          const alternativesData = alternativesResponse.data.data || [];
+          // 服务器返回的数据结构是 { total, alternatives, currentPage, totalPages, volunteerCount, groupedByDevelopmentPotential, groupedByRankDiffPer, topDevelopmentMajors }
+          const alternativesData = alternativesResponse.data.alternatives || [];
+
           // 从API响应中获取志愿数量配置
           const apiVolunteerCount = alternativesResponse.data.volunteerCount;
           if (apiVolunteerCount !== undefined) {
@@ -820,6 +826,19 @@ const EducationalPage: React.FC = () => {
           if (apiTopDevelopmentCount !== undefined) {
             // 将topDevelopmentCount存储到localStorage中供后续使用
             localStorage.setItem('topDevelopmentCount', apiTopDevelopmentCount.toString());
+          }
+
+          // 处理新的分组数据
+          if (alternativesResponse.data.groupedByDevelopmentPotential) {
+            setGroupedByDevelopmentPotential(
+              alternativesResponse.data.groupedByDevelopmentPotential
+            );
+          }
+          if (alternativesResponse.data.groupedByRankDiffPer) {
+            setGroupedByRankDiffPer(alternativesResponse.data.groupedByRankDiffPer);
+          }
+          if (alternativesResponse.data.topDevelopmentMajors) {
+            setTopDevelopmentMajors(alternativesResponse.data.topDevelopmentMajors);
           }
 
           // 将 API 返回的数据转换为我们的类型
@@ -1297,70 +1316,53 @@ const EducationalPage: React.FC = () => {
   };
 
   return (
-    <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 40 }}>
-      <Top
-        title={activeTab === 'alternatives' ? '备选志愿' : '入选志愿'}
-        onBack={() => window.history.back()}
-      />
-      <div className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3 min-h-screen">
-        {/* 主Tab选项卡 */}
-        <div className="w-full max-w-xl bg-white rounded-2xl shadow p-4 mb-3">
-          <div
-            style={{
-              display: 'flex',
-              background: '#f5f5f5',
-              borderRadius: '20px',
-              padding: '4px',
-              gap: '4px',
-            }}
+    <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 50 }}>
+      {/* 顶部导航条 */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
+        <div className="flex items-center justify-between px-4 py-3">
+          {/* 返回按钮 */}
+          <button
+            onClick={() => window.history.back()}
+            className="flex items-center justify-center w-8 h-8 text-gray-600 hover:text-gray-800 transition-colors"
           >
-            {[
-              { key: 'alternatives', label: '备选志愿', icon: '📋', color: '#2563eb' },
-              { key: 'selected', label: '入选志愿', icon: '✅', color: '#10b981' },
-            ].map((tab) => (
-              <div
-                key={tab.key}
-                onClick={() => handleMainTabChange(tab.key as any)}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '12px 16px',
-                  borderRadius: '16px',
-                  fontSize: '16px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  background: activeTab === tab.key ? tab.color : 'transparent',
-                  color: activeTab === tab.key ? '#fff' : '#666',
-                  boxShadow: activeTab === tab.key ? `0 2px 8px ${tab.color}30` : 'none',
-                  transform: activeTab === tab.key ? 'scale(1.02)' : 'scale(1)',
-                }}
-              >
-                <span
-                  style={{
-                    marginRight: '8px',
-                    fontSize: '18px',
-                  }}
-                >
-                  {tab.icon}
-                </span>
-                {tab.label}
-                <span
-                  style={{
-                    marginLeft: '8px',
-                    fontSize: '14px',
-                    opacity: 0.8,
-                  }}
-                >
-                  {tab.key === 'alternatives' ? alternativesCount : selectedCount}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
 
+          {/* 标签页 - 居中显示 */}
+          <div className="flex items-center space-x-6 absolute left-1/2 transform -translate-x-1/2">
+            <button
+              className={`text-sm font-medium transition-colors ${
+                activeTab === 'alternatives'
+                  ? 'text-blue-600 border-b-2 border-blue-600 pb-1'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+              onClick={() => handleMainTabChange('alternatives')}
+            >
+              备选志愿
+            </button>
+            <button
+              className={`text-sm font-medium transition-colors ${
+                activeTab === 'selected'
+                  ? 'text-blue-600 border-b-2 border-blue-600 pb-1'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+              onClick={() => handleMainTabChange('selected')}
+            >
+              入选志愿
+            </button>
+          </div>
+          <div className="flex items-right "></div>
+        </div>
+      </div>
+
+      <div className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3 min-h-screen">
         {/* 排序Tab选项卡 - 独立的card */}
         <div className="w-full max-w-xl bg-white rounded-2xl shadow p-4 mb-0">
           <div className="flex gap-2 flex-wrap">
@@ -2249,7 +2251,7 @@ const EducationalPage: React.FC = () => {
 
       {/* 底部导航 */}
       <BottomNav
-        selectedIndex={3}
+        selectedIndex={2}
         onSelect={() => {
           window.location.href = '/educational';
         }}

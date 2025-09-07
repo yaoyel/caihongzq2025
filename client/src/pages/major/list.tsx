@@ -24,7 +24,6 @@ import {
   cancelMajorIntention,
   getMajorIntentions,
 } from '../../config/volunteer';
-import Top from '../comm/top';
 import './list.css'; // 可根据需要自定义样式
 
 /**
@@ -173,6 +172,12 @@ const MajorPage: React.FC = () => {
   const [payLoading, setPayLoading] = useState(false);
   // 收藏专业列表
   const [majorIntentions, setMajorIntentions] = useState<any[]>([]);
+  // 意向专业数据状态
+  // 按专业分组的意向专业数据状态
+  const [groupedIntentionMajors, setGroupedIntentionMajors] = useState<any[]>([]);
+  const [originalSchoolsWithMajor, setOriginalSchoolsWithMajor] = useState<any[]>([]);
+  const [intentionMajors, setIntentionMajors] = useState<any[]>([]);
+  const [originalIntentionMajors, setOriginalIntentionMajors] = useState<any[]>([]);
   // 标记是否已经初始化过数据
   const [isInitialized, setIsInitialized] = useState(false);
   // 提示弹窗状态
@@ -185,7 +190,7 @@ const MajorPage: React.FC = () => {
   // tab说明文字展开状态
   const [isTabDescriptionExpanded, setIsTabDescriptionExpanded] = useState(false);
   // 添加新的顶部导航条 tab 状态
-  const [topActiveTab, setTopActiveTab] = useState<'all' | 'favorite'>('all');  // 使用Redux管理tab状态
+  const [topActiveTab, setTopActiveTab] = useState<'all' | 'favorite'>('all'); // 使用Redux管理tab状态
   const dispatch = useDispatch();
   const { activeTab, activeSubTab, activeOpportunitySubTab } = useSelector(
     (state: RootState) => state.majorList
@@ -197,11 +202,11 @@ const MajorPage: React.FC = () => {
   const displayMajors = (() => {
     let filteredMajors = majors;
     if (topActiveTab === 'favorite') {
-      filteredMajors = majors.filter((major: any) => isMajorFavorite(major.majorCode));
+      // 使用按专业分组的意向专业数据
+      filteredMajors = groupedIntentionMajors;
     }
     return filteredMajors.slice(0, currentPage * pageSize);
   })();
-
   // 在组件内添加ref
   const listAreaRef = useRef<HTMLDivElement>(null);
 
@@ -589,7 +594,7 @@ const MajorPage: React.FC = () => {
   );
 
   /**
-   * 获取收藏专业列表
+   * 获取收藏专业列表/意向专业列表
    */
   const fetchMajorIntentions = useCallback(async (forceRefresh = false) => {
     // 检查是否有缓存的收藏数据
@@ -621,14 +626,178 @@ const MajorPage: React.FC = () => {
     }
   }, []);
 
+  /**
+   * 获取意向专业数据（用于意向专业tab）
+   */
+  /**
+   * 获取意向专业数据（用于意向专业tab）- 按专业分组并按发展潜能排序
+   */
+  const fetchIntentionMajors = useCallback(
+    async (isLoadMore = false) => {
+      // 检查是否有缓存的意向专业数据
+      const cachedData = sessionStorage.getItem('major-list-cached-intention-data');
+      const cachedSchoolsData = sessionStorage.getItem('major-list-cached-schools-with-major');
+      const isFromDetail = sessionStorage.getItem('major-list-scroll-position') !== null;
+
+      // 如果是从详情页返回且有缓存数据，直接使用缓存
+      if (isFromDetail && cachedData && cachedSchoolsData && !isLoadMore) {
+        try {
+          const parsedData = JSON.parse(cachedData);
+          const parsedSchoolsData = JSON.parse(cachedSchoolsData);
+          setOriginalIntentionMajors(parsedData);
+          setOriginalSchoolsWithMajor(parsedSchoolsData);
+          setGroupedIntentionMajors(parsedData);
+          setLoading(false);
+
+          // 在数据设置完成后立即恢复滚动位置
+          setTimeout(() => {
+            restoreScrollPosition(parsedData);
+          }, 500);
+
+          // 再次尝试，确保分割线完全渲染
+          setTimeout(() => {
+            restoreScrollPosition(parsedData);
+          }, 1000);
+
+          return;
+        } catch (error) {
+          console.error('解析缓存意向专业数据失败:', error);
+          // 如果解析失败，继续正常加载
+        }
+      }
+
+      if (isLoadMore) {
+        setIsLoadingMore(true);
+      } else {
+        setLoading(true);
+        setCurrentPage(1); // 重置页码
+      }
+
+      try {
+        const response = await getMajorIntentions();
+        if (response && response.code === 200) {
+          // 获取意向专业数据 - schoolsWithMajor 是学校-专业组合数组
+          const schoolsWithMajor = response.data.schoolsWithMajor || [];
+
+          // 保存原始 schoolsWithMajor 数据
+          setOriginalSchoolsWithMajor(schoolsWithMajor);
+
+          // 按专业分组
+          const majorGroups = new Map();
+          schoolsWithMajor.forEach((schoolMajor: any) => {
+            if (schoolMajor.major) {
+              const majorCode = schoolMajor.major.code;
+              if (!majorGroups.has(majorCode)) {
+                // 创建专业组，包含专业信息和学校列表
+                majorGroups.set(majorCode, {
+                  majorCode: majorCode,
+                  majorName: schoolMajor.major.name || schoolMajor.major.displayName,
+                  majorBrief: schoolMajor.major.brief || '',
+                  developmentPotential:
+                    schoolMajor.major.developmentPotential || schoolMajor.developmentPotential,
+                  score: schoolMajor.major.score || schoolMajor.score,
+                  lexueScore: schoolMajor.major.lexueScore || schoolMajor.lexueScore,
+                  shanxueScore: schoolMajor.major.shanxueScore || schoolMajor.shanxueScore,
+                  yanxueDeduction: schoolMajor.major.yanxueDeduction || schoolMajor.yanxueDeduction,
+                  tiaozhanDeduction:
+                    schoolMajor.major.tiaozhanDeduction || schoolMajor.tiaozhanDeduction,
+                  opportunityScore:
+                    schoolMajor.major.opportunityScore || schoolMajor.opportunityScore,
+                  academicDevelopmentScore:
+                    schoolMajor.major.academicDevelopmentScore ||
+                    schoolMajor.academicDevelopmentScore,
+                  careerDevelopmentScore:
+                    schoolMajor.major.careerDevelopmentScore || schoolMajor.careerDevelopmentScore,
+                  industryProspectsScore:
+                    schoolMajor.major.industryProspectsScore || schoolMajor.industryProspectsScore,
+                  growthPotentialScore:
+                    schoolMajor.major.growthPotentialScore || schoolMajor.growthPotentialScore,
+                  isMatching: schoolMajor.isMatching !== false,
+                  schools: [],
+                });
+              }
+
+              // 将学校信息添加到对应专业组
+              const majorGroup = majorGroups.get(majorCode);
+              majorGroup.schools.push({
+                schoolCode: schoolMajor.schoolCode,
+                schoolName: schoolMajor.schoolName,
+                schoolNature: schoolMajor.schoolNature,
+                schoolFeature: schoolMajor.schoolFeature,
+                provinceName: schoolMajor.provinceName,
+                cityName: schoolMajor.cityName,
+                enrollmentRate: schoolMajor.enrollmentRate,
+                employmentRate: schoolMajor.employmentRate,
+                historyScores: schoolMajor.historyScores,
+                majorGroupId: schoolMajor.majorGroupId,
+                majorGroupName: schoolMajor.majorGroupName,
+                rankDiff: schoolMajor.rankDiff,
+                rankDiffPer: schoolMajor.rankDiffPer,
+                level: schoolMajor.level,
+              });
+            }
+          });
+
+          // 转换为数组并按发展潜能排序
+          const groupedMajors = Array.from(majorGroups.values()).sort((a, b) => {
+            // 按发展潜能从高到低排序
+            return (b.developmentPotential || 0) - (a.developmentPotential || 0);
+          });
+
+          if (isLoadMore) {
+            // 加载更多：追加数据
+            const newOriginalIntentionMajors = [...originalIntentionMajors, ...groupedMajors];
+            setOriginalIntentionMajors(newOriginalIntentionMajors);
+            setGroupedIntentionMajors(newOriginalIntentionMajors);
+          } else {
+            // 首次加载：替换数据
+            setOriginalIntentionMajors(groupedMajors);
+            setGroupedIntentionMajors(groupedMajors);
+            // 缓存数据到 sessionStorage
+            sessionStorage.setItem(
+              'major-list-cached-intention-data',
+              JSON.stringify(groupedMajors)
+            );
+            sessionStorage.setItem(
+              'major-list-cached-schools-with-major',
+              JSON.stringify(schoolsWithMajor)
+            );
+          }
+
+          // 检查是否还有更多数据
+          setHasMore(groupedMajors.length >= pageSize);
+        } else {
+          message.error(response.message || '获取意向专业失败');
+        }
+      } catch (error) {
+        console.error('获取意向专业失败:', error);
+        message.error('获取意向专业数据失败，请稍后重试');
+      } finally {
+        if (isLoadMore) {
+          setIsLoadingMore(false);
+        } else {
+          setLoading(false);
+        }
+      }
+    },
+    [pageSize, restoreScrollPosition, originalIntentionMajors]
+  );
+  // 当切换到意向专业tab时，确保数据已加载
+  // 当切换到意向专业tab时，确保数据已加载
+  useEffect(() => {
+    if (topActiveTab === 'favorite' && groupedIntentionMajors.length === 0) {
+      fetchIntentionMajors();
+    }
+  }, [topActiveTab, groupedIntentionMajors.length, fetchIntentionMajors]);
   // 初始化数据加载 - 只在首次挂载时加载
   useEffect(() => {
     if (!isInitialized) {
       fetchMajorScores();
       fetchMajorIntentions();
+      fetchIntentionMajors(); // 添加意向专业数据获取
       setIsInitialized(true);
     }
-  }, [fetchMajorScores, fetchMajorIntentions, isInitialized]);
+  }, [fetchMajorScores, fetchMajorIntentions, fetchIntentionMajors, isInitialized]);
 
   // 恢复tab状态 - 从sessionStorage中恢复
   useEffect(() => {
@@ -887,11 +1056,27 @@ const MajorPage: React.FC = () => {
       setHasMore(true);
 
       // 实时搜索：根据输入内容过滤数据并排序
-      const filteredData = filterMajors(value, originalMajors);
-      const sortedData = sortMajors(filteredData);
-      setMajors(sortedData);
+      // 实时搜索：根据输入内容过滤数据并排序
+      if (topActiveTab === 'favorite') {
+        // 意向专业tab：搜索分组数据
+        const filteredData = originalIntentionMajors.filter((majorGroup: any) => {
+          const searchLower = value.toLowerCase().trim();
+          if (!searchLower) return true;
+          return (
+            majorGroup.majorCode.toLowerCase().includes(searchLower) ||
+            majorGroup.majorName.toLowerCase().includes(searchLower)
+          );
+        });
+        setGroupedIntentionMajors(filteredData);
+      } else {
+        // 全部专业tab：使用原有逻辑
+        const sourceData = originalMajors;
+        const filteredData = filterMajors(value, sourceData);
+        const sortedData = sortMajors(filteredData);
+        setMajors(sortedData);
+      }
     },
-    [filterMajors, originalMajors, sortMajors]
+    [filterMajors, originalMajors, originalIntentionMajors, sortMajors, topActiveTab]
   );
 
   const showModal = useCallback(() => {
@@ -963,9 +1148,15 @@ const MajorPage: React.FC = () => {
     setSearchValue('');
     setCurrentPage(1);
     setHasMore(true);
-    const sortedData = sortMajors(originalMajors); // 恢复显示所有专业并排序
-    setMajors(sortedData);
-  }, [originalMajors, sortMajors]);
+
+    if (topActiveTab === 'favorite') {
+      // 意向专业tab：恢复分组数据
+      setGroupedIntentionMajors(originalIntentionMajors);
+    } else {
+      const sortedData = sortMajors(originalMajors); // 恢复显示所有专业并排序
+      setMajors(sortedData);
+    }
+  }, [originalMajors, originalIntentionMajors, sortMajors, topActiveTab]);
 
   /**
    * 处理发展潜能选择
@@ -1088,17 +1279,54 @@ const MajorPage: React.FC = () => {
   /**
    * 搜索按钮点击事件处理
    */
-  const handleSearch = useCallback(() => {
-    // 搜索按钮点击时，重新执行搜索（虽然已经实时搜索了，这里可以添加额外逻辑）
-    const filteredData = filterMajors(searchValue, originalMajors);
-    const sortedData = sortMajors(filteredData);
-    setMajors(sortedData);
 
-    // 可以在这里添加搜索提示
-    if (searchValue.trim() && filteredData.length === 0) {
-      message.info('未找到匹配的专业');
+  /**
+   * 刷新数据
+   */
+  const handleRefresh = useCallback(() => {
+    // 清除缓存
+    sessionStorage.removeItem('major-list-cached-data');
+    sessionStorage.removeItem('major-list-cached-intentions');
+    sessionStorage.removeItem('major-list-cached-intention-data');
+    sessionStorage.removeItem('major-list-cached-schools-with-major');
+    sessionStorage.removeItem('major-list-clicked-code');
+    sessionStorage.removeItem('major-list-tab-state');
+    fetchMajorScores();
+    fetchMajorIntentions(true);
+    fetchIntentionMajors();
+  }, [fetchMajorScores, fetchMajorIntentions, fetchIntentionMajors]);
+
+  const handleSearch = useCallback(() => {
+    // 搜索按钮点击时，重新执行搜索
+    if (topActiveTab === 'favorite') {
+      // 意向专业tab：搜索分组数据
+      const filteredData = originalIntentionMajors.filter((majorGroup: any) => {
+        const searchLower = searchValue.toLowerCase().trim();
+        if (!searchLower) return true;
+        return (
+          majorGroup.majorCode.toLowerCase().includes(searchLower) ||
+          majorGroup.majorName.toLowerCase().includes(searchLower)
+        );
+      });
+      setGroupedIntentionMajors(filteredData);
+
+      // 搜索提示
+      if (searchValue.trim() && filteredData.length === 0) {
+        message.info('未找到匹配的专业');
+      }
+    } else {
+      // 全部专业tab：使用原有逻辑
+      const sourceData = originalMajors;
+      const filteredData = filterMajors(searchValue, sourceData);
+      const sortedData = sortMajors(filteredData);
+      setMajors(sortedData);
+
+      // 搜索提示
+      if (searchValue.trim() && filteredData.length === 0) {
+        message.info('未找到匹配的专业');
+      }
     }
-  }, [filterMajors, searchValue, originalMajors, sortMajors]);
+  }, [filterMajors, originalMajors, originalIntentionMajors, sortMajors, topActiveTab]);
 
   /**
    * 保存当前tab状态到sessionStorage
@@ -1126,40 +1354,27 @@ const MajorPage: React.FC = () => {
   );
 
   /**
-   * 处理专业点击事件
+   * 处理专业项点击
    */
   const handleMajorItemClick = useCallback(
     (item: any, isFavorite: boolean) => {
-      // 保存当前滚动位置
-      saveScrollPosition();
-
-      // 保存点击的专业代码
       saveClickedMajorCode(String(item.majorCode));
-
       // 设置点击状态
       handleMajorClick(String(item.majorCode));
-
-      // 使用带状态保存的导航函数
       navigateWithState(
         `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.majorName}&score=${item.score}&isFavorite=${isFavorite}`
       );
+      sessionStorage.removeItem('major-list-cached-data');
+      sessionStorage.removeItem('major-list-cached-intentions');
+      sessionStorage.removeItem('major-list-cached-intention-data'); // 添加意向专业缓存清除
+      sessionStorage.removeItem('major-list-cached-schools-with-major'); // 清除意向专业学校数据缓存    sessionStorage.removeItem('major-list-clicked-code'); // 清除点击状态
+      sessionStorage.removeItem('major-list-tab-state'); // 清除tab状态
+      fetchMajorScores();
+      fetchMajorIntentions(true); // 强制刷新收藏数据
+      fetchIntentionMajors(); // 添加意向专业数据刷新
     },
-    [saveScrollPosition, saveClickedMajorCode, handleMajorClick, navigateWithState]
+    [fetchMajorScores, fetchMajorIntentions, fetchIntentionMajors, clearScrollPosition]
   );
-
-  /**
-   * 重新加载数据
-   */
-  const handleRefresh = useCallback(() => {
-    // 只在主动刷新时清除滚动位置和缓存数据
-    clearScrollPosition();
-    sessionStorage.removeItem('major-list-cached-data');
-    sessionStorage.removeItem('major-list-cached-intentions');
-    sessionStorage.removeItem('major-list-clicked-code'); // 清除点击状态
-    sessionStorage.removeItem('major-list-tab-state'); // 清除tab状态
-    fetchMajorScores();
-    fetchMajorIntentions(true); // 强制刷新收藏数据
-  }, [fetchMajorScores, fetchMajorIntentions, clearScrollPosition]);
 
   /**
    * 截断专业名称，超过6个字符时用省略号表示
@@ -1305,6 +1520,95 @@ const MajorPage: React.FC = () => {
     setIsTabDescriptionExpanded((prev) => !prev);
   }, []);
 
+  const getHistoryScore = (historyScores) => {
+    let htmlTemp = '';
+    if (historyScores && historyScores.length > 0) {
+      historyScores?.map((item, index) => {
+        // 添加分隔线和备注信息（包括第一个）
+        if (index > 0) {
+          htmlTemp += `<div class="border-t border-gray-200 my-4"></div>`;
+        }
+
+        // 显示备注信息
+        if (item.remark) {
+          htmlTemp += `
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+              <div class="flex items-start">
+                <span class="text-yellow-600 mr-2 mt-0.5">📝</span>
+                <div class="text-sm text-yellow-800">
+                  <span class="font-medium">备注：</span>
+                  ${item.remark}
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        // 历史分数表格
+        if (item.historyScore && item.historyScore.length > 0) {
+          htmlTemp += `
+            <div class="bg-white border border-gray-200 rounded-lg overflow-hidden mb-4">
+              <div class="bg-blue-50 px-4 py-3 border-b border-gray-200">
+                <h4 class="text-sm font-semibold text-blue-800 flex items-center">
+                  <span class="mr-2">📊</span>
+                  历年录取分数
+                </h4>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">年份</th>
+                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">最低分</th>
+                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">最低位次</th>
+                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">录取</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+          `;
+
+          item.historyScore?.map((hs) => {
+            for (const [key, value] of Object.entries(hs)) {
+              const valueTemp = value.split(',');
+              const score = valueTemp && valueTemp.length > 2 ? valueTemp[0] : '';
+              const rank = valueTemp && valueTemp.length > 2 ? valueTemp[1] : '';
+              const count = valueTemp && valueTemp.length > 2 ? valueTemp[2] : '';
+
+              htmlTemp += `
+                <tr class="hover:bg-gray-50 transition-colors duration-150">
+                  <td class="px-4 py-3 text-sm font-medium text-gray-900">${key}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      ${score}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-700">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      ${rank}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-700">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      ${count}名
+                    </span>
+                  </td>
+                </tr>
+              `;
+            }
+          });
+
+          htmlTemp += `
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        }
+      });
+    }
+    return htmlTemp;
+  };
+
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 50 }}>
       <div className="top-container">
@@ -1359,537 +1663,475 @@ const MajorPage: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
-        
-      {/* 顶部搜索栏 */}
-      <div
-        className="major-search-bar"
-        style={{
-          position: 'fixed',
-          top: 60,
-          left: 0,
-          right: 0,
-          zIndex: 1000,
-          display: 'flex',
-          alignItems: 'center',
-          padding: '8px 16px',
-          background: '#fff',
-          borderBottom: '1px solid #f0f0f0',
-        }}
-      >
-        <SearchOutlined style={{ fontSize: 26, marginRight: 8 }} />
-        <Input
-          placeholder={'请搜索您"最爱"专业'}
-          value={searchValue}
-          onChange={handleSearchChange}
-          onClear={handleClearSearch}
+
+        {/* 顶部搜索栏 */}
+        <div
+          className="major-search-bar"
           style={{
-            flex: 1,
-            borderRadius: 20,
-            background: '#f2f2f2',
-            border: 'none',
-            height: 36,
-            lineHeight: '16px',
-            fontSize: '16px',
+            position: 'fixed',
+            top: 60,
+            left: 0,
+            right: 0,
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            padding: '8px 16px',
+            background: '#fff',
+            borderBottom: '1px solid #f0f0f0',
           }}
-          allowClear
-        />{' '}
-        <Button
-          type="primary"
-          shape="round"
-          style={{ marginLeft: 12, width: 64, height: 36, background: '#2563eb', border: 'none' }}
-          onClick={handleSearch}
         >
-          搜索
-        </Button>
-        {/* 发展潜能选择器 */}
+          <SearchOutlined style={{ fontSize: 26, marginRight: 8 }} />
+          <Input
+            placeholder={'请搜索您"最爱"专业'}
+            value={searchValue}
+            onChange={handleSearchChange}
+            onClear={handleClearSearch}
+            style={{
+              flex: 1,
+              borderRadius: 20,
+              background: '#f2f2f2',
+              border: 'none',
+              height: 36,
+              lineHeight: '36px',
+              fontSize: '16px',
+            }}
+            allowClear
+          />{' '}
+          <Button
+            type="primary"
+            shape="round"
+            style={{ marginLeft: 12, width: 64, height: 36, background: '#2563eb', border: 'none' }}
+            onClick={handleSearch}
+          >
+            搜索
+          </Button>
+          {/* 发展潜能选择器 */}
+          <div
+            style={{
+              position: 'fixed',
+              top: '105px',
+              left: 0,
+              right: 0,
+              zIndex: 999,
+              background: '#fff',
+              borderBottom: '1px solid #f0f0f0',
+              padding: '8px 16px',
+            }}
+          >
+            <CommonSelect
+              data={developmentOptions}
+              placeholder={getPlaceholderText()}
+              onSelect={handleDevelopmentSelect}
+              onClear={handleDevelopmentClear}
+              allowClear={true}
+              showCount={true}
+              width="100%"
+            />
+          </div>
+        </div>
+
+        {/* 为固定搜索栏留出空间 */}
+        <div style={{ height: '102px' }}></div>
+
+        <div
+          style={{
+            height: (() => {
+              // 基础高度：主选项卡 + 子选项卡
+              let baseHeight = 72;
+
+              if (activeTab === 'passion' || activeTab === 'opportunity') {
+                baseHeight = 115; // 主选项卡 + 子选项卡
+
+                // 如果有子Tab说明文字，需要额外增加高度
+                if (
+                  (activeTab === 'passion' && activeSubTab) ||
+                  (activeTab === 'opportunity' && activeOpportunitySubTab)
+                ) {
+                  baseHeight += 50; // 子Tab说明文字的高度（包含margin和padding）
+                }
+              }
+
+              return baseHeight;
+            })(),
+          }}
+        ></div>
+        {/* 选项卡区域 */}
         <div
           style={{
             position: 'fixed',
-            top: '105px',
+            top: '150px',
             left: 0,
             right: 0,
             zIndex: 999,
             background: '#fff',
             borderBottom: '1px solid #f0f0f0',
-            padding: '8px 16px',
+            padding: '12px 16px 8px 16px',
           }}
         >
-          <CommonSelect
-            data={developmentOptions}
-            placeholder={getPlaceholderText()}
-            onSelect={handleDevelopmentSelect}
-            onClear={handleDevelopmentClear}
-            allowClear={true}
-            showCount={true}
-            width="100%"
-          />
-        </div>
-      </div>
-
-      {/* 为固定搜索栏留出空间 */}
-      <div style={{ height: '152px' }}></div>
-
-      <div
-        style={{
-          height: (() => {
-            // 基础高度：主选项卡 + 子选项卡
-            let baseHeight = 72;
-
-            if (activeTab === 'passion' || activeTab === 'opportunity') {
-              baseHeight = 115; // 主选项卡 + 子选项卡
-
-              // 如果有子Tab说明文字，需要额外增加高度
-              if (
-                (activeTab === 'passion' && activeSubTab) ||
-                (activeTab === 'opportunity' && activeOpportunitySubTab)
-              ) {
-                baseHeight += 50; // 子Tab说明文字的高度（包含margin和padding）
-              }
-            }
-
-            return baseHeight;
-          })(),
-        }}
-      ></div>
-      {/* 选项卡区域 */}
-      <div
-        style={{
-          position: 'fixed',
-          top: '150px',
-          left: 0,
-          right: 0,
-          zIndex: 999,
-          background: '#fff',
-          borderBottom: '1px solid #f0f0f0',
-          padding: '12px 16px 8px 16px',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            background: '#f5f5f5',
-            borderRadius: '20px',
-            padding: '4px',
-            gap: '4px',
-          }}
-        >
-          {[
-            { key: 'development', label: '发展潜能', icon: '▲', color: '#2563eb' },
-            { key: 'passion', label: '热爱能量', icon: '♥', color: '#ff6b6b' },
-            { key: 'opportunity', label: '机遇指数', icon: '★', color: '#10b981' },
-          ].map((tab) => (
-            <div
-              key={tab.key}
-              onClick={() => {
-                dispatch(setActiveTab(tab.key as any));
-              }}
-              style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '8px 12px',
-                borderRadius: '16px',
-                fontSize: tab.key === 'development' ? '16px' : '14px', // 发展潜能字号大两号
-                fontWeight: tab.key === 'development' ? 600 : 500, // 发展潜能字重也稍微加粗
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                background: activeTab === tab.key ? tab.color : 'transparent',
-                color: activeTab === tab.key ? '#fff' : '#666',
-                boxShadow: activeTab === tab.key ? `0 2px 8px ${tab.color}30` : 'none',
-                transform: activeTab === tab.key ? 'scale(1.02)' : 'scale(1)',
-              }}
-            >
-              <span
-                style={{
-                  marginRight: '4px',
-                  fontSize: tab.key === 'development' ? '18px' : '16px',
-                }}
-              >
-                {tab.icon}
-              </span>
-              {tab.label}
-            </div>
-          ))}
-        </div>
-
-        {/* 热爱能量子选项卡 */}
-        {activeTab === 'passion' && (
-          <>
-            <div
-              style={{
-                display: 'flex',
-                background: '#fef7f7',
-                borderRadius: '16px',
-                padding: '4px',
-                gap: '4px',
-                marginTop: '8px',
-              }}
-            >
-              {[
-                { key: 'le', label: '乐学', color: '#52c41a' },
-                { key: 'shan', label: '善学', color: '#1890ff' },
-                { key: 'yan', label: '厌学', color: '#fa8c16' },
-                { key: 'zu', label: '阻学', color: '#ff7875' },
-              ].map((subTab) => (
-                <div
-                  key={subTab.key}
-                  onClick={() => dispatch(setActiveSubTab(subTab.key as any))}
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '6px 8px',
-                    borderRadius: '12px',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    background: activeSubTab === subTab.key ? subTab.color : 'transparent',
-                    color: activeSubTab === subTab.key ? '#fff' : '#666',
-                    boxShadow: activeSubTab === subTab.key ? `0 2px 6px ${subTab.color}30` : 'none',
-                    transform: activeSubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
-                  }}
-                >
-                  {subTab.label}
-                </div>
-              ))}
-            </div>
-
-            {/* 子Tab说明文字 */}
-            {activeSubTab && (
-              <div
-                className="subtab-description"
-                style={{
-                  marginTop: '8px',
-                  padding: '10px 16px',
-                  background: (() => {
-                    switch (activeSubTab) {
-                      case 'le':
-                        return '#f6ffed';
-                      case 'shan':
-                        return '#e6f7ff';
-                      case 'yan':
-                        return '#fff7e6';
-                      case 'zu':
-                        return '#fff2f0';
-                      default:
-                        return '#f8f9fa';
-                    }
-                  })(),
-                  borderRadius: '12px',
-                  fontSize: '13px',
-                  color: (() => {
-                    switch (activeSubTab) {
-                      case 'le':
-                        return '#52c41a';
-                      case 'shan':
-                        return '#1890ff';
-                      case 'yan':
-                        return '#fa8c16';
-                      case 'zu':
-                        return '#ff7875';
-                      default:
-                        return '#666';
-                    }
-                  })(),
-                  textAlign: 'center',
-                  border: (() => {
-                    switch (activeSubTab) {
-                      case 'le':
-                        return '1px solid #b7eb8f';
-                      case 'shan':
-                        return '1px solid #91d5ff';
-                      case 'yan':
-                        return '1px solid #ffd591';
-                      case 'zu':
-                        return '1px solid #ffccc7';
-                      default:
-                        return '1px solid #e9ecef';
-                    }
-                  })(),
-                  lineHeight: '1.5',
-                  fontWeight: 500,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                }}
-              >
-                {activeSubTab === 'le' && '💚 内在开心体验带来持续动力'}
-                {activeSubTab === 'shan' && '💙 自然而然学得更快更好更轻松'}
-                {activeSubTab === 'yan' && '🟠 开心体验持续无法满足，导致动力衰减'}
-                {activeSubTab === 'zu' && '🔴 思维与行为模式冲突，导致效率损耗'}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* 机遇指数子选项卡 */}
-        {activeTab === 'opportunity' && (
-          <>
-            <div
-              style={{
-                display: 'flex',
-                background: '#f0fdf4',
-                borderRadius: '16px',
-                padding: '4px',
-                gap: '4px',
-                marginTop: '8px',
-              }}
-            >
-              {[
-                { key: 'academic', label: '学业发展', color: '#8b5cf6' },
-                { key: 'career', label: '职业回报', color: '#06b6d4' },
-                { key: 'industry', label: '产业前景', color: '#ec4899' },
-                { key: 'growth', label: '成长空间', color: '#f97316' },
-              ].map((subTab) => (
-                <div
-                  key={subTab.key}
-                  onClick={() => dispatch(setActiveOpportunitySubTab(subTab.key as any))}
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '6px 8px',
-                    borderRadius: '12px',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    background:
-                      activeOpportunitySubTab === subTab.key ? subTab.color : 'transparent',
-                    color: activeOpportunitySubTab === subTab.key ? '#fff' : '#666',
-                    boxShadow:
-                      activeOpportunitySubTab === subTab.key
-                        ? `0 2px 6px ${subTab.color}30`
-                        : 'none',
-                    transform: activeOpportunitySubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
-                  }}
-                >
-                  {subTab.label}
-                </div>
-              ))}
-            </div>
-
-            {/* 机遇指数子Tab说明文字 */}
-            {activeOpportunitySubTab && (
-              <div
-                className="subtab-description"
-                style={{
-                  marginTop: '8px',
-                  padding: '10px 16px',
-                  background: (() => {
-                    switch (activeOpportunitySubTab) {
-                      case 'academic':
-                        return '#f3f0ff';
-                      case 'career':
-                        return '#e6fffb';
-                      case 'industry':
-                        return '#fdf2f8';
-                      case 'growth':
-                        return '#fff7ed';
-                      default:
-                        return '#f8f9fa';
-                    }
-                  })(),
-                  borderRadius: '12px',
-                  fontSize: '13px',
-                  color: (() => {
-                    switch (activeOpportunitySubTab) {
-                      case 'academic':
-                        return '#8b5cf6';
-                      case 'career':
-                        return '#06b6d4';
-                      case 'industry':
-                        return '#ec4899';
-                      case 'growth':
-                        return '#f97316';
-                      default:
-                        return '#666';
-                    }
-                  })(),
-                  textAlign: 'center',
-                  border: (() => {
-                    switch (activeOpportunitySubTab) {
-                      case 'academic':
-                        return '1px solid #c4b5fd';
-                      case 'career':
-                        return '1px solid #67e8f9';
-                      case 'industry':
-                        return '1px solid #f9a8d4';
-                      case 'growth':
-                        return '1px solid #fdba74';
-                      default:
-                        return '1px solid #e9ecef';
-                    }
-                  })(),
-                  lineHeight: '1.5',
-                  fontWeight: 500,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                }}
-              >
-                {activeOpportunitySubTab === 'academic' && '🎓 升学畅通程度'}
-                {activeOpportunitySubTab === 'career' && '💰 起薪与加薪幅度'}
-                {activeOpportunitySubTab === 'industry' && '📈 产业发展前景乐观度'}
-                {activeOpportunitySubTab === 'growth' && '🚀 升迁空间广阔度'}
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* 滚动容器 */}
-      <div
-        className="major-list-card-area"
-        ref={listAreaRef}
-        style={{
-          height: (() => {
-            // 基础高度计算
-            let baseHeight = 300; // 搜索栏 + 发展潜能选择器 + 主选项卡
-
-            if (activeTab === 'passion' || activeTab === 'opportunity') {
-              baseHeight = 320; // 搜索栏 + 发展潜能选择器 + 主选项卡 + 子选项卡
-
-              // 如果有子Tab说明文字，需要额外增加高度
-              if (
-                (activeTab === 'passion' && activeSubTab) ||
-                (activeTab === 'opportunity' && activeOpportunitySubTab)
-              ) {
-                baseHeight += 50; // 子Tab说明文字的高度
-              }
-            }
-
-            return `calc(100vh - ${baseHeight}px)`;
-          })(),
-          overflow: 'auto',
-        }}
-      >
-        {/* Tab说明文字区域 - 只在没有子选项卡时显示 */}
-        {!(
-          (activeTab === 'passion' && activeSubTab) ||
-          (activeTab === 'opportunity' && activeOpportunitySubTab)
-        ) && (
           <div
             style={{
-              margin: '8px 16px 8px 16px',
-              padding: '16px 20px',
-              background: (() => {
-                switch (activeTab) {
-                  case 'development':
-                    return 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)';
-                  case 'passion':
-                    return 'linear-gradient(135deg, #fef7f7 0%, #fed7d7 100%)';
-                  case 'opportunity':
-                    return 'linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%)';
-                  default:
-                    return 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)';
-                }
-              })(),
-              borderRadius: '16px',
-              border: (() => {
-                switch (activeTab) {
-                  case 'development':
-                    return '1px solid #3b82f6';
-                  case 'passion':
-                    return '1px solid #ef4444';
-                  case 'opportunity':
-                    return '1px solid #10b981';
-                  default:
-                    return '1px solid #d1d5db';
-                }
-              })(),
-              boxShadow: (() => {
-                switch (activeTab) {
-                  case 'development':
-                    return '0 4px 12px rgba(59, 130, 246, 0.15)';
-                  case 'passion':
-                    return '0 4px 12px rgba(239, 68, 68, 0.15)';
-                  case 'opportunity':
-                    return '0 4px 12px rgba(16, 185, 129, 0.15)';
-                  default:
-                    return '0 4px 12px rgba(0, 0, 0, 0.05)';
-                }
-              })(),
-              cursor: 'pointer',
-              transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-              position: 'relative',
-              overflow: 'hidden',
-              transform: isTabDescriptionExpanded ? 'scale(1.02)' : 'scale(1)',
+              display: 'flex',
+              background: '#f5f5f5',
+              borderRadius: '20px',
+              padding: '4px',
+              gap: '4px',
             }}
-            onClick={toggleTabDescription}
           >
-            {/* 装饰性背景元素 */}
+            {[
+              { key: 'development', label: '发展潜能', icon: '▲', color: '#2563eb' },
+              { key: 'passion', label: '热爱能量', icon: '♥', color: '#ff6b6b' },
+              { key: 'opportunity', label: '机遇指数', icon: '★', color: '#10b981' },
+            ].map((tab) => (
+              <div
+                key={tab.key}
+                onClick={() => {
+                  dispatch(setActiveTab(tab.key as any));
+                }}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '8px 12px',
+                  borderRadius: '16px',
+                  fontSize: tab.key === 'development' ? '16px' : '14px', // 发展潜能字号大两号
+                  fontWeight: tab.key === 'development' ? 600 : 500, // 发展潜能字重也稍微加粗
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  background: activeTab === tab.key ? tab.color : 'transparent',
+                  color: activeTab === tab.key ? '#fff' : '#666',
+                  boxShadow: activeTab === tab.key ? `0 2px 8px ${tab.color}30` : 'none',
+                  transform: activeTab === tab.key ? 'scale(1.02)' : 'scale(1)',
+                }}
+              >
+                <span
+                  style={{
+                    marginRight: '4px',
+                    fontSize: tab.key === 'development' ? '18px' : '16px',
+                  }}
+                >
+                  {tab.icon}
+                </span>
+                {tab.label}
+              </div>
+            ))}
+          </div>
+
+          {/* 热爱能量子选项卡 */}
+          {activeTab === 'passion' && (
+            <>
+              <div
+                style={{
+                  display: 'flex',
+                  background: '#fef7f7',
+                  borderRadius: '16px',
+                  padding: '4px',
+                  gap: '4px',
+                  marginTop: '8px',
+                }}
+              >
+                {[
+                  { key: 'le', label: '乐学', color: '#52c41a' },
+                  { key: 'shan', label: '善学', color: '#1890ff' },
+                  { key: 'yan', label: '厌学', color: '#fa8c16' },
+                  { key: 'zu', label: '阻学', color: '#ff7875' },
+                ].map((subTab) => (
+                  <div
+                    key={subTab.key}
+                    onClick={() => dispatch(setActiveSubTab(subTab.key as any))}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '6px 8px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      background: activeSubTab === subTab.key ? subTab.color : 'transparent',
+                      color: activeSubTab === subTab.key ? '#fff' : '#666',
+                      boxShadow:
+                        activeSubTab === subTab.key ? `0 2px 6px ${subTab.color}30` : 'none',
+                      transform: activeSubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
+                    }}
+                  >
+                    {subTab.label}
+                  </div>
+                ))}
+              </div>
+
+              {/* 子Tab说明文字 */}
+              {activeSubTab && (
+                <div
+                  className="subtab-description"
+                  style={{
+                    marginTop: '8px',
+                    padding: '10px 16px',
+                    background: (() => {
+                      switch (activeSubTab) {
+                        case 'le':
+                          return '#f6ffed';
+                        case 'shan':
+                          return '#e6f7ff';
+                        case 'yan':
+                          return '#fff7e6';
+                        case 'zu':
+                          return '#fff2f0';
+                        default:
+                          return '#f8f9fa';
+                      }
+                    })(),
+                    borderRadius: '12px',
+                    fontSize: '13px',
+                    color: (() => {
+                      switch (activeSubTab) {
+                        case 'le':
+                          return '#52c41a';
+                        case 'shan':
+                          return '#1890ff';
+                        case 'yan':
+                          return '#fa8c16';
+                        case 'zu':
+                          return '#ff7875';
+                        default:
+                          return '#666';
+                      }
+                    })(),
+                    textAlign: 'center',
+                    border: (() => {
+                      switch (activeSubTab) {
+                        case 'le':
+                          return '1px solid #b7eb8f';
+                        case 'shan':
+                          return '1px solid #91d5ff';
+                        case 'yan':
+                          return '1px solid #ffd591';
+                        case 'zu':
+                          return '1px solid #ffccc7';
+                        default:
+                          return '1px solid #e9ecef';
+                      }
+                    })(),
+                    lineHeight: '1.5',
+                    fontWeight: 500,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                  }}
+                >
+                  {activeSubTab === 'le' && '💚 内在开心体验带来持续动力'}
+                  {activeSubTab === 'shan' && '💙 自然而然学得更快更好更轻松'}
+                  {activeSubTab === 'yan' && '🟠 开心体验持续无法满足，导致动力衰减'}
+                  {activeSubTab === 'zu' && '🔴 思维与行为模式冲突，导致效率损耗'}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* 机遇指数子选项卡 */}
+          {activeTab === 'opportunity' && (
+            <>
+              <div
+                style={{
+                  display: 'flex',
+                  background: '#f0fdf4',
+                  borderRadius: '16px',
+                  padding: '4px',
+                  gap: '4px',
+                  marginTop: '8px',
+                }}
+              >
+                {[
+                  { key: 'academic', label: '学业发展', color: '#8b5cf6' },
+                  { key: 'career', label: '职业回报', color: '#06b6d4' },
+                  { key: 'industry', label: '产业前景', color: '#ec4899' },
+                  { key: 'growth', label: '成长空间', color: '#f97316' },
+                ].map((subTab) => (
+                  <div
+                    key={subTab.key}
+                    onClick={() => dispatch(setActiveOpportunitySubTab(subTab.key as any))}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '6px 8px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      background:
+                        activeOpportunitySubTab === subTab.key ? subTab.color : 'transparent',
+                      color: activeOpportunitySubTab === subTab.key ? '#fff' : '#666',
+                      boxShadow:
+                        activeOpportunitySubTab === subTab.key
+                          ? `0 2px 6px ${subTab.color}30`
+                          : 'none',
+                      transform:
+                        activeOpportunitySubTab === subTab.key ? 'scale(1.02)' : 'scale(1)',
+                    }}
+                  >
+                    {subTab.label}
+                  </div>
+                ))}
+              </div>
+
+              {/* 机遇指数子Tab说明文字 */}
+              {activeOpportunitySubTab && (
+                <div
+                  className="subtab-description"
+                  style={{
+                    marginTop: '8px',
+                    padding: '10px 16px',
+                    background: (() => {
+                      switch (activeOpportunitySubTab) {
+                        case 'academic':
+                          return '#f3f0ff';
+                        case 'career':
+                          return '#e6fffb';
+                        case 'industry':
+                          return '#fdf2f8';
+                        case 'growth':
+                          return '#fff7ed';
+                        default:
+                          return '#f8f9fa';
+                      }
+                    })(),
+                    borderRadius: '12px',
+                    fontSize: '13px',
+                    color: (() => {
+                      switch (activeOpportunitySubTab) {
+                        case 'academic':
+                          return '#8b5cf6';
+                        case 'career':
+                          return '#06b6d4';
+                        case 'industry':
+                          return '#ec4899';
+                        case 'growth':
+                          return '#f97316';
+                        default:
+                          return '#666';
+                      }
+                    })(),
+                    textAlign: 'center',
+                    border: (() => {
+                      switch (activeOpportunitySubTab) {
+                        case 'academic':
+                          return '1px solid #c4b5fd';
+                        case 'career':
+                          return '1px solid #67e8f9';
+                        case 'industry':
+                          return '1px solid #f9a8d4';
+                        case 'growth':
+                          return '1px solid #fdba74';
+                        default:
+                          return '1px solid #e9ecef';
+                      }
+                    })(),
+                    lineHeight: '1.5',
+                    fontWeight: 500,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                  }}
+                >
+                  {activeOpportunitySubTab === 'academic' && '🎓 升学畅通程度'}
+                  {activeOpportunitySubTab === 'career' && '💰 起薪与加薪幅度'}
+                  {activeOpportunitySubTab === 'industry' && '📈 产业发展前景乐观度'}
+                  {activeOpportunitySubTab === 'growth' && '🚀 升迁空间广阔度'}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* 滚动容器 */}
+        <div
+          className="major-list-card-area"
+          ref={listAreaRef}
+          style={{
+            height: (() => {
+              // 基础高度计算
+              let baseHeight = 300; // 搜索栏 + 发展潜能选择器 + 主选项卡
+
+              if (activeTab === 'passion' || activeTab === 'opportunity') {
+                baseHeight = 320; // 搜索栏 + 发展潜能选择器 + 主选项卡 + 子选项卡
+
+                // 如果有子Tab说明文字，需要额外增加高度
+                if (
+                  (activeTab === 'passion' && activeSubTab) ||
+                  (activeTab === 'opportunity' && activeOpportunitySubTab)
+                ) {
+                  baseHeight += 50; // 子Tab说明文字的高度
+                }
+              }
+
+              return `calc(100vh - ${baseHeight}px)`;
+            })(),
+            overflow: 'auto',
+          }}
+        >
+          {/* Tab说明文字区域 - 只在没有子选项卡时显示 */}
+          {!(
+            (activeTab === 'passion' && activeSubTab) ||
+            (activeTab === 'opportunity' && activeOpportunitySubTab)
+          ) && (
             <div
               style={{
-                position: 'absolute',
-                top: '-20px',
-                right: '-20px',
-                width: '60px',
-                height: '60px',
-                borderRadius: '50%',
+                margin: '8px 16px 8px 16px',
+                padding: '16px 20px',
                 background: (() => {
                   switch (activeTab) {
                     case 'development':
-                      return 'rgba(59, 130, 246, 0.1)';
+                      return 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)';
                     case 'passion':
-                      return 'rgba(239, 68, 68, 0.1)';
+                      return 'linear-gradient(135deg, #fef7f7 0%, #fed7d7 100%)';
                     case 'opportunity':
-                      return 'rgba(16, 185, 129, 0.1)';
+                      return 'linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%)';
                     default:
-                      return 'rgba(0, 0, 0, 0.05)';
+                      return 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)';
                   }
                 })(),
-                transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                transform: isTabDescriptionExpanded ? 'scale(1.2)' : 'scale(1)',
-                opacity: isTabDescriptionExpanded ? 0.8 : 0.5,
-              }}
-            />
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                color: (() => {
+                borderRadius: '16px',
+                border: (() => {
                   switch (activeTab) {
                     case 'development':
-                      return '#1e40af';
+                      return '1px solid #3b82f6';
                     case 'passion':
-                      return '#dc2626';
+                      return '1px solid #ef4444';
                     case 'opportunity':
-                      return '#059669';
+                      return '1px solid #10b981';
                     default:
-                      return '#374151';
+                      return '1px solid #d1d5db';
                   }
                 })(),
-                fontSize: '15px',
-                fontWeight: 600,
-                lineHeight: '1.6',
+                boxShadow: (() => {
+                  switch (activeTab) {
+                    case 'development':
+                      return '0 4px 12px rgba(59, 130, 246, 0.15)';
+                    case 'passion':
+                      return '0 4px 12px rgba(239, 68, 68, 0.15)';
+                    case 'opportunity':
+                      return '0 4px 12px rgba(16, 185, 129, 0.15)';
+                    default:
+                      return '0 4px 12px rgba(0, 0, 0, 0.05)';
+                  }
+                })(),
+                cursor: 'pointer',
+                transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                 position: 'relative',
-                zIndex: 1,
+                overflow: 'hidden',
+                transform: isTabDescriptionExpanded ? 'scale(1.02)' : 'scale(1)',
               }}
+              onClick={toggleTabDescription}
             >
+              {/* 装饰性背景元素 */}
               <div
                 style={{
-                  flex: 1,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'normal',
-                  maxHeight: isTabDescriptionExpanded ? '200px' : '24px',
-                  transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                  opacity: isTabDescriptionExpanded ? 1 : 0.8,
-                }}
-              >
-                {getTabDescription()}
-              </div>
-              <div
-                style={{
-                  marginLeft: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                  padding: '4px',
+                  position: 'absolute',
+                  top: '-20px',
+                  right: '-20px',
+                  width: '60px',
+                  height: '60px',
                   borderRadius: '50%',
                   background: (() => {
                     switch (activeTab) {
@@ -1903,40 +2145,103 @@ const MajorPage: React.FC = () => {
                         return 'rgba(0, 0, 0, 0.05)';
                     }
                   })(),
-                  transform: isTabDescriptionExpanded ? 'scale(1.1)' : 'scale(1)',
+                  transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transform: isTabDescriptionExpanded ? 'scale(1.2)' : 'scale(1)',
+                  opacity: isTabDescriptionExpanded ? 0.8 : 0.5,
+                }}
+              />
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  color: (() => {
+                    switch (activeTab) {
+                      case 'development':
+                        return '#1e40af';
+                      case 'passion':
+                        return '#dc2626';
+                      case 'opportunity':
+                        return '#059669';
+                      default:
+                        return '#374151';
+                    }
+                  })(),
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  lineHeight: '1.6',
+                  position: 'relative',
+                  zIndex: 1,
                 }}
               >
                 <div
                   style={{
-                    transition: 'all 0.3s ease',
-                    transform: isTabDescriptionExpanded ? 'rotate(0deg)' : 'rotate(0deg)',
+                    flex: 1,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'normal',
+                    maxHeight: isTabDescriptionExpanded ? '200px' : '24px',
+                    transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                    opacity: isTabDescriptionExpanded ? 1 : 0.8,
                   }}
                 >
-                  {isTabDescriptionExpanded ? (
-                    <UpOutlined style={{ fontSize: '14px' }} />
-                  ) : (
-                    <DownOutlined style={{ fontSize: '14px' }} />
-                  )}
+                  {getTabDescription()}
+                </div>
+                <div
+                  style={{
+                    marginLeft: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                    padding: '4px',
+                    borderRadius: '50%',
+                    background: (() => {
+                      switch (activeTab) {
+                        case 'development':
+                          return 'rgba(59, 130, 246, 0.1)';
+                        case 'passion':
+                          return 'rgba(239, 68, 68, 0.1)';
+                        case 'opportunity':
+                          return 'rgba(16, 185, 129, 0.1)';
+                        default:
+                          return 'rgba(0, 0, 0, 0.05)';
+                      }
+                    })(),
+                    transform: isTabDescriptionExpanded ? 'scale(1.1)' : 'scale(1)',
+                  }}
+                >
+                  <div
+                    style={{
+                      transition: 'all 0.3s ease',
+                      transform: isTabDescriptionExpanded ? 'rotate(0deg)' : 'rotate(0deg)',
+                    }}
+                  >
+                    {isTabDescriptionExpanded ? (
+                      <UpOutlined style={{ fontSize: '14px' }} />
+                    ) : (
+                      <DownOutlined style={{ fontSize: '14px' }} />
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* 专业列表卡片 */}
-        <div
-          className="major-list-card"
-          style={{
-            background: '#fff',
-            borderRadius: 16,
-            margin: '16px',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-            minWidth: 'calc(100% - 32px)',
-            border: '1px solid #f1f5f9',
-          }}
-        >
-          {/* 标题 */}
-          {/* <div
+          {/* 专业列表卡片 */}
+          <div
+            className="major-list-card"
+            style={{
+              background: '#fff',
+              borderRadius: 16,
+              margin: '16px',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+              minWidth: 'calc(100% - 32px)',
+              border: '1px solid #f1f5f9',
+            }}
+          >
+            {/* 标题 */}
+            {/* <div
             style={{
               fontWeight: 700,
               fontSize: 20,
@@ -1959,702 +2264,754 @@ const MajorPage: React.FC = () => {
               最爱专业
             </div>
           </div> */}
-          {/* 列表内容 */}
-          <div>
-            {loading ? (
-              // 加载中状态
-              <div
-                style={{
-                  padding: '60px 20px',
-                  textAlign: 'center',
-                  color: '#666',
-                  fontSize: 16,
-                }}
-              >
-                <Spin size="large" style={{ marginBottom: 16 }} />
-                <div>正在加载专业数据...</div>
-                <div style={{ fontSize: 14, marginTop: 8, color: '#999' }}>
-                  请稍候，正在为您获取最爱专业信息
+            {/* 列表内容 */}
+            <div>
+              {loading ? (
+                // 加载中状态
+                <div
+                  style={{
+                    padding: '60px 20px',
+                    textAlign: 'center',
+                    color: '#666',
+                    fontSize: 16,
+                  }}
+                >
+                  <Spin size="large" style={{ marginBottom: 16 }} />
+                  <div>正在加载专业数据...</div>
+                  <div style={{ fontSize: 14, marginTop: 8, color: '#999' }}>
+                    请稍候，正在为您获取最爱专业信息
+                  </div>
                 </div>
-              </div>
-            ) : majors.length > 0 ? (
-              displayMajors.map((item: any, idx: number) => {
-                // 检查当前专业是否已收藏
-                const isFavorite = isMajorFavorite(item.majorCode);
-                const isClicked = clickedMajorCode === String(item.majorCode);
-                // 计算在完整列表中的索引
-                const fullListIndex = majors.findIndex(
-                  (major: any) => major.majorCode === item.majorCode
-                );
-                const isRecommendedMajor = recommendFlags[fullListIndex];
-                // 判断是否需要插入分割线
-                const needDivider =
-                  firstNonMatchingIndex !== -1 && fullListIndex === firstNonMatchingIndex;
-                return (
-                  <React.Fragment key={item.majorCode}>
-                    {needDivider && (
+              ) : topActiveTab === 'favorite' && groupedIntentionMajors.length > 0 ? (
+                // 意向专业tab - 使用intentiondetail.tsx的样式
+                <div className="space-y-4">
+                  {displayMajors.map((majorGroup: any, idx: number) => (
+                    <div key={majorGroup.majorCode} className="mb-5">
+                      {/* 专业头部信息 */}
                       <div
-                        style={{
-                          margin: '16px 0',
-                          padding: '12px 24px',
-                          background: '#f8fafc',
-                          color: '#666',
-                          fontSize: 14,
-                          borderTop: '1px solid #e5e7eb',
-                          borderBottom: '1px solid #e5e7eb',
-                          textAlign: 'center',
-                          fontWeight: 500,
+                        className="flex items-center justify-between bg-[#dee9fd] rounded-t-xl p-4 mb-1"
+                        onClick={() => {
+                          navigator(
+                            `/major/majorlovedetail?majorCode=${majorGroup.majorCode}&&majorName=${majorGroup.majorName}&score=${majorGroup.developmentPotential}&isFavorite=true`,
+                            { replace: false }
+                          );
                         }}
                       >
-                        以下专业，根据院校招生简章选科要求，您暂时不可报考，规划长远发展时可作为参考。
+                        <div className="flex items-center">
+                          <span className="text-blue-600 text-base font-bold mr-3">
+                            {majorGroup.majorCode}
+                          </span>
+                          <span className="text-blue-700 text-base font-bold">
+                            {majorGroup.majorName.length > 8
+                              ? `${majorGroup.majorName.substring(0, 8)}...`
+                              : majorGroup.majorName}{' '}
+                          </span>
+                          <span className="ml-2 text-gray-400">&gt;</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-gray-900 font-bold mr-2">发展潜能</span>
+                          <span className="text-blue-700 font-bold text-base">
+                            {Math.ceil(majorGroup.developmentPotential)}分！
+                          </span>
+                        </div>
                       </div>
-                    )}
-                    <div
-                      key={item.majorCode}
-                      data-major-code={item.majorCode}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        flexDirection: 'column',
-                        padding: '0 8px',
-                        marginBottom: '8px',
-                        borderBottom:
-                          idx === displayMajors.length - 1 ? 'none' : '1px solid #f0f0f0',
-                        fontSize: 14,
-                        cursor: 'pointer',
-                        transition: 'all 0.3s ease', // 添加过渡动画
-                        boxShadow:
-                          isClicked && activeTab !== 'passion' && activeTab !== 'opportunity'
-                            ? '0 2px 8px rgba(24, 144, 255, 0.15)'
-                            : 'none', // 点击时的阴影效果
-                        transform:
-                          isClicked && activeTab !== 'passion' && activeTab !== 'opportunity'
-                            ? 'translateX(2px)'
-                            : 'translateX(0)', // 轻微向右移动
-                        color: isRecommendedMajor ? '#333' : '#bbb', // 推荐深色，不推荐淡色
-                        background:
-                          isClicked && activeTab !== 'passion' && activeTab !== 'opportunity'
-                            ? (() => {
-                                switch (activeTab) {
-                                  case 'development':
-                                    return '#dbeafe';
-                                  case 'passion':
-                                    return '#ffeaea';
-                                  case 'opportunity':
-                                    return '#ecfdf5';
-                                  default:
-                                    return '#e6f7ff';
-                                }
-                              })()
-                            : isRecommendedMajor
-                              ? (() => {
-                                  switch (activeTab) {
-                                    case 'development':
-                                      return '#eff6ff';
-                                    case 'passion':
-                                      return '#fef7f7';
-                                    case 'opportunity':
-                                      return '#f0fdf4';
-                                    default:
-                                      return '#fff7e6';
-                                  }
-                                })()
-                              : '#f3f4f6', // 不推荐灰色
-                        borderLeft:
-                          isClicked && activeTab !== 'passion' && activeTab !== 'opportunity'
-                            ? (() => {
-                                switch (activeTab) {
-                                  case 'development':
-                                    return '4px solid #2563eb';
-                                  case 'passion':
-                                    return '4px solid #ff6b6b';
-                                  case 'opportunity':
-                                    return '4px solid #10b981';
-                                  default:
-                                    return '4px solid #1890ff';
-                                }
-                              })()
-                            : isRecommendedMajor
-                              ? (() => {
-                                  switch (activeTab) {
-                                    case 'development':
-                                      return '3px solid #2563eb';
-                                    case 'passion':
-                                      return '3px solid #ff6b6b';
-                                    case 'opportunity':
-                                      return '3px solid #10b981';
-                                    default:
-                                      return '3px solid #fa8c16';
-                                  }
-                                })()
-                              : 'none', // 不推荐无边框
-                      }}
-                    >
+
+                      {/* 学校列表 */}
+                      <div className="space-y-2 p-2">
+                        {majorGroup.schools.map((school: any) => (
+                          <div
+                            key={school.schoolCode}
+                            className="border border-gray-200 mb-4 overflow-hidden bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
+                          >
+                            {/* 院校头部 */}
+                            <div className="p-4">
+                              {/* 学校名称和备选按钮行 */}
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex-1 min-w-0 flex items-center space-x-2">
+                                  <span
+                                    className="text-blue-600 text-lg font-bold cursor-pointer hover:text-blue-700 transition-colors duration-200 truncate block"
+                                    title={school.schoolName}
+                                    onClick={() => {
+                                      navigator(
+                                        `/major/schooldetail?schoolCode=${school.schoolCode}&schoolname=${school.schoolName}`
+                                      );
+                                    }}
+                                  >
+                                    {school.schoolName.length > 10
+                                      ? `${school.schoolName.substring(0, 10)}...`
+                                      : school.schoolName}
+                                  </span>
+                                  {/* 位次差显示 */}
+                                  {school.rankDiff && school.rankDiff !== 0 && (
+                                    <span className="px-2 py-0.5 rounded text-xs font-bold">
+                                      上年较您
+                                      <span
+                                        className={
+                                          school.rankDiff > 0
+                                            ? 'text-red-600 bg-red-100'
+                                            : 'text-green-600 bg-green-100'
+                                        }
+                                      >
+                                        {school.rankDiff > 0
+                                          ? `高${school.rankDiff}位次/${Math.floor(school.rankDiffPer || 0)}%`
+                                          : `低${Math.abs(school.rankDiff)}位次/${Math.floor(school.rankDiffPer || 0)}%`}
+                                      </span>
+                                    </span>
+                                  )}
+                                </div>
+                                <button
+                                  className="ml-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm bg-green-500 text-white hover:bg-green-600 hover:shadow-md"
+                                  onClick={() => {
+                                    // 这里可以添加备选逻辑
+                                    message.success('已加入备选志愿');
+                                  }}
+                                >
+                                  备选
+                                </button>
+                              </div>
+
+                              {/* 学校标签行 */}
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                {/* 学校特色标签 */}
+                                {school.schoolFeature &&
+                                  school.schoolFeature
+                                    .split(',')
+                                    .map((feature: string, index: number) => (
+                                      <span
+                                        key={`${school.schoolName}-feature-${index}`}
+                                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
+                                      >
+                                        {feature.trim()}
+                                      </span>
+                                    ))}
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                  {school.schoolNature === 'public' ? '公办' : '民办'}
+                                </span>
+                                {school.enrollmentRate !== 0 && (
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                                    升学率{school.enrollmentRate}%
+                                  </span>
+                                )}
+                                {school.level !== 'zhuan' && (
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                                    保研率{school.enrollmentRate}%
+                                  </span>
+                                )}
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
+                                  {school.cityName}
+                                </span>
+                                {school.majorGroupName && (
+                                  <button
+                                    className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-purple-500 text-white border-2 border-purple-400 hover:bg-purple-600 hover:border-purple-500 hover:shadow-md transition-all duration-200 cursor-pointer shadow-sm"
+                                    title="点击查看专业组详情"
+                                  >
+                                    <span className="mr-1">📋</span>
+                                    {school.majorGroupName}专业组
+                                    <span className="ml-1 text-xs">▶</span>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* 历史分数表格 */}
+                            {school.historyScores && school.historyScores.length > 0 && (
+                              <div
+                                className="px-4 pb-4 bg-gray-50 rounded-b-lg"
+                                dangerouslySetInnerHTML={{
+                                  __html: getHistoryScore(school?.historyScores),
+                                }}
+                              ></div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : majors.length > 0 ? (
+                displayMajors.map((item: any, idx: number) => {
+                  // 检查当前专业是否已收藏
+                  const isFavorite = isMajorFavorite(item.majorCode);
+                  const isClicked = clickedMajorCode === String(item.majorCode);
+                  // 计算在完整列表中的索引
+                  const fullListIndex = majors.findIndex(
+                    (major: any) => major.majorCode === item.majorCode
+                  );
+                  const isRecommendedMajor = recommendFlags[fullListIndex];
+                  // 判断是否需要插入分割线
+                  const needDivider =
+                    firstNonMatchingIndex !== -1 && fullListIndex === firstNonMatchingIndex;
+                  return (
+                    <React.Fragment key={item.majorCode}>
+                      {needDivider && (
+                        <div
+                          style={{
+                            margin: '16px 0',
+                            padding: '12px 24px',
+                            background: '#f8fafc',
+                            color: '#666',
+                            fontSize: 14,
+                            borderTop: '1px solid #e5e7eb',
+                            borderBottom: '1px solid #e5e7eb',
+                            textAlign: 'center',
+                            fontWeight: 500,
+                          }}
+                        >
+                          以下专业，根据院校招生简章选科要求，您暂时不可报考，规划长远发展时可作为参考。
+                        </div>
+                      )}
                       <div
+                        key={item.majorCode}
+                        data-major-code={item.majorCode}
                         style={{
                           display: 'flex',
-                          alignItems: 'left',
-                          width: '100%',
+                          alignItems: 'center',
+                          flexDirection: 'column',
+                          padding: '0 8px',
+                          marginBottom: '8px',
+                          borderBottom:
+                            idx === displayMajors.length - 1 ? 'none' : '1px solid #f0f0f0',
+                          fontSize: 14,
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease', // 添加过渡动画
+                          boxShadow:
+                            isClicked && activeTab !== 'passion' && activeTab !== 'opportunity'
+                              ? '0 2px 8px rgba(24, 144, 255, 0.15)'
+                              : 'none', // 点击时的阴影效果
+                          transform:
+                            isClicked && activeTab !== 'passion' && activeTab !== 'opportunity'
+                              ? 'translateX(2px)'
+                              : 'translateX(0)', // 轻微向右移动
+                          color: isRecommendedMajor ? '#333' : '#bbb', // 推荐深色，不推荐淡色
+                          background:
+                            isClicked && activeTab !== 'passion' && activeTab !== 'opportunity'
+                              ? (() => {
+                                  switch (activeTab) {
+                                    case 'development':
+                                      return '#dbeafe';
+                                    case 'passion':
+                                      return '#ffeaea';
+                                    case 'opportunity':
+                                      return '#ecfdf5';
+                                    default:
+                                      return '#e6f7ff';
+                                  }
+                                })()
+                              : isRecommendedMajor
+                                ? (() => {
+                                    switch (activeTab) {
+                                      case 'development':
+                                        return '#eff6ff';
+                                      case 'passion':
+                                        return '#fef7f7';
+                                      case 'opportunity':
+                                        return '#f0fdf4';
+                                      default:
+                                        return '#fff7e6';
+                                    }
+                                  })()
+                                : '#f3f4f6', // 不推荐灰色
+                          borderLeft:
+                            isClicked && activeTab !== 'passion' && activeTab !== 'opportunity'
+                              ? (() => {
+                                  switch (activeTab) {
+                                    case 'development':
+                                      return '4px solid #2563eb';
+                                    case 'passion':
+                                      return '4px solid #ff6b6b';
+                                    case 'opportunity':
+                                      return '4px solid #10b981';
+                                    default:
+                                      return '4px solid #1890ff';
+                                  }
+                                })()
+                              : isRecommendedMajor
+                                ? (() => {
+                                    switch (activeTab) {
+                                      case 'development':
+                                        return '3px solid #2563eb';
+                                      case 'passion':
+                                        return '3px solid #ff6b6b';
+                                      case 'opportunity':
+                                        return '3px solid #10b981';
+                                      default:
+                                        return '3px solid #fa8c16';
+                                    }
+                                  })()
+                                : 'none', // 不推荐无边框
                         }}
                       >
                         <div
-                          onClick={() => handleMajorItemClick(item, isFavorite)}
                           style={{
-                            flex: 1,
-                            position: 'relative',
-                            cursor: 'pointer',
-                            fontWeight: 500,
-                            fontSize: 15,
                             display: 'flex',
-                            alignItems: 'center',
+                            alignItems: 'left',
                             width: '100%',
                           }}
                         >
-                          <div>
-                            {/* 专业名称 */}
-                            <div style={{ marginRight: 15 }} title={item.majorName}>
-                              {truncateMajorName(item.majorName)}
-                            </div>
-                            {/* 专业编号 */}
-                            {activeTab !== 'passion' && activeTab !== 'opportunity' && (
-                              <div style={{ color: '#666', fontSize: 12, marginTop: 2 }}>
-                                {item.majorCode}
-                              </div>
-                            )}
-                          </div>
-                          {/* 跳转箭头 */}
                           <div
+                            onClick={() => handleMajorItemClick(item, isFavorite)}
                             style={{
-                              color: '#bbb',
-                              fontSize: 18,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            {'>'}
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                          <span
-                            style={{ fontSize: 15, fontWeight: 500 }}
-                            onClick={() => {
-                              if (activeTab === 'development')
-                                navigateWithState(
-                                  `/major/majorjobintro?type=major&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}`
-                                );
-                            }}
-                          >
-                            {getScoreDisplayText(item).text}
-                          </span>
-                          {/* 分数显示 */}
-                          <span
-                            onClick={() => {
-                              if (activeTab === 'development')
-                                navigateWithState(
-                                  `/major/majorjobintro?type=major&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}`
-                                );
-                            }}
-                            style={{
-                              color: (() => {
-                                switch (activeTab) {
-                                  case 'development':
-                                    return '#2563eb';
-                                  case 'passion':
-                                    return '#ff6b6b';
-                                  case 'opportunity':
-                                    return '#10b981';
-                                  default:
-                                    return '#333';
-                                }
-                              })(),
-                              fontSize: 15,
-                              marginRight: 8,
-                              fontWeight: 500,
-                            }}
-                          >
-                            {getScoreDisplayText(item).score}
-                          </span>
-                          {/* 收藏按钮 */}
-                          <span
-                            style={{
+                              flex: 1,
+                              position: 'relative',
                               cursor: 'pointer',
+                              fontWeight: 500,
+                              fontSize: 15,
                               display: 'flex',
                               alignItems: 'center',
-                              minWidth: 40,
+                              width: '100%',
                             }}
-                            onClick={() => toggleFavorite(item.majorCode)}
                           >
-                            {isFavorite ? (
-                              <StarFilled style={{ color: '#fadb14', fontSize: 20 }} />
-                            ) : (
-                              <StarOutlined style={{ color: '#ccc', fontSize: 20 }} />
-                            )}
-                            <span style={{ fontSize: 13, marginLeft: 2 }}>收藏</span>
-                          </span>
+                            <div>
+                              {/* 专业名称 */}
+                              <div style={{ marginRight: 15 }} title={item.majorName}>
+                                {truncateMajorName(item.majorName)}
+                              </div>
+                              {/* 专业编号 */}
+                              {activeTab !== 'passion' && activeTab !== 'opportunity' && (
+                                <div style={{ color: '#666', fontSize: 12, marginTop: 2 }}>
+                                  {item.majorCode}
+                                </div>
+                              )}
+                            </div>
+                            {/* 跳转箭头 */}
+                            <div
+                              style={{
+                                color: '#bbb',
+                                fontSize: 18,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              {'>'}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <span
+                              style={{ fontSize: 15, fontWeight: 500 }}
+                              onClick={() => {
+                                if (activeTab === 'development')
+                                  navigateWithState(
+                                    `/major/majorjobintro?type=major&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}`
+                                  );
+                              }}
+                            >
+                              {getScoreDisplayText(item).text}
+                            </span>
+                            {/* 分数显示 */}
+                            <span
+                              onClick={() => {
+                                if (activeTab === 'development')
+                                  navigateWithState(
+                                    `/major/majorjobintro?type=major&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}`
+                                  );
+                              }}
+                              style={{
+                                color: (() => {
+                                  switch (activeTab) {
+                                    case 'development':
+                                      return '#2563eb';
+                                    case 'passion':
+                                      return '#ff6b6b';
+                                    case 'opportunity':
+                                      return '#10b981';
+                                    default:
+                                      return '#333';
+                                  }
+                                })(),
+                                fontSize: 15,
+                                marginRight: 8,
+                                fontWeight: 500,
+                              }}
+                            >
+                              {getScoreDisplayText(item).score}
+                            </span>
+                            {/* 收藏按钮 */}
+                            <span
+                              style={{
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                minWidth: 40,
+                              }}
+                              onClick={() => toggleFavorite(item.majorCode)}
+                            >
+                              {isFavorite ? (
+                                <StarFilled style={{ color: '#fadb14', fontSize: 20 }} />
+                              ) : (
+                                <StarOutlined style={{ color: '#ccc', fontSize: 20 }} />
+                              )}
+                              <span style={{ fontSize: 13, marginLeft: 2 }}>收藏</span>
+                            </span>
+                          </div>
+                        </div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            width: '100%',
+                            padding: '8px 0',
+                            gap: '6px',
+                          }}
+                        >
+                          {/* 专业描述 */}
+                          {activeTab === 'development' && (
+                            <div
+                              className="major-list-item-content"
+                              onClick={() => {
+                                navigateWithState(
+                                  `/major/majorjobintro?type=major&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}`
+                                );
+                              }}
+                            >
+                              {item.majorName}是{item.majorBrief} {'>'}
+                            </div>
+                          )}
+
+                          {/* 学习特质评分 */}
+                          {activeTab !== 'opportunity' && (
+                            <>
+                              {/* 热爱能量标识 */}
+                              {activeTab === 'development' && (
+                                <div
+                                  style={{
+                                    fontSize: '12px',
+                                    color: '#333',
+                                    fontWeight: 600,
+                                    marginBottom: '4px',
+                                    paddingLeft: '4px',
+                                  }}
+                                >
+                                  ♥ 热爱能量
+                                </div>
+                              )}
+                              <div className="major-list-item-content">
+                                {(!activeSubTab || activeTab === 'development') && (
+                                  <span
+                                    onClick={() => {
+                                      navigateWithState(
+                                        `/major/studyTrait?type=lexue&majorCode=${item.majorCode}&majorName=${item.majorName}`
+                                      );
+                                    }}
+                                  >
+                                    乐学
+                                    <span style={{ color: '#52c41a', fontWeight: 500 }}>
+                                      {getCalcScore100(item.lexueScore)}分
+                                    </span>
+                                    {'>'}
+                                  </span>
+                                )}
+                                {(!activeSubTab || activeTab === 'development') && (
+                                  <span
+                                    onClick={() => {
+                                      navigateWithState(
+                                        `/major/studyTrait?type=shanxue&majorCode=${item.majorCode}&majorName=${item.majorName}`
+                                      );
+                                    }}
+                                  >
+                                    善学
+                                    <span style={{ color: '#1890ff', fontWeight: 500 }}>
+                                      {getCalcScore100(item.shanxueScore)}分
+                                    </span>
+                                    {'>'}
+                                  </span>
+                                )}
+                                {(!activeSubTab || activeTab === 'development') && (
+                                  <span
+                                    onClick={() => {
+                                      navigateWithState(
+                                        `/major/studyTrait?type=yanxue&majorCode=${item.majorCode}&majorName=${item.majorName}`
+                                      );
+                                    }}
+                                  >
+                                    厌学
+                                    <span style={{ color: '#fa8c16', fontWeight: 500 }}>
+                                      {getCalcScore100(item.yanxueDeduction)}分
+                                    </span>
+                                    {'>'}
+                                  </span>
+                                )}
+                                {(!activeSubTab || activeTab === 'development') && (
+                                  <span
+                                    onClick={() => {
+                                      navigateWithState(
+                                        `/major/studyTrait?type=tiaozhan&majorCode=${item.majorCode}&majorName=${item.majorName}`
+                                      );
+                                    }}
+                                  >
+                                    阻学
+                                    <span style={{ color: '#ff7875', fontWeight: 500 }}>
+                                      {getCalcScore100(item.tiaozhanDeduction)}分
+                                    </span>
+                                    {'>'}
+                                  </span>
+                                )}
+                              </div>
+                            </>
+                          )}
+
+                          {/* 发展评分 */}
+                          {activeTab !== 'passion' && (
+                            <>
+                              {/* 热爱能量标识 */}
+                              {activeTab === 'development' && (
+                                <div
+                                  style={{
+                                    fontSize: '12px',
+                                    color: '#333',
+                                    fontWeight: 600,
+                                    marginBottom: '4px',
+                                    paddingLeft: '4px',
+                                  }}
+                                >
+                                  ★ 机遇指数
+                                </div>
+                              )}
+                              <div className="major-list-item-content">
+                                {(!activeOpportunitySubTab || activeTab === 'development') && (
+                                  <span
+                                    onClick={() => {
+                                      navigateWithState(
+                                        `/major/majorjobintro?type=major&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&anchor=academic`
+                                      );
+                                    }}
+                                  >
+                                    学业发展
+                                    <span style={{ color: '#8b5cf6', fontWeight: 500 }}>
+                                      {getCalcScore(item.academicDevelopmentScore)}分
+                                    </span>
+                                    {'>'}
+                                  </span>
+                                )}
+                                {(!activeOpportunitySubTab || activeTab === 'development') && (
+                                  <span
+                                    onClick={() => {
+                                      navigateWithState(
+                                        `/major/majorjobintro?type=academic&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&anchor=career`
+                                      );
+                                    }}
+                                  >
+                                    职业回报
+                                    <span style={{ color: '#06b6d4', fontWeight: 500 }}>
+                                      {getCalcScore(item.careerDevelopmentScore)}分
+                                    </span>
+                                    {'>'}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="major-list-item-content">
+                                {(!activeOpportunitySubTab || activeTab === 'development') && (
+                                  <span
+                                    onClick={() =>
+                                      navigateWithState(
+                                        `/major/majorjobintro?type=industry&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&anchor=industry`
+                                      )
+                                    }
+                                  >
+                                    产业前景
+                                    <span style={{ color: '#ec4899', fontWeight: 500 }}>
+                                      {getCalcScore(item.industryProspectsScore)}分
+                                    </span>
+                                    {'>'}
+                                  </span>
+                                )}
+                                {(!activeOpportunitySubTab || activeTab === 'development') && (
+                                  <span
+                                    onClick={() =>
+                                      navigateWithState(
+                                        `/major/majorjobintro?type=industry&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&anchor=growth`
+                                      )
+                                    }
+                                  >
+                                    成长空间
+                                    <span style={{ color: '#f97316', fontWeight: 500 }}>
+                                      {getCalcScore(item.growthPotentialScore)}分
+                                    </span>
+                                    {'>'}
+                                  </span>
+                                )}
+                              </div>
+                            </>
+                          )}
+
+                          {/* 招生院校 */}
+                          {activeTab === 'development' && (
+                            <div
+                              className="major-list-item-content"
+                              onClick={() => {
+                                navigateWithState(
+                                  `/major/majorschools?majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}`
+                                );
+                              }}
+                            >
+                              招生院校 {'>'}
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          width: '100%',
-                          padding: '8px 0',
-                          gap: '6px',
-                        }}
-                      >
-                        {/* 专业描述 */}
-                        {activeTab === 'development' && (
-                          <div
-                            className="major-list-item-content"
-                            onClick={() => {
-                              navigateWithState(
-                                `/major/majorjobintro?type=major&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}`
-                              );
-                            }}
-                          >
-                            {item.majorName}是{item.majorBrief} {'>'}
-                          </div>
-                        )}
-
-                        {/* 学习特质评分 */}
-                        {activeTab !== 'opportunity' && (
-                          <>
-                            {/* 热爱能量标识 */}
-                            {activeTab === 'development' && (
-                              <div
-                                style={{
-                                  fontSize: '12px',
-                                  color: '#333',
-                                  fontWeight: 600,
-                                  marginBottom: '4px',
-                                  paddingLeft: '4px',
-                                }}
-                              >
-                                ♥ 热爱能量
-                              </div>
-                            )}
-                            <div className="major-list-item-content">
-                              {(!activeSubTab || activeTab === 'development') && (
-                                <span
-                                  onClick={() => {
-                                    navigateWithState(
-                                      `/major/studyTrait?type=lexue&majorCode=${item.majorCode}&majorName=${item.majorName}`
-                                    );
-                                  }}
-                                >
-                                  乐学
-                                  <span style={{ color: '#52c41a', fontWeight: 500 }}>
-                                    {getCalcScore100(item.lexueScore)}分
-                                  </span>
-                                  {'>'}
-                                </span>
-                              )}
-                              {(!activeSubTab || activeTab === 'development') && (
-                                <span
-                                  onClick={() => {
-                                    navigateWithState(
-                                      `/major/studyTrait?type=shanxue&majorCode=${item.majorCode}&majorName=${item.majorName}`
-                                    );
-                                  }}
-                                >
-                                  善学
-                                  <span style={{ color: '#1890ff', fontWeight: 500 }}>
-                                    {getCalcScore100(item.shanxueScore)}分
-                                  </span>
-                                  {'>'}
-                                </span>
-                              )}
-                              {(!activeSubTab || activeTab === 'development') && (
-                                <span
-                                  onClick={() => {
-                                    navigateWithState(
-                                      `/major/studyTrait?type=yanxue&majorCode=${item.majorCode}&majorName=${item.majorName}`
-                                    );
-                                  }}
-                                >
-                                  厌学
-                                  <span style={{ color: '#fa8c16', fontWeight: 500 }}>
-                                    {getCalcScore100(item.yanxueDeduction)}分
-                                  </span>
-                                  {'>'}
-                                </span>
-                              )}
-                              {(!activeSubTab || activeTab === 'development') && (
-                                <span
-                                  onClick={() => {
-                                    navigateWithState(
-                                      `/major/studyTrait?type=tiaozhan&majorCode=${item.majorCode}&majorName=${item.majorName}`
-                                    );
-                                  }}
-                                >
-                                  阻学
-                                  <span style={{ color: '#ff7875', fontWeight: 500 }}>
-                                    {getCalcScore100(item.tiaozhanDeduction)}分
-                                  </span>
-                                  {'>'}
-                                </span>
-                              )}
-                            </div>
-                          </>
-                        )}
-
-                        {/* 发展评分 */}
-                        {activeTab !== 'passion' && (
-                          <>
-                            {/* 热爱能量标识 */}
-                            {activeTab === 'development' && (
-                              <div
-                                style={{
-                                  fontSize: '12px',
-                                  color: '#333',
-                                  fontWeight: 600,
-                                  marginBottom: '4px',
-                                  paddingLeft: '4px',
-                                }}
-                              >
-                                ★ 机遇指数
-                              </div>
-                            )}
-                            <div className="major-list-item-content">
-                              {(!activeOpportunitySubTab || activeTab === 'development') && (
-                                <span
-                                  onClick={() => {
-                                    navigateWithState(
-                                      `/major/majorjobintro?type=major&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&anchor=academic`
-                                    );
-                                  }}
-                                >
-                                  学业发展
-                                  <span style={{ color: '#8b5cf6', fontWeight: 500 }}>
-                                    {getCalcScore(item.academicDevelopmentScore)}分
-                                  </span>
-                                  {'>'}
-                                </span>
-                              )}
-                              {(!activeOpportunitySubTab || activeTab === 'development') && (
-                                <span
-                                  onClick={() => {
-                                    navigateWithState(
-                                      `/major/majorjobintro?type=academic&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&anchor=career`
-                                    );
-                                  }}
-                                >
-                                  职业回报
-                                  <span style={{ color: '#06b6d4', fontWeight: 500 }}>
-                                    {getCalcScore(item.careerDevelopmentScore)}分
-                                  </span>
-                                  {'>'}
-                                </span>
-                              )}
-                            </div>
-                            <div className="major-list-item-content">
-                              {(!activeOpportunitySubTab || activeTab === 'development') && (
-                                <span
-                                  onClick={() =>
-                                    navigateWithState(
-                                      `/major/majorjobintro?type=industry&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&anchor=industry`
-                                    )
-                                  }
-                                >
-                                  产业前景
-                                  <span style={{ color: '#ec4899', fontWeight: 500 }}>
-                                    {getCalcScore(item.industryProspectsScore)}分
-                                  </span>
-                                  {'>'}
-                                </span>
-                              )}
-                              {(!activeOpportunitySubTab || activeTab === 'development') && (
-                                <span
-                                  onClick={() =>
-                                    navigateWithState(
-                                      `/major/majorjobintro?type=industry&majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}&anchor=growth`
-                                    )
-                                  }
-                                >
-                                  成长空间
-                                  <span style={{ color: '#f97316', fontWeight: 500 }}>
-                                    {getCalcScore(item.growthPotentialScore)}分
-                                  </span>
-                                  {'>'}
-                                </span>
-                              )}
-                            </div>
-                          </>
-                        )}
-
-                        {/* 招生院校 */}
-                        {activeTab === 'development' && (
-                          <div
-                            className="major-list-item-content"
-                            onClick={() => {
-                              navigateWithState(
-                                `/major/majorschools?majorCode=${item.majorCode}&majorName=${item.majorName}&score=${item.score}`
-                              );
-                            }}
-                          >
-                            招生院校 {'>'}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </React.Fragment>
-                );
-              })
-            ) : searchValue.trim() ? (
-              // 空搜索结果提示
-              <div
-                style={{
-                  padding: '40px 20px',
-                  textAlign: 'center',
-                  color: '#999',
-                  fontSize: 16,
-                }}
-              >
-                <div style={{ marginBottom: 8 }}>🔍</div>
-                <div>未找到匹配的专业</div>
-                <div style={{ fontSize: 14, marginTop: 4, marginBottom: 16 }}>
-                  请尝试其他关键词或专业代码
-                </div>
-                <Button
-                  type="default"
-                  size="small"
-                  onClick={handleClearSearch}
+                    </React.Fragment>
+                  );
+                })
+              ) : topActiveTab === 'favorite' && groupedIntentionMajors.length === 0 ? (
+                // 意向专业tab空数据提示
+                <div
                   style={{
-                    borderRadius: 16,
-                    height: 32,
-                    fontSize: 14,
+                    padding: '40px 20px',
+                    textAlign: 'center',
+                    color: '#999',
+                    fontSize: 16,
                   }}
                 >
-                  查看全部专业
-                </Button>
-                搜索
-              </div>
-            ) : (
-              // 暂无数据提示
-              <div
-                style={{
-                  padding: '40px 20px',
-                  textAlign: 'center',
-                  color: '#999',
-                  fontSize: 16,
-                }}
-              >
-                <div style={{ marginBottom: 8 }}>📚</div>
-                <div>暂无专业数据</div>
-                <div style={{ fontSize: 14, marginTop: 4, marginBottom: 16 }}>
-                  请先完成专业测评获取数据
+                  <div style={{ marginBottom: 8 }}>⭐</div>
+                  <div>暂无意向专业</div>
+                  <div style={{ fontSize: 14, marginTop: 4, marginBottom: 16 }}>
+                    请先收藏一些专业作为意向专业
+                  </div>
+                  <Button
+                    type="default"
+                    size="small"
+                    onClick={handleClearSearch}
+                    style={{
+                      borderRadius: 16,
+                      height: 32,
+                      fontSize: 14,
+                    }}
+                  >
+                    查看全部专业
+                  </Button>
                 </div>
-                <Button
-                  type="primary"
-                  size="small"
-                  onClick={handleRefresh}
+              ) : searchValue.trim() ? (
+                // 空搜索结果提示
+                <div
                   style={{
-                    background: '#2563eb',
-                    border: 'none',
-                    borderRadius: 16,
-                    height: 32,
-                    fontSize: 14,
+                    padding: '40px 20px',
+                    textAlign: 'center',
+                    color: '#999',
+                    fontSize: 16,
                   }}
                 >
-                  重新加载
-                </Button>
-                搜索
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 查看更多按钮（支付相关） */}
-      {majors.length <= 10 && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32 }}>
-          <Button
-            type="primary"
-            shape="round"
-            style={{
-              width: '90%',
-              height: 50,
-              fontSize: 22,
-              background: '#2563eb',
-              border: 'none',
-            }}
-            onClick={showModal}
-          >
-            查看更多
-          </Button>
-          搜索
-        </div>
-      )}
-
-      {/* 底部导航 */}
-      <BottomNav selectedIndex={1} />
-
-      {/* 支付弹窗 */}
-      <Modal
-        title="解锁完整分析报告"
-        open={isModalVisible}
-        onCancel={handleCancel}
-        footer={null}
-        className="rounded-2xl"
-      >
-        <div className="py-6">
-          <div className="text-center mb-6">
-            <div className="text-2xl font-semibold text-gray-800 mb-4">
-              选择最爱专业与理想院校，发现热爱！
-            </div>
-
-            {/* 功能介绍 */}
-            <div className="space-y-3 mb-6 text-left">
-              <div className="flex items-center space-x-2">
-                <span className="text-blue-500 font-semibold" style={{ width: '50px' }}>
-                  自评：
-                </span>
-                <span className="text-gray-700">168座&ldquo;心桥&rdquo;，多维度走进内心世界</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-green-500 font-semibold" style={{ width: '50px' }}>
-                  专业：
-                </span>
-                <span className="text-gray-700">
-                  所有1914个大学专业，结合现在与未来，看见&ldquo;最爱&rdquo;！
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-purple-500 font-semibold" style={{ width: '50px' }}>
-                  意向：
-                </span>
-                <span className="text-gray-700">多层次筛选，让选择更贴近&ldquo;热爱&rdquo;！</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-orange-500 font-semibold" style={{ width: '50px' }}>
-                  志愿：
-                </span>
-                <span className="text-gray-700">多方位对比，发现&ldquo;至爱理想&rdquo;！</span>
-              </div>
-            </div>
-
-            {/* 价格信息 */}
-            <div className="bg-gradient-to-r from-red-50 to-orange-50 p-4 rounded-lg border border-red-200">
-              <div className="text-3xl font-bold text-red-500 mb-1">¥88</div>
-              <div className="text-red-600 font-semibold text-sm">亲友价！</div>
-            </div>
-          </div>
-          <Button
-            type="primary"
-            className="w-full h-12 !rounded-button text-lg font-medium bg-gradient-to-r from-blue-500 to-blue-400 border-none hover:opacity-90"
-            onClick={handlePayment}
-            loading={payLoading}
-            disabled={payLoading}
-          >
-            {payLoading ? '支付中...' : '立即支付'}
-          </Button>
-          搜索
-        </div>
-      </Modal>
-
-      {/* 提示弹窗 */}
-      <Modal
-        title={
-          <div
-            style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}
-          >
-            💡 使用提示
-          </div>
-        }
-        open={isTipModalVisible}
-        onCancel={handleTipModalClose}
-        footer={null}
-        width={400}
-        centered
-        className="rounded-2xl"
-        style={{ top: '20%' }}
-      >
-        <div style={{ padding: '20px 0' }}>
-          <Tabs
-            defaultActiveKey="1"
-            items={[
-              {
-                key: '1',
-                label: '收藏功能',
-                children: (
-                  <div
+                  <div style={{ marginBottom: 8 }}>🔍</div>
+                  <div>未找到匹配的专业</div>
+                  <div style={{ fontSize: 14, marginTop: 4, marginBottom: 16 }}>
+                    请尝试其他关键词或专业代码
+                  </div>
+                  <Button
+                    type="default"
+                    size="small"
+                    onClick={handleClearSearch}
                     style={{
-                      padding: '16px 0',
-                      lineHeight: '1.8',
-                      fontSize: '14px',
-                      color: '#333',
+                      borderRadius: 16,
+                      height: 32,
+                      fontSize: 14,
                     }}
                   >
-                    <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#2563eb' }}>
-                      1. &ldquo;点亮&rdquo;收藏，喜欢专业会自动进入&ldquo;意向&rdquo;频道备选
-                    </div>
-                    <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#2563eb' }}>
-                      2. 所有字段均可点击查看详情
-                    </div>
+                    查看全部专业
+                  </Button>
+                </div>
+              ) : (
+                // 暂无数据提示
+                <div
+                  style={{
+                    padding: '40px 20px',
+                    textAlign: 'center',
+                    color: '#999',
+                    fontSize: 16,
+                  }}
+                >
+                  <div style={{ marginBottom: 8 }}>📚</div>
+                  <div>暂无专业数据</div>
+                  <div style={{ fontSize: 14, marginTop: 4, marginBottom: 16 }}>
+                    请先完成专业测评获取数据
                   </div>
-                ),
-              },
-              {
-                key: '2',
-                label: '专业分析',
-                children: (
-                  <div
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={handleRefresh}
                     style={{
-                      padding: '16px 0',
-                      lineHeight: '1.8',
-                      fontSize: '14px',
-                      color: '#333',
+                      background: '#2563eb',
+                      border: 'none',
+                      borderRadius: 16,
+                      height: 32,
+                      fontSize: 14,
                     }}
                   >
-                    <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#2563eb' }}>
-                      1.
-                      建议特别关注&ldquo;乐学/善学/厌学/阻学特质&rdquo;，了解为什么自己可能喜欢与擅长该专业
-                    </div>
-                    <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#2563eb' }}>
-                      2.
-                      请详细了解学业发展、职业回报、产业前景、成长空间等&ldquo;外部机遇&rdquo;相关内容，基于更全面的评估，决定是否&ldquo;收藏&rdquo;为意向专业
-                    </div>
-                  </div>
-                ),
-              },
-            ]}
-            style={{ marginTop: '8px' }}
-          />
+                    重新加载
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
-          {/* 底部复选框选项 */}
-          <div
-            style={{
-              marginTop: '20px',
-              padding: '16px 20px',
-              background: '#f8f9fa',
-              borderRadius: '8px',
-              border: '1px solid #e9ecef',
-            }}
-          >
-            <div
-              style={{ marginBottom: '12px', fontSize: '14px', fontWeight: 'bold', color: '#333' }}
+        {/* 查看更多按钮（支付相关） */}
+        {/* 查看更多按钮（支付相关） - 只在全部专业tab显示 */}
+        {topActiveTab === 'all' && majors.length <= 10 && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32 }}>
+            <Button
+              type="primary"
+              shape="round"
+              style={{
+                width: '90%',
+                height: 50,
+                fontSize: 22,
+                background: '#2563eb',
+                border: 'none',
+              }}
+              onClick={showModal}
             >
-              请选择您的偏好（可多选）：
+              查看更多
+            </Button>
+          </div>
+        )}
+        <BottomNav selectedIndex={1} />
+        {/* 提示弹窗 */}
+        <Modal
+          title={
+            <div
+              style={{
+                textAlign: 'center',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                color: '#2563eb',
+              }}
+            >
+              💡 使用提示
             </div>
-            <div style={{ marginBottom: '8px' }}>
-              <Checkbox
-                checked={userChoices.choice1}
-                onChange={(e) => handleChoiceChange('choice1', e.target.checked)}
-                style={{ fontSize: '13px' }}
-              >
-                今天不显示此提示
-              </Checkbox>
-            </div>
-            <div>
-              <Checkbox
-                checked={userChoices.choice2}
-                onChange={(e) => handleChoiceChange('choice2', e.target.checked)}
-                style={{ fontSize: '13px' }}
-              >
-                以后都不显示此提示
-              </Checkbox>
-            </div>
+          }
+          open={isTipModalVisible}
+          onCancel={handleTipModalClose}
+          footer={null}
+          width={400}
+          centered
+          className="rounded-2xl"
+          style={{ top: '20%' }}
+        >
+          <div>
+            <Checkbox
+              checked={userChoices.choice1}
+              onChange={(e) => handleChoiceChange('choice1', e.target.checked)}
+              style={{ fontSize: '13px' }}
+            >
+              今天不显示此提示
+            </Checkbox>
+          </div>
+          <div>
+            <Checkbox
+              checked={userChoices.choice2}
+              onChange={(e) => handleChoiceChange('choice2', e.target.checked)}
+              style={{ fontSize: '13px' }}
+            >
+              以后都不显示此提示
+            </Checkbox>
+          </div>
+          <div>
+            <Checkbox
+              checked={userChoices.choice2}
+              onChange={(e) => handleChoiceChange('choice2', e.target.checked)}
+              style={{ fontSize: '13px' }}
+            >
+              以后都不显示此提示
+            </Checkbox>
           </div>
 
           <div style={{ textAlign: 'center', marginTop: '20px' }}>
@@ -2672,10 +3029,9 @@ const MajorPage: React.FC = () => {
             >
               我知道了
             </Button>
-            搜索
           </div>
-        </div>
-      </Modal>
+        </Modal>
+      </div>
     </div>
   );
 };

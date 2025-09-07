@@ -1,9 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { UserOutline, UserCircleOutline } from 'antd-mobile-icons';
 import aspiration_blue from '../../public/aspiration_blue.png';
 import aspiration_grey from '../../public/aspiration_grey.png';
-import intention_blue from '../../public/intention_blue.png';
-import intention_grey from '../../public/intention_grey.png';
 import major_blue from '../../public/major_blue.png';
 import major_grey from '../../public/major_grey.png';
 import selfAssessmentBlue from '../../public/self-assessment-blue.svg';
@@ -19,21 +18,30 @@ const navItems = [
     label: '推荐',
     blueIcon: selfAssessmentBlue,
     greyIcon: selfAssessmentGrey,
+    isIcon: false, // 标识是否为图标组件
   },
   {
     label: '专业',
     blueIcon: major_blue,
     greyIcon: major_grey,
+    isIcon: false,
   },
-  {
-    label: '意向',
-    blueIcon: intention_blue,
-    greyIcon: intention_grey,
-  },
+  // {
+  //   label: '意向',
+  //   blueIcon: intention_blue,
+  //   greyIcon: intention_grey,
+  // },
   {
     label: '志愿',
     blueIcon: aspiration_blue,
     greyIcon: aspiration_grey,
+    isIcon: false,
+  },
+  {
+    label: '我的',
+    blueIcon: UserCircleOutline, // 使用 Antd Mobile 图标组件 - 选中状态
+    greyIcon: UserOutline, // 未选中状态
+    isIcon: true, // 标识为图标组件
   },
 ];
 
@@ -74,10 +82,10 @@ const BottomNav: React.FC<BottomNavProps> = ({ selectedIndex }) => {
             path = '/major/list';
             break;
           case 2:
-            path = '/intention';
+            path = '/volunteer';
             break;
           case 3:
-            path = '/volunteer';
+            path = '/my';
             break;
         }
 
@@ -96,15 +104,36 @@ const BottomNav: React.FC<BottomNavProps> = ({ selectedIndex }) => {
             }}
           >
             {/* 图标 */}
-            <img
-              src={selectedIndex === idx ? item.blueIcon : item.greyIcon}
-              alt={item.label}
-              style={{
-                width: 32,
-                height: 32,
-                marginBottom: 4,
-              }}
-            />
+            {item.isIcon ? (
+              // 使用 Antd Mobile 图标组件
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  marginBottom: 4,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {selectedIndex === idx ? (
+                  <item.blueIcon style={{ fontSize: 30, color: '#2563eb' }} />
+                ) : (
+                  <item.greyIcon style={{ fontSize: 30, color: '#666' }} />
+                )}
+              </div>
+            ) : (
+              // 使用图片图标
+              <img
+                src={selectedIndex === idx ? item.blueIcon : item.greyIcon}
+                alt={item.label}
+                style={{
+                  width: 32,
+                  height: 32,
+                  marginBottom: 4,
+                }}
+              />
+            )}
             {/* 文字 */}
             <span
               style={{

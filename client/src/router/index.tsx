@@ -8,8 +8,10 @@ import TeenQAAssessment from '../pages/assessment/qa-teen';
 import AdultQAAssessment from '../pages/assessment/qa-adult';
 import ScaleAssessment from '../pages/assessment/scale';
 import AnalysisReport from '../pages/report/analysis_report';
+import ReportPage from '../pages/report';
 import Scale168Assessment from '../pages/assessment/scale-168';
 import HomeDiscover from '../pages/home';
+import MyPage from '../pages/my/index';
 
 const router = createBrowserRouter([
   {
@@ -55,6 +57,10 @@ const router = createBrowserRouter([
   {
     path: '/analysisReport',
     element: <AnalysisReport />
+  },
+  {
+    path: '/my',
+    element: <MyPage />
   }
 ]);
 

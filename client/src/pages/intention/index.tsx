@@ -178,11 +178,54 @@ const EducationalPage: React.FC = () => {
       setLoading(true);
       const response = await getMajorIntentions();
       if (response && response.code === 200) {
-        const dataIntentions = response.data || [];
+        // 获取意向专业数据 - 处理 schoolsWithMajor 数据结构
+        const schoolsWithMajor = (response.data as any).schoolsWithMajor || response.data || [];
+        
+        // 从学校-专业组合中提取专业信息并去重
+        const majorMap = new Map();
+        if (Array.isArray(schoolsWithMajor) && schoolsWithMajor.length > 0 && schoolsWithMajor[0].major) {
+          // 新的数据结构：schoolsWithMajor
+          schoolsWithMajor.forEach((schoolMajor: any) => {
+            if (schoolMajor.major) {
+              const majorCode = schoolMajor.major.code;
+              if (!majorMap.has(majorCode)) {
+                const majorData = {
+                  majorCode: majorCode,
+                  majorName: schoolMajor.major.name || schoolMajor.major.displayName,
+                  score: schoolMajor.major.score || schoolMajor.score,
+                  developmentPotential: schoolMajor.major.developmentPotential || schoolMajor.developmentPotential,
+                  lexueScore: schoolMajor.major.lexueScore || schoolMajor.lexueScore,
+                  shanxueScore: schoolMajor.major.shanxueScore || schoolMajor.shanxueScore,
+                  yanxueDeduction: schoolMajor.major.yanxueDeduction || schoolMajor.yanxueDeduction,
+                  tiaozhanDeduction: schoolMajor.major.tiaozhanDeduction || schoolMajor.tiaozhanDeduction,
+                  opportunityScore: schoolMajor.major.opportunityScore || schoolMajor.opportunityScore,
+                  academicDevelopmentScore: schoolMajor.major.academicDevelopmentScore || schoolMajor.academicDevelopmentScore,
+                  careerDevelopmentScore: schoolMajor.major.careerDevelopmentScore || schoolMajor.careerDevelopmentScore,
+                  industryProspectsScore: schoolMajor.major.industryProspectsScore || schoolMajor.industryProspectsScore,
+                  growthPotentialScore: schoolMajor.major.growthPotentialScore || schoolMajor.growthPotentialScore,
+                  isMatching: schoolMajor.isMatching !== false,
+                  schoolName: schoolMajor.schoolName,
+                  schoolCode: schoolMajor.schoolCode,
+                };
+                majorMap.set(majorCode, majorData);
+              }
+            }
+          });
+        } else {
+          // 旧的数据结构：直接是专业数组
+          schoolsWithMajor.forEach((major: any) => {
+            const majorCode = major.majorCode || major.code;
+            if (majorCode && !majorMap.has(majorCode)) {
+              majorMap.set(majorCode, major);
+            }
+          });
+        }
+        
+        const dataIntentions = Array.from(majorMap.values());
         // 使用排序逻辑对数据进行排序
         const sortedData = sortMajors(dataIntentions);
         setMajorIntentions(sortedData);
-        console.log('收藏专业列表', response.data);
+        console.log('收藏专业列表', dataIntentions);
       }
     } catch (error) {
       console.error('获取收藏专业列表失败:', error);

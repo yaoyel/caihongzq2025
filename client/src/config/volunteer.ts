@@ -145,7 +145,7 @@ interface MajorIntentionItem {
 interface MajorIntentionsResponse {
   code: number;
   message: string;
-  data: MajorIntentionItem[];
+  data: MajorIntentionItem[] | { schoolsWithMajor: any[] };
 }
 
 /**
