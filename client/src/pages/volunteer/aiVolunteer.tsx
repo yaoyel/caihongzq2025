@@ -36,6 +36,7 @@ import {
   getSuitability,
   nominate,
 } from '../../config/volunteer';
+import { getCurrentUser } from '../../config';
 
 // 定义备选志愿项的类型（扩展自 API 返回的数据）
 interface AlternativeItem {
@@ -175,6 +176,16 @@ const AiVolunteerPage: React.FC = () => {
   const hasInitialized = useSelector(selectHasInitialized);
   const currentPageKey = useSelector(selectPageKey);
 
+  //获取用户信息
+  const [userInfo, setUserInfo] = useState<any>(null);
+  useEffect(() => {
+    const getUserInfo = async () => {
+      const user = await getCurrentUser();
+      setUserInfo(user.data);
+    };
+    getUserInfo();
+  }, []);
+
   // 使用滚动管理hook
   const scrollManager = useScrollManager({
     pageKey: currentPageKey,
@@ -189,11 +200,13 @@ const AiVolunteerPage: React.FC = () => {
   // 搜索相关状态
   const [searchText, setSearchText] = useState('');
   const [selectedSchoolNature, setSelectedSchoolNature] = useState<string>('all');
-  const [selectedRankSegment, setSelectedRankSegment] = useState<string>('all');
+  const [selectedRankSegment, setSelectedRankSegment] = useState<string>('');
   const [showSearchTips, setShowSearchTips] = useState(false);
   // 添加缓存状态，避免重复加载相同数据
   const [lastLoadedGroupId, setLastLoadedGroupId] = useState<string | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<'all' | 'smart'>('all'); // 默认选择"全部可选"tab
+  // 添加浮层提示状态
+  const [showFloatingTip, setShowFloatingTip] = useState(true); // 默认显示浮层提示
 
   // 添加精确的滚动位置恢复机制
   const [isRestoringScroll, setIsRestoringScroll] = useState(false);
@@ -561,6 +574,9 @@ const AiVolunteerPage: React.FC = () => {
   // 添加智能推荐数据状态
   const [smartRecommendData, setSmartRecommendData] = useState<AlternativeGroup[]>([]);
   const [smartRecommendLoading, setSmartRecommendLoading] = useState(false);
+
+  // 添加发展潜能对话框状态
+  const [showDevelopmentPotentialDialog, setShowDevelopmentPotentialDialog] = useState(false);
 
   // 辅助函数：处理导航跳转，设置返回标记
   const handleNavigation = useCallback(
@@ -1097,7 +1113,7 @@ const AiVolunteerPage: React.FC = () => {
     try {
       const alternativesResponse = await getMajorAlternatives();
       if (alternativesResponse && alternativesResponse.code === 200) {
-        const alternatives = alternativesResponse.data?.data || [];
+        const alternatives = alternativesResponse.data?.alternatives || [];
         const alternativeMap: { [key: string]: { isAlternative: boolean; id?: string } } = {};
 
         // 构建已备选学校的映射
@@ -1312,16 +1328,47 @@ const AiVolunteerPage: React.FC = () => {
     setCurrentMajorGroupInfo(null);
   };
 
-  const scaleAnswerCount = localStorage.getItem('scaleAnswerCount');
+  // 处理发展潜能点击事件
+  const handleDevelopmentPotentialClick = () => {
+    setShowDevelopmentPotentialDialog(true);
+  };
 
-  if (scaleAnswerCount && Number(scaleAnswerCount) !== 168) {
-    return (
-      <>
-        <StartWelcomePage />
-        <BottomNav selectedIndex={0} />
-      </>
-    );
-  }
+  // 关闭发展潜能对话框
+  const handleCloseDevelopmentPotentialDialog = () => {
+    setShowDevelopmentPotentialDialog(false);
+  };
+  // 监听位次段数据变化，自动选择默认位次段
+  useEffect(() => {
+    // 当位次段数据变化且当前没有选择任何位次段时，自动选择默认的"+30%到+100%位次段"
+    if (
+      selectedRankSegment === '' &&
+      !loading &&
+      (segmentStats.length > 0 || alternatives.length > 0)
+    ) {
+      const options = buildRankSegmentOptions();
+      if (options.length > 0) {
+        // 查找"+30%到+100%位次段"，如果找不到则选择第一个
+        const targetSegment = options.find(
+          (option) =>
+            option.label.includes('+30%到+100%') ||
+            option.label.includes('+30%') ||
+            option.id === '3' // 通常位次段3对应+30%到+100%
+        );
+        const defaultRankSegment = targetSegment ? targetSegment.id : options[0].id;
+        setSelectedRankSegment(defaultRankSegment);
+        // 自动加载默认位次段的数据
+        handleRankSegmentChange(defaultRankSegment);
+      }
+    }
+  }, [
+    segmentStats,
+    smartRecommendData,
+    alternatives,
+    activeTab,
+    loading,
+    buildRankSegmentOptions,
+    handleRankSegmentChange,
+  ]);
 
   // 解析学校特色标签的函数
   const parseSchoolFeatures = (features: string | null | undefined): string[] => {
@@ -1517,6 +1564,17 @@ const AiVolunteerPage: React.FC = () => {
     );
   };
 
+  const scaleAnswerCount = localStorage.getItem('scaleAnswerCount');
+
+  if (scaleAnswerCount && Number(scaleAnswerCount) !== 168) {
+    return (
+      <>
+        <StartWelcomePage />
+        <BottomNav selectedIndex={0} />
+      </>
+    );
+  }
+
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 50 }}>
       <div className="top-container">
@@ -1570,7 +1628,7 @@ const AiVolunteerPage: React.FC = () => {
                   window.location.href = '/selfassessment';
                 }}
               >
-                重启自评
+                {userInfo?.scaleAnswerCount === 168 ? '重启自评' : '开始自评'}
               </button>
             </div>
           </div>
@@ -1656,7 +1714,42 @@ const AiVolunteerPage: React.FC = () => {
               {/* 根据当前tab显示不同的提示 */}
               {activeTab === 'smart' && (
                 <div className="w-full mt-2 text-xs text-blue-600 bg-blue-50 p-2 rounded-lg">
-                  💡 智能推荐模式下，位次段筛选将直接定位到对应分组位置，无需重新加载数据
+                  💡 智能推荐志愿，基于六大条件层层筛选：
+                  <br />
+                  1.更安全：-100%位次差＜所有志愿＜+100%位次差
+                  <br />
+                  2.更长远：上述位次段发展潜能前20%专业
+                  {userInfo?.scaleAnswerCount !== 168 && (
+                    <button
+                      onClick={() => {
+                        handleCloseDevelopmentPotentialDialog();
+                        window.location.href = '/selfassessment';
+                      }}
+                      className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    >
+                      开启自评
+                    </button>
+                  )}
+                  <br />
+                  3.更开心：上述专业开心体验分值＞0
+                  {userInfo?.scaleAnswerCount !== 168 && (
+                    <button
+                      onClick={() => {
+                        handleCloseDevelopmentPotentialDialog();
+                        window.location.href = '/selfassessment';
+                      }}
+                      className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    >
+                      开启自评
+                    </button>
+                  )}{' '}
+                  <br />
+                  4.学风好：遴选其中升学率前50%院校
+                  <br />
+                  5.专业强：再选保研率前50%院校
+                  <br />
+                  6.风险低：已去除含发展潜能后20%专业的选项，大幅降低调剂后厌学风险
+                  <br />
                 </div>
               )}
               {activeTab === 'all' && (
@@ -1846,12 +1939,31 @@ const AiVolunteerPage: React.FC = () => {
                                     {item.schoolNature === 'public' ? '公办' : '民办'}
                                   </span>
 
-                                  {item.developmentPotential > 0 && (
+                                  {item.developmentPotential > 0 ? (
                                     <span
                                       key={item.schoolName + '发展潜能'}
-                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200"
+                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200 cursor-pointer hover:bg-green-200 transition-colors"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleDevelopmentPotentialClick();
+                                      }}
                                     >
                                       发展潜能{item.developmentPotential}分
+                                    </span>
+                                  ) : (
+                                    <span
+                                      key={item.schoolName + '发展潜能'}
+                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200 cursor-pointer hover:bg-green-200 transition-colors"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleDevelopmentPotentialClick();
+                                      }}
+                                    >
+                                      发展潜能 (
+                                      <span className="text-blue-600 underline ml-1">开启自评</span>
+                                      )
                                     </span>
                                   )}
                                   {item.enrollmentRate && item.enrollmentRate > 0 && (
@@ -1940,6 +2052,30 @@ const AiVolunteerPage: React.FC = () => {
           </>
         )}
       </div>
+
+      {/* 可关闭的透明浮层提示 */}
+      {showFloatingTip && (
+        <div className="fixed bottom-20 left-4 right-4 z-40">
+          <div className="bg-black/70 backdrop-blur-sm rounded-2xl p-4 text-white shadow-lg">
+            <div className="flex items-start justify-between">
+              <div className="flex-1 pr-3">
+                <p className="text-sm leading-relaxed">
+                  点击<span className="font-bold text-yellow-300 bg-yellow-300/20 px-1 rounded">备选</span>按钮，该院校专业将进入"志愿"频道，作为"备选志愿"，供进一步筛选确认。
+                </p>
+              </div>
+              <button
+                onClick={() => setShowFloatingTip(false)}
+                className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/20 rounded-full transition-colors"
+                title="关闭提示"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 底部导航 */}
       <BottomNav
@@ -2092,6 +2228,71 @@ const AiVolunteerPage: React.FC = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* 发展潜能说明对话框 */}
+      <Modal
+        title={
+          <div className="text-center">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">💡 发展潜能说明</h3>
+          </div>
+        }
+        open={showDevelopmentPotentialDialog}
+        onCancel={handleCloseDevelopmentPotentialDialog}
+        footer={
+          <div className="flex justify-center space-x-3">
+            {userInfo?.scaleAnswerCount !== 168 && (
+              <button
+                onClick={() => {
+                  handleCloseDevelopmentPotentialDialog();
+                  window.location.href = '/selfassessment';
+                }}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                开启自评
+              </button>
+            )}
+            <button
+              onClick={handleCloseDevelopmentPotentialDialog}
+              className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-400 transition-colors"
+            >
+              关闭
+            </button>
+          </div>
+        }
+        width={600}
+        centered
+        className="rounded-2xl"
+      >
+        <div className="p-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="flex items-start">
+              <span className="text-blue-600 mr-3 mt-1 text-lg">🎯</span>
+              <div>
+                <h4 className="text-lg font-semibold text-blue-900 mb-2">什么是发展潜能？</h4>
+                <p className="text-blue-800 text-sm leading-relaxed">
+                  发展潜能：不同喜欢与天赋在面对各专业微观环境时所具有的热爱能量、面对各专业宏观环境时所拥有的发展机遇，所决定的&ldquo;学习过程愉快、效率高、效果好&rdquo;，及&ldquo;工作干得顺、赚得多、前景光明&rdquo;。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {userInfo?.scaleAnswerCount !== 168 && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-start">
+                <span className="text-yellow-600 mr-3 mt-1 text-lg">⚡</span>
+                <div>
+                  <h4 className="text-lg font-semibold text-yellow-900 mb-2">
+                    开启自评获得精准分析
+                  </h4>
+                  <p className="text-yellow-800 text-sm leading-relaxed">
+                    完成168题自评问卷，系统将为您分析每个专业的发展潜能分数，帮助您做出更明智的志愿选择。
+                  </p>
+                </div>
               </div>
             </div>
           )}
