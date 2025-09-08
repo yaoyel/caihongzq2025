@@ -772,33 +772,42 @@ export class MajorController {
         };
       }); 
 
-        // 原有的逻辑：将所有学校展开并添加专业信息
-        const allSchools: any[] = []; 
+        // 修改后的逻辑：按照专业对学校进行分组，保持专业分组结构
+        const majorsWithSchools: any[] = []; 
         processedMajorDetails.forEach((major, index) => {
           if (major.schools && Array.isArray(major.schools)) { 
-            major.schools.forEach((school: any) => {
-              allSchools.push({
-                ...school,
-                majorCode: major.code,
-                majorName: major.major.name, 
-              });
+            // 对每个专业下的学校进行排序
+            const sortedSchools = major.schools.sort((a: any, b: any) => {
+              const aRankDiff = a.rankDiffPer || 0;
+              const bRankDiff = b.rankDiffPer || 0;
+              return bRankDiff - aRankDiff;
+            });
+
+            // 为每个学校添加专业信息
+            const schoolsWithMajorInfo = sortedSchools.map((school: any) => ({
+              ...school,
+              majorCode: major.code,
+              majorName: major.major.name,
+            }));
+
+            majorsWithSchools.push({
+              majorCode: major.code,
+              majorName: major.major.name,
+              schools: schoolsWithMajorInfo
             });
           }
         });
-
-        // 对所有学校进行统一排序
-        const sortedAllSchools = allSchools.sort((a: any, b: any) => { 
-            
-            // 组内按照 rankDiffPer 进行排序（从高到低）
-            const aRankDiff = a.rankDiffPer || 0;
-            const bRankDiff = b.rankDiffPer || 0;
-            return bRankDiff - aRankDiff;
-       
-        });
  
 
-        // 将专业信息放到学校里面，每个学校单独显示
-        const schoolsWithMajor = sortedAllSchools.map(school => ({
+        // 从专业分组中提取所有学校，将专业信息放到学校里面
+        const allSchools: any[] = [];
+        majorsWithSchools.forEach(major => {
+          major.schools.forEach((school: any) => {
+            allSchools.push(school);
+          });
+        });
+
+        const schoolsWithMajor = allSchools.map(school => ({
           id: school.id,
           schoolName: school.name,
           schoolCode: school.code,
@@ -867,17 +876,17 @@ export class MajorController {
         
         // 按照不同专业评分维度进行分组
         const schoolsByMajorScore = {
-          developmentPotential: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'developmentPotential'),
-          score: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'score'),
-          opportunityScore: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'opportunityScore'),
-          lexueScore: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'lexueScore'),
-          shanxueScore: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'shanxueScore'),
-          yanxueDeduction: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'yanxueDeduction'),
-          tiaozhanDeduction: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'tiaozhanDeduction'),
-          academicDevelopmentScore: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'academicDevelopmentScore'),
-          careerDevelopmentScore: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'careerDevelopmentScore'),
-          industryProspectsScore: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'industryProspectsScore'),
-          growthPotentialScore: this.groupSchoolsByMajorScore(schoolsWithMajor, allMajors, 'growthPotentialScore')
+          developmentPotential: this.groupSchoolsByMajorScore(majorsWithSchools, allMajors, 'developmentPotential'),
+          score: this.groupSchoolsByMajorScore(majorsWithSchools, allMajors, 'score'),
+          opportunityScore: this.groupSchoolsByMajorScore(majorsWithSchools, allMajors, 'opportunityScore'),
+          lexueScore: this.groupSchoolsByMajorScore(majorsWithSchools, allMajors, 'lexueScore'),
+          shanxueScore: this.groupSchoolsByMajorScore(majorsWithSchools, allMajors, 'shanxueScore'),
+          yanxueDeduction: this.groupSchoolsByMajorScore(majorsWithSchools, allMajors, 'yanxueDeduction'),
+          tiaozhanDeduction: this.groupSchoolsByMajorScore(majorsWithSchools, allMajors, 'tiaozhanDeduction'),
+          academicDevelopmentScore: this.groupSchoolsByMajorScore(majorsWithSchools, allMajors, 'academicDevelopmentScore'),
+          careerDevelopmentScore: this.groupSchoolsByMajorScore(majorsWithSchools, allMajors, 'careerDevelopmentScore'),
+          industryProspectsScore: this.groupSchoolsByMajorScore(majorsWithSchools, allMajors, 'industryProspectsScore'),
+          growthPotentialScore: this.groupSchoolsByMajorScore(majorsWithSchools, allMajors, 'growthPotentialScore')
         };
 
         // 构建segmentStats - 包含位次分组和专业评分维度分组
@@ -1548,11 +1557,12 @@ export class MajorController {
 
   /**
    * 根据专业评分维度对学校进行分组
-   * @param schools 学校列表
+   * @param majorsWithSchools 按专业分组的学校数据
+   * @param majors 专业评分数据
    * @param scoreField 评分字段名
    * @returns 分组结果
    */
-  private groupSchoolsByMajorScore(schools: any[], majors: any[], scoreField: string) {
+  private groupSchoolsByMajorScore(majorsWithSchools: any[], majors: any[], scoreField: string) {
     // 按 majors 中的 scoreField 进行排序
     const sortedMajors = [...majors].sort((a, b) => (b[scoreField] || 0) - (a[scoreField] || 0));
     const totalMajors = sortedMajors.length;
@@ -1588,11 +1598,17 @@ export class MajorController {
       majorToGroup.set(major.majorCode, groupId);
     });
     
-    // 为每个学校添加对应的分组信息
-    const schoolsWithMajorInfo = schools.map(school => { 
-      const groupId = majorToGroup.get(school.major.code) || '6';
-      return {
+    // 为每个专业分组下的学校添加对应的分组信息
+    const majorsWithGroupedSchools = majorsWithSchools.map(major => {
+      const groupId = majorToGroup.get(major.majorCode) || '6';
+      const schoolsWithGroupInfo = major.schools.map((school: any) => ({
         ...school,
+        groupId: groupId
+      }));
+      
+      return {
+        ...major,
+        schools: schoolsWithGroupInfo,
         groupId: groupId
       };
     });
@@ -1705,16 +1721,16 @@ export class MajorController {
         employmentRate: segment.employmentRate
       }));
     };
-    // 根据分组ID收集学校 - 前20%、20%-80%、后20%
-    const schoolsByGroup = {
+    // 根据分组ID收集学校和专业 - 前20%、20%-80%、后20%
+    const majorsByGroup = {
       '1': [] as any[],
       '2': [] as any[],
       '3': [] as any[]
     };
     
-    // 将学校分配到对应的分组 - 将原来的6个分组映射到3个分组
-    schoolsWithMajorInfo.forEach(school => {
-      const originalGroupId = school.groupId;
+    // 将专业分配到对应的分组 - 将原来的6个分组映射到3个分组
+    majorsWithGroupedSchools.forEach(major => {
+      const originalGroupId = major.groupId;
       let newGroupId: string;
       
       // 映射规则：1,2,3,4 -> 1 (前20%)，5 -> 2 (20%-80%)，6 -> 3 (后20%)
@@ -1726,27 +1742,39 @@ export class MajorController {
         newGroupId = '3'; // 后20%
       }
       
-      schoolsByGroup[newGroupId as keyof typeof schoolsByGroup].push(school);
+      majorsByGroup[newGroupId as keyof typeof majorsByGroup].push(major);
     });
     
     return [
       {
         groupId: "1",
         description: `${prefix}前20%专业`,
-        count: schoolsByGroup['1'].length,
-        schoolsByRank: processRankSegments(schoolsByGroup['1'])
+        count: majorsByGroup['1'].reduce((sum, major) => sum + major.schools.length, 0),
+        majors: majorsByGroup['1'].map(major => ({
+          majorCode: major.majorCode,
+          majorName: major.majorName,
+          schoolsByRank: processRankSegments(major.schools)
+        }))
       },
       {
-        groupId: "2",
+        groupId: "2", 
         description: `${prefix}20%-80%专业`,
-        count: schoolsByGroup['2'].length,
-        schoolsByRank: processRankSegments(schoolsByGroup['2'])
+        count: majorsByGroup['2'].reduce((sum, major) => sum + major.schools.length, 0),
+        majors: majorsByGroup['2'].map(major => ({
+          majorCode: major.majorCode,
+          majorName: major.majorName,
+          schoolsByRank: processRankSegments(major.schools)
+        }))
       },
       {
         groupId: "3",
         description: `${prefix}后20%专业`,
-        count: schoolsByGroup['3'].length,
-        schoolsByRank: processRankSegments(schoolsByGroup['3'])
+        count: majorsByGroup['3'].reduce((sum, major) => sum + major.schools.length, 0),
+        majors: majorsByGroup['3'].map(major => ({
+          majorCode: major.majorCode,
+          majorName: major.majorName,
+          schoolsByRank: processRankSegments(major.schools)
+        }))
       }
     ];
   }
