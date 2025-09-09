@@ -1263,12 +1263,20 @@ export class MajorController {
         };
       });
 
-      // 转换为视图模型，并添加分数信息
-      const alternativeViewModels = alternatives.map(alternative => ({
-        ...toAlternativeViewModel(alternative),
-        score: majorScores[alternative.majorCode] || 0,
-        developmentPotential: majorScoreDetails[alternative.majorCode]?.developmentPotential || 0 
-      }));
+      // 转换为视图模型，并添加分数信息，同时根据rank重新计算group值
+      const alternativeViewModels = alternatives.map(alternative => {
+        const viewModel = toAlternativeViewModel(alternative);
+        
+        // 根据rank重新计算group值
+        const recalculatedGroup = this.calculateGroupByRank(rank, alternative.historyScore);
+        
+        return {
+          ...viewModel,
+          group: recalculatedGroup,
+          score: majorScores[alternative.majorCode] || 0,
+          developmentPotential: majorScoreDetails[alternative.majorCode]?.developmentPotential || 0 
+        };
+      });
 
       // 获取所有专业的发展潜力排名信息（只调用一次）
       const allDevelopmentRankings = await this.majorScoreService.getTopDevelopmentPotentialMajors(
@@ -1749,7 +1757,7 @@ export class MajorController {
       {
         groupId: "1",
         description: `${prefix}前20%专业`,
-        count: majorsByGroup['1'].reduce((sum, major) => sum + major.schools.length, 0),
+        count: majorsByGroup['1'].length,
         majors: majorsByGroup['1'].map(major => ({
           majorCode: major.majorCode,
           majorName: major.majorName,
@@ -1759,7 +1767,7 @@ export class MajorController {
       {
         groupId: "2", 
         description: `${prefix}20%-80%专业`,
-        count: majorsByGroup['2'].reduce((sum, major) => sum + major.schools.length, 0),
+        count: majorsByGroup['2'].length,
         majors: majorsByGroup['2'].map(major => ({
           majorCode: major.majorCode,
           majorName: major.majorName,
@@ -1769,7 +1777,7 @@ export class MajorController {
       {
         groupId: "3",
         description: `${prefix}后20%专业`,
-        count: majorsByGroup['3'].reduce((sum, major) => sum + major.schools.length, 0),
+        count: majorsByGroup['3'].length,
         majors: majorsByGroup['3'].map(major => ({
           majorCode: major.majorCode,
           majorName: major.majorName,
@@ -2048,6 +2056,46 @@ export class MajorController {
     });
     
     return result;
+  }
+
+  /**
+   * 根据用户位次和历史分数重新计算group值
+   * @param userRank 用户位次
+   * @param historyScore 历史分数对象
+   * @returns 重新计算后的group值
+   */
+  private calculateGroupByRank(userRank: number, historyScore: any): number {
+    if (!userRank || userRank <= 0 || !historyScore) {
+      return 6; // 默认组（无位次或历史分数）
+    }
+
+    // 获取2024年的位次数据
+    const rank2024 = extractRank(historyScore);
+    
+    if (!rank2024 || rank2024 <= 0) {
+      return 6; // 默认组（无2024年位次数据）
+    }
+
+    // 计算位次差值（用户位次 - 2024年位次）
+    const rankDiff = userRank - rank2024;
+    
+    // 计算位次差值百分比（差值 / 2024年位次）
+    const rankDiffPer = rank2024 > 0 ? (rankDiff / rank2024) * 100 : 0;
+
+    // 根据位次差异确定分组
+    if (rankDiffPer >= 30 && rankDiffPer <= 100) {
+      return 1; // +30%到+100%位次段 
+    } else if (rankDiffPer >= 5 && rankDiffPer < 30) {
+      return 2; // +5%到+30%位次段
+    } else if (rankDiffPer >= -10 && rankDiffPer < 5) {
+      return 3; // （-10%）到+5%位次段
+    } else if (rankDiffPer >= -30 && rankDiffPer < -10) {
+      return 4; // （-30%）到（-10%）位次段
+    } else if (rankDiffPer >= -100 && rankDiffPer < -30) {
+      return 5; // （-100%）到（-30%）位次段
+    } else {
+      return 6; // 其他位次段
+    }
   }
 
 }

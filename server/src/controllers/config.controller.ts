@@ -7,7 +7,8 @@ import { UserService } from '../services/user.service';
 import { MajorScoreService } from '../services/major.service'; 
 import { PROVINCE_VOLUNTEER_COUNT } from '../config/province';
 import { extractRank } from '../utils/helper';
- 
+import { User } from '../entities/User';
+import { AppDataSource } from '../data-source';
 /**
  * 带排名信息的学校接口
  */
@@ -846,8 +847,18 @@ export class ConfigController {
     @Ctx() ctx: { state: { user?: { userId: number } } },
     @QueryParam('group') groupSelected?: string
   ) { 
-    try {
-      const user = await this.userService.findOne(ctx.state.user!.userId);
+    try { 
+      const userRepository = AppDataSource.getRepository(User);
+
+      const user = await userRepository.findOne({
+        where: { id: parseInt(ctx.state.user!.userId.toString()) },
+        relations: ['orders']
+      });
+
+      if (!user) {
+        throw new Error('用户不存在');
+      }
+
       const year = process.env.YEAR || '2025';
       const matchSubjects = await RedisModule.getMatchingPatterns("major_scores",user!.preferredSubjects || '综合', user!.secondarySubjects ? user!.secondarySubjects.split(',') : [] );
       
@@ -963,6 +974,20 @@ export class ConfigController {
         });
       });
 
+      // 判断用户是否已经购买了产品
+      const hasPurchased = user.orders && user.orders.some(order => 
+        order.trade_state === 'SUCCESS' || order.trade_state === 'COMPLETED'
+      );
+
+      // 如果用户未购买产品，每个位次段只返回5个数据
+      if (!hasPurchased) {
+        Object.keys(rankSegments).forEach(key => {
+          const segment = rankSegments[key as keyof typeof rankSegments];
+          segment.data = segment.data.slice(0, 5);
+          segment.count = segment.data.length;
+        });
+      }
+
       // 构建segmentStats数组格式
       const segmentStats = [
         { groupId: '1', name: '+30%到+100%位次段', count: rankSegments['1'].count },
@@ -1014,7 +1039,9 @@ export class ConfigController {
           groupId: targetGroupId,
           count: 0,
           data: []
-        }
+        },
+        // 标记用户是否已付费
+        hasPurchased
       };
      
     } catch (error: any) {
