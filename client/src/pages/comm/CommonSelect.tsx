@@ -58,6 +58,13 @@ const CommonSelect: React.FC<CommonSelectProps> = ({
   // 当前选中的值
   const [selectedValue, setSelectedValue] = useState<string>(defaultValue || '');
 
+  // 响应 defaultValue 变化
+  useEffect(() => {
+    if (defaultValue !== undefined) {
+      setSelectedValue(defaultValue);
+    }
+  }, [defaultValue]);
+
   // 初始化默认值
   useEffect(() => {
     if (defaultValue && data.length > 0) {

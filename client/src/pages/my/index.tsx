@@ -99,7 +99,7 @@ const MyPage: React.FC = () => {
                 {userInfo?.scaleAnswerCount === 168 ? '重新自评' : '开始自评'}
               </Title>
               <Text className="card-description">
-                自评后，我们将为您智能推荐最适合的专业和院校，确保学习过程愉悦高效、职业发展前景广阔，具体包括：匹配您成绩位次的可选专业范围、排除发展潜能较低的专业，并保证所有推荐专业的学习体验均为积极正向。
+                完成168题自评问卷，系统将为您分析每个专业的发展潜能分数，帮助您做出更明智的志愿选择。
               </Text>
             </div>
             <RightOutlined className="card-arrow" />
