@@ -1,7 +1,8 @@
 // @ts-nocheck
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Modal, Button, Checkbox } from 'antd';
+import { Modal, Checkbox, Input } from 'antd';
+import { SearchOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
 import BottomNav from '../comm/bottom';
 import StartWelcomePage from '../selfassessment/startWelcome';
@@ -28,8 +29,8 @@ interface AlternativeItem {
   selected?: boolean; // 是否已入选
   historyScore?: any[]; // 历年分数
   group?: number; // 分组
-  enrollmentRate?: number; // 升学率
-  employmentRate?: number; // 就业率
+  enrollmentRate?: number; // 按专业
+  employmentRate?: number; // 按位次差(低→高)
   Rankdiff?: number; // 位次差
   RankdiffPer?: number; // 位次差百分比
   // 学校标签相关属性
@@ -119,37 +120,23 @@ interface MajorGroupedAlternatives {
 const EducationalPage: React.FC = () => {
   const navigate = useNavigate();
   const [alternatives, setAlternatives] = useState<GroupedAlternatives[]>([]);
+  // 添加原始数据状态，用于保存初始的备选志愿数据
+  const [originalAlternatives, setOriginalAlternatives] = useState<GroupedAlternatives[]>([]);
   const [alternativesCount, setAlternativesCount] = useState(0);
   const [selectedCount, setSelectedCount] = useState(0); // 添加入选志愿数量
   const [loading, setLoading] = useState(true); // 添加加载状态
 
   const [loadingStatus, setLoadingStatus] = useState<{ [key: string]: boolean }>({}); // 添加按钮加载状态
 
-  // 弹框相关状态
-  const [isTipModalVisible, setIsTipModalVisible] = useState(false);
-  const [userChoices, setUserChoices] = useState({
-    choice1: false,
-    choice2: false,
-  });
+  // 透明浮层提示状态
 
   // 主Tab状态 - 控制志愿显示方式
   const [activeTab, setActiveTab] = useState<'alternatives' | 'selected'>('alternatives');
 
   // 排序Tab状态 - 控制排序方式
-  const [sortTab, setSortTab] = useState<
-    'group' | 'enrollment' | 'employment' | 'willingness' | 'major' | 'rankDiff'
-  >('group');
+  const [sortTab, setSortTab] = useState<'willingness' | 'major' | 'rankDiff'>('willingness');
 
-  // 添加取消入选确认对话框状态
-  const [showUnselectDialog, setShowUnselectDialog] = useState(false);
-  const [itemToUnselect, setItemToUnselect] = useState<AlternativeItem | null>(null);
-
-  // 分别为备选志愿和入选志愿管理展开状态
-  const [expandedAlternatives, setExpandedAlternatives] = useState<{ [key: number]: boolean }>({});
-  const [expandedSelected, setExpandedSelected] = useState<{ [key: number]: boolean }>({});
-
-  // 添加专业分组的展开状态管理 - 默认全部展开
-  const [expandedMajorGroups, setExpandedMajorGroups] = useState<{ [key: string]: boolean }>({});
+  const [showFloatingTip, setShowFloatingTip] = useState(true); // 默认显示浮层提示
 
   // 添加入选确认对话框状态
   const [showSelectDialog, setShowSelectDialog] = useState(false);
@@ -181,7 +168,7 @@ const EducationalPage: React.FC = () => {
   } | null>(null);
 
   // 获取志愿数量配置
-  const [volunteerCount, setVolunteerCount] = useState('6'); // 默认6个志愿
+  const [volunteerCount, setVolunteerCount] = useState(6); // 默认6个志愿
 
   // 添加预警弹窗相关状态
   const [showWarningModal, setShowWarningModal] = useState(false);
@@ -202,14 +189,36 @@ const EducationalPage: React.FC = () => {
   // 添加新的分组数据状态
   // 发展潜能选择相关状态
   const [selectedDevelopmentGroup, setSelectedDevelopmentGroup] = useState<string>();
+  const [selectedRankGroup, setSelectedRankGroup] = useState<string>();
   const [developmentOptions, setDevelopmentOptions] = useState<SelectOptionData[]>([]);
   const [groupedByDevelopmentPotential, setGroupedByDevelopmentPotential] = useState<any[]>([]);
   const [groupedByRankDiffPer, setGroupedByRankDiffPer] = useState<any[]>([]);
   const [topDevelopmentMajors, setTopDevelopmentMajors] = useState<any[]>([]);
 
-  // 位次段选择相关状态
-  const [selectedRankGroup, setSelectedRankGroup] = useState<string>();
+  // 按API顺序选择相关状态
   const [rankOptions, setRankOptions] = useState<SelectOptionData[]>([]);
+  const [rankFilterOptions, setRankFilterOptions] = useState<SelectOptionData[]>([]);
+  // 学校性质过滤相关状态
+  const [selectedSchoolNature, setSelectedSchoolNature] = useState<string>('all');
+  // 升学率过滤相关状态
+  const [selectedEnrollmentRate, setSelectedEnrollmentRate] = useState<string>('all');
+  // 就业率过滤相关状态
+  const [selectedEmploymentRate, setSelectedEmploymentRate] = useState<string>('all');
+  // 分别为备选志愿和入选志愿管理展开状态
+  const [expandedAlternatives, setExpandedAlternatives] = useState<{ [key: number]: boolean }>({});
+  const [expandedSelected, setExpandedSelected] = useState<{ [key: number]: boolean }>({});
+
+  // 添加专业分组的展开状态管理 - 默认全部展开
+  const [expandedMajorGroups, setExpandedMajorGroups] = useState<{ [key: string]: boolean }>({});
+
+  // 添加取消入选确认对话框状态
+  const [showUnselectDialog, setShowUnselectDialog] = useState(false);
+  const [itemToUnselect, setItemToUnselect] = useState<AlternativeItem | null>(null);
+
+  // 检查是否所有确认项都已选中
+  // 添加搜索相关状态
+  const [searchText, setSearchText] = useState('');
+  const [showSearchTips, setShowSearchTips] = useState(false);
 
   // 处理入选确认选项变化
   const handleSelectConfirmationChange = (
@@ -221,8 +230,6 @@ const EducationalPage: React.FC = () => {
       [key]: checked,
     }));
   };
-
-  // 检查是否所有确认项都已选中
   const isAllConfirmed = Object.values(selectConfirmations).every((value) => value);
 
   // 处理入选确认
@@ -360,19 +367,11 @@ const EducationalPage: React.FC = () => {
   };
 
   const groupNames = [
-    '其他位次段院校',
-    '（+5%）到（+30%）位次段院校',
-    '（-10%）到+（+5%）位次段院校',
-    '（-30%） 到 （-10%）位次段院校',
+    '其他按API顺序院校',
+    '（+5%）到（+30%）按API顺序院校',
+    '（-10%）到+（+5%）按API顺序院校',
+    '（-30%） 到 （-10%）按API顺序院校',
   ];
-
-  // 处理用户选择变化
-  const handleChoiceChange = useCallback((choice: 'choice1' | 'choice2', checked: boolean) => {
-    setUserChoices((prev) => ({
-      ...prev,
-      [choice]: checked,
-    }));
-  }, []);
 
   // 处理预警弹窗选择变化
   const handleWarningChoiceChange = useCallback((checked: boolean) => {
@@ -424,28 +423,6 @@ const EducationalPage: React.FC = () => {
     setShowTopDevelopmentWarningModal(false);
   }, []);
 
-  // 处理提示弹窗确认
-  const handleTipModalConfirm = useCallback(() => {
-    // 根据用户选择设置不同的存储策略
-    if (userChoices.choice1) {
-      // 今天不显示
-      const today = new Date().toDateString();
-      localStorage.setItem('volunteer-tip-last-shown', today);
-    }
-
-    if (userChoices.choice2) {
-      // 以后都不显示
-      localStorage.setItem('volunteer-tip-never-show', 'true');
-    }
-
-    setIsTipModalVisible(false);
-  }, [userChoices]);
-
-  // 处理提示弹窗关闭
-  const handleTipModalClose = useCallback(() => {
-    setIsTipModalVisible(false);
-  }, []);
-
   // 按学校分组数据
   const groupBySchool = (items: AlternativeItem[]): SchoolGroup[] => {
     const schoolMap = new Map<string, SchoolGroup>();
@@ -487,12 +464,12 @@ const EducationalPage: React.FC = () => {
     });
   };
 
-  // 按专业分组并按位次段分组学校
+  // 按专业分组并按按API顺序分组学校
   const groupByMajorAndRank = (items: AlternativeItem[]): MajorGroup[] => {
     const majorGroups = groupByMajor(items);
 
     return majorGroups.map((majorGroup) => {
-      // 按位次段分组学校
+      // 按按API顺序分组学校
       const rankGroups = new Map<number, AlternativeItem[]>();
 
       majorGroup.result.forEach((item) => {
@@ -503,7 +480,7 @@ const EducationalPage: React.FC = () => {
         rankGroups.get(group)!.push(item);
       });
 
-      // 按指定顺序[2,3,1,0]组织位次段，每个位次段包含该位次段下的所有学校
+      // 按指定顺序[2,3,1,0]组织按API顺序，每个按API顺序包含该按API顺序下的所有学校
       const orderedRankGroups = [2, 3, 1, 0]
         .map((groupIndex) => {
           const items = rankGroups.get(groupIndex) || [];
@@ -517,7 +494,7 @@ const EducationalPage: React.FC = () => {
             schoolMap.get(item.schoolCode)!.push(item);
           });
 
-          // 创建学校组，每个学校组包含该位次段下的所有专业
+          // 创建学校组，每个学校组包含该按API顺序下的所有专业
           const schools = Array.from(schoolMap.entries()).map(([schoolCode, schoolItems]) => {
             const firstItem = schoolItems[0];
             return {
@@ -534,7 +511,7 @@ const EducationalPage: React.FC = () => {
             schools,
           };
         })
-        .filter((rankGroup) => rankGroup.schools.length > 0); // 只保留有学校的位次段
+        .filter((rankGroup) => rankGroup.schools.length > 0); // 只保留有学校的按API顺序
 
       return {
         majorCode: majorGroup.majorCode,
@@ -569,19 +546,17 @@ const EducationalPage: React.FC = () => {
     if (tab === 'selected') {
       setSortTab('willingness'); // 入选志愿默认按自主意愿
     } else {
-      // 如果当前是"按自主意愿"排序，切换到"位次段"排序
+      // 如果当前是"按自主意愿"排序，切换到"按API顺序"排序
       if (sortTab === 'willingness') {
-        setSortTab('group');
+        setSortTab('willingness');
       } else {
-        setSortTab('group'); // 备选志愿默认按位次段
+        setSortTab('willingness'); // 备选志愿默认按API顺序
       }
     }
   };
 
   // 处理排序Tab切换
-  const handleSortTabChange = (
-    tab: 'group' | 'enrollment' | 'employment' | 'willingness' | 'major' | 'rankDiff'
-  ) => {
+  const handleSortTabChange = (tab: 'willingness' | 'major' | 'rankDiff') => {
     setSortTab(tab);
     // 如果切换到非自主意愿排序，重置手动排序模式
     if (tab !== 'willingness') {
@@ -598,85 +573,66 @@ const EducationalPage: React.FC = () => {
       }
 
       switch (sortTab) {
-        case 'enrollment': {
-          // 按升学率倒序排列，不分组
-          const allEnrollmentData = data.flatMap((group) => group.result);
-          const sortedEnrollmentData = allEnrollmentData.sort(
-            (a, b) => (b.enrollmentRate || 0) - (a.enrollmentRate || 0)
-          );
-          return [{ group: -1, result: sortedEnrollmentData }];
-        }
-        case 'employment': {
-          // 按就业率倒序排列，不分组
-          const allEmploymentData = data.flatMap((group) => group.result);
-          const sortedEmploymentData = allEmploymentData.sort(
-            (a, b) => (b.employmentRate || 0) - (a.employmentRate || 0)
-          );
-          return [{ group: -1, result: sortedEmploymentData }];
-        }
         case 'willingness': {
-          // 按自主意愿排序 - 直接显示API返回的数据，不进行排序
           if (activeTab === 'selected') {
-            const allWillingnessData = data.flatMap((group) => group.result);
-            // 按position字段排序，保持API返回的原始顺序
-            const sortedWillingnessData = allWillingnessData.sort(
-              (a, b) => (a.position || 0) - (b.position || 0)
-            );
-            return [{ group: -1, result: sortedWillingnessData }];
+            // 入选志愿按自主意愿排序
+            return data.sort((a, b) => {
+              const aScore = a.result[0]?.score || 0;
+              const bScore = b.result[0]?.score || 0;
+              return bScore - aScore;
+            });
           } else {
-            // 在备选志愿页面，如果意外使用了willingness排序，回退到group排序
-            return data;
+            return data; // 在备选志愿页面，直接返回API数据，保持原始顺序
           }
         }
         case 'major': {
-          // 按专业分组，每个专业下按位次段显示学校
-          const allData = data.flatMap((group) => group.result);
-          const majorGroups = groupByMajorAndRank(allData);
-
-          // 按发展潜能排序专业组
-          const sortedMajorGroups = majorGroups.sort((a, b) => {
-            const aMaxPotential = Math.max(
-              ...(a.rankGroups?.flatMap((rankGroup) =>
-                rankGroup.schools.flatMap((school) =>
-                  school.majors.map((major) => major.developmentPotential || 0)
-                )
-              ) || [0])
-            );
-            const bMaxPotential = Math.max(
-              ...(b.rankGroups?.flatMap((rankGroup) =>
-                rankGroup.schools.flatMap((school) =>
-                  school.majors.map((major) => major.developmentPotential || 0)
-                )
-              ) || [0])
-            );
-            return bMaxPotential - aMaxPotential;
-          });
-
-          // 转换为原有的GroupedAlternatives格式，但使用特殊的group标识
-          return sortedMajorGroups.map((majorGroup, index) => ({
-            group: -1000 - index, // 使用负数避免与位次段分组冲突
+          // 按专业分组
+          const majorGroups = groupByMajorAndRank(data.flatMap((group) => group.result));
+          return majorGroups.map((majorGroup) => ({
+            group: -1000 - parseInt(majorGroup.majorCode),
             result:
               majorGroup.rankGroups?.flatMap((rankGroup) =>
                 rankGroup.schools.flatMap((school) => school.majors)
               ) || [],
-            majorGroup: majorGroup, // 添加专业组信息
+            majorGroup,
           }));
         }
         case 'rankDiff': {
-          // 按位次差从低到高排序
-          const allRankDiffData = data.flatMap((group) => group.result);
-          const sortedRankDiffData = allRankDiffData.sort(
-            (a, b) => (a.Rankdiff || 0) - (b.Rankdiff || 0)
-          );
-          return [{ group: -1, result: sortedRankDiffData }];
+          // 按位次差排序
+          return data.sort((a, b) => {
+            const aRankDiff = a.result[0]?.Rankdiff || 0;
+            const bRankDiff = b.result[0]?.Rankdiff || 0;
+            return aRankDiff - bRankDiff;
+          });
         }
-        case 'group':
-        default:
-          // 按位次段分组排列（保持原有逻辑）
+        default: {
+          // 默认 按API返回顺序显示
           return data;
+        }
       }
     },
     [sortTab, activeTab, isManualSortMode, manualSortData]
+  );
+  // 添加搜索过滤逻辑
+  const filterDataBySearch = useCallback(
+    (data: AlternativeItem[]) => {
+      const filteredData = data.filter((item) => {
+        // 搜索文本过滤
+        const searchLower = searchText.toLowerCase();
+        const matchesSearch =
+          searchText === '' ||
+          item.schoolName.toLowerCase().includes(searchLower) ||
+          item.majorName.toLowerCase().includes(searchLower) ||
+          item.majorCode.toLowerCase().includes(searchLower) ||
+          getCityDisplayInfo(item).toLowerCase().includes(searchLower) ||
+          (item.provinceName && item.provinceName.toLowerCase().includes(searchLower));
+
+        return matchesSearch;
+      });
+
+      return filteredData;
+    },
+    [searchText]
   );
 
   // 根据当前Tab过滤数据
@@ -690,13 +646,34 @@ const EducationalPage: React.FC = () => {
         }))
         .filter((group) => group.result.length > 0);
 
-      return getSortedData(selectedData);
+      const sortedData = getSortedData(selectedData) || [];
+
+      // 应用搜索过滤
+      return sortedData
+        .map((group) => ({
+          ...group,
+          result: filterDataBySearch(group.result),
+        }))
+        .filter((group) => group.result.length > 0);
     } else {
       // 备选志愿页面显示所有备选志愿
-      return getSortedData(alternatives);
-    }
-  }, [alternatives, activeTab, getSortedData]);
+      const sortedData = getSortedData(alternatives) || [];
 
+      // 应用搜索过滤
+      return sortedData
+        .map((group) => ({
+          ...group,
+          result: filterDataBySearch(group.result),
+        }))
+        .filter((group) => group.result.length > 0);
+    }
+  }, [alternatives, activeTab, getSortedData, filterDataBySearch]);
+
+  // 确保getFilteredData总是返回一个数组
+  const safeGetFilteredData = useCallback(() => {
+    const result = getFilteredData();
+    return result || [];
+  }, [getFilteredData]);
   // 处理手动排序相关函数
   const handleMoveUp = async (item: AlternativeItem) => {
     // 只在入选志愿页面才允许手动排序
@@ -717,7 +694,7 @@ const EducationalPage: React.FC = () => {
         if (isManualSortMode && manualSortData.length > 0) {
           currentData = [...manualSortData];
         } else {
-          currentData = getFilteredData().flatMap((group) => group.result);
+          currentData = safeGetFilteredData().flatMap((group) => group.result);
         }
 
         const currentIndex = currentData.findIndex((i) => i.id === item.id);
@@ -770,7 +747,7 @@ const EducationalPage: React.FC = () => {
         if (isManualSortMode && manualSortData.length > 0) {
           currentData = [...manualSortData];
         } else {
-          currentData = getFilteredData().flatMap((group) => group.result);
+          currentData = safeGetFilteredData().flatMap((group) => group.result);
         }
 
         const currentIndex = currentData.findIndex((i) => i.id === item.id);
@@ -820,8 +797,8 @@ const EducationalPage: React.FC = () => {
           (group: any) => group.groupId === groupId
         );
         if (selectedGroup && selectedGroup.majorCodes) {
-          // 过滤备选志愿数据
-          const filteredAlternatives = alternatives
+          // 基于原始数据进行过滤
+          const filteredAlternatives = originalAlternatives
             .map((group) => ({
               ...group,
               result: group.result.filter((item) =>
@@ -835,14 +812,83 @@ const EducationalPage: React.FC = () => {
         }
       }
     },
-    [alternatives, groupedByDevelopmentPotential]
+    [originalAlternatives, groupedByDevelopmentPotential] // 依赖改为 originalAlternatives
   );
 
   // 清除发展潜能选择
   const handleDevelopmentClear = useCallback(() => {
-    setSelectedDevelopmentGroup(); // 重新加载原始数据
-    window.location.reload();
-  }, []);
+    setSelectedDevelopmentGroup(undefined); // 重新加载原始数据
+    // 恢复原始数据，而不是重新加载页面
+    setAlternatives(originalAlternatives);
+  }, [originalAlternatives]);
+
+  // 处理位次段选择
+  const handleRankSelect = useCallback(
+    (groupId: string) => {
+      setSelectedRankGroup(groupId);
+
+      // 根据选中的分组过滤数据
+      if (groupedByRankDiffPer && groupedByRankDiffPer.length > 0) {
+        const selectedGroup = groupedByRankDiffPer.find((group: any) => group.groupId === groupId);
+        console.log('selectedGroup', selectedGroup);
+        console.log('groupedByRankDiffPer', groupedByRankDiffPer);
+        if (selectedGroup && selectedGroup.alternativeIds) {
+          // 基于原始数据进行过滤，而不是当前的 alternatives
+          const filteredAlternatives = originalAlternatives
+            .map((group) => ({
+              ...group,
+              result: group.result.filter((item) =>
+                selectedGroup.alternativeIds.includes(parseInt(item.id))
+              ),
+            }))
+            .filter((group) => group.result.length > 0);
+          console.log('filteredAlternatives', filteredAlternatives);
+          console.log('original alternatives', originalAlternatives);
+          setAlternatives(filteredAlternatives);
+          return;
+        }
+      }
+    },
+    [originalAlternatives, groupedByRankDiffPer] // 依赖改为 originalAlternatives
+  );
+
+  // 清除位次段选择
+  const handleRankClear = useCallback(() => {
+    setSelectedRankGroup(undefined);
+    // 恢复原始数据，而不是重新加载页面
+    setAlternatives(originalAlternatives);
+  }, [originalAlternatives]);
+
+  // 处理学校性质选择
+  const handleSchoolNatureSelect = useCallback(
+    (nature: string) => {
+      setSelectedSchoolNature(nature);
+
+      // 根据选中的学校性质过滤数据
+      if (nature === 'all') {
+        // 显示所有数据
+        setAlternatives(originalAlternatives);
+      } else {
+        // 基于原始数据进行过滤
+        const filteredAlternatives = originalAlternatives
+          .map((group) => ({
+            ...group,
+            result: group.result.filter((item) => {
+              if (nature === 'public') {
+                return item.schoolNature === 'public';
+              } else if (nature === 'private') {
+                return item.schoolNature === 'private';
+              }
+              return true;
+            }),
+          }))
+          .filter((group) => group.result.length > 0);
+
+        setAlternatives(filteredAlternatives);
+      }
+    },
+    [originalAlternatives]
+  );
   useEffect(() => {
     // 页面初始化逻辑
     const initializePage = async () => {
@@ -859,7 +905,7 @@ const EducationalPage: React.FC = () => {
           // 从API响应中获取志愿数量配置
           const apiVolunteerCount = alternativesResponse.data.volunteerCount;
           if (apiVolunteerCount !== undefined) {
-            setVolunteerCount(apiVolunteerCount.toString());
+            setVolunteerCount(apiVolunteerCount);
           }
 
           // 从API响应中获取高发展潜能专业数量
@@ -966,6 +1012,7 @@ const EducationalPage: React.FC = () => {
           setSelectedCount(selectedCount);
 
           setAlternatives(sortedAlternativesGroup);
+          setOriginalAlternatives(sortedAlternativesGroup); // 保存原始数据
         }
         // 初始化发展潜能选择器选项
         if (alternativesResponse.data.groupedByDevelopmentPotential) {
@@ -979,7 +1026,7 @@ const EducationalPage: React.FC = () => {
           setDevelopmentOptions(optionsData);
         }
 
-        // 初始化位次段选择器选项
+        // 初始化按API顺序选择器选项
         if (alternativesResponse.data.groupedByRankDiffPer) {
           const rankOptionsData = alternativesResponse.data.groupedByRankDiffPer.map(
             (group: any) => ({
@@ -989,6 +1036,7 @@ const EducationalPage: React.FC = () => {
             })
           );
           setRankOptions(rankOptionsData);
+          setRankFilterOptions(rankOptionsData);
         }
       } catch (error) {
         console.error('页面初始化失败:', error);
@@ -998,29 +1046,12 @@ const EducationalPage: React.FC = () => {
     };
 
     initializePage();
-
-    // 检查是否需要显示提示框
-    const neverShow = localStorage.getItem('volunteer-tip-never-show');
-    if (!neverShow) {
-      // 检查今天是否已经显示过
-      const today = new Date().toDateString();
-      const lastShownDate = localStorage.getItem('volunteer-tip-last-shown');
-      if (lastShownDate !== today) {
-        // 显示弹窗
-        const timer = setTimeout(() => {
-          setIsTipModalVisible(true);
-        }, 1000);
-
-        return () => clearTimeout(timer);
-      }
-    }
   }, []);
-
   // 检查预警条件
   useEffect(() => {
-    // 只在入选志愿页面且按自主意愿排序时检查
-    if (activeTab === 'selected' && sortTab === 'willingness') {
-      const requiredCount = parseInt(volunteerCount);
+    // 只在备选志愿页面且按按API顺序排序时检查
+    if (activeTab === 'alternatives' && sortTab === 'willingness') {
+      const requiredCount = volunteerCount;
       const currentCount = selectedCount;
 
       if (currentCount < requiredCount) {
@@ -1042,8 +1073,8 @@ const EducationalPage: React.FC = () => {
 
   // 检查高发展潜能预警条件
   useEffect(() => {
-    // 只在入选志愿页面且按专业排序时检查
-    if (activeTab === 'selected' && sortTab === 'major') {
+    // 只在备选志愿页面且按专业排序时检查
+    if (activeTab === 'alternatives' && sortTab === 'major') {
       // 从localStorage获取API返回的高发展潜能专业数量
       const apiTopDevelopmentCount = parseInt(localStorage.getItem('topDevelopmentCount') || '0');
 
@@ -1069,6 +1100,60 @@ const EducationalPage: React.FC = () => {
     <div className="w-full max-w-xl bg-white rounded-2xl shadow p-6 text-center">
       <div className="mb-4">
         <div className="text-gray-400 text-6xl mb-4">🎯</div>
+
+        {/* 升学率过滤 */}
+        <div className="w-full max-w-xl p-1">
+          <div className="flex items-center space-x-4">
+            <span className="text-sm font-medium text-gray-700 whitespace-nowrap">升学率：</span>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => handleEnrollmentRateSelect('all')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedEnrollmentRate === 'all' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                全部
+              </button>
+              <button
+                onClick={() => handleEnrollmentRateSelect('top50')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedEnrollmentRate === 'top50' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                前50%
+              </button>
+              <button
+                onClick={() => handleEnrollmentRateSelect('bottom50')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedEnrollmentRate === 'bottom50' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                后50%
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 就业率过滤 */}
+        <div className="w-full max-w-xl p-1">
+          <div className="flex items-center space-x-4">
+            <span className="text-sm font-medium text-gray-700 whitespace-nowrap">就业率：</span>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => handleEmploymentRateSelect('all')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedEmploymentRate === 'all' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                全部
+              </button>
+              <button
+                onClick={() => handleEmploymentRateSelect('top50')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedEmploymentRate === 'top50' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                前50%
+              </button>
+              <button
+                onClick={() => handleEmploymentRateSelect('bottom50')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedEmploymentRate === 'bottom50' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                后50%
+              </button>
+            </div>
+          </div>
+        </div>
         <h3 className="text-lg font-bold text-gray-900 mb-2">暂无志愿</h3>
         <p className="text-gray-500 text-sm mb-6">
           您还没有任何志愿，快去意向页面选择您感兴趣的院校和专业吧！
@@ -1209,7 +1294,7 @@ const EducationalPage: React.FC = () => {
   };
 
   const scaleAnswerCount = localStorage.getItem('scaleAnswerCount');
-  console.log(scaleAnswerCount, 'scaleAnswerCount');
+
   if (scaleAnswerCount && Number(scaleAnswerCount) !== 168) {
     return (
       <>
@@ -1355,9 +1440,71 @@ const EducationalPage: React.FC = () => {
   };
 
   // 获取当前显示的数据
-  const filteredData = getFilteredData();
+  const filteredData = safeGetFilteredData();
   const currentCount = activeTab === 'selected' ? selectedCount : alternativesCount;
+  // 计算备选志愿预警信息
+  const calculateWarnings = useCallback(() => {
+    if (activeTab !== 'alternatives') return [];
 
+    const warnings: Array<{
+      type: 'major-count' | 'top-development' | 'bottom-development';
+      level: 'warning' | 'danger';
+      title: string;
+      content: string;
+      majors?: string[];
+    }> = [];
+
+    // 获取所有备选志愿的专业数据
+    const allMajors = alternatives.flatMap(group => group.result);
+    const majorCount = allMajors.length;
+
+    // 1. 合计专业数预警
+    if (majorCount < 5) {
+      warnings.push({
+        type: 'major-count',
+        level: 'warning',
+        title: '合计专业数：⚠️偏少',
+        content: '建议增加至5个以上，避免某些专业当年过热、录取线大幅上升导致的滑档风险！'
+      });
+    }
+
+    // 2. 发展潜能前20%专业预警
+    if (allMajors.length > 0) {
+      // 计算发展潜能的分位数
+      const developmentPotentials = allMajors.map(item => item.developmentPotential || 0).sort((a, b) => b - a);
+      const top20PercentThreshold = developmentPotentials[Math.floor(developmentPotentials.length * 0.2)] || 0;
+      const top20PercentCount = allMajors.filter(item => (item.developmentPotential || 0) >= top20PercentThreshold).length;
+      const top20PercentRatio = top20PercentCount / allMajors.length;
+
+      if (top20PercentRatio < 0.8) {
+        warnings.push({
+          type: 'top-development',
+          level: 'warning',
+          title: '发展潜能前20%专业：⚠️偏少',
+          content: '建议80%以上志愿均属于发展潜能前20%专业，降低未来发展风险！'
+        });
+      }
+
+      // 3. 发展潜能后80%专业预警
+      const bottom20PercentThreshold = developmentPotentials[Math.floor(developmentPotentials.length * 0.8)] || 0;
+      const bottomMajors = allMajors.filter(item => (item.developmentPotential || 0) <= bottom20PercentThreshold);
+      
+      if (bottomMajors.length > 0) {
+        const majorNames = bottomMajors.map(item => item.majorName).slice(0, 3); // 最多显示3个专业名称
+        warnings.push({
+          type: 'bottom-development',
+          level: 'danger',
+          title: '发展潜能后80%专业：⚠️高风险预警',
+          content: `${majorNames.join('、')}${bottomMajors.length > 3 ? '等' : ''}专业均属于发展潜能后20%专业，如无非常特殊的原因，不建议考虑，避免未来发展风险！`,
+          majors: majorNames
+        });
+      }
+    }
+
+    return warnings;
+  }, [alternatives, activeTab]);
+
+  const warningData = calculateWarnings();
   // 获取位次差DOM
   const getRankdiffDom = (item: any) => {
     // 如果位次差为0或不存在，则不显示
@@ -1379,39 +1526,275 @@ const EducationalPage: React.FC = () => {
     );
   };
 
-  // 处理位次段选择
-  const handleRankSelect = useCallback(
-    (groupId: string) => {
-      setSelectedRankGroup(groupId);
+  // 处理升学率选择
+  const handleEnrollmentRateSelect = useCallback(
+    (rate: string) => {
+      setSelectedEnrollmentRate(rate);
 
-      // 根据选中的分组过滤数据
-      if (groupedByRankDiffPer && groupedByRankDiffPer.length > 0) {
-        const selectedGroup = groupedByRankDiffPer.find((group: any) => group.groupId === groupId);
-        if (selectedGroup && selectedGroup.majorCodes) {
-          // 过滤备选志愿数据
-          const filteredAlternatives = alternatives
-            .map((group) => ({
-              ...group,
-              result: group.result.filter((item) =>
-                selectedGroup.majorCodes.includes(item.majorCode)
-              ),
-            }))
-            .filter((group) => group.result.length > 0);
+      // 根据选中的升学率过滤数据
+      if (rate === 'all') {
+        // 显示所有数据
+        setAlternatives(originalAlternatives);
+      } else {
+        // 基于原始数据进行过滤
+        const filteredAlternatives = originalAlternatives
+          .map((group) => ({
+            ...group,
+            result: group.result.filter((item) => {
+              const enrollmentRate = item.enrollmentRate || 0;
+              if (rate === 'top50') {
+                return enrollmentRate >= 50;
+              } else if (rate === 'bottom50') {
+                return enrollmentRate < 50;
+              }
+              return true;
+            }),
+          }))
+          .filter((group) => group.result.length > 0);
 
-          setAlternatives(filteredAlternatives);
-          return;
-        }
+        setAlternatives(filteredAlternatives);
       }
     },
-    [alternatives, groupedByRankDiffPer]
+    [originalAlternatives]
   );
 
-  // 清除位次段选择
-  const handleRankClear = useCallback(() => {
-    setSelectedRankGroup(undefined);
-    // 重新加载原始数据
-    window.location.reload();
+  // 处理就业率选择
+  const handleEmploymentRateSelect = useCallback(
+    (rate: string) => {
+      setSelectedEmploymentRate(rate);
+
+      // 根据选中的就业率过滤数据
+      if (rate === 'all') {
+        // 显示所有数据
+        setAlternatives(originalAlternatives);
+      } else {
+        // 基于原始数据进行过滤
+        const filteredAlternatives = originalAlternatives
+          .map((group) => ({
+            ...group,
+            result: group.result.filter((item) => {
+              const employmentRate = item.employmentRate || 0;
+              if (rate === 'top50') {
+                return employmentRate >= 50;
+              } else if (rate === 'bottom50') {
+                return employmentRate < 50;
+              }
+              return true;
+            }),
+          }))
+          .filter((group) => group.result.length > 0);
+
+        setAlternatives(filteredAlternatives);
+      }
+    },
+    [originalAlternatives]
+  );
+
+  useEffect(() => {
+    // 页面初始化逻辑
+    const initializePage = async () => {
+      try {
+        setLoading(true);
+        // 已备选志愿
+        const alternativesResponse = await getMajorAlternatives();
+
+        // 处理已备选志愿数据
+        if (alternativesResponse && alternativesResponse.code === 200) {
+          // 服务器返回的数据结构是 { total, alternatives, currentPage, totalPages, volunteerCount, groupedByDevelopmentPotential, groupedByRankDiffPer, topDevelopmentMajors }
+          const alternativesData = alternativesResponse.data.alternatives || [];
+
+          // 从API响应中获取志愿数量配置
+          const apiVolunteerCount = alternativesResponse.data.volunteerCount;
+          if (apiVolunteerCount !== undefined) {
+            setVolunteerCount(apiVolunteerCount);
+          }
+
+          // 从API响应中获取高发展潜能专业数量
+          const apiTopDevelopmentCount = alternativesResponse.data.topDevelopmentCount;
+          if (apiTopDevelopmentCount !== undefined) {
+            // 将topDevelopmentCount存储到localStorage中供后续使用
+            localStorage.setItem('topDevelopmentCount', apiTopDevelopmentCount.toString());
+          }
+
+          // 处理新的分组数据
+          if (alternativesResponse.data.groupedByDevelopmentPotential) {
+            setGroupedByDevelopmentPotential(
+              alternativesResponse.data.groupedByDevelopmentPotential
+            );
+          }
+          if (alternativesResponse.data.groupedByRankDiffPer) {
+            setGroupedByRankDiffPer(alternativesResponse.data.groupedByRankDiffPer);
+          }
+          if (alternativesResponse.data.topDevelopmentMajors) {
+            setTopDevelopmentMajors(alternativesResponse.data.topDevelopmentMajors);
+          }
+
+          // 将 API 返回的数据转换为我们的类型
+          const convertedData: AlternativeItem[] = alternativesData.map(
+            (item: any, index: number) => ({
+              id: item.id || `${item.schoolCode}_${item.majorCode}`,
+              majorCode: item.majorCode,
+              majorName: item.majorName,
+              schoolCode: item.schoolCode,
+              schoolName: item.schoolName,
+              priority: item.priority,
+              createdAt: item.createdAt,
+              score: item.score,
+              selected: item.selected || false,
+              historyScore: item.historyScore,
+              group: item.group,
+              enrollmentRate: item.enrollmentRate || 0,
+              employmentRate: item.employmentRate || 0,
+              Rankdiff: item.Rankdiff || 0, // 位次差
+              RankdiffPer: item.RankdiffPer || 0, // 位次差百分比
+              // 学校标签相关属性
+              schoolFeature: item.schoolFeature,
+              schoolNature: item.schoolNature,
+              schoolLevel: item.schoolLevel,
+              majorGroupId: item.majorGroupId,
+              majorGroupName: item.majorGroupName,
+              schoolCity: item.schoolCity,
+              provinceName: item.provinceName,
+              cityName: item.cityName,
+              sortIndex: index, // 添加排序索引
+              developmentPotential: item.developmentPotential || 0, // 发展潜能
+              position: item.position || 0, // 位置排序字段
+              // 招生信息相关属性
+              admissionsSite: item.admissionsSite,
+              admissionsPhone: item.admissionsPhone,
+            })
+          );
+
+          const groupByCategory = (
+            arr: AlternativeItem[],
+            key: keyof AlternativeItem
+          ): GroupedAlternatives[] => {
+            const groupedMap = arr.reduce(
+              (map: Map<any, AlternativeItem[]>, item: AlternativeItem) => {
+                const groupValue = item[key];
+                if (!map.has(groupValue)) {
+                  map.set(groupValue, []); // 初始化该分类的数组
+                }
+                map.get(groupValue)!.push(item); // 添加当前项到对应分类
+                return map;
+              },
+              new Map()
+            );
+
+            // 转换为目标格式
+            return Array.from(groupedMap).map(([category, result]) => ({
+              group: category,
+              result,
+            }));
+          };
+          const alternativesGroup = groupByCategory(convertedData, 'group');
+
+          // 对分组进行排序：2 -> 3 -> 1 -> 0
+          const sortedAlternativesGroup = alternativesGroup.sort((a, b) => {
+            const orderMap: { [key: number]: number } = { 2: 0, 3: 1, 1: 2, 0: 3 };
+            return orderMap[a.group] - orderMap[b.group];
+          });
+
+          const alternativesCount = sortedAlternativesGroup.reduce(
+            (acc: number, item: GroupedAlternatives) => {
+              return acc + item.result.length;
+            },
+            0
+          );
+          setAlternativesCount(alternativesCount);
+
+          // 计算已入选志愿数量
+          const selectedCount = sortedAlternativesGroup.reduce(
+            (acc: number, item: GroupedAlternatives) => {
+              return acc + item.result.filter((alt) => alt.selected).length;
+            },
+            0
+          );
+          setSelectedCount(selectedCount);
+
+          setAlternatives(sortedAlternativesGroup);
+          setOriginalAlternatives(sortedAlternativesGroup); // 保存原始数据
+        }
+        // 初始化发展潜能选择器选项
+        if (alternativesResponse.data.groupedByDevelopmentPotential) {
+          const optionsData = alternativesResponse.data.groupedByDevelopmentPotential.map(
+            (group: any) => ({
+              id: group.groupId,
+              label: group.description,
+              count: group.count,
+            })
+          );
+          setDevelopmentOptions(optionsData);
+        }
+
+        // 初始化按API顺序选择器选项
+        if (alternativesResponse.data.groupedByRankDiffPer) {
+          const rankOptionsData = alternativesResponse.data.groupedByRankDiffPer.map(
+            (group: any) => ({
+              id: group.groupId,
+              label: group.description,
+              count: group.count,
+            })
+          );
+          setRankOptions(rankOptionsData);
+          setRankFilterOptions(rankOptionsData);
+        }
+      } catch (error) {
+        console.error('页面初始化失败:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializePage();
   }, []);
+  // 检查预警条件
+  useEffect(() => {
+    // 只在备选志愿页面且按按API顺序排序时检查
+    if (activeTab === 'alternatives' && sortTab === 'willingness') {
+      const requiredCount = volunteerCount;
+      const currentCount = selectedCount;
+
+      if (currentCount < requiredCount) {
+        // 检查今天是否已经显示过预警
+        const today = new Date().toDateString();
+        const lastShownDate = localStorage.getItem('volunteer-warning-last-shown');
+
+        if (lastShownDate !== today) {
+          // 延迟显示预警弹窗
+          const timer = setTimeout(() => {
+            setShowWarningModal(true);
+          }, 1000);
+
+          return () => clearTimeout(timer);
+        }
+      }
+    }
+  }, [activeTab, sortTab, selectedCount, volunteerCount]);
+
+  // 检查高发展潜能预警条件
+  useEffect(() => {
+    // 只在备选志愿页面且按专业排序时检查
+    if (activeTab === 'alternatives' && sortTab === 'major') {
+      // 从localStorage获取API返回的高发展潜能专业数量
+      const apiTopDevelopmentCount = parseInt(localStorage.getItem('topDevelopmentCount') || '0');
+
+      if (apiTopDevelopmentCount < 3) {
+        // 检查今天是否已经显示过高发展潜能预警
+        const today = new Date().toDateString();
+        const lastShownDate = localStorage.getItem('volunteer-top-development-warning-last-shown');
+
+        if (lastShownDate !== today) {
+          // 延迟显示预警弹窗
+          const timer = setTimeout(() => {
+            setShowTopDevelopmentWarningModal(true);
+          }, 1000);
+
+          return () => clearTimeout(timer);
+        }
+      }
+    }
+  }, [activeTab, sortTab]);
 
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 50 }}>
@@ -1436,24 +1819,30 @@ const EducationalPage: React.FC = () => {
           {/* 标签页 - 居中显示 */}
           <div className="flex items-center space-x-6 absolute left-1/2 transform -translate-x-1/2">
             <button
-              className={`text-sm font-medium transition-colors ${
+              className={`text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'alternatives'
                   ? 'text-blue-600 border-b-2 border-blue-600 pb-1'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
               onClick={() => handleMainTabChange('alternatives')}
             >
-              备选志愿
+              备选志愿{' '}
+              <span className="ml-1 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                {alternativesCount}
+              </span>
             </button>
             <button
-              className={`text-sm font-medium transition-colors ${
+              className={`text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'selected'
                   ? 'text-blue-600 border-b-2 border-blue-600 pb-1'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
               onClick={() => handleMainTabChange('selected')}
             >
-              入选志愿
+              入选志愿{' '}
+              <span className="ml-1 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                {selectedCount}
+              </span>
             </button>
           </div>
           <div className="flex items-right "></div>
@@ -1513,48 +1902,81 @@ const EducationalPage: React.FC = () => {
                     />
                   </div>
                 )}
+
+                {/* 搜索组件 - 在入选志愿页面也显示 */}
+                <div className="w-full max-w-xl p-1">
+                  <div className="relative">
+                    <Input
+                      placeholder="搜索学校名称、专业名称、城市、省份等..."
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                      prefix={<SearchOutlined className="text-gray-400" />}
+                      suffix={
+                        <InfoCircleOutlined
+                          className="text-blue-500 cursor-pointer"
+                          onClick={() => setShowSearchTips(!showSearchTips)}
+                          title="搜索帮助"
+                        />
+                      }
+                      className="rounded-lg"
+                      allowClear
+                    />
+                    {/* 搜索提示 */}
+                    {showSearchTips && (
+                      <div className="search-tips-container absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg p-3 shadow-lg z-10">
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <div>
+                            💡 <strong>搜索提示：</strong>
+                          </div>
+                          <div>• 可以搜索学校名称（如：清华大学）</div>
+                          <div>• 可以搜索专业名称（如：计算机科学）</div>
+                          <div>• 可以搜索专业代码（如：080901）</div>
+                          <div>• 可以搜索城市名称（如：北京、上海）</div>
+                          <div>• 可以搜索省份名称（如：江苏、浙江、湖南省）</div>
+                          <div>• 支持模糊搜索，输入部分关键词即可</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 学校性质过滤 - 在入选志愿页面也显示 */}
+                <div className="w-full max-w-xl p-1">
+                  <div className="flex items-center space-x-4">
+                    <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                      学校性质：
+                    </span>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleSchoolNatureSelect('all')}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedSchoolNature === 'all' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                      >
+                        全部
+                      </button>
+                      <button
+                        onClick={() => handleSchoolNatureSelect('public')}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedSchoolNature === 'public' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                      >
+                        公办
+                      </button>
+                      <button
+                        onClick={() => handleSchoolNatureSelect('private')}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedSchoolNature === 'private' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                      >
+                        民办
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </>
             ) : (
-              // 备选志愿的排序选项
-              <>
+              rankFilterOptions &&
+              rankFilterOptions.length > 0 && (
                 <>
-                  {' '}
-                  <button
-                    onClick={() => handleSortTabChange('group')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      sortTab === 'group'
-                        ? 'bg-blue-500 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    位次段
-                  </button>
-                  <button
-                    onClick={() => handleSortTabChange('enrollment')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      sortTab === 'enrollment'
-                        ? 'bg-blue-500 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    升学率
-                  </button>
-                  <button
-                    onClick={() => handleSortTabChange('employment')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      sortTab === 'employment'
-                        ? 'bg-blue-500 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    就业率
-                  </button>
-                </>
-                {/* 位次段选择器 - 仅在备选志愿页面显示 */}
-                {rankOptions && rankOptions.length > 0 && (
-                  <div className="w-full max-w-xl p-2">
+                {/* 位次段过滤 */}
+                  <div className="w-full max-w-xl p-1">
                     <CommonSelect
-                      data={rankOptions}
+                      data={rankFilterOptions}
                       placeholder="选择位次段范围"
                       onSelect={handleRankSelect}
                       onClear={handleRankClear}
@@ -1563,8 +1985,128 @@ const EducationalPage: React.FC = () => {
                       width="100%"
                     />
                   </div>
-                )}
-              </>
+                  {/* 升学率过滤 */}
+                  <div className="w-full max-w-xl p-1">
+                    <div className="flex items-center space-x-4">
+                      <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                        升学率：
+                      </span>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleEnrollmentRateSelect('all')}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedEnrollmentRate === 'all' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                        >
+                          全部
+                        </button>
+                        <button
+                          onClick={() => handleEnrollmentRateSelect('top50')}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedEnrollmentRate === 'top50' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                        >
+                          前50%
+                        </button>
+                        <button
+                          onClick={() => handleEnrollmentRateSelect('bottom50')}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedEnrollmentRate === 'bottom50' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                        >
+                          后50%
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  {/* 就业率过滤 */}
+                  <div className="w-full max-w-xl p-1">
+                    <div className="flex items-center space-x-4">
+                      <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                        就业率：
+                      </span>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleEmploymentRateSelect('all')}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedEmploymentRate === 'all' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                        >
+                          全部
+                        </button>
+                        <button
+                          onClick={() => handleEmploymentRateSelect('top50')}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedEmploymentRate === 'top50' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                        >
+                          前50%
+                        </button>
+                        <button
+                          onClick={() => handleEmploymentRateSelect('bottom50')}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedEmploymentRate === 'bottom50' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                        >
+                          后50%
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  {/* 搜索组件 */}
+                  <div className="w-full max-w-xl p-1">
+                    <div className="relative">
+                      <Input
+                        placeholder="搜索学校名称、专业名称、城市、省份等..."
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        prefix={<SearchOutlined className="text-gray-400" />}
+                        suffix={
+                          <InfoCircleOutlined
+                            className="text-blue-500 cursor-pointer"
+                            onClick={() => setShowSearchTips(!showSearchTips)}
+                            title="搜索帮助"
+                          />
+                        }
+                        className="rounded-lg"
+                        allowClear
+                      />
+                      {/* 搜索提示 */}
+                      {showSearchTips && (
+                        <div className="search-tips-container absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg p-3 shadow-lg z-10">
+                          <div className="text-sm text-gray-600 space-y-1">
+                            <div>
+                              💡 <strong>搜索提示：</strong>
+                            </div>
+                            <div>• 可以搜索学校名称（如：清华大学）</div>
+                            <div>• 可以搜索专业名称（如：计算机科学）</div>
+                            <div>• 可以搜索专业代码（如：080901）</div>
+                            <div>• 可以搜索城市名称（如：北京、上海）</div>
+                            <div>• 可以搜索省份名称（如：江苏、浙江、湖南省）</div>
+                            <div>• 支持模糊搜索，输入部分关键词即可</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {/* 学校性质过滤 */}
+                  <div className="w-full max-w-xl p-1">
+                    <div className="flex items-center space-x-4">
+                      <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                        学校性质：
+                      </span>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleSchoolNatureSelect('all')}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedSchoolNature === 'all' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                        >
+                          全部
+                        </button>
+                        <button
+                          onClick={() => handleSchoolNatureSelect('public')}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedSchoolNature === 'public' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                        >
+                          公办
+                        </button>
+                        <button
+                          onClick={() => handleSchoolNatureSelect('private')}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedSchoolNature === 'private' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                        >
+                          民办
+                        </button>
+                      </div>
+                    </div>
+                  </div>{' '}
+                </>
+              )
             )}
           </div>
         </div>
@@ -1579,6 +2121,66 @@ const EducationalPage: React.FC = () => {
         {/* 志愿列表 */}
         {!loading && (
           <>
+            {/* 预警信息显示 - 仅在备选志愿tab显示 */}
+            {activeTab === 'alternatives' && warningData.length > 0 && (
+              <div className="w-full max-w-xl space-y-3 mb-3">
+                {warningData.map((warning, index) => (
+                  <div
+                    key={`warning-${warning.type}-${index}`}
+                    className={`rounded-2xl shadow p-4 ${
+                      warning.level === 'danger'
+                        ? 'bg-red-50 border-l-4 border-red-500 mt-3'
+                        : 'bg-orange-50 border-l-4 border-orange-500 mt-2'
+                    }`}
+                  >
+                    <div className="flex items-start">
+                      <div
+                        className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mr-3 mt-0.5 ${
+                          warning.level === 'danger'
+                            ? 'bg-red-100 text-red-600'
+                            : 'bg-orange-100 text-orange-600'
+                        }`}
+                      >
+                        <span className="text-sm font-bold">!</span>
+                      </div>
+                      <div className="flex-1">
+                        <h4
+                          className={`font-bold text-sm mb-1 ${
+                            warning.level === 'danger' ? 'text-red-800' : 'text-orange-800'
+                          }`}
+                        >
+                          {warning.title}
+                        </h4>
+                        <p
+                          className={`text-sm leading-relaxed ${
+                            warning.level === 'danger' ? 'text-red-700' : 'text-orange-700'
+                          }`}
+                        >
+                          {warning.content}
+                        </p>
+                        {warning.majors && warning.majors.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {warning.majors.map((major, majorIndex) => (
+                              <span
+                                key={`major-${majorIndex}`}
+                                className={`px-2 py-1 rounded text-xs font-medium ${
+                                  warning.level === 'danger'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-orange-100 text-orange-800'
+                                }`}
+                              >
+                                {major}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* 空状态提示 */}
             {currentCount === 0 && renderEmptyState()}
 
@@ -1599,15 +2201,12 @@ const EducationalPage: React.FC = () => {
                   rankGroups = majorGroup.rankGroups || [];
                   schoolGroups = rankGroups.flatMap((rankGroup) => rankGroup.schools);
                   groupTitle = majorGroup.majorName;
-                  groupCount = items.result.length;
                 } else {
-                  // 按位次段分组的数据
+                  // 按按API顺序分组的数据
                   schoolGroups = groupBySchool(items.result);
-                  groupTitle = groupNames[items.group];
-                  groupCount = items.result.length;
                 }
 
-                // 每个分组只显示一个学校，其他学校需要展开（仅在位次段排序时）
+                // 每个分组只显示一个学校，其他学校需要展开（仅在按API顺序排序时）
                 const isExpanded =
                   activeTab === 'alternatives'
                     ? expandedAlternatives[items.group]
@@ -1618,14 +2217,9 @@ const EducationalPage: React.FC = () => {
                   ? expandedMajorGroups[`${(items as any).majorGroup.majorCode}`]
                   : isExpanded;
 
-                const displaySchools =
-                  sortTab === 'group' || sortTab === 'major'
-                    ? majorGroupExpanded
-                      ? schoolGroups
-                      : schoolGroups.slice(0, 1)
-                    : schoolGroups; // 按升学率和就业率排序时显示所有学校
+                const displaySchools = schoolGroups; // 按按专业和按位次差(低→高)排序时显示所有学校
                 const hasMoreSchools =
-                  schoolGroups.length > 1 && (sortTab === 'group' || sortTab === 'major');
+                  schoolGroups.length > 1 && (sortTab === 'willingness' || sortTab === 'major');
 
                 return (
                   <div
@@ -1636,13 +2230,16 @@ const EducationalPage: React.FC = () => {
                         : 'w-full max-w-xl bg-white rounded-2xl shadow mt-3 p-4'
                     }
                   >
-                    {/* 在位次段排序时显示分组标题 */}
-                    {sortTab === 'group' && (
+                    {/* 在按API顺序排序时显示分组标题 */}
+                    {/* {sortTab === 'willingness' && (
                       <div className="text-[16px] font-bold border-b pb-2 mb-2">
-                        【{groupTitle}】 {groupCount}个 &nbsp;{' '}
-                        {Math.ceil((groupCount / currentCount) * 100)} %
+                        【
+                        {rankOptions.find((option) => option.id === items.group.toString())?.label}
+                        】{' '}
+                        {rankOptions.find((option) => option.id === items.group.toString())?.count}
+                        个 &nbsp;{' '}
                       </div>
-                    )}
+                    )} */}
 
                     {/* 按专业排序时显示层级结构 */}
                     {sortTab === 'major' ? (
@@ -1693,21 +2290,21 @@ const EducationalPage: React.FC = () => {
                         </div>
 
                         <div className="space-y-2 p-2">
-                          {/* 位次段分组显示 */}
+                          {/* 按API顺序分组显示 */}
                           {isMajorGroup && rankGroups.length > 0 ? (
                             rankGroups.map((rankGroup) => {
                               const key = `${(items as any).majorGroup.majorCode}_${rankGroup.groupIndex}`;
                               const isExpanded = expandedMajorGroups[key] !== false; // 默认展开，除非明确设置为false
                               const filteredSchools = rankGroup.schools;
 
-                              // 如果没有学校，不显示该位次段
+                              // 如果没有学校，不显示该按API顺序
                               if (filteredSchools.length === 0) {
                                 return null;
                               }
 
                               return (
                                 <div key={rankGroup.groupIndex} className="mb-5">
-                                  {/* 位次段标题 */}
+                                  {/* 按API顺序标题 */}
                                   <div className="flex items-center justify-between font-bold mb-4 text-sm border-b border-solid pb-3 border-gray-200 pr-0">
                                     <div className="flex items-center">
                                       <button
@@ -1731,7 +2328,7 @@ const EducationalPage: React.FC = () => {
                                     </div>
                                   </div>
 
-                                  {/* 该位次段的院校列表 */}
+                                  {/* 该按API顺序的院校列表 */}
                                   {isExpanded &&
                                     rankGroup.schools.map((schoolGroup: SchoolGroup) => (
                                       <div
@@ -1849,10 +2446,10 @@ const EducationalPage: React.FC = () => {
                                                 </span>
                                                 {Number(item.enrollmentRate) > 0 && (
                                                   <span
-                                                    key={item.schoolName + '升学率'}
+                                                    key={item.schoolName + '按专业'}
                                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
                                                   >
-                                                    升学率{item.enrollmentRate}%
+                                                    按专业{item.enrollmentRate}%
                                                   </span>
                                                 )}
 
@@ -1906,7 +2503,7 @@ const EducationalPage: React.FC = () => {
                               );
                             })
                           ) : (
-                            // 如果没有位次段分组，显示简单的学校列表
+                            // 如果没有按API顺序分组，显示简单的学校列表
                             <div className="space-y-4">
                               {displaySchools.map((schoolGroup: SchoolGroup) => (
                                 <div
@@ -2014,10 +2611,10 @@ const EducationalPage: React.FC = () => {
                                           </span>
                                           {Number(item.enrollmentRate) > 0 && (
                                             <span
-                                              key={item.schoolName + '升学率'}
+                                              key={item.schoolName + '按专业'}
                                               className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
                                             >
-                                              升学率{item.enrollmentRate}%
+                                              按专业{item.enrollmentRate}%
                                             </span>
                                           )}
 
@@ -2072,7 +2669,7 @@ const EducationalPage: React.FC = () => {
                         </div>
                       </div>
                     ) : (
-                      /* 原有的渲染逻辑（位次段排序等） */
+                      /* 原有的渲染逻辑（按API顺序排序等） */
                       displaySchools.map((schoolGroup) => (
                         <div key={schoolGroup.schoolCode} className="mb-4">
                           {/* 学校与基本信息 */}
@@ -2089,7 +2686,7 @@ const EducationalPage: React.FC = () => {
                               <span className="text-[18px] font-bold text-white">
                                 {schoolGroup.schoolName} {'>'}
                               </span>
-                              {/* 在按专业排序时显示位次段信息，且位次段不为0时显示 */}
+                              {/* 在按专业排序时显示按API顺序信息，且按API顺序不为0时显示 */}
                               {(sortTab as any) === 'major' &&
                                 schoolGroup.majors.length > 0 &&
                                 schoolGroup.majors[0].group &&
@@ -2123,19 +2720,19 @@ const EducationalPage: React.FC = () => {
                                   </span>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                  {/* 按自主意愿不显示，但在位次段和按专业排序时显示 */}
+                                  {/* 按自主意愿不显示，但在按API顺序和按专业排序时显示 */}
                                   {activeTab !== 'selected' &&
-                                    (sortTab === 'group' || (sortTab as any) === 'major') && (
-                                      <span className="text-yellow-600 bg-yellow-100  py-0.5 rounded text-xs ">
-                                        热爱能量{Math.ceil((item.score || 0) * 100)}分！
+                                    (sortTab === 'willingness' || (sortTab as any) === 'major') && (
+                                      <span className="text-green-600 bg-green-100  py-0.5 rounded text-xs ">
+                                        发展潜能{item.developmentPotential}分！
                                       </span>
                                     )}
-                                  {/* 显示升学率和就业率 */}
-                                  {(sortTab === 'enrollment' || sortTab === 'employment') && (
+                                  {/* 显示按专业和按位次差(低→高) */}
+                                  {(sortTab === 'major' || sortTab === 'rankDiff') && (
                                     <span className="text-green-600 bg-green-100 px-2 py-0.5 rounded text-xs font-bold">
-                                      {sortTab === 'enrollment'
-                                        ? `升学率${item.enrollmentRate && item.enrollmentRate > 0 ? item.enrollmentRate + '%' : '待补充'}`
-                                        : `就业率${item.employmentRate && item.employmentRate > 0 ? item.employmentRate + '%' : '待补充'}`}
+                                      {sortTab === 'major'
+                                        ? `按专业${item.enrollmentRate && item.enrollmentRate > 0 ? item.enrollmentRate + '%' : '待补充'}`
+                                        : `按位次差(低→高)${item.employmentRate && item.employmentRate > 0 ? item.employmentRate + '%' : '待补充'}`}
                                     </span>
                                   )}
                                   {/* 显示发展潜能值 */}
@@ -2231,12 +2828,12 @@ const EducationalPage: React.FC = () => {
                                 >
                                   {item.schoolNature === 'public' ? '公办' : '民办'}
                                 </span>
-                                {Number(item.enrollmentRate) > 0 && sortTab !== 'enrollment' && (
+                                {Number(item.enrollmentRate) > 0 && true && (
                                   <span
-                                    key={item.schoolName + '升学率'}
+                                    key={item.schoolName + '按专业'}
                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
                                   >
-                                    升学率{item.enrollmentRate}%
+                                    按专业{item.enrollmentRate}%
                                   </span>
                                 )}
 
@@ -2346,8 +2943,8 @@ const EducationalPage: React.FC = () => {
                       ))
                     )}
 
-                    {/* 展开/收起按钮 - 当分组下有多个学校时显示，且仅在位次段排序时显示 */}
-                    {hasMoreSchools && sortTab === 'group' && (
+                    {/* 展开/收起按钮 - 当分组下有多个学校时显示，且仅在按API顺序排序时显示 */}
+                    {hasMoreSchools && sortTab === 'willingness' && (
                       <div className="mt-2 text-center">
                         <button
                           onClick={() => {
@@ -2359,7 +2956,7 @@ const EducationalPage: React.FC = () => {
                                 [majorCode]: !prev[majorCode],
                               }));
                             } else {
-                              // 按位次段分组的展开/收起
+                              // 按按API顺序分组的展开/收起
                               activeTab === 'alternatives'
                                 ? toggleAlternativesExpansion(items.group)
                                 : toggleSelectedExpansion(items.group);
@@ -2380,6 +2977,40 @@ const EducationalPage: React.FC = () => {
         )}
       </div>
 
+      {/* 可关闭的透明浮层提示 */}
+      {showFloatingTip && activeTab === 'alternatives' && (
+        <div className="fixed bottom-20 left-4 right-4 z-40">
+          <div className="bg-black/70 backdrop-blur-sm rounded-2xl p-4 text-white shadow-lg">
+            <div className="flex items-start justify-between">
+              <div className="flex-1 pr-3">
+                <p className="text-sm leading-relaxed">
+                  点击
+                  <span className="font-bold text-yellow-300 bg-yellow-300/20 px-1 rounded">
+                    入选
+                  </span>
+                  后，该院校及专业信息自动进入&ldquo;志愿表&rdquo;；点击
+                  <span className="font-bold text-red-300 bg-red-300/20 px-1 rounded">移除</span>
+                  后，该院校及专业信息将不再出现在&ldquo;备选志愿&rdquo;频道。
+                </p>
+              </div>
+              <button
+                onClick={() => setShowFloatingTip(false)}
+                className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/20 rounded-full transition-colors"
+                title="关闭提示"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* 底部导航 */}
       <BottomNav
         selectedIndex={2}
@@ -2484,7 +3115,7 @@ const EducationalPage: React.FC = () => {
                   />
                   <div className="flex-1">
                     <h5 className="font-semibold text-gray-900 mb-2">
-                      2. 院校近几年升学率、就业率、招生校区等，是否符合您的报考意愿？
+                      2. 院校近几年按专业、按位次差(低→高)、招生校区等，是否符合您的报考意愿？
                     </h5>
 
                     {itemToSelect.admissionsSite ? (
@@ -2592,94 +3223,6 @@ const EducationalPage: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* 提示弹窗 */}
-      <Modal
-        title={
-          <div
-            style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}
-          >
-            💡 志愿管理说明
-          </div>
-        }
-        open={isTipModalVisible}
-        onCancel={handleTipModalClose}
-        footer={null}
-        width={400}
-        centered
-        className="rounded-2xl"
-        style={{ top: '20%', zIndex: 10000 }}
-      >
-        <div style={{ padding: '20px 0' }}>
-          <div
-            style={{
-              padding: '16px 0',
-              lineHeight: '1.8',
-              fontSize: '14px',
-              color: '#333',
-            }}
-          >
-            <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#2563eb' }}>
-              1.点击&ldquo;入选&rdquo;后，该院校及专业信息自动进入&ldquo;志愿表&rdquo;；
-            </div>
-            <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#2563eb' }}>
-              2.点击&ldquo;移除&rdquo;后，该院校及专业信息将不再出现在&ldquo;备选志愿&rdquo;频道，如果想重新备选，需进入&ldquo;意向&rdquo;频道进行操作。
-            </div>
-          </div>
-
-          {/* 底部复选框选项 */}
-          <div
-            style={{
-              marginTop: '20px',
-              padding: '16px 20px',
-              background: '#f8f9fa',
-              borderRadius: '8px',
-              border: '1px solid #e9ecef',
-            }}
-          >
-            <div
-              style={{ marginBottom: '12px', fontSize: '14px', fontWeight: 'bold', color: '#333' }}
-            >
-              请选择您的偏好（可多选）：
-            </div>
-            <div style={{ marginBottom: '8px' }}>
-              <Checkbox
-                checked={userChoices.choice1}
-                onChange={(e) => handleChoiceChange('choice1', e.target.checked)}
-                style={{ fontSize: '13px' }}
-              >
-                今天不显示此提示
-              </Checkbox>
-            </div>
-            <div>
-              <Checkbox
-                checked={userChoices.choice2}
-                onChange={(e) => handleChoiceChange('choice2', e.target.checked)}
-                style={{ fontSize: '13px' }}
-              >
-                以后都不显示此提示
-              </Checkbox>
-            </div>
-          </div>
-
-          <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <Button
-              type="primary"
-              onClick={handleTipModalConfirm}
-              style={{
-                background: '#2563eb',
-                border: 'none',
-                borderRadius: '20px',
-                height: '40px',
-                width: '120px',
-                fontSize: '16px',
-              }}
-            >
-              我知道了
-            </Button>
-          </div>
-        </div>
-      </Modal>
 
       {/* 专业组详情弹窗 */}
       <Modal
@@ -2846,162 +3389,97 @@ const EducationalPage: React.FC = () => {
         </div>
       </Modal>
 
-      {/* 预警弹窗 */}
-      <Modal
-        title={
-          <div
-            style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold', color: '#dc2626' }}
-          >
-            ⚠️ 志愿填报预警
-          </div>
-        }
-        open={showWarningModal}
-        onCancel={handleWarningModalClose}
-        footer={null}
-        width={400}
-        centered
-        className="rounded-2xl"
-        style={{ top: '20%', zIndex: 10000 }}
-      >
-        <div style={{ padding: '20px 0' }}>
-          <div
-            style={{
-              padding: '16px 0',
-              lineHeight: '1.8',
-              fontSize: '14px',
-              color: '#333',
-            }}
-          >
-            <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#dc2626' }}>
-              预警：您合计需填报{volunteerCount}个志愿，已确定{selectedCount}个，尚需确认
-              {parseInt(volunteerCount) - selectedCount}个。
-            </div>
-            <div style={{ marginBottom: '12px', color: '#666' }}>
-              请及时补充入选志愿，确保志愿填报的完整性。
-            </div>
-          </div>
-
-          {/* 底部复选框选项 */}
-          <div
-            style={{
-              marginTop: '20px',
-              padding: '16px 20px',
-              background: '#f8f9fa',
-              borderRadius: '8px',
-              border: '1px solid #e9ecef',
-            }}
-          >
-            <div
-              style={{ marginBottom: '12px', fontSize: '14px', fontWeight: 'bold', color: '#333' }}
-            >
-              请选择您的偏好：
-            </div>
-            <div>
-              <Checkbox
-                checked={warningChoices.todayNotShow}
-                onChange={(e) => handleWarningChoiceChange(e.target.checked)}
-                style={{ fontSize: '13px' }}
+      {/* 志愿填报预警浮层 */}
+      {showWarningModal && activeTab === 'selected' && (
+        <div className="fixed bottom-20 left-4 right-4 z-50">
+          <div className="bg-red-500/90 backdrop-blur-sm rounded-2xl p-4 text-white shadow-lg border border-red-400">
+            <div className="flex items-start justify-between">
+              <div className="flex-1 pr-3">
+                <div className="text-sm leading-relaxed mb-3">
+                  <div className="font-semibold mb-1">
+                    预警：您合计需填报{volunteerCount}个志愿，已确定{selectedCount}个，尚需确认
+                    {volunteerCount - selectedCount}个。
+                  </div>
+                  <div className="text-red-100">请及时补充入选志愿，确保志愿填报的完整性。</div>
+                </div>
+              </div>
+              <button
+                onClick={handleWarningModalClose}
+                className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/20 rounded-full transition-colors ml-2"
+                title="关闭预警"
               >
-                今天不显示此预警
-              </Checkbox>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
             </div>
-          </div>
-
-          <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <Button
-              type="primary"
-              onClick={handleWarningModalConfirm}
-              style={{
-                background: '#dc2626',
-                border: 'none',
-                borderRadius: '20px',
-                height: '40px',
-                width: '120px',
-                fontSize: '16px',
-              }}
-            >
-              我知道了
-            </Button>
           </div>
         </div>
-      </Modal>
+      )}
 
-      {/* 高发展潜能预警弹窗 */}
-      <Modal
-        title={
-          <div
-            style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold', color: '#dc2626' }}
-          >
-            ⚠️ 高发展潜能专业预警
-          </div>
-        }
-        open={showTopDevelopmentWarningModal}
-        onCancel={handleTopDevelopmentWarningModalClose}
-        footer={null}
-        width={400}
-        centered
-        className="rounded-2xl"
-        style={{ top: '20%', zIndex: 10000 }}
-      >
-        <div style={{ padding: '20px 0' }}>
-          <div
-            style={{
-              padding: '16px 0',
-              lineHeight: '1.8',
-              fontSize: '14px',
-              color: '#333',
-            }}
-          >
-            <div style={{ marginBottom: '12px', fontWeight: 'bold', color: '#dc2626' }}>预警：</div>
-            <div style={{ marginBottom: '12px', color: '#666', lineHeight: '1.6' }}>
-              1.志愿表中&ldquo;高发展潜能专业&rdquo;低于3个，建议增加，避免个别专业当年报考热度太高导致滑档；
-            </div>
-          </div>
+      {/* 高发展潜能预警浮层 */}
+      {showTopDevelopmentWarningModal && activeTab === 'alternatives' && (
+        <div className="fixed top-20 left-4 right-4 z-50">
+          <div className="bg-orange-500/90 backdrop-blur-sm rounded-2xl p-4 text-white shadow-lg border border-orange-400">
+            <div className="flex items-start justify-between">
+              <div className="flex-1 pr-3">
+                <div className="flex items-center mb-2">
+                  <span className="text-2xl mr-2">⚠️</span>
+                  <h3 className="text-lg font-bold">高发展潜能专业预警</h3>
+                </div>
+                <div className="text-sm leading-relaxed mb-3">
+                  <div className="font-semibold mb-1">预警：</div>
+                  <div className="text-orange-100">
+                    志愿表中&ldquo;高发展潜能专业&rdquo;低于3个，建议增加，避免个别专业当年报考热度太高导致滑档；
+                  </div>
+                </div>
 
-          {/* 底部复选框选项 */}
-          <div
-            style={{
-              marginTop: '20px',
-              padding: '16px 20px',
-              background: '#f8f9fa',
-              borderRadius: '8px',
-              border: '1px solid #e9ecef',
-            }}
-          >
-            <div
-              style={{ marginBottom: '12px', fontSize: '14px', fontWeight: 'bold', color: '#333' }}
-            >
-              请选择您的偏好：
-            </div>
-            <div>
-              <Checkbox
-                checked={topDevelopmentWarningChoices.todayNotShow}
-                onChange={(e) => handleTopDevelopmentWarningChoiceChange(e.target.checked)}
-                style={{ fontSize: '13px' }}
+                {/* 复选框选项 */}
+                <div className="bg-orange-400/20 rounded-lg p-3 mb-3">
+                  <div className="text-sm font-medium mb-2">请选择您的偏好：</div>
+                  <label className="flex items-center text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={topDevelopmentWarningChoices.todayNotShow}
+                      onChange={(e) => handleTopDevelopmentWarningChoiceChange(e.target.checked)}
+                      className="mr-2 rounded"
+                    />
+                    今天不显示此预警
+                  </label>
+                </div>
+
+                <div className="flex justify-center">
+                  <button
+                    onClick={handleTopDevelopmentWarningModalConfirm}
+                    className="bg-white text-orange-500 px-6 py-2 rounded-lg font-medium hover:bg-orange-50 transition-colors"
+                  >
+                    我知道了
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={handleTopDevelopmentWarningModalClose}
+                className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/20 rounded-full transition-colors ml-2"
+                title="关闭预警"
               >
-                今天不显示此预警
-              </Checkbox>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
             </div>
-          </div>
-
-          <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <Button
-              type="primary"
-              onClick={handleTopDevelopmentWarningModalConfirm}
-              style={{
-                background: '#dc2626',
-                border: 'none',
-                borderRadius: '20px',
-                height: '40px',
-                width: '120px',
-                fontSize: '16px',
-              }}
-            >
-              我知道了
-            </Button>
           </div>
         </div>
-      </Modal>
+      )}
 
       {/* 招生简章弹窗 */}
       <Modal

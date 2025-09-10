@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect, useState, useCallback } from 'react';
 import Top from '../comm/top';
 import { Card, Spin, message, Input, Tag, Modal } from 'antd';
