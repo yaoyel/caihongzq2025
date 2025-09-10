@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect } from 'react';
-import { Input, Button, Modal, message, Spin, Checkbox } from 'antd';
+import { Input, Button, Modal, message, Spin } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import {
   SearchOutlined,
@@ -185,13 +185,6 @@ const MajorPage: React.FC = () => {
   const [intentionSchoolsByMajorScore, setIntentionSchoolsByMajorScore] = useState<any>({});
   // 标记是否已经初始化过数据
   const [isInitialized, setIsInitialized] = useState(false);
-  // 提示弹窗状态
-  const [isTipModalVisible, setIsTipModalVisible] = useState(false);
-  // 用户选择状态
-  const [userChoices, setUserChoices] = useState({
-    choice1: false,
-    choice2: false,
-  });
   // tab说明文字展开状态
   const [isTabDescriptionExpanded, setIsTabDescriptionExpanded] = useState(false);
   // 备选状态管理
@@ -787,10 +780,9 @@ const MajorPage: React.FC = () => {
           });
 
           if (isLoadMore) {
-            // 加载更多：追加数据
-            const newOriginalIntentionMajors = [...originalIntentionMajors, ...groupedMajors];
-            setOriginalIntentionMajors(newOriginalIntentionMajors);
-            setGroupedIntentionMajors(newOriginalIntentionMajors);
+            // 加载更多：使用函数式更新避免依赖状态
+            setOriginalIntentionMajors(prev => [...prev, ...groupedMajors]);
+            setGroupedIntentionMajors(prev => [...prev, ...groupedMajors]);
           } else {
             // 首次加载：替换数据
             setOriginalIntentionMajors(groupedMajors);
@@ -827,7 +819,7 @@ const MajorPage: React.FC = () => {
         }
       }
     },
-    [pageSize, restoreScrollPosition, originalIntentionMajors]
+    [pageSize, restoreScrollPosition] // 移除 originalIntentionMajors 依赖
   );
 
   /**
@@ -897,31 +889,6 @@ const MajorPage: React.FC = () => {
       }
     }
   }, [dispatch]);
-
-  // 检查是否需要显示提示弹窗
-  useEffect(() => {
-    if (isInitialized && !loading && majors.length > 0) {
-      // 检查是否设置了永远不显示
-      const neverShow = localStorage.getItem('major-list-tip-never-show');
-      if (neverShow === 'true') {
-        return;
-      }
-
-      // 检查今天是否已经显示过
-      const today = new Date().toDateString();
-      const lastShownDate = localStorage.getItem('major-list-tip-last-shown');
-      if (lastShownDate === today) {
-        return;
-      }
-
-      // 显示弹窗
-      const timer = setTimeout(() => {
-        setIsTipModalVisible(true);
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [isInitialized, loading, majors.length]);
 
   // 使用 useLayoutEffect 确保在 DOM 更新后立即恢复滚动位置
   useLayoutEffect(() => {
@@ -1556,41 +1523,6 @@ const MajorPage: React.FC = () => {
     [activeTab, activeSubTab, activeOpportunitySubTab]
   );
 
-  /**
-   * 处理用户选择变化
-   */
-  const handleChoiceChange = useCallback((choice: 'choice1' | 'choice2', checked: boolean) => {
-    setUserChoices((prev) => ({
-      ...prev,
-      [choice]: checked,
-    }));
-  }, []);
-
-  /**
-   * 处理提示弹窗确认
-   */
-  const handleTipModalConfirm = useCallback(() => {
-    // 根据用户选择设置不同的存储策略
-    if (userChoices.choice1) {
-      // 今天不显示
-      const today = new Date().toDateString();
-      localStorage.setItem('major-list-tip-last-shown', today);
-    }
-
-    if (userChoices.choice2) {
-      // 以后都不显示
-      localStorage.setItem('major-list-tip-never-show', 'true');
-    }
-
-    setIsTipModalVisible(false);
-  }, [userChoices]);
-
-  /**
-   * 处理提示弹窗关闭
-   */
-  const handleTipModalClose = useCallback(() => {
-    setIsTipModalVisible(false);
-  }, []);
 
   /**
    * 计算分数
@@ -3169,73 +3101,6 @@ const MajorPage: React.FC = () => {
           </div>
         )}
         <BottomNav selectedIndex={1} />
-        {/* 提示弹窗 */}
-        <Modal
-          title={
-            <div
-              style={{
-                textAlign: 'center',
-                fontSize: '18px',
-                fontWeight: 'bold',
-                color: '#2563eb',
-              }}
-            >
-              💡 使用提示
-            </div>
-          }
-          open={isTipModalVisible}
-          onCancel={handleTipModalClose}
-          footer={null}
-          width={400}
-          centered
-          className="rounded-2xl"
-          style={{ top: '20%' }}
-        >
-          <div>
-            <Checkbox
-              checked={userChoices.choice1}
-              onChange={(e) => handleChoiceChange('choice1', e.target.checked)}
-              style={{ fontSize: '13px' }}
-            >
-              今天不显示此提示
-            </Checkbox>
-          </div>
-          <div>
-            <Checkbox
-              checked={userChoices.choice2}
-              onChange={(e) => handleChoiceChange('choice2', e.target.checked)}
-              style={{ fontSize: '13px' }}
-            >
-              以后都不显示此提示
-            </Checkbox>
-          </div>
-          <div>
-            <Checkbox
-              checked={userChoices.choice2}
-              onChange={(e) => handleChoiceChange('choice2', e.target.checked)}
-              style={{ fontSize: '13px' }}
-            >
-              以后都不显示此提示
-            </Checkbox>
-          </div>
-
-          <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <Button
-              type="primary"
-              onClick={handleTipModalConfirm}
-              style={{
-                background: '#2563eb',
-                border: 'none',
-                borderRadius: '20px',
-                height: '40px',
-                width: '120px',
-                fontSize: '16px',
-              }}
-            >
-              我知道了
-            </Button>
-          </div>
-        </Modal>
       </div>
     </div>
   );

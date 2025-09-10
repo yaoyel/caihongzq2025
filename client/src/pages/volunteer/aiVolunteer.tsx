@@ -205,8 +205,12 @@ const AiVolunteerPage: React.FC = () => {
   // 添加缓存状态，避免重复加载相同数据
   const [lastLoadedGroupId, setLastLoadedGroupId] = useState<string | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<'all' | 'smart'>('all'); // 默认选择"全部可选"tab
-  // 添加浮层提示状态
-  const [showFloatingTip, setShowFloatingTip] = useState(true); // 默认显示浮层提示
+  // 添加浮层提示状态 - 从 localStorage 读取初始状态
+  const [showFloatingTip, setShowFloatingTip] = useState(() => {
+    // 检查 localStorage 中是否已关闭浮层提示
+    const isFloatingTipClosed = localStorage.getItem('aiVolunteerFloatingTipClosed');
+    return isFloatingTipClosed !== 'true'; // 如果已关闭则返回 false，否则返回 true
+  });
   // 添加初始化标志，防止重复初始化
   const [isInitializing, setIsInitializing] = useState(false);
 
@@ -1610,6 +1614,13 @@ const AiVolunteerPage: React.FC = () => {
     );
   }
 
+  // 处理浮层提示关闭的函数
+  const handleCloseFloatingTip = useCallback(() => {
+    setShowFloatingTip(false);
+    // 将关闭状态保存到 localStorage，实现一次关闭后永久不显示
+    localStorage.setItem('aiVolunteerFloatingTipClosed', 'true');
+  }, []);
+
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 50 }}>
       <div className="top-container">
@@ -2103,7 +2114,7 @@ const AiVolunteerPage: React.FC = () => {
                 </p>
               </div>
               <button
-                onClick={() => setShowFloatingTip(false)}
+                onClick={handleCloseFloatingTip}
                 className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/20 rounded-full transition-colors"
                 title="关闭提示"
               >

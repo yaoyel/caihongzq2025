@@ -108,7 +108,7 @@ const MyPage: React.FC = () => {
         </Card>
 
         {/* 高考信息卡片 */}
-        <Card className="info-card" onClick={() => handleCardClick('/basicInfo')}>
+        <Card className="info-card" onClick={() => handleCardClick('/basicInfo?type=my')}>
           <div className="card-content">
             <div className="card-info">
               <Title level={4} className="card-title">

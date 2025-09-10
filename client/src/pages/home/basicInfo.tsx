@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import top from '../../public/basic_info_top.png';
@@ -83,7 +82,6 @@ const BasicInfo: React.FC = () => {
   const [score, setScore] = useState('');
   const [rank, setRank] = useState('');
   const [showProvincePicker, setShowProvincePicker] = useState(false);
-  const [scaleAnswerCount, setScaleAnswerCount] = useState(false);
   // 新增：加载状态
   const [isLoadingRank, setIsLoadingRank] = useState(false);
   const [autoGetRankTimeout, setAutoGetRankTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -117,7 +115,7 @@ const BasicInfo: React.FC = () => {
     const getScaleAnswerCount = async () => {
       const user = await getCurrentUser();
       if (user.code == 200 && user.data) {
-        setScaleAnswerCount(user.data.scaleAnswerCount);
+        // setScaleAnswerCount(user.data.scaleAnswerCount); // This line was removed
       }
     };
     getScaleAnswerCount();
@@ -271,6 +269,8 @@ const BasicInfo: React.FC = () => {
       if (gaokaoConfigResponse && gaokaoConfigResponse.code === 200) {
         if (type === 'college') {
           navigator('/volunteer/aiVolunteer');
+        } else if (type === 'my') {
+          navigator('/my');
         } else {
           navigator('/selfassessment');
         }
