@@ -161,8 +161,8 @@ const CommonSelect: React.FC<CommonSelectProps> = ({
               <div 
                 className={styles.clearButton}
                 style={{
-                  width: '60px',
-                  height: '20px',
+                  width: '15px',
+                  height: '15px',
                   background: '#2563eb',
                   borderRadius: '10px',
                   color: '#fff',
@@ -175,7 +175,7 @@ const CommonSelect: React.FC<CommonSelectProps> = ({
                   handleClear();
                 }}
               >
-                ✕清除
+                ✕
               </div>
             )}
           </div>

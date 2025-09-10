@@ -41,7 +41,7 @@ import { getCurrentUser } from '../../config';
 // 定义备选志愿项的类型（扩展自 API 返回的数据）
 interface AlternativeItem {
   id: string;
-  code: string;
+  majorCode: string;
   name: string;
   schoolCode: string;
   schoolName: string;
@@ -90,7 +90,7 @@ const convertToAlternativeGroup = (item: any): AlternativeGroup => {
   const data = (item.data || []).map(
     (dataItem: any, index: number): AlternativeItem => ({
       id: `${dataItem.schoolCode}_${dataItem.major?.code || 'unknown'}_${index}`,
-      code: dataItem.major?.code || '', // 专业代码
+      majorCode: dataItem.major?.code || '', // 专业代码
       name: dataItem.major?.name || '', // 专业名称
       schoolCode: dataItem.schoolCode?.toString() || '',
       schoolName: dataItem.schoolName || '',
@@ -205,8 +205,14 @@ const AiVolunteerPage: React.FC = () => {
   // 添加缓存状态，避免重复加载相同数据
   const [lastLoadedGroupId, setLastLoadedGroupId] = useState<string | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<'all' | 'smart'>('all'); // 默认选择"全部可选"tab
-  // 添加浮层提示状态
-  const [showFloatingTip, setShowFloatingTip] = useState(true); // 默认显示浮层提示
+  // 添加浮层提示状态 - 从 localStorage 读取初始状态
+  const [showFloatingTip, setShowFloatingTip] = useState(() => {
+    // 检查 localStorage 中是否已关闭浮层提示
+    const isFloatingTipClosed = localStorage.getItem('aiVolunteerFloatingTipClosed');
+    return isFloatingTipClosed !== 'true'; // 如果已关闭则返回 false，否则返回 true
+  });
+  // 添加初始化标志，防止重复初始化
+  const [isInitializing, setIsInitializing] = useState(false);
 
   // 添加精确的滚动位置恢复机制
   const [isRestoringScroll, setIsRestoringScroll] = useState(false);
@@ -798,7 +804,7 @@ const AiVolunteerPage: React.FC = () => {
           searchText === '' ||
           item.schoolName.toLowerCase().includes(searchLower) ||
           item.name.toLowerCase().includes(searchLower) ||
-          item.code.toLowerCase().includes(searchLower) ||
+          item.majorCode.toLowerCase().includes(searchLower) ||
           getCityDisplayInfo(item).toLowerCase().includes(searchLower) ||
           (item.provinceName && isProvinceMatch(searchText, item.provinceName));
 
@@ -1108,31 +1114,45 @@ const AiVolunteerPage: React.FC = () => {
     ]
   );
 
-  // 获取已备选志愿状态的函数
+  // 获取已备选志愿状态的函数 - 增强错误处理和状态管理
   const loadAlternativeStatus = useCallback(async () => {
     try {
       const alternativesResponse = await getMajorAlternatives();
+
       if (alternativesResponse && alternativesResponse.code === 200) {
         const alternatives = alternativesResponse.data?.alternatives || [];
+
         const alternativeMap: { [key: string]: { isAlternative: boolean; id?: string } } = {};
 
         // 构建已备选学校的映射
         alternatives.forEach((item: any) => {
-          const schoolKey = `${item.schoolCode}_${item.code}`;
+          const schoolKey = `${item.schoolCode}_${item.majorCode}`;
           alternativeMap[schoolKey] = { isAlternative: true, id: item.id };
         });
 
         dispatch(setAlternativeStatus(alternativeMap));
+        return true;
+      } else {
+        console.warn('备选状态API返回异常:', alternativesResponse);
+        return false;
       }
     } catch (error) {
       console.error('获取备选状态失败:', error);
+      // 不显示错误提示，避免影响用户体验
+      return false;
     }
   }, [dispatch]);
 
   // 优化的页面初始化逻辑
   useEffect(() => {
     const initializePage = async () => {
+      // 防止重复初始化
+      if (isInitializing || hasInitialized) {
+        return;
+      }
+
       try {
+        setIsInitializing(true);
         dispatch(setLoading(true));
 
         // 设置页面标识
@@ -1152,8 +1172,11 @@ const AiVolunteerPage: React.FC = () => {
         const success = await loadSuitabilityData();
 
         if (success) {
-          // 获取已备选志愿状态
-          await loadAlternativeStatus();
+          // 确保数据加载完成后再加载备选状态
+          // 添加小延迟确保Redux状态已更新
+          setTimeout(async () => {
+            await loadAlternativeStatus();
+          }, 100);
 
           // 设置高发展潜能专业数量
           const topDevelopmentCount = 0;
@@ -1165,11 +1188,12 @@ const AiVolunteerPage: React.FC = () => {
       } finally {
         dispatch(setLoading(false));
         dispatch(setHasInitialized(true));
+        setIsInitializing(false);
       }
     };
 
     initializePage();
-  }, [dispatch, loadSuitabilityData, loadAlternativeStatus]);
+  }, [dispatch, isInitializing, hasInitialized]);
 
   // 渲染空状态提示 - 根据tab页状态显示不同内容
   const renderEmptyState = () => {
@@ -1216,7 +1240,7 @@ const AiVolunteerPage: React.FC = () => {
 
   // 处理备选按钮点击
   const handleAlternativeClick = async (item: AlternativeItem) => {
-    const itemKey = `${item.schoolCode}_${item.code}`;
+    const itemKey = `${item.schoolCode}_${item.majorCode}`;
     const currentStatus = alternativeStatus[itemKey];
 
     // 如果正在加载中，直接返回
@@ -1246,22 +1270,36 @@ const AiVolunteerPage: React.FC = () => {
           message.error(response?.message || '取消备选志愿失败');
         }
       } else {
+       
         // 如果未备选，则添加备选
         // 准备历史分数数据
-        const historyScoreData =
-          item.historyScore?.map((item: any) => {
-            const scoreData: { [key: string]: string } = {};
-            item.historyScore?.forEach((hs: any) => {
-              for (const [key, value] of Object.entries(hs)) {
-                scoreData[key] = value as string;
+        const historyScoreData = (() => {
+          // 兼容不同的数据结构
+          const historyScores = Array.isArray(item.historyScore) ? item.historyScore : [item.historyScore];
+          
+          return historyScores
+            .filter(score => score && typeof score === 'object')
+            .map((scoreItem: any) => {
+              // 处理嵌套的historyScore结构
+              const scoreData = scoreItem.historyScore || scoreItem.scoreData || scoreItem;
+              const result: { [key: string]: string } = {};
+              
+              if (scoreData && typeof scoreData === 'object') {
+                for (const [key, value] of Object.entries(scoreData)) {
+                  if (typeof value === 'string') {
+                    result[key] = value;
+                  }
+                }
               }
-            });
-            return scoreData;
-          }) || [];
+              
+              return result;
+            })
+            .filter(data => Object.keys(data).length > 0);
+        })();
 
         // 调用创建备选志愿接口
         const response = await createMajorAlternative({
-          majorCode: item.code,
+          majorCode: item.majorCode,
           majorName: item.name,
           schoolCode: item.schoolCode,
           schoolName: item.schoolName,
@@ -1288,6 +1326,7 @@ const AiVolunteerPage: React.FC = () => {
         }
       }
     } catch (error) {
+      console.error('备选志愿操作失败:', item);
       message.error('备选志愿操作失败');
     } finally {
       // 清除加载状态
@@ -1575,6 +1614,13 @@ const AiVolunteerPage: React.FC = () => {
     );
   }
 
+  // 处理浮层提示关闭的函数
+  const handleCloseFloatingTip = useCallback(() => {
+    setShowFloatingTip(false);
+    // 将关闭状态保存到 localStorage，实现一次关闭后永久不显示
+    localStorage.setItem('aiVolunteerFloatingTipClosed', 'true');
+  }, []);
+
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 50 }}>
       <div className="top-container">
@@ -1836,7 +1882,7 @@ const AiVolunteerPage: React.FC = () => {
                               {getGroupDisplayName(group.group)}
                             </span>
                             <span className="text-sm opacity-90 bg-white/20 px-2 py-1 rounded-full">
-                              {group.count || 0} 个志愿
+                              {group?.result?.length || 0} 个志愿
                             </span>
                           </div>
                         </div>
@@ -1873,12 +1919,12 @@ const AiVolunteerPage: React.FC = () => {
                                       className={`text-blue-700 text-[14px] mr-2 ${item.name.length > 8 ? 'cursor-pointer hover:text-blue-800' : ''}`}
                                       onClick={() => {
                                         handleNavigation(
-                                          `/major/majorlovedetail?majorCode=${item.code}&&majorName=${item.name}&score=${item.score}&isFavorite=true`,
+                                          `/major/majorlovedetail?majorCode=${item.majorCode}&&majorName=${item.name}&score=${item.score}&isFavorite=true`,
                                           { replace: false } // 不使用 replace，保持正常的导航历史
                                         );
                                       }}
                                     >
-                                      {item.code}{' '}
+                                      {item.majorCode}{' '}
                                       {item.name.length > 5
                                         ? item.name.substring(0, 5) + '...'
                                         : item.name}
@@ -1890,7 +1936,7 @@ const AiVolunteerPage: React.FC = () => {
 
                                     <button
                                       className={`px-3 py-1 rounded ${(() => {
-                                        const itemKey = `${item.schoolCode}_${item.code}`;
+                                        const itemKey = `${item.schoolCode}_${item.majorCode}`;
                                         const isAlternative =
                                           alternativeStatus[itemKey]?.isAlternative || false;
                                         const isLoading = loadingStatus[itemKey];
@@ -1902,12 +1948,12 @@ const AiVolunteerPage: React.FC = () => {
                                       })()}`}
                                       onClick={() => handleAlternativeClick(item)}
                                       disabled={(() => {
-                                        const itemKey = `${item.schoolCode}_${item.code}`;
+                                        const itemKey = `${item.schoolCode}_${item.majorCode}`;
                                         return loadingStatus[itemKey];
                                       })()}
                                     >
                                       {(() => {
-                                        const itemKey = `${item.schoolCode}_${item.code}`;
+                                        const itemKey = `${item.schoolCode}_${item.majorCode}`;
                                         const isAlternative =
                                           alternativeStatus[itemKey]?.isAlternative || false;
                                         const isLoading = loadingStatus[itemKey];
@@ -2060,16 +2106,25 @@ const AiVolunteerPage: React.FC = () => {
             <div className="flex items-start justify-between">
               <div className="flex-1 pr-3">
                 <p className="text-sm leading-relaxed">
-                  点击<span className="font-bold text-yellow-300 bg-yellow-300/20 px-1 rounded">备选</span>按钮，该院校专业将进入"志愿"频道，作为"备选志愿"，供进一步筛选确认。
+                  点击
+                  <span className="font-bold text-yellow-300 bg-yellow-300/20 px-1 rounded">
+                    备选
+                  </span>
+                  按钮，该院校专业将进入&ldquo;志愿&rdquo;频道，作为&ldquo;备选志愿&rdquo;，供进一步筛选确认。
                 </p>
               </div>
               <button
-                onClick={() => setShowFloatingTip(false)}
+                onClick={handleCloseFloatingTip}
                 className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/20 rounded-full transition-colors"
                 title="关闭提示"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>

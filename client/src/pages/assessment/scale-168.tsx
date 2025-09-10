@@ -51,6 +51,7 @@ const StyledContent = styled(Content)`
   @media (max-width: 768px) {
     padding: 16px;
     max-width: 100%;
+    padding-bottom: 100px;
   }
 `;
 
