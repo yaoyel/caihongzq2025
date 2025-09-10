@@ -1163,6 +1163,13 @@ export class MajorController {
       majorName: string;
       developmentPotential: number;
     }>;
+    bottomDevelopmentCount: number;
+    bottomDevelopmentMajors: Array<{
+      majorCode: string;
+      majorName: string;
+      developmentPotential: number;
+    }>;
+
     groupedByDevelopmentPotential: Array<{
       groupId: string;
       description: string;
@@ -1298,6 +1305,26 @@ export class MajorController {
         topDevelopmentMajors.map(major => major.majorCode)
       );
 
+      // 获取后20%发展潜力最高的专业，并转换为期望的格式
+      const bottomDevelopmentMajors = allDevelopmentRankings
+        .filter(major => major.position === 'bottom')
+        .map(major => ({
+          majorCode: major.majorCode,
+          majorName: major.majorName,
+          developmentPotential: major.developmentpotential || 0
+        }));
+        
+        const bottomDevelopmentMajorSet = new Set(
+          bottomDevelopmentMajors.map(major => major.majorCode)
+        );
+
+      // 统计备选方案中属于后20%发展潜力专业的唯一专业代码数量
+      const bottomDevelopmentCount = new Set(
+        alternatives
+          .filter(alternative => bottomDevelopmentMajorSet.has(alternative.majorCode))
+          .map(alternative => alternative.majorCode)
+      ).size;
+
       // 统计备选方案中属于前20%发展潜力专业的唯一专业代码数量
       const topDevelopmentCount = new Set(
         alternatives
@@ -1322,6 +1349,8 @@ export class MajorController {
         totalPages,
         topDevelopmentCount,
         topDevelopmentMajors,
+        bottomDevelopmentCount,
+        bottomDevelopmentMajors,
         groupedByDevelopmentPotential,
         groupedByRankDiffPer
       };
