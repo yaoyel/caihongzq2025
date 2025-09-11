@@ -167,8 +167,7 @@ export class ConfigController {
       const user = await this.userService.findOne(ctx.state.user!.userId);
       if (!user) {
         throw new Error('用户不存在');
-      }
-      
+      } 
       const rank = user.rank;
       const computeMajors = await this.majorScoreService.getTopDevelopmentPotentialMajors(ctx.state.user!.userId.toString(),user!.enrollType || '本科批');
       const majors = computeMajors.filter(s=> s.lexue_score > 0 && s.position === 'top');
@@ -179,7 +178,7 @@ export class ConfigController {
       const enrollPlansMap = await this.majorRedisService.getMultipleEnrollPlans(computeMajors.map(s=>s.majorCode), user!.province || '北京',   Number.parseInt(process.env.CURRENT_YEAR || '2025'), user!.enrollType || '本科批', '普通类', user!.preferredSubjects || '综合', user!.secondarySubjects?.split(',') || ['不限']);
     
       // 使用专业数据获取详细信息
-      const majorDetails = await this.majorRedisService.getMajorDetails(majors.map(s=> s.majorCode),1,recommendCount); 
+      const majorDetails = await this.majorRedisService.getMajorDetails(majors.map(s=> s.majorCode),1,9999);    
       // 根据用户信息，从redis中查询专业对应的分数
       const historyScoreMap = await this.majorRedisService.getMultipleMajorScores(majors.map(s=>s.majorCode), user!.province || '北京', user!.preferredSubjects || '综合', user!.secondarySubjects || '');
       // 将 Map 转换为数组格式，便于后续处理
@@ -192,7 +191,7 @@ export class ConfigController {
           });
         });
       }); 
-
+ 
 
       // 处理每个专业的学校数据，添加历史分数信息并按位次分组排序
       const processedMajorDetails = majorDetails.data.map((majorDetail: any) => { 
@@ -237,10 +236,8 @@ export class ConfigController {
             (user.enrollType === '专科批' 
               ? localBatchNames.includes(score.batch)
               : !localBatchNames.includes(score.batch))
-          );
-          
-
-          
+          ); 
+      
           // 计算与用户位次的差异百分比
           // 计算位次差异百分比：正值表示学校平均位次比用户位次好，负值表示较差
           const rankDiffPercentage = 0;
@@ -293,7 +290,7 @@ export class ConfigController {
             group,
             isHighRange
           };
-        });
+        }); 
         
         // 过滤掉 historyScores 数组长度为 0 的学校和2024年位次数据无效的学校
         const filteredSchools = processedSchools.filter((school: SchoolWithRank) => {
@@ -315,8 +312,7 @@ export class ConfigController {
           ...majorDetail,
           schools: filteredSchools
         };
-      });
-
+      }); 
       // 检查是否按照专业排序
       const isSortByMajor = sortByMajor === 'true';
       
@@ -450,58 +446,18 @@ export class ConfigController {
         // 原有的逻辑：将所有学校展开并添加专业信息
         const allSchools: any[] = []; 
         processedMajorDetails.forEach((major, index) => {
-          if (major.schools && Array.isArray(major.schools)) {
-            const isTopFive = index < 5; // 前五个专业为置顶
+          if (major.schools && Array.isArray(major.schools)) { 
             major.schools.forEach((school: any) => {
               allSchools.push({
                 ...school,
                 majorCode: major.code,
-                majorName: major.major.name,
-                isTopFive
+                majorName: major.major.name 
               });
             });
           }
-        });
-
-        // 对所有学校进行统一排序
-        const sortedAllSchools = allSchools.sort((a: any, b: any) => {
-          // 首先按 isTopFive 排序（置顶的排在前面）
-          if (a.isTopFive !== b.isTopFive) {
-            return a.isTopFive ? -1 : 1;
-          } 
-
-          // 对于非置顶的学校，按照 group 进行分组，组内按照 rankDiffPer 排序
-          if (!a.isTopFive && !b.isTopFive) {
-            // 首先按 group 排序
-            if (a.group !== b.group) {
-              return a.group - b.group;
-            }
-            
-            // 组内按照 rankDiffPer 进行排序（从高到低）
-            const aRankDiff = a.rankDiffPer || 0;
-            const bRankDiff = b.rankDiffPer || 0;
-            return bRankDiff - aRankDiff;
-          }
-
-          return 0;
-        });
-
-        // 选出置顶的学校和非置顶的学校
-        const topFiveSchools = sortedAllSchools.filter(school => 
-          school.isTopFive && 
-          school.isHighRange && 
-          school.features  
-        ); 
-        const nonTopFiveSchools = sortedAllSchools.filter(school => 
-          !school.isTopFive 
-        );
-        const selectedNonTopFiveSchools = nonTopFiveSchools;//.slice(0, recommendCount);
-        
-        // 合并置顶和非置顶学校
-        const allSelectedSchools = [...topFiveSchools, ...selectedNonTopFiveSchools];
-
+        });  
         // 将专业信息放到学校里面，每个学校单独显示
-        const schoolsWithMajor = allSelectedSchools.map(school => ({
+        const schoolsWithMajor = allSchools.map(school => ({
           id: school.id,
           schoolName: school.name,
           schoolCode: school.code,
@@ -532,53 +488,12 @@ export class ConfigController {
             developmentPotential: majors.find(m => m.majorCode === school.majorCode)?.developmentpotential || 0 
           }
         }));
+   
 
-        // 筛选出录取率和就业率都在前50%的学校
-        const filterTop50PercentSchools = (schools: any[]) => {
-          // 计算中位数的辅助函数
-          const calculateMedian = (values: number[]) => {
-            if (values.length === 0) return 0;
-            const sorted = values.filter(v => v > 0).sort((a, b) => a - b);
-            if (sorted.length === 0) return 0;
-            const mid = Math.floor(sorted.length / 2);
-            return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
-          };
 
-          // 提取所有有效的录取率和就业率数据
-          const validEnrollmentRates = schools
-            .map(school => school.enrollmentRate)
-            .filter(rate => rate !== null && rate !== undefined && rate > 0)
-            .map(rate => parseFloat(rate)); // 转换为数字
-          
-          const validEmploymentRates = schools
-            .map(school => school.employmentRate)
-            .filter(rate => rate !== null && rate !== undefined && rate > 0)
-            .map(rate => parseFloat(rate)); // 转换为数字 
-          // 计算中位数（前50%的阈值）
-          const enrollmentMedian = calculateMedian(validEnrollmentRates);
-          const employmentMedian = calculateMedian(validEmploymentRates); 
-          // 筛选出录取率和就业率都在前50%的学校
-          const top50PercentSchools = schools.filter(school => {
-          const enrollmentRate = parseFloat(school.enrollmentRate) || 0;
-          const employmentRate = parseFloat(school.employmentRate) || 0;
-            
-          return enrollmentRate >= enrollmentMedian && employmentRate >= employmentMedian;
-          }); 
-          return {
-            filteredSchools: top50PercentSchools,
-            enrollmentMedian,
-            employmentMedian,
-            totalSchools: schools.length,
-            filteredCount: top50PercentSchools.length
-          };
-        };
-
-        // 应用筛选逻辑
-        const top50PercentResult = filterTop50PercentSchools(schoolsWithMajor);
-
-        // 对筛选后的学校数据进行冲突专业过滤
+        // 对学校数据进行冲突专业过滤
         const filteredSchools = this.filterConflictingMajors(
-          top50PercentResult.filteredSchools,
+          schoolsWithMajor,
           buttomMajors,
           enrollPlansMap
         );
@@ -593,7 +508,7 @@ export class ConfigController {
           '3': { name: '（-10%）到+5%位次段', count: 0, data: [] as any[] },
           '4': { name: '（-30%）到（-10%）位次段', count: 0, data: [] as any[] },
           '5': { name: '（-100%）到（-30%）位次段', count: 0, data: [] as any[] },
-          '6': { name: '其他位次段', count: 0, data: [] as any[] }
+         // '6': { name: '其他位次段', count: 0, data: [] as any[] }
         };
 
         // 统计各分组的学校数量（使用最终过滤后的数据）
@@ -602,7 +517,7 @@ export class ConfigController {
           if (rankSegments[groupKey as keyof typeof rankSegments]) {
             rankSegments[groupKey as keyof typeof rankSegments].count++;
           } else {
-            rankSegments['6'].count++;
+           // rankSegments['6'].count++;
           }
         });
 
@@ -613,7 +528,7 @@ export class ConfigController {
           { groupId: '3', name: '（-10%）到+5%位次段', count: rankSegments['3'].count },
           { groupId: '4', name: '（-30%）到（-10%）位次段', count: rankSegments['4'].count },
           { groupId: '5', name: '（-100%）到（-30%）位次段', count: rankSegments['5'].count },
-          { groupId: '6', name: '其他位次段', count: rankSegments['6'].count }
+          // { groupId: '6', name: '其他位次段', count: rankSegments['6'].count }
         ];
 
         // 对 schools 进行分组处理（使用最终过滤后的数据）
@@ -716,7 +631,7 @@ export class ConfigController {
    * @returns 按分组组织的学校数据数组，格式为 [{groupId:"1",count:0,data:[]}]
    */
   private transformSchoolsByGroup(schools: any[]) {
-    const segments = ['1', '2', '3', '4', '5', '6'];
+    const segments = ['1', '2', '3', '4', '5'];
     const result: any = {};
     
     // 初始化分组结构
@@ -736,8 +651,8 @@ export class ConfigController {
         result[groupKey].data.push(school);
       } else {
         // 如果 group 不在预定义范围内，归类到 group 6
-        result['6'].count++;
-        result['6'].data.push(school);
+        // result['6'].count++;
+        // result['6'].data.push(school);
       }
     });
     
@@ -761,13 +676,12 @@ export class ConfigController {
    * @param enrollPlansMap 招生计划映射
    * @returns 过滤后的专业数据
    */
-  private filterConflictingMajors(majors: any[], buttomMajors: any[], enrollPlansMap: Map<string, any[]>) {    
+  private filterConflictingMajors(majors: any[], buttomMajors: any[], enrollPlansMap: Map<string, any[]>) {   
     // 按 majorGroup 分组
     const groupMap = new Map<string, { majors: string[], buttomMajors: string[] }>();   
     // 处理 majors 数据
-    majors.forEach(m => { 
-      if(!m.major.code) return; 
-      const enrollPlans = enrollPlansMap.get(m.major.code) || [];
+    majors.forEach(m => {  
+      const enrollPlans = enrollPlansMap.get(m.major.code) || []; 
       enrollPlans.forEach(plan => { 
         const majorGroup = plan.majorGroup;
         if (majorGroup) {
@@ -775,14 +689,16 @@ export class ConfigController {
             groupMap.set(majorGroup, { majors: [], buttomMajors: [] });
           }
           
-          groupMap.get(majorGroup)!.majors.push(m.major.code); 
+          const groupData = groupMap.get(majorGroup)!;
+          // 检查是否已存在，避免重复添加
+          if (!groupData.majors.includes(m.major.code)) {
+            groupData.majors.push(m.major.code); 
+          }
         }
       });
-    });  
- 
+    });    
     // 处理 buttomMajors 数据
-    buttomMajors.forEach(m => { 
-      if(!m.majorCode) return; 
+    buttomMajors.forEach(m => {  
       const enrollPlans = enrollPlansMap.get(m.majorCode) || []; 
       enrollPlans.forEach(plan => { 
         const majorGroup = plan.majorGroup;
@@ -790,14 +706,14 @@ export class ConfigController {
           if (!groupMap.has(majorGroup)) {
             groupMap.set(majorGroup, { majors: [], buttomMajors: [] });
           }
-          groupMap.get(majorGroup)!.buttomMajors.push(m.majorCode);
+          const groupData = groupMap.get(majorGroup)!;
+          // 检查是否已存在，避免重复添加
+          if (!groupData.buttomMajors.includes(m.majorCode)) {
+            groupData.buttomMajors.push(m.majorCode);
+          }
         }
       });
-    });
-    console.log('buttomMajors:', buttomMajors);
-    console.log('groupMap:', groupMap);
-    
-
+    });  
     // 找出冲突的 majorGroup（同时包含 majors 和 buttomMajors）
     const conflictingGroups = new Set<string>();
     groupMap.forEach((value, key) => {
@@ -805,8 +721,7 @@ export class ConfigController {
         console.log(key,value.majors,value.buttomMajors);
         conflictingGroups.add(key);
       }
-    }); 
-
+    });  
     // 过滤掉冲突组中的 majors 数据
     const filteredMajors = majors.filter(major => {
       const enrollPlans = enrollPlansMap.get(major.majorCode) || [];

@@ -815,7 +815,7 @@ export class MajorScoreService {
     try {
       // 构建科目选择的IN条件
       const subjectSelectionPlaceholders = subjectSelections.map((_, index) => `$${index + 5}`).join(',');
-      
+      console.log(subjectSelectionPlaceholders)
       const sql = `
         SELECT 
           d.name AS schoolName,

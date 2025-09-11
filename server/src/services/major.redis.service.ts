@@ -164,14 +164,13 @@ export class MajorRedisService {
       // 参数验证
       if (!Array.isArray(codes) || codes.length === 0) {
         return new Map();
-      }
+      } 
 
       // 将次选科目字符串转换为数组
       const secondSubjects = secondarySelected.split(',').filter(Boolean);
       
       // 使用RedisModule获取所有可能的组合
-      const patterns = await RedisModule.getMatchingPatterns("major_scores", subjectType, secondSubjects);
-      
+      const patterns = await RedisModule.getMatchingPatterns("major_scores", subjectType, secondSubjects); 
       // 使用multi进行批量查询
       const multi = this.redisClient.multi();
       
@@ -215,8 +214,7 @@ export class MajorRedisService {
         } else {
           majorScoresMap.set(code, []);
         }
-      }
-      
+      } 
       return majorScoresMap;
       
     } catch (error: unknown) {
@@ -538,6 +536,7 @@ export class MajorRedisService {
     currentPage: number;
     totalPages: number;
   }> {
+        
     try {
       // 参数验证
       if (!Array.isArray(codes) || codes.length === 0) {
@@ -573,13 +572,13 @@ export class MajorRedisService {
           totalPages: Math.ceil(codes.length / pageSize)
         };
       }
-
+  
       // 处理查询结果
       const data = results
         .map((result, index) => {
           if (!result) return null;
           try {
-            const parsed = JSON.parse(result as string);
+            const parsed = JSON.parse(result as string); 
             return {
               ...parsed,
               code: paginatedCodes[index] // 添加专业代码到返回数据中
@@ -589,14 +588,15 @@ export class MajorRedisService {
             return null;
           }
         })
-        .filter(item => item !== null);
-
+        .filter(item => item !== null); 
       return {
         total: codes.length,
         data,
         currentPage: page,
         totalPages: Math.ceil(codes.length / pageSize)
       };
+      
+
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
       console.error('批量获取专业信息失败:', errorMessage);
