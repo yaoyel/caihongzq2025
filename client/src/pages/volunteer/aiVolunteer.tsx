@@ -1072,7 +1072,17 @@ const AiVolunteerPage: React.FC = () => {
     },
     [activeTab, smartRecommendData, alternatives]
   );
-
+  // 清除滚动条定位的函数
+  const clearScrollPosition = useCallback(() => {
+    // 清除保存的滚动位置
+    localStorage.removeItem('aiVolunteerScrollPosition');
+    // 清除最后查看的项目
+    localStorage.removeItem('aiVolunteerLastViewedItem');
+    // 清除返回标记
+    sessionStorage.removeItem('aiVolunteerFromDetail');
+    // 重置滚动位置到顶部
+    window.scrollTo(0, 0);
+  }, []);
   // 位次段选择回调函数 - 根据当前tab选择不同的处理逻辑
   const handleRankSegmentChange = useCallback(
     async (groupId: string) => {
@@ -1109,6 +1119,7 @@ const AiVolunteerPage: React.FC = () => {
           setLastLoadedGroupId(groupId); // 设置缓存，防止重复调用
           // 根据选中的位次段加载数据
           await loadSuitabilityData(groupId === 'all' ? undefined : groupId);
+          clearScrollPosition();
         } catch (error) {
           console.error('位次段选择数据更新失败:', error);
         }
@@ -1121,6 +1132,7 @@ const AiVolunteerPage: React.FC = () => {
       activeTab,
       alternatives,
       scrollToSpecificGroup,
+      clearScrollPosition,
     ]
   );
 
