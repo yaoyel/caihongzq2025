@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal, Checkbox, Input } from 'antd';
@@ -194,9 +193,9 @@ const EducationalPage: React.FC = () => {
   const [groupedByDevelopmentPotential, setGroupedByDevelopmentPotential] = useState<any[]>([]);
   const [groupedByRankDiffPer, setGroupedByRankDiffPer] = useState<any[]>([]);
   const [topDevelopmentMajors, setTopDevelopmentMajors] = useState<any[]>([]);
-
-  // 按API顺序选择相关状态
+  const [bottomDevelopmentMajors, setBottomDevelopmentMajors] = useState<any[]>([]);
   const [rankOptions, setRankOptions] = useState<SelectOptionData[]>([]);
+  // 按API顺序选择相关状态
   const [rankFilterOptions, setRankFilterOptions] = useState<SelectOptionData[]>([]);
   // 学校性质过滤相关状态
   const [selectedSchoolNature, setSelectedSchoolNature] = useState<string>('all');
@@ -927,7 +926,9 @@ const EducationalPage: React.FC = () => {
           if (alternativesResponse.data.topDevelopmentMajors) {
             setTopDevelopmentMajors(alternativesResponse.data.topDevelopmentMajors);
           }
-
+          if (alternativesResponse.data.bottomDevelopmentMajors) {
+            setBottomDevelopmentMajors(alternativesResponse.data.bottomDevelopmentMajors);
+          }
           // 将 API 返回的数据转换为我们的类型
           const convertedData: AlternativeItem[] = alternativesData.map(
             (item: any, index: number) => ({
@@ -1097,63 +1098,9 @@ const EducationalPage: React.FC = () => {
 
   // 渲染空状态提示
   const renderEmptyState = () => (
-    <div className="w-full max-w-xl bg-white rounded-2xl shadow p-6 text-center">
+    <div className="w-full max-w-xl bg-white rounded-2xl shadow p-6 text-center mt-5">
       <div className="mb-4">
         <div className="text-gray-400 text-6xl mb-4">🎯</div>
-
-        {/* 升学率过滤 */}
-        <div className="w-full max-w-xl p-1">
-          <div className="flex items-center space-x-4">
-            <span className="text-sm font-medium text-gray-700 whitespace-nowrap">升学率：</span>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => handleEnrollmentRateSelect('all')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedEnrollmentRate === 'all' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                全部
-              </button>
-              <button
-                onClick={() => handleEnrollmentRateSelect('top50')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedEnrollmentRate === 'top50' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                前50%
-              </button>
-              <button
-                onClick={() => handleEnrollmentRateSelect('bottom50')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedEnrollmentRate === 'bottom50' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                后50%
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* 就业率过滤 */}
-        <div className="w-full max-w-xl p-1">
-          <div className="flex items-center space-x-4">
-            <span className="text-sm font-medium text-gray-700 whitespace-nowrap">就业率：</span>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => handleEmploymentRateSelect('all')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedEmploymentRate === 'all' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                全部
-              </button>
-              <button
-                onClick={() => handleEmploymentRateSelect('top50')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedEmploymentRate === 'top50' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                前50%
-              </button>
-              <button
-                onClick={() => handleEmploymentRateSelect('bottom50')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${selectedEmploymentRate === 'bottom50' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                后50%
-              </button>
-            </div>
-          </div>
-        </div>
         <h3 className="text-lg font-bold text-gray-900 mb-2">暂无志愿</h3>
         <p className="text-gray-500 text-sm mb-6">
           您还没有任何志愿，快去意向页面选择您感兴趣的院校和专业吧！
@@ -1468,15 +1415,18 @@ const EducationalPage: React.FC = () => {
       });
     }
 
-    // 2. 发展潜能前20%专业预警
-    if (allMajors.length > 0) {
-      // 计算发展潜能的分位数
-      const developmentPotentials = allMajors.map(item => item.developmentPotential || 0).sort((a, b) => b - a);
-      const top20PercentThreshold = developmentPotentials[Math.floor(developmentPotentials.length * 0.2)] || 0;
-      const top20PercentCount = allMajors.filter(item => (item.developmentPotential || 0) >= top20PercentThreshold).length;
-      const top20PercentRatio = top20PercentCount / allMajors.length;
-
-      if (top20PercentRatio < 0.8) {
+    // 2. 发展潜能前20%专业预警 - 使用API返回的topDevelopmentMajors
+    if (allMajors.length > 0 && topDevelopmentMajors && topDevelopmentMajors.length > 0) {
+      // 获取当前备选专业中属于前20%发展潜能专业的数量
+      const topDevelopmentCount = allMajors.filter(item => 
+        topDevelopmentMajors.some(topMajor => 
+          topMajor.schoolCode === item.schoolCode && topMajor.majorCode === item.majorCode
+        )
+      ).length;
+      
+      const topDevelopmentRatio = topDevelopmentCount / allMajors.length;
+      
+      if (topDevelopmentRatio < 0.8) {
         warnings.push({
           type: 'top-development',
           level: 'warning',
@@ -1484,25 +1434,30 @@ const EducationalPage: React.FC = () => {
           content: '建议80%以上志愿均属于发展潜能前20%专业，降低未来发展风险！'
         });
       }
-
-      // 3. 发展潜能后80%专业预警
-      const bottom20PercentThreshold = developmentPotentials[Math.floor(developmentPotentials.length * 0.8)] || 0;
-      const bottomMajors = allMajors.filter(item => (item.developmentPotential || 0) <= bottom20PercentThreshold);
-      
-      if (bottomMajors.length > 0) {
-        const majorNames = bottomMajors.map(item => item.majorName).slice(0, 3); // 最多显示3个专业名称
-        warnings.push({
-          type: 'bottom-development',
-          level: 'danger',
-          title: '发展潜能后80%专业：⚠️高风险预警',
-          content: `${majorNames.join('、')}${bottomMajors.length > 3 ? '等' : ''}专业均属于发展潜能后20%专业，如无非常特殊的原因，不建议考虑，避免未来发展风险！`,
-          majors: majorNames
-        });
-      }
     }
 
+      // 3. 发展潜能后20%专业预警 - 使用API返回的数据
+      if (bottomDevelopmentMajors && bottomDevelopmentMajors.length > 0) {
+        // 找出当前备选志愿中属于后20%专业的项目
+        const bottomMajorsInAlternatives = allMajors.filter(item => 
+          bottomDevelopmentMajors.some((bottomMajor: any) => 
+            bottomMajor.majorCode === item.majorCode
+          )
+        );
+        
+        if (bottomMajorsInAlternatives.length > 0) {
+          const majorNames = bottomMajorsInAlternatives.map(item => item.majorName).slice(0, 3);
+          warnings.push({
+            type: 'bottom-development',
+            level: 'danger',
+            title: '发展潜能后20%专业：⚠️高风险预警',
+            content: `${majorNames.join('、')}${bottomMajorsInAlternatives.length > 3 ? '等' : ''}专业均属于发展潜能后20%专业，如无非常特殊的原因，不建议考虑，避免未来发展风险！`,
+            majors: majorNames
+          });
+        }
+      }
     return warnings;
-  }, [alternatives, activeTab]);
+  }, [alternatives, activeTab, topDevelopmentMajors, bottomDevelopmentMajors]);
 
   const warningData = calculateWarnings();
   // 获取位次差DOM
@@ -1628,7 +1583,9 @@ const EducationalPage: React.FC = () => {
           if (alternativesResponse.data.topDevelopmentMajors) {
             setTopDevelopmentMajors(alternativesResponse.data.topDevelopmentMajors);
           }
-
+          if (alternativesResponse.data.bottomDevelopmentMajors) {
+            setBottomDevelopmentMajors(alternativesResponse.data.bottomDevelopmentMajors);
+          }
           // 将 API 返回的数据转换为我们的类型
           const convertedData: AlternativeItem[] = alternativesData.map(
             (item: any, index: number) => ({
@@ -2191,8 +2148,6 @@ const EducationalPage: React.FC = () => {
                 const isMajorGroup = items.group <= -1000;
 
                 let schoolGroups: SchoolGroup[];
-                let groupTitle: string;
-                let groupCount: number;
                 let rankGroups: any[] = [];
 
                 if (isMajorGroup) {
@@ -2200,7 +2155,6 @@ const EducationalPage: React.FC = () => {
                   const majorGroup = (items as any).majorGroup as MajorGroup;
                   rankGroups = majorGroup.rankGroups || [];
                   schoolGroups = rankGroups.flatMap((rankGroup) => rankGroup.schools);
-                  groupTitle = majorGroup.majorName;
                 } else {
                   // 按按API顺序分组的数据
                   schoolGroups = groupBySchool(items.result);

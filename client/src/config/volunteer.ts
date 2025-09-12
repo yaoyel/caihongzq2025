@@ -224,6 +224,7 @@ interface MajorAlternativesResponse {
     volunteerCount: number;
     topDevelopmentCount: number;
     topDevelopmentMajors: TopDevelopmentMajor[];
+    bottomDevelopmentMajors: TopDevelopmentMajor[];
     groupedByDevelopmentPotential: DevelopmentPotentialGroup[];
     groupedByRankDiffPer: RankDiffPerGroup[];
   };

@@ -1,12 +1,12 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import Top from '../comm/top';
 import { Card } from 'antd';
 import BottomNav from '../comm/bottom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getSchoolDetail } from '../../config';
+
 /**
- * 主页面组件
+ * 学校详情页面组件
  */
 const SchoolDetail: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -24,44 +24,48 @@ const SchoolDetail: React.FC = () => {
     marginBottom: 16,
     fontSize: 18,
   };
-  //+5--5
+  
+  // +30%到+100%位次段 (group 1)
   const [tuijianSchools1, setTuijianSchools1] = useState([]);
-  //-15- -5
+  // +5%到+30%位次段 (group 2)
   const [tuijianSchools2, setTuijianSchools2] = useState([]);
-  //5--10
+  // (-10%)到+5%位次段 (group 3)
   const [tuijianSchools3, setTuijianSchools3] = useState([]);
-  //其他位次院校
+  // (-30%)到(-10%)位次段 (group 4)
   const [tuijianSchools4, setTuijianSchools4] = useState([]);
+  // (-100%)到(-30%)位次段 (group 5)
+  const [tuijianSchools5, setTuijianSchools5] = useState([]);
+  // 其他位次段 (group 6)
+  const [tuijianSchools6, setTuijianSchools6] = useState([]);
 
   useEffect(() => {
-    //获取院校信息
+    // 获取院校信息
     const getSchools = async (schoolCode: string) => {
       if (!schoolCode) {
         console.error('未找到学校代码');
         return;
       }
-      //  setSchoolLoading(true);
       try {
         const response = await getSchoolDetail(schoolCode);
         console.log('学校详情响应:', response);
-        
+
         // 服务器端现在返回标准格式 { code: 200, data: {...} }
         if (response && response.code === 200 && response.data) {
-          setSchoolDetail(response.data);
+          setSchoolDetail(response.data?.data);
           console.log('学校详情数据:', response.data);
-          if (response.data.majors && Array.isArray(response.data.majors)) {
-            setTuijianSchools1(response.data.majors.filter((s: any) => s.group === 2));
-            setTuijianSchools2(response.data.majors.filter((s: any) => s.group === 3));
-            setTuijianSchools3(response.data.majors.filter((s: any) => s.group === 1));
-            setTuijianSchools4(response.data.majors.filter((s: any) => s.group === 0));
+          if (response.data?.data?.majors && Array.isArray(response.data?.data?.majors)) {
+            setTuijianSchools1(response.data.data.majors.filter((s: any) => s.group === 1));
+            setTuijianSchools2(response.data.data.majors.filter((s: any) => s.group === 2));
+            setTuijianSchools3(response.data.data.majors.filter((s: any) => s.group === 3));
+            setTuijianSchools4(response.data.data.majors.filter((s: any) => s.group === 4));
+            setTuijianSchools5(response.data.data.majors.filter((s: any) => s.group === 5));
+            setTuijianSchools6(response.data.data.majors.filter((s: any) => s.group === 6));
           }
         } else {
           console.error('未获取到有效的学校数据:', response);
         }
       } catch (error) {
         console.error('获取院校信息失败:', error);
-      } finally {
-        // setSchoolLoading(false);
       }
     };
     if (schoolCode) {
@@ -88,7 +92,7 @@ const SchoolDetail: React.FC = () => {
     }
   };
 
-  //获取特色专业
+  // 获取特色专业
   const getFeatureMajors = () => {
     const featureMajors = schoolDetailInfo?.majors?.filter(
       (item: any) => item.isNationalFeature || item.isProvinceFeature
@@ -108,7 +112,7 @@ const SchoolDetail: React.FC = () => {
     }
   };
 
-  //每个节点的Html渲染
+  // 每个节点的Html渲染
   const getDisadvantages = (htmlData: string, titleStr: string) => {
     if (htmlData) {
       return (
@@ -138,7 +142,7 @@ const SchoolDetail: React.FC = () => {
             {schoolName}
           </div>
           <div className="border border-solid border-[#e5e6eb] p-3">
-            {/* 专业一览 */}
+            {/* 院校简介 */}
             {getDisadvantages(schoolDetailInfo?.schoolDetail?.briefComment || '', '院校简介')}
             {/* 特色专业 */}
             {getFeatureMajors()}
@@ -147,13 +151,16 @@ const SchoolDetail: React.FC = () => {
             {/* 历史沿革 */}
             {getDisadvantages(schoolDetailInfo?.schoolDetail?.historyIntro || '', '历史沿革')}
             {/* 推荐理由 */}
-            {getDisadvantages(schoolDetailInfo?.schoolDetail?.seniorRecommendations || '', '推荐理由')}
+            {getDisadvantages(
+              schoolDetailInfo?.schoolDetail?.seniorRecommendations || '',
+              '推荐理由'
+            )}
             {/* 热爱专业 */}
             <div style={{ marginBottom: 24 }}>
               <div style={sectionTitleStyle}>热爱专业</div>
               <div style={{ marginTop: 12 }}>
                 <div
-                  className="flex items-center justify-between  mb-2"
+                  className="flex items-center justify-between mb-2"
                   onClick={() =>
                     tuijianSchools1.length > 0 &&
                     navigator(
@@ -161,11 +168,11 @@ const SchoolDetail: React.FC = () => {
                     )
                   }
                 >
-                  <span>1.-10%到+5%位次专业 {tuijianSchools1.length}个</span>
+                  <span>1. +30%到+100%位次段 {tuijianSchools1.length}个</span>
                   <span className="mr-2">{'>'}</span>
                 </div>
                 <div
-                  className=" flex items-center justify-between mb-2"
+                  className="flex items-center justify-between mb-2"
                   onClick={() =>
                     tuijianSchools2.length > 0 &&
                     navigator(
@@ -173,11 +180,11 @@ const SchoolDetail: React.FC = () => {
                     )
                   }
                 >
-                  <span>2.-30% 到-10%位次专业 {tuijianSchools2.length}个</span>
+                  <span>2. +5%到+30%位次段 {tuijianSchools2.length}个</span>
                   <span className="mr-2">{'>'}</span>
                 </div>
                 <div
-                  className=" flex items-center justify-between mb-2"
+                  className="flex items-center justify-between mb-2"
                   onClick={() =>
                     tuijianSchools3.length > 0 &&
                     navigator(
@@ -185,11 +192,11 @@ const SchoolDetail: React.FC = () => {
                     )
                   }
                 >
-                  <span>3.+5%到+30%位次专业 {tuijianSchools3.length}个</span>
+                  <span>3. (-10%)到+5%位次段 {tuijianSchools3.length}个</span>
                   <span className="mr-2">{'>'}</span>
                 </div>
                 <div
-                  className=" flex items-center justify-between mb-2"
+                  className="flex items-center justify-between mb-2"
                   onClick={() =>
                     tuijianSchools4.length > 0 &&
                     navigator(
@@ -197,7 +204,31 @@ const SchoolDetail: React.FC = () => {
                     )
                   }
                 >
-                  <span>4.其他位次专业 {tuijianSchools4.length}个</span>
+                  <span>4. (-30%)到(-10%)位次段 {tuijianSchools4.length}个</span>
+                  <span className="mr-2">{'>'}</span>
+                </div>
+                <div
+                  className="flex items-center justify-between mb-2"
+                  onClick={() =>
+                    tuijianSchools5.length > 0 &&
+                    navigator(
+                      `/major/loveMajorSchool?schoolName=${schoolName}&schoolCode=${schoolCode}`
+                    )
+                  }
+                >
+                  <span>5. (-100%)到(-30%)位次段 {tuijianSchools5.length}个</span>
+                  <span className="mr-2">{'>'}</span>
+                </div>
+                <div
+                  className="flex items-center justify-between mb-2"
+                  onClick={() =>
+                    tuijianSchools6.length > 0 &&
+                    navigator(
+                      `/major/loveMajorSchool?schoolName=${schoolName}&schoolCode=${schoolCode}`
+                    )
+                  }
+                >
+                  <span>6. 其他位次段 {tuijianSchools6.length}个</span>
                   <span className="mr-2">{'>'}</span>
                 </div>
               </div>

@@ -240,7 +240,7 @@ const MajorPage: React.FC = () => {
 
   // 使用 useMemo 优化收藏状态匹配，避免重复计算
   const favoriteMajorCodes = useMemo(() => {
-    return new Set(majorIntentions.map((item: any) => String(item.majorCode)));
+    return new Set(majorIntentions.map((item: any) => String(item.major.code)));
   }, [majorIntentions]);
 
   /**
