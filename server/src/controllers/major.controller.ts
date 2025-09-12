@@ -1688,7 +1688,7 @@ export class MajorController {
         return segmentNames[segment] || `分组${segment}`;
       };
 
-      // 计算录取率和就业率的中位数，用于分组
+      // 计算录取率和就业率的中位数，用于判断高低
       const calculateMedian = (values: number[]) => {
         if (values.length === 0) return 0;
         const sorted = values.filter(v => v > 0).sort((a, b) => a - b);
@@ -1709,19 +1709,11 @@ export class MajorController {
           groupId: segment,
           name: getSegmentName(segment),
           count: 0,
-          ids: [],
-          enrollmentRate: [
-            { type: "high", name: "录取率前50%", count: 0, ids: [] },
-            { type: "low", name: "录取率后50%", count: 0, ids: [] }
-          ],
-          employmentRate: [
-            { type: "high", name: "就业率前50%", count: 0, ids: [] },
-            { type: "low", name: "就业率后50%", count: 0, ids: [] }
-          ]
+          ids: []
         };
       });
       
-      // 按 group 分组学校数据，并同时进行录取率和就业率分组
+      // 按 group 分组学校数据
       schoolsInGroup.forEach(school => {
         const groupKey = school.group.toString();
         const targetGroup = result[groupKey] || result['3'];
@@ -1729,34 +1721,39 @@ export class MajorController {
         targetGroup.count++;
         targetGroup.ids.push(school.id);
         
-        // 录取率分组
-        if (school.enrollmentRate >= enrollmentMedian) {
-          targetGroup.enrollmentRate[0].count++;
-          targetGroup.enrollmentRate[0].ids.push(school.id);
-        } else {
-          targetGroup.enrollmentRate[1].count++;
-          targetGroup.enrollmentRate[1].ids.push(school.id);
-        }
-        
-        // 就业率分组
-        if (school.employmentRate >= employmentMedian) {
-          targetGroup.employmentRate[0].count++;
-          targetGroup.employmentRate[0].ids.push(school.id);
-        } else {
-          targetGroup.employmentRate[1].count++;
-          targetGroup.employmentRate[1].ids.push(school.id);
-        }
       });
       
-      // 返回数组格式，每个元素包含完整的分组信息
-      return Object.values(result).map((segment: any) => ({
-        groupId: segment.groupId,
-        name: segment.name,
-        count: segment.count,
-        ids: segment.ids,
-        enrollmentRate: segment.enrollmentRate,
-        employmentRate: segment.employmentRate
-      }));
+      // 收集所有学校的详细信息，包含 id、groupId 和 enrollment 信息
+      const allSchoolDetails: any[] = [];
+      const groupSummary: any[] = [];
+      
+      // 遍历所有分组，收集学校详情和分组统计
+      Object.values(result).forEach((segment: any) => {
+        // 添加分组统计信息
+        groupSummary.push({
+          groupId: segment.groupId,
+          name: segment.name,
+          count: segment.count
+        });
+        
+        // 收集该分组下所有学校的详细信息
+        segment.ids.forEach((schoolId: number) => {
+          const school = schoolsInGroup.find(s => s.id === schoolId);
+          if (school) {
+            allSchoolDetails.push({
+              id: schoolId,
+              groupId: segment.groupId,
+              enrollment: school.enrollmentRate >= enrollmentMedian ? 'high' : 'low',
+              employment: school.employmentRate >= employmentMedian ? 'high' : 'low'
+            });
+          }
+        });
+      });
+      
+      return {
+        ids: allSchoolDetails,
+        groupSummary: groupSummary
+      };
     };
     // 根据分组ID收集学校和专业 - 前20%、20%-80%、后20%
     const majorsByGroup = {
@@ -1782,38 +1779,49 @@ export class MajorController {
       majorsByGroup[newGroupId as keyof typeof majorsByGroup].push(major);
     });
     
-    return [
-      {
-        groupId: "1",
-        description: `${prefix}前20%专业`,
-        count: majorsByGroup['1'].length,
-        majors: majorsByGroup['1'].map(major => ({
-          majorCode: major.majorCode,
-          majorName: major.majorName,
-          schoolsByRank: processRankSegments(major.schools)
-        }))
-      },
-      {
-        groupId: "2", 
-        description: `${prefix}20%-80%专业`,
-        count: majorsByGroup['2'].length,
-        majors: majorsByGroup['2'].map(major => ({
-          majorCode: major.majorCode,
-          majorName: major.majorName,
-          schoolsByRank: processRankSegments(major.schools)
-        }))
-      },
-      {
-        groupId: "3",
-        description: `${prefix}后20%专业`,
-        count: majorsByGroup['3'].length,
-        majors: majorsByGroup['3'].map(major => ({
-          majorCode: major.majorCode,
-          majorName: major.majorName,
-          schoolsByRank: processRankSegments(major.schools)
-        }))
-      }
+    // 将所有专业按照原来的 groupId 顺序合并到一个数组中
+    const allMajors = [
+      ...majorsByGroup['1'].map(major => ({
+        majorCode: major.majorCode,
+        majorName: major.majorName,
+        schoolsByRank: processRankSegments(major.schools),
+        groupId: "1"
+      })),
+      ...majorsByGroup['2'].map(major => ({
+        majorCode: major.majorCode,
+        majorName: major.majorName,
+        schoolsByRank: processRankSegments(major.schools),
+        groupId: "2"
+      })),
+      ...majorsByGroup['3'].map(major => ({
+        majorCode: major.majorCode,
+        majorName: major.majorName,
+        schoolsByRank: processRankSegments(major.schools),
+        groupId: "3"
+      }))
     ];
+
+    return {
+      majors: allMajors,
+      // 所有分组的归总信息
+      groupSummary: [
+        {
+          groupId: "1",
+          description: `${prefix}前20%专业`,
+          count: majorsByGroup['1'].length
+        },
+        {
+          groupId: "2",
+          description: `${prefix}20%-80%专业`,
+          count: majorsByGroup['2'].length
+        },
+        {
+          groupId: "3",
+          description: `${prefix}后20%专业`,
+          count: majorsByGroup['3'].length
+        }
+      ]
+    };
   }
 
   /**
