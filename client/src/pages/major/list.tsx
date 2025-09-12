@@ -1,6 +1,5 @@
-// @ts-nocheck
 import React, { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect } from 'react';
-import { Input, Button, Modal, message, Spin } from 'antd';
+import { Input, Button, message, Spin } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import {
   SearchOutlined,
@@ -18,7 +17,7 @@ import {
 } from '../../store/slices/majorListSlice';
 import BottomNav from '../comm/bottom';
 import CommonSelect, { SelectOptionData } from '../comm/CommonSelect';
-import { getUserMajorScores, callWechatPay } from '../../config';
+import { getUserMajorScores } from '../../config';
 import {
   toggleMajorIntention,
   cancelMajorIntention,
@@ -171,17 +170,11 @@ const MajorPage: React.FC = () => {
   const [pageSize] = useState(30); // 每页显示30条记录
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [payLoading, setPayLoading] = useState(false);
-  // 收藏专业列表
   const [majorIntentions, setMajorIntentions] = useState<any[]>([]);
   // 意向专业数据状态
   // 按专业分组的意向专业数据状态
   const [groupedIntentionMajors, setGroupedIntentionMajors] = useState<any[]>([]);
-  const [originalSchoolsWithMajor, setOriginalSchoolsWithMajor] = useState<any[]>([]);
-  const [intentionMajors, setIntentionMajors] = useState<any[]>([]);
   const [originalIntentionMajors, setOriginalIntentionMajors] = useState<any[]>([]);
-  // 意向专业的schoolsByMajorScore数据
   const [intentionSchoolsByMajorScore, setIntentionSchoolsByMajorScore] = useState<any>({});
   // 标记是否已经初始化过数据
   const [isInitialized, setIsInitialized] = useState(false);
@@ -199,9 +192,24 @@ const MajorPage: React.FC = () => {
     (state: RootState) => state.majorList
   );
   // 发展潜能选择相关状态
-  const [selectedDevelopmentGroup, setSelectedDevelopmentGroup] = useState<string>('');
   const [developmentOptions, setDevelopmentOptions] = useState<SelectOptionData[]>([]);
-  // 计算当前实际要渲染的专业数据
+  // 意向专业统计数量状态
+  const [intentionMajorCount, setIntentionMajorCount] = useState<number>(0);
+// 添加过滤状态管理
+const [majorFilters, setMajorFilters] = useState<{
+  [majorCode: string]: {
+    selectedRankGroup: string;
+    enrollmentRateRange: string;
+    employmentRateRange: string;
+    searchKeyword: string;
+    isFilterExpanded: boolean;
+  };
+}>({});
+
+// 添加过滤后的学校数据状态
+const [filteredSchoolsByMajor, setFilteredSchoolsByMajor] = useState<{
+  [majorCode: string]: any[];
+}>({});  // 计算当前实际要渲染的专业数据
   const displayMajors = (() => {
     let filteredMajors = majors;
     if (topActiveTab === 'favorite') {
@@ -234,8 +242,7 @@ const MajorPage: React.FC = () => {
   const firstNonMatchingIndex = recommendFlags.findIndex((flag) => !flag);
 
   // 使用自定义 Hook
-  const { saveScrollPosition, saveClickedMajorCode, restoreScrollPosition, clearScrollPosition } =
-    useScrollPosition(listAreaRef);
+  const { saveClickedMajorCode, restoreScrollPosition, clearScrollPosition } = useScrollPosition(listAreaRef);
   const { clickedMajorCode, handleMajorClick } = useClickState();
 
   // 使用 useMemo 优化收藏状态匹配，避免重复计算
@@ -418,19 +425,15 @@ const MajorPage: React.FC = () => {
     // 如果是意向专业tab，使用意向专业的schoolsByMajorScore数据
     if (topActiveTab === 'favorite') {
       const dataSource = getCurrentGroupDataSource();
-      console.log('意向专业tab - 当前数据源:', dataSource);
-      console.log('意向专业schoolsByMajorScore数据:', intentionSchoolsByMajorScore);
-      
+
       const sourceData = intentionSchoolsByMajorScore[dataSource];
-      console.log('选择的sourceData:', sourceData);
-      
-      if (sourceData && Array.isArray(sourceData)) {
-        const optionsData = sourceData.map((group: any) => ({
+
+      if (sourceData && sourceData.groupSummary && Array.isArray(sourceData.groupSummary)) {
+        const optionsData = sourceData.groupSummary.map((group: any) => ({
           id: group.groupId,
           label: group.description,
           count: group.count,
         }));
-        console.log('生成的选项数据:', optionsData);
         setDevelopmentOptions(optionsData);
       } else {
         console.warn('意向专业tab - 未找到有效的分组数据:', { dataSource, sourceData });
@@ -501,7 +504,7 @@ const MajorPage: React.FC = () => {
   // 当tab状态变化时，更新发展潜能选择器的选项数据并清除选择
   useEffect(() => {
     // 清除当前选择状态
-    setSelectedDevelopmentGroup('');
+    // setSelectedDevelopmentGroup('');
     // 更新选项数据
     updateDevelopmentOptions();
   }, [activeTab, activeSubTab, activeOpportunitySubTab, updateDevelopmentOptions]);
@@ -634,6 +637,9 @@ const MajorPage: React.FC = () => {
       try {
         const parsedIntentions = JSON.parse(cachedIntentions);
         setMajorIntentions(parsedIntentions);
+        // 更新意向专业统计数量
+        // 注意：这里不应该设置意向专业数量，因为parsedIntentions是学校-专业组合数组
+        // 真正的专业数量应该在 fetchIntentionMajors 中设置
         return;
       } catch (error) {
         console.error('解析缓存收藏数据失败:', error);
@@ -646,6 +652,9 @@ const MajorPage: React.FC = () => {
       if (response && response.code === 200) {
         const intentions = response.data.schoolsWithMajor || [];
         setMajorIntentions(intentions);
+        // 更新意向专业统计数量
+        // 注意：不在这里设置意向专业数量，因为这里统计的是学校-专业组合数量
+        // 真正的专业数量应该在 fetchIntentionMajors 中设置
         // 缓存收藏数据到 sessionStorage
         sessionStorage.setItem('major-list-cached-intentions', JSON.stringify(intentions));
       }
@@ -665,19 +674,28 @@ const MajorPage: React.FC = () => {
       // 检查是否有缓存的意向专业数据
       const cachedData = sessionStorage.getItem('major-list-cached-intention-data');
       const cachedSchoolsData = sessionStorage.getItem('major-list-cached-schools-with-major');
-      const cachedSchoolsByMajorScore = sessionStorage.getItem('major-list-cached-intention-schools-by-major-score');
+      const cachedSchoolsByMajorScore = sessionStorage.getItem(
+        'major-list-cached-intention-schools-by-major-score'
+      );
       const isFromDetail = sessionStorage.getItem('major-list-scroll-position') !== null;
 
       // 如果是从详情页返回且有缓存数据，直接使用缓存
-      if (isFromDetail && cachedData && cachedSchoolsData && cachedSchoolsByMajorScore && !isLoadMore) {
+      if (
+        isFromDetail &&
+        cachedData &&
+        cachedSchoolsData &&
+        cachedSchoolsByMajorScore &&
+        !isLoadMore
+      ) {
         try {
           const parsedData = JSON.parse(cachedData);
           const parsedSchoolsData = JSON.parse(cachedSchoolsData);
           const parsedSchoolsByMajorScore = JSON.parse(cachedSchoolsByMajorScore);
           setOriginalIntentionMajors(parsedData);
-          setOriginalSchoolsWithMajor(parsedSchoolsData);
           setIntentionSchoolsByMajorScore(parsedSchoolsByMajorScore);
           setGroupedIntentionMajors(parsedData);
+          // 更新意向专业统计数量 - 使用分组后的专业数量
+          setIntentionMajorCount(parsedData.length);
           setLoading(false);
 
           // 在数据设置完成后立即恢复滚动位置
@@ -707,13 +725,16 @@ const MajorPage: React.FC = () => {
       try {
         const response = await getMajorIntentions();
         if (response && response.code === 200) {
+          
           // 获取意向专业数据 - schoolsWithMajor 是学校-专业组合数组
           const schoolsWithMajor = response.data.schoolsWithMajor || [];
           // 获取schoolsByMajorScore数据
           const schoolsByMajorScore = response.data.schoolsByMajorScore || {};
+          
+          // 从schoolsByMajorScore.developmentPotential.majors中获取majors数据
+          const majors = schoolsByMajorScore.developmentPotential?.majors || [];
 
-          // 保存原始 schoolsWithMajor 数据
-          setOriginalSchoolsWithMajor(schoolsWithMajor);
+
           // 保存schoolsByMajorScore数据
           setIntentionSchoolsByMajorScore(schoolsByMajorScore);
 
@@ -723,6 +744,11 @@ const MajorPage: React.FC = () => {
             if (schoolMajor.major) {
               const majorCode = schoolMajor.major.code;
               if (!majorGroups.has(majorCode)) {
+                // 从majors数组中找到对应专业的schoolsByRank.groupSummary数据
+                const majorData = majors.find((major: any) => major.majorCode === majorCode);
+                const schoolsByRankGroupSummary = majorData?.schoolsByRank?.groupSummary || [];
+
+
                 // 创建专业组，包含专业信息和学校列表
                 majorGroups.set(majorCode, {
                   majorCode: majorCode,
@@ -749,12 +775,15 @@ const MajorPage: React.FC = () => {
                     schoolMajor.major.growthPotentialScore || schoolMajor.growthPotentialScore,
                   isMatching: schoolMajor.isMatching !== false,
                   schools: [],
+                  // 添加schoolsByRank.groupSummary数据
+                  schoolsByRankGroupSummary: schoolsByRankGroupSummary,
                 });
               }
 
               // 将学校信息添加到对应专业组
               const majorGroup = majorGroups.get(majorCode);
               majorGroup.schools.push({
+                id: schoolMajor.id,
                 schoolCode: schoolMajor.schoolCode,
                 schoolName: schoolMajor.schoolName,
                 schoolNature: schoolMajor.schoolNature,
@@ -781,12 +810,14 @@ const MajorPage: React.FC = () => {
 
           if (isLoadMore) {
             // 加载更多：使用函数式更新避免依赖状态
-            setOriginalIntentionMajors(prev => [...prev, ...groupedMajors]);
-            setGroupedIntentionMajors(prev => [...prev, ...groupedMajors]);
+            setOriginalIntentionMajors((prev) => [...prev, ...groupedMajors]);
+            setGroupedIntentionMajors((prev) => [...prev, ...groupedMajors]);
           } else {
             // 首次加载：替换数据
             setOriginalIntentionMajors(groupedMajors);
             setGroupedIntentionMajors(groupedMajors);
+            // 更新意向专业统计数量 - 使用分组后的专业数量
+            setIntentionMajorCount(groupedMajors.length);
             // 缓存数据到 sessionStorage
             sessionStorage.setItem(
               'major-list-cached-intention-data',
@@ -845,6 +876,111 @@ const MajorPage: React.FC = () => {
     }
   }, []);
 
+
+  const filterSchoolsByConditions = useCallback((majorCode: string, schools: any[]) => {
+    const filters = majorFilters[majorCode];
+    if (!filters) return schools;
+
+    let filtered = [...schools];
+
+    // 位次段过滤 - 修正逻辑
+    if (filters.selectedRankGroup) {
+      const dataSource = getCurrentGroupDataSource();
+      const sourceData = intentionSchoolsByMajorScore[dataSource];
+      
+      if (sourceData && sourceData.majors) {
+        // 找到对应专业的数据
+        const majorData = sourceData.majors.find((major: any) => major.majorCode === majorCode);
+        
+        if (majorData && majorData.schoolsByRank && majorData.schoolsByRank.ids) {
+          // 从schoolsByRank.ids中获取匹配groupId的学校ID列表
+          const allowedIds = majorData.schoolsByRank.ids
+            .filter((item: any) => item.groupId === filters.selectedRankGroup)
+            .map((item: any) => item.id);
+          
+          if (allowedIds.length > 0) {
+            filtered = filtered.filter(school => allowedIds.includes(school.id));
+          }
+        }
+      }
+    }
+
+    // 升学率过滤
+    if (filters.enrollmentRateRange && filters.enrollmentRateRange !== '') {
+      // 计算升学率的中位数
+      const enrollmentRates = schools.map(school => school.enrollmentRate || 0).filter(rate => rate > 0);
+      if (enrollmentRates.length > 0) {
+        enrollmentRates.sort((a, b) => a - b);
+        const median = enrollmentRates[Math.floor(enrollmentRates.length / 2)];
+        
+        filtered = filtered.filter(school => {
+          const rate = school.enrollmentRate || 0;
+          if (filters.enrollmentRateRange === 'high') {
+            return rate >= median;
+          } else if (filters.enrollmentRateRange === 'low') {
+            return rate < median;
+          }
+          return true; // 'all' 或其他值
+        });
+      }
+    }
+
+    // 就业率过滤
+    if (filters.employmentRateRange && filters.employmentRateRange !== '') {
+      // 计算就业率的中位数
+      const employmentRates = schools.map(school => school.employmentRate || 0).filter(rate => rate > 0);
+      if (employmentRates.length > 0) {
+        employmentRates.sort((a, b) => a - b);
+        const median = employmentRates[Math.floor(employmentRates.length / 2)];
+        
+        filtered = filtered.filter(school => {
+          const rate = school.employmentRate || 0;
+          if (filters.employmentRateRange === 'high') {
+            return rate >= median;
+          } else if (filters.employmentRateRange === 'low') {
+            return rate < median;
+          }
+          return true; // 'all' 或其他值
+        });
+      }
+    }
+
+    // 搜索关键词过滤
+    if (filters.searchKeyword.trim()) {
+      const keyword = filters.searchKeyword.toLowerCase().trim();
+      filtered = filtered.filter(school => 
+        school.schoolName?.toLowerCase().includes(keyword) ||
+        school.provinceName?.toLowerCase().includes(keyword) ||
+        school.cityName?.toLowerCase().includes(keyword)
+      );
+    }
+
+    return filtered;
+  }, [majorFilters, intentionSchoolsByMajorScore, getCurrentGroupDataSource]);
+
+  /**
+   * 初始化专业过滤器
+   */
+
+  const initializeMajorFilter = useCallback((majorCode: string) => {
+    if (!majorFilters[majorCode]) {
+      setMajorFilters(prev => ({
+        ...prev,
+        [majorCode]: {
+          selectedRankGroup: '',
+          enrollmentRateRange: '',
+          employmentRateRange: '',
+          searchKeyword: '',
+          isFilterExpanded: false,
+        }
+      }));
+    }
+  }, [majorFilters]);
+
+  /**
+   * 更新专业过滤器
+   */
+
   // 当切换到意向专业tab时，确保数据已加载
   // 当切换到意向专业tab时，确保数据已加载
   useEffect(() => {
@@ -852,7 +988,19 @@ const MajorPage: React.FC = () => {
       fetchIntentionMajors();
     }
   }, [topActiveTab, groupedIntentionMajors.length, fetchIntentionMajors]);
-  // 初始化数据加载 - 只在首次挂载时加载
+
+// 监听过滤条件变化，更新过滤后的学校列表
+useEffect(() => {
+  const newFilteredSchools: { [majorCode: string]: any[] } = {};
+  
+  groupedIntentionMajors.forEach((majorGroup: any) => {
+    initializeMajorFilter(majorGroup.majorCode);
+    const filteredSchools = filterSchoolsByConditions(majorGroup.majorCode, majorGroup.schools);
+    newFilteredSchools[majorGroup.majorCode] = filteredSchools;
+  });
+  
+  setFilteredSchoolsByMajor(newFilteredSchools);
+}, [groupedIntentionMajors, majorFilters, filterSchoolsByConditions, initializeMajorFilter]);  // 初始化数据加载 - 只在首次挂载时加载
   useEffect(() => {
     if (!isInitialized) {
       fetchMajorScores();
@@ -1128,63 +1276,10 @@ const MajorPage: React.FC = () => {
     setIsModalVisible(true);
   }, []);
 
-  const handleCancel = useCallback(() => {
-    setIsModalVisible(false);
-  }, []);
 
   // 获取用户openid
-  const getUserOpenid = useCallback(() => {
-    try {
-      const userStr = localStorage.getItem('new-user');
-      if (!userStr) {
-        return null;
-      }
-      const user = JSON.parse(userStr);
-      return user?.openid || user?.data?.openid;
-    } catch (error) {
-      console.error('获取用户openid失败:', error);
-      return null;
-    }
-  }, []);
 
   // 处理支付
-  const handlePayment = useCallback(async () => {
-    try {
-      setPayLoading(true);
-
-      // 获取用户openid
-      const openid = getUserOpenid();
-      if (!openid) {
-        message.error('请先登录微信账号');
-        setIsModalVisible(false);
-        return;
-      }
-
-      // 支付金额：88元 = 8800分
-      const amount = 100;
-
-      // 调用微信支付
-      const paySuccess = await callWechatPay(openid, amount);
-
-      if (paySuccess) {
-        message.success('支付成功！');
-        //重新加载页面
-        setLoading(true);
-        message.loading('正在帮您解锁所有专业报告', 0);
-        await fetchMajorScores();
-        message.destroy();
-        setIsModalVisible(false);
-        // 这里可以添加支付成功后的逻辑，比如刷新数据或跳转页面
-      } else {
-        message.info('支付已取消');
-      }
-    } catch (error: any) {
-      console.error('支付失败:', error);
-      message.error(error.message || '支付失败，请重试');
-    } finally {
-      setPayLoading(false);
-    }
-  }, [getUserOpenid, fetchMajorScores]);
 
   /**
    * 清空搜索
@@ -1208,30 +1303,35 @@ const MajorPage: React.FC = () => {
    */
   const handleDevelopmentSelect = useCallback(
     (groupId: string) => {
-      setSelectedDevelopmentGroup(groupId);
+      // setSelectedDevelopmentGroup(groupId);
       setCurrentPage(1);
       setHasMore(true);
 
       // 如果是意向专业tab，使用意向专业的数据进行过滤
       if (topActiveTab === 'favorite') {
         const dataSource = getCurrentGroupDataSource();
-        console.log('handleDevelopmentSelect - 意向专业tab数据源:', dataSource);
+      
         const sourceData = intentionSchoolsByMajorScore[dataSource];
+
+        if (sourceData && sourceData.groupSummary && Array.isArray(sourceData.groupSummary)) {
+          const selectedGroup = sourceData.groupSummary.find(
+            (group: any) => group.groupId === groupId
+          );
         
-        if (sourceData && Array.isArray(sourceData)) {
-          const selectedGroup = sourceData.find((group: any) => group.groupId === groupId);
-          console.log('找到的分组:', selectedGroup);
-          if (selectedGroup && selectedGroup.majors) {
+          if (selectedGroup && sourceData.majors) {
             // 根据选中的分组过滤专业列表
             const filteredMajors = originalIntentionMajors.filter((major: any) =>
-              selectedGroup.majors.some((groupMajor: any) => groupMajor.majorCode === major.majorCode)
+              sourceData.majors.some(
+                (groupMajor: any) =>
+                  groupMajor.groupId === groupId && groupMajor.majorCode === major.majorCode
+              )
             );
-            console.log('过滤后的专业列表:', filteredMajors);
+            
             setGroupedIntentionMajors(filteredMajors);
             return;
           }
         }
-        
+
         console.warn('意向专业tab - 未找到有效的分组数据，显示所有专业');
         // 如果无法获取分组数据，显示所有专业
         setGroupedIntentionMajors(originalIntentionMajors);
@@ -1302,23 +1402,30 @@ const MajorPage: React.FC = () => {
       const sortedData = sortMajors(originalMajors);
       setMajors(sortedData);
     },
-    [originalMajors, originalIntentionMajors, sortMajors, getCurrentGroupDataSource, topActiveTab, intentionSchoolsByMajorScore]
+    [
+      originalMajors,
+      originalIntentionMajors,
+      sortMajors,
+      getCurrentGroupDataSource,
+      topActiveTab,
+      intentionSchoolsByMajorScore,
+    ]
   );
 
   /**
    * 清除发展潜能选择
    */
   const handleDevelopmentClear = useCallback(() => {
-    setSelectedDevelopmentGroup('');
+    // setSelectedDevelopmentGroup('');
     setCurrentPage(1);
     setHasMore(true);
-    
+
     // 如果是意向专业tab，恢复意向专业数据
     if (topActiveTab === 'favorite') {
       setGroupedIntentionMajors(originalIntentionMajors);
       return;
     }
-    
+
     // 全部专业tab的逻辑保持不变
     const sortedData = sortMajors(originalMajors);
     setMajors(sortedData);
@@ -1473,6 +1580,13 @@ const MajorPage: React.FC = () => {
    */
   const getScoreDisplayText = useCallback(
     (item: any) => {
+      // 如果是意向专业tab，优先使用新的前缀信息
+      if (topActiveTab === 'favorite' && item.prefix) {
+        const currentScoreType = getCurrentGroupDataSource();
+        const scoreValue = item[currentScoreType] || 0;
+        const prefix = item[`${currentScoreType}_prefix`] || item.prefix;
+        return { text: prefix, score: Math.ceil(scoreValue) + '分' };
+      }
       // 如果选择了热爱能量的子选项卡
       if (activeTab === 'passion' && activeSubTab) {
         switch (activeSubTab) {
@@ -1522,7 +1636,6 @@ const MajorPage: React.FC = () => {
     },
     [activeTab, activeSubTab, activeOpportunitySubTab]
   );
-
 
   /**
    * 计算分数
@@ -1729,6 +1842,38 @@ const MajorPage: React.FC = () => {
     },
     [alternativeStatus, loadingStatus, fetchMajorAlternatives] // 添加 fetchMajorAlternatives 到依赖数组
   );
+  /**
+   * 根据过滤条件过滤学校列表
+   */
+  const updateMajorFilter = useCallback((majorCode: string, updates: Partial<typeof majorFilters[string]>) => {
+    setMajorFilters(prev => ({
+      ...prev,
+      [majorCode]: {
+        ...prev[majorCode],
+        ...updates,
+      }
+    }));
+  }, []);
+
+  /**
+   * 切换过滤器展开状态
+   */
+  const toggleFilterExpanded = useCallback((majorCode: string) => {
+    const currentExpanded = majorFilters[majorCode]?.isFilterExpanded || false;
+    updateMajorFilter(majorCode, { isFilterExpanded: !currentExpanded });
+  }, [majorFilters, updateMajorFilter]);
+
+  /**
+   * 清空过滤条件
+   */
+  const clearMajorFilters = useCallback((majorCode: string) => {
+    updateMajorFilter(majorCode, {
+      selectedRankGroup: '',
+          enrollmentRateRange: '',
+          employmentRateRange: '',
+      searchKeyword: '',
+    });
+  }, [updateMajorFilter]);
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 50 }}>
       <div className="top-container">
@@ -1770,7 +1915,7 @@ const MajorPage: React.FC = () => {
                 }`}
                 onClick={() => setTopActiveTab('favorite')}
               >
-                意向专业
+                意向专业<span className="text-blue-600 pl-1">{intentionMajorCount}</span>个
               </button>
             </div>
             <div className="flex items-right ">
@@ -2405,165 +2550,337 @@ const MajorPage: React.FC = () => {
               ) : topActiveTab === 'favorite' && groupedIntentionMajors.length > 0 ? (
                 // 意向专业tab - 使用intentiondetail.tsx的样式
                 <div className="space-y-4">
-                  {displayMajors.map((majorGroup: any, idx: number) => (
-                    <div key={majorGroup.majorCode} className="mb-5">
-                      {/* 专业头部信息 */}
-                      <div
-                        className="flex items-center justify-between bg-[#dee9fd] rounded-t-xl p-4 mb-1"
-                        onClick={() => {
-                          navigator(
-                            `/major/majorlovedetail?majorCode=${majorGroup.majorCode}&&majorName=${majorGroup.majorName}&score=${majorGroup.developmentPotential}&isFavorite=true`,
-                            { replace: false }
-                          );
-                        }}
-                      >
-                        <div className="flex items-center">
-                          <span className="text-blue-600 text-base font-bold mr-3">
-                            {majorGroup.majorCode}
-                          </span>
-                          <span className="text-blue-700 text-base font-bold">
-                            {majorGroup.majorName.length > 8
-                              ? `${majorGroup.majorName.substring(0, 8)}...`
-                              : majorGroup.majorName}{' '}
-                          </span>
-                          <span className="ml-2 text-gray-400">&gt;</span>
+                  {displayMajors.map((majorGroup: any) => {
+                    // 初始化过滤器
+                    initializeMajorFilter(majorGroup.majorCode);
+                    const currentFilter = majorFilters[majorGroup.majorCode] || {};
+                    const filteredSchools = filteredSchoolsByMajor[majorGroup.majorCode] || majorGroup.schools;
+                  
+                    // 获取位次段选项
+                    const rankOptions = majorGroup.schoolsByRankGroupSummary || [];
+                 
+                    return (
+                      <div key={majorGroup.majorCode} className="mb-5">
+                        {/* 专业头部信息 */}
+                        <div
+                          className="flex items-center justify-between bg-[#dee9fd] rounded-t-xl p-4 mb-1"
+                          onClick={() => {
+                            navigator(
+                              `/major/majorlovedetail?majorCode=${majorGroup.majorCode}&&majorName=${majorGroup.majorName}&score=${majorGroup.developmentPotential}&isFavorite=true`,
+                              { replace: false }
+                            );
+                          }}
+                        >
+                          <div className="flex items-center">
+                            <span className="text-blue-600 text-base font-bold mr-3">
+                              {majorGroup.majorCode}
+                            </span>
+                            <span className="text-blue-700 text-base font-bold">
+                              {majorGroup.majorName.length > 8
+                                ? `${majorGroup.majorName.substring(0, 8)}...`
+                                : majorGroup.majorName}{' '}
+                            </span>
+                            <span className="ml-2 text-gray-400">&gt;</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-gray-900 font-bold mr-2"> {getScoreDisplayText(majorGroup).text}</span>
+                            <span className="text-blue-700 font-bold text-base">
+                              {getScoreDisplayText(majorGroup).score}！
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center">
-                          <span className="text-gray-900 font-bold mr-2">发展潜能</span>
-                          <span className="text-blue-700 font-bold text-base">
-                            {Math.ceil(majorGroup.developmentPotential)}分！
-                          </span>
-                        </div>
-                      </div>
 
-                      {/* 学校列表 */}
-                      <div className="space-y-2 p-2">
-                        {majorGroup.schools.map((school: any) => {
-                          // 检查学校是否已备选
-                          const schoolKey = `${school.schoolCode}_${majorGroup.majorCode}`;
-                          const isAlternative =
-                            alternativeStatus[schoolKey]?.isAlternative || false;
-                          const isLoading = loadingStatus[schoolKey] || false;
-                          return (
-                            <div
-                              key={school.schoolCode}
-                              className="border border-gray-200 mb-4 overflow-hidden bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
-                            >
-                              {/* 院校头部 */}
-                              <div className="p-4">
-                                {/* 学校名称和备选按钮行 */}
-                                <div className="flex items-center justify-between mb-3">
-                                  <div className="flex-1 min-w-0 flex items-center space-x-2">
-                                    <span
-                                      className="text-blue-600 text-lg font-bold cursor-pointer hover:text-blue-700 transition-colors duration-200 truncate block"
-                                      title={school.schoolName}
-                                      onClick={() => {
-                                        navigator(
-                                          `/major/schooldetail?schoolCode=${school.schoolCode}&schoolname=${school.schoolName}`
-                                        );
-                                      }}
-                                    >
-                                      {school.schoolName.length > 10
-                                        ? `${school.schoolName.substring(0, 10)}...`
-                                        : school.schoolName}
-                                    </span>
-                                    {/* 位次差显示 */}
-                                    {school.rankDiff && school.rankDiff !== 0 && (
-                                      <span className="px-2 py-0.5 rounded text-xs font-bold">
-                                        上年较您
-                                        <span
-                                          className={
-                                            school.rankDiff > 0
-                                              ? 'text-red-600 bg-red-100'
-                                              : 'text-green-600 bg-green-100'
-                                          }
-                                        >
-                                          {school.rankDiff > 0
-                                            ? `高${school.rankDiff}位次/${Math.floor(school.rankDiffPer || 0)}%`
-                                            : `低${Math.abs(school.rankDiff)}位次/${Math.floor(school.rankDiffPer || 0)}%`}
-                                        </span>
-                                      </span>
-                                    )}
-                                  </div>
+                        {/* 过滤器组件 */}
+                        <div className="bg-gray-50 border-x border-gray-200">
+                          {/* 过滤器标题栏 */}
+                          <div 
+                            className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                            onClick={() => toggleFilterExpanded(majorGroup.majorCode)}
+                          >
+                            <div className="flex items-center space-x-2">
+                              <span className="text-blue-600 font-medium">🔍 筛选条件</span>
+                              <span className="text-xs text-gray-500">
+                                ({filteredSchools.length}/{majorGroup.schools.length}所院校)
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              {(currentFilter.selectedRankGroup || 
+                                currentFilter.searchKeyword || 
+                                currentFilter.minEnrollmentRate > 0 || 
+                                currentFilter.maxEnrollmentRate < 100 ||
+                                currentFilter.minEmploymentRate > 0 || 
+                                currentFilter.maxEmploymentRate < 100) && (
+                                <button
+                                  className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    clearMajorFilters(majorGroup.majorCode);
+                                  }}
+                                >
+                                  清空
+                                </button>
+                              )}
+                              <span className={`transform transition-transform ${currentFilter.isFilterExpanded ? 'rotate-180' : ''}`}>
+                                ▼
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* 过滤器内容 */}
+                          {currentFilter.isFilterExpanded && (
+                            <div className="p-4 border-t border-gray-200 space-y-4">
+                              {/* 位次段选择 */}
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">位次段选择</label>
+                                <CommonSelect
+                                  data={rankOptions.map((option: any) => ({
+                                    id: option.groupId,
+                                    label: option.name,
+                                    count: option.count,
+                                  }))}
+                                  placeholder="请选择位次段"
+                                  onSelect={(groupId: string) => updateMajorFilter(majorGroup.majorCode, { selectedRankGroup: groupId })}
+                                  onClear={() => updateMajorFilter(majorGroup.majorCode, { selectedRankGroup: '' })}
+                                  allowClear={true}
+                                  showCount={true}
+                                  width="100%"
+                                />
+                              </div>
+                              {/* 升学率过滤 */}
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">升学率</label>
+                                <div className="flex items-center space-x-2">
                                   <button
-                                    className={`ml-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm ${
-                                      isAlternative
-                                        ? 'bg-red-500 text-white hover:bg-red-600 hover:shadow-md'
-                                        : isLoading
-                                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                          : 'bg-green-500 text-white hover:bg-green-600 hover:shadow-md'
+                                    className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                                      currentFilter.enrollmentRateRange === 'all'
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                     }`}
-                                    onClick={() =>
-                                      handleAlternativeClick({
-                                        ...school,
-                                        majorCode: majorGroup.majorCode,
-                                        majorName: majorGroup.majorName,
-                                      })
-                                    }
-                                    disabled={isLoading}
+                                    onClick={() => updateMajorFilter(majorGroup.majorCode, { enrollmentRateRange: 'all' })}
                                   >
-                                    {isLoading ? '处理中...' : isAlternative ? '移除' : '备选'}
+                                    全部
+                                  </button>
+                                  <button
+                                    className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                                      currentFilter.enrollmentRateRange === 'high'
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    }`}
+                                    onClick={() => updateMajorFilter(majorGroup.majorCode, { enrollmentRateRange: 'high' })}
+                                  >
+                                    前50%
+                                  </button>
+                                  <button
+                                    className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                                      currentFilter.enrollmentRateRange === 'low'
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    }`}
+                                    onClick={() => updateMajorFilter(majorGroup.majorCode, { enrollmentRateRange: 'low' })}
+                                  >
+                                    后50%
                                   </button>
                                 </div>
+                              </div>
 
-                                {/* 学校标签行 */}
-                                <div className="flex flex-wrap gap-2 mb-3">
-                                  {/* 学校特色标签 */}
-                                  {school.schoolFeature &&
-                                    school.schoolFeature
-                                      .split(',')
-                                      .map((feature: string, index: number) => (
-                                        <span
-                                          key={`${school.schoolName}-feature-${index}`}
-                                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
-                                        >
-                                          {feature.trim()}
-                                        </span>
-                                      ))}
-                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200">
-                                    {school.schoolNature === 'public' ? '公办' : '民办'}
-                                  </span>
-                                  {school.enrollmentRate !== 0 && (
-                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                                      升学率{school.enrollmentRate}%
-                                    </span>
-                                  )}
-                                  {school.level !== 'zhuan' && (
-                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                      保研率{school.enrollmentRate}%
-                                    </span>
-                                  )}
-                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
-                                    {school.cityName}
-                                  </span>
-                                  {school.majorGroupName && (
+                              {/* 就业率过滤 */}
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">就业率</label>
+                                <div className="flex items-center space-x-2">
+                                  <button
+                                    className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                                      currentFilter.employmentRateRange === 'all'
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    }`}
+                                    onClick={() => updateMajorFilter(majorGroup.majorCode, { employmentRateRange: 'all' })}
+                                  >
+                                    全部
+                                  </button>
+                                  <button
+                                    className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                                      currentFilter.employmentRateRange === 'high'
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    }`}
+                                    onClick={() => updateMajorFilter(majorGroup.majorCode, { employmentRateRange: 'high' })}
+                                  >
+                                    前50%
+                                  </button>
+                                  <button
+                                    className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                                      currentFilter.employmentRateRange === 'low'
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    }`}
+                                    onClick={() => updateMajorFilter(majorGroup.majorCode, { employmentRateRange: 'low' })}
+                                  >
+                                    后50%
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* 搜索框 */}
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">搜索学校、省份、城市</label>
+                                <div className="relative">
+                                  <input
+                                    type="text"
+                                    value={currentFilter.searchKeyword}
+                                    onChange={(e) => updateMajorFilter(majorGroup.majorCode, { searchKeyword: e.target.value })}
+                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 pr-10"
+                                    placeholder="请输入学校名称、省份或城市..."
+                                  />
+                                  {currentFilter.searchKeyword && (
                                     <button
-                                      className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-purple-500 text-white border-2 border-purple-400 hover:bg-purple-600 hover:border-purple-500 hover:shadow-md transition-all duration-200 cursor-pointer shadow-sm"
-                                      title="点击查看专业组详情"
+                                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                      onClick={() => updateMajorFilter(majorGroup.majorCode, { searchKeyword: '' })}
                                     >
-                                      <span className="mr-1">📋</span>
-                                      {school.majorGroupName}专业组
-                                      <span className="ml-1 text-xs">▶</span>
+                                      ✕
                                     </button>
                                   )}
                                 </div>
                               </div>
-
-                              {/* 历史分数表格 */}
-                              {school.historyScores && school.historyScores.length > 0 && (
-                                <div
-                                  className="px-4 pb-4 bg-gray-50 rounded-b-lg"
-                                  dangerouslySetInnerHTML={{
-                                    __html: getHistoryScore(school?.historyScores),
-                                  }}
-                                ></div>
-                              )}
                             </div>
-                          );
-                        })}
+                          )}
+                        </div>
+
+                        {/* 学校列表 - 使用过滤后的数据 */}
+                        <div className="space-y-2 p-2">
+                          {filteredSchools.length > 0 ? (
+                            filteredSchools.map((school: any) => {
+                              // 检查学校是否已备选
+                              const schoolKey = `${school.schoolCode}_${majorGroup.majorCode}`;
+                              const isAlternative = alternativeStatus[schoolKey]?.isAlternative || false;
+                              const isLoading = loadingStatus[schoolKey] || false;
+                              return (
+                                <div
+                                  key={school.schoolCode}
+                                  className="border border-gray-200 mb-4 overflow-hidden bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
+                                >
+                                  {/* 院校头部 */}
+                                  <div className="p-4">
+                                    {/* 学校名称和备选按钮行 */}
+                                    <div className="flex items-center justify-between mb-3">
+                                      <div className="flex-1 min-w-0 flex items-center space-x-2">
+                                        <span
+                                          className="text-blue-600 text-lg font-bold cursor-pointer hover:text-blue-700 transition-colors duration-200 truncate block"
+                                          title={school.schoolName}
+                                          onClick={() => {
+                                            navigator(
+                                              `/major/schooldetail?schoolCode=${school.schoolCode}&schoolname=${school.schoolName}`
+                                            );
+                                          }}
+                                        >
+                                          {school.schoolName.length > 10
+                                            ? `${school.schoolName.substring(0, 10)}...`
+                                            : school.schoolName}
+                                        </span>
+                                        {/* 位次差显示 */}
+                                        {school.rankDiff && school.rankDiff !== 0 && (
+                                          <span className="px-2 py-0.5 rounded text-xs font-bold">
+                                            上年较您
+                                            <span
+                                              className={
+                                                school.rankDiff > 0
+                                                  ? 'text-red-600 bg-red-100'
+                                                  : 'text-green-600 bg-green-100'
+                                              }
+                                            >
+                                              {school.rankDiff > 0
+                                                ? `高${school.rankDiff}位次/${Math.floor(school.rankDiffPer || 0)}%`
+                                                : `低${Math.abs(school.rankDiff)}位次/${Math.floor(school.rankDiffPer || 0)}%`}
+                                            </span>
+                                          </span>
+                                        )}
+                                      </div>
+                                      <button
+                                        className={`ml-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm ${
+                                          isAlternative
+                                            ? 'bg-red-500 text-white hover:bg-red-600 hover:shadow-md'
+                                            : isLoading
+                                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                              : 'bg-green-500 text-white hover:bg-green-600 hover:shadow-md'
+                                        }`}
+                                        onClick={() =>
+                                          handleAlternativeClick({
+                                            ...school,
+                                            majorCode: majorGroup.majorCode,
+                                            majorName: majorGroup.majorName,
+                                          })
+                                        }
+                                        disabled={isLoading}
+                                      >
+                                        {isLoading ? '处理中...' : isAlternative ? '移除' : '备选'}
+                                      </button>
+                                    </div>
+
+                                    {/* 学校标签行 */}
+                                    <div className="flex flex-wrap gap-2 mb-3">
+                                      {/* 学校特色标签 */}
+                                      {school.schoolFeature &&
+                                        school.schoolFeature
+                                          .split(',')
+                                          .map((feature: string, index: number) => (
+                                            <span
+                                              key={`${school.schoolName}-feature-${index}`}
+                                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
+                                            >
+                                              {feature.trim()}
+                                            </span>
+                                          ))}
+                                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                        {school.schoolNature === 'public' ? '公办' : '民办'}
+                                      </span>
+                                      {school.enrollmentRate !== 0 && (
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                                          升学率{school.enrollmentRate}%
+                                        </span>
+                                      )}
+                                      {school.employmentRate !== 0 && (
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                                          就业率{school.employmentRate}%
+                                        </span>
+                                      )}
+                                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
+                                        {school.cityName}
+                                      </span>
+                                      {school.majorGroupName && (
+                                        <button
+                                          className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-purple-500 text-white border-2 border-purple-400 hover:bg-purple-600 hover:border-purple-500 hover:shadow-md transition-all duration-200 cursor-pointer shadow-sm"
+                                          title="点击查看专业组详情"
+                                        >
+                                          <span className="mr-1">📋</span>
+                                          {school.majorGroupName}专业组
+                                          <span className="ml-1 text-xs">▶</span>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* 历史分数表格 */}
+                                  {school.historyScores && school.historyScores.length > 0 && (
+                                    <div
+                                      className="px-4 pb-4 bg-gray-50 rounded-b-lg"
+                                      dangerouslySetInnerHTML={{
+                                        __html: getHistoryScore(school?.historyScores),
+                                      }}
+                                    ></div>
+                                  )}
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="text-center py-8 text-gray-500">
+                              <div className="text-4xl mb-2">🔍</div>
+                              <div className="text-lg font-medium mb-1">暂无符合条件的院校</div>
+                              <div className="text-sm">请调整筛选条件后重试</div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : majors.length > 0 ? (
                 displayMajors.map((item: any, idx: number) => {
