@@ -33,6 +33,9 @@ interface AiVolunteerState {
   // 排序和筛选相关
   sortTab: 'willingness' | 'major' | 'rankDiff';
   
+  // Tab 状态管理
+  activeTab: 'all' | 'smart';
+  
   // 备选状态管理
   alternativeStatus: {
     [key: string]: { isAlternative: boolean; id?: string };
@@ -85,6 +88,7 @@ const initialState: AiVolunteerState = {
   itemHeight: 200, // 每个项目的预估高度
   containerHeight: 0,
   sortTab: 'rankDiff',
+  activeTab: 'all', // 默认选择"全部可选"tab
   alternativeStatus: {},
   loading: true,
   loadingStatus: {},
@@ -163,6 +167,11 @@ const aiVolunteerSlice = createSlice({
     // 设置排序方式
     setSortTab: (state, action: PayloadAction<'willingness' | 'major' | 'rankDiff'>) => {
       state.sortTab = action.payload;
+    },
+    
+    // 设置活跃的 Tab
+    setActiveTab: (state, action: PayloadAction<'all' | 'smart'>) => {
+      state.activeTab = action.payload;
     },
     
     // 设置备选状态
@@ -280,6 +289,7 @@ const aiVolunteerSlice = createSlice({
       state.pageKey = '';
       state.isReturning = false;
       state.hasInitialized = false;
+      // 注意：不重置 activeTab，保持用户选择的 tab 状态
     },
     
     // 恢复状态（用于页面返回时）
@@ -314,6 +324,7 @@ export const {
   setScrollPosition,
   setDisplayCount,
   setSortTab,
+  setActiveTab,
   setAlternativeStatus,
   updateAlternativeStatus,
   setLoading,
@@ -387,6 +398,11 @@ export const selectSortTab = createSelector(
   (aiVolunteer) => aiVolunteer.sortTab
 );
 
+export const selectActiveTab = createSelector(
+  [selectAiVolunteer],
+  (aiVolunteer) => aiVolunteer.activeTab
+);
+
 export const selectRecommendCount = createSelector(
   [selectAiVolunteer],
   (aiVolunteer) => aiVolunteer.recommendCount
@@ -435,4 +451,4 @@ export const selectCachedScrollPosition = createSelector(
 );
 
 // 导出类型
-export type { AiVolunteerState, ScrollState, VisibleRange }; 
+export type { AiVolunteerState, ScrollState, VisibleRange };

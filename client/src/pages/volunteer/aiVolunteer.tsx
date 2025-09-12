@@ -21,6 +21,8 @@ import {
   selectAlternatives,
   selectPageKey,
   selectHasInitialized,
+  setActiveTab,
+  selectActiveTab,
 } from '../../store/slices/aiVolunteerSlice';
 import { useScrollManager } from '../../hooks/useScrollManager';
 
@@ -174,6 +176,7 @@ const AiVolunteerPage: React.FC = () => {
   const alternativeStatus = useSelector(selectAlternativeStatus);
 
   const hasInitialized = useSelector(selectHasInitialized);
+  const activeTab = useSelector(selectActiveTab);
   const currentPageKey = useSelector(selectPageKey);
 
   //获取用户信息
@@ -204,7 +207,7 @@ const AiVolunteerPage: React.FC = () => {
   const [showSearchTips, setShowSearchTips] = useState(false);
   // 添加缓存状态，避免重复加载相同数据
   const [lastLoadedGroupId, setLastLoadedGroupId] = useState<string | undefined>(undefined);
-  const [activeTab, setActiveTab] = useState<'all' | 'smart'>('all'); // 默认选择"全部可选"tab
+  // activeTab 现在由 Redux 管理
   // 添加浮层提示状态 - 从 localStorage 读取初始状态
   const [showFloatingTip, setShowFloatingTip] = useState(() => {
     // 检查 localStorage 中是否已关闭浮层提示
@@ -218,6 +221,13 @@ const AiVolunteerPage: React.FC = () => {
   const [isRestoringScroll, setIsRestoringScroll] = useState(false);
 
   // 保存用户最后查看的项目ID
+  // 处理浮层提示关闭的函数
+  const handleCloseFloatingTip = useCallback(() => {
+    setShowFloatingTip(false);
+    // 将关闭状态保存到 localStorage，实现一次关闭后永久不显示
+    localStorage.setItem('aiVolunteerFloatingTipClosed', 'true');
+  }, []);
+
   const saveLastViewedItem = useCallback((itemId: string) => {
     localStorage.setItem('aiVolunteerLastViewedItem', itemId);
   }, []);
@@ -1208,7 +1218,7 @@ const AiVolunteerPage: React.FC = () => {
               当前没有符合您条件的智能推荐志愿，请尝试调整搜索条件或切换到&quot;全部可选&quot;查看所有志愿。
             </p>
             <button
-              onClick={() => setActiveTab('all')}
+              onClick={() => dispatch(setActiveTab('all'))}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
             >
               查看全部志愿
@@ -1270,20 +1280,21 @@ const AiVolunteerPage: React.FC = () => {
           message.error(response?.message || '取消备选志愿失败');
         }
       } else {
-       
         // 如果未备选，则添加备选
         // 准备历史分数数据
         const historyScoreData = (() => {
           // 兼容不同的数据结构
-          const historyScores = Array.isArray(item.historyScore) ? item.historyScore : [item.historyScore];
-          
+          const historyScores = Array.isArray(item.historyScore)
+            ? item.historyScore
+            : [item.historyScore];
+
           return historyScores
-            .filter(score => score && typeof score === 'object')
+            .filter((score) => score && typeof score === 'object')
             .map((scoreItem: any) => {
               // 处理嵌套的historyScore结构
               const scoreData = scoreItem.historyScore || scoreItem.scoreData || scoreItem;
               const result: { [key: string]: string } = {};
-              
+
               if (scoreData && typeof scoreData === 'object') {
                 for (const [key, value] of Object.entries(scoreData)) {
                   if (typeof value === 'string') {
@@ -1291,10 +1302,10 @@ const AiVolunteerPage: React.FC = () => {
                   }
                 }
               }
-              
+
               return result;
             })
-            .filter(data => Object.keys(data).length > 0);
+            .filter((data) => Object.keys(data).length > 0);
         })();
 
         // 调用创建备选志愿接口
@@ -1614,13 +1625,6 @@ const AiVolunteerPage: React.FC = () => {
     );
   }
 
-  // 处理浮层提示关闭的函数
-  const handleCloseFloatingTip = useCallback(() => {
-    setShowFloatingTip(false);
-    // 将关闭状态保存到 localStorage，实现一次关闭后永久不显示
-    localStorage.setItem('aiVolunteerFloatingTipClosed', 'true');
-  }, []);
-
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 50 }}>
       <div className="top-container">
@@ -1650,7 +1654,7 @@ const AiVolunteerPage: React.FC = () => {
                     ? 'text-blue-600 border-b-2 border-blue-600 pb-1'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
-                onClick={() => setActiveTab('all')}
+                onClick={() => dispatch(setActiveTab('all'))}
               >
                 全部可选
               </button>
@@ -1660,7 +1664,7 @@ const AiVolunteerPage: React.FC = () => {
                     ? 'text-blue-600 border-b-2 border-blue-600 pb-1'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
-                onClick={() => setActiveTab('smart')}
+                onClick={() => dispatch(setActiveTab('smart'))}
               >
                 智能推荐
               </button>
@@ -1798,11 +1802,6 @@ const AiVolunteerPage: React.FC = () => {
                   <br />
                 </div>
               )}
-              {activeTab === 'all' && (
-                <div className="w-full mt-2 text-xs text-green-600 bg-green-50 p-2 rounded-lg">
-                  💡 全部可选模式下，位次段筛选将重新加载对应数据
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -1882,7 +1881,9 @@ const AiVolunteerPage: React.FC = () => {
                               {getGroupDisplayName(group.group)}
                             </span>
                             <span className="text-sm opacity-90 bg-white/20 px-2 py-1 rounded-full">
-                              {group?.result?.length || 0} 个志愿
+                              {segmentStats?.find((s) => s.groupId === group.group.toString())
+                                ?.count || 0}{' '}
+                              个志愿
                             </span>
                           </div>
                         </div>
