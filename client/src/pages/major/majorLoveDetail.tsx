@@ -252,15 +252,7 @@ const MajorLoveDetail: React.FC = () => {
             </div>
             <div className="divide-y">
               <CardItem
-                text="1.就业去向"
-                onClick={() =>
-                  navigator(
-                    `/major/majorjobintro?type=career&majorCode=${majorCode}&majorName=${majorName}&score=${score}`
-                  )
-                }
-              />
-              <CardItem
-                text={'2.薪酬水平' + Math.ceil(majorDetail?.careerDevelopmentScore) + '分'}
+                text={'1.职业回报' + Math.ceil(majorDetail?.careerDevelopmentScore) + '分'}
                 onClick={() =>
                   navigator(
                     `/major/majorjobintro?type=salary&majorCode=${majorCode}&majorName=${majorName}&score=${score}&anchor=career`
@@ -268,7 +260,7 @@ const MajorLoveDetail: React.FC = () => {
                 }
               />
               <CardItem
-                text={'3.产业前景' + Math.ceil(majorDetail?.industryProspectsScore) + '分'}
+                text={'2.产业前景' + Math.ceil(majorDetail?.industryProspectsScore) + '分'}
                 onClick={() =>
                   navigator(
                     `/major/majorjobintro?type=prospect&majorCode=${majorCode}&majorName=${majorName}&score=${score}&anchor=industry`
@@ -276,7 +268,7 @@ const MajorLoveDetail: React.FC = () => {
                 }
               />
               <CardItem
-                text={'4.成长空间' + Math.ceil(majorDetail?.growthPotentialScore) + '分'}
+                text={'3.成长空间' + Math.ceil(majorDetail?.growthPotentialScore) + '分'}
                 onClick={() =>
                   navigator(
                     `/major/majorjobintro?type=prospect&majorCode=${majorCode}&majorName=${majorName}&score=${score}&anchor=growth`

@@ -64,13 +64,13 @@ const MajorJobIntro: React.FC = () => {
           // 临时设置scroll-margin-top来控制偏移量
           const originalScrollMargin = targetSection.style.scrollMarginTop;
           targetSection.style.scrollMarginTop = '60px'; // 40px导航栏 + 20px额外偏移
-          
+
           // 使用scrollIntoView方法
           targetSection.scrollIntoView({
             behavior: 'smooth',
             block: 'start',
           });
-          
+
           // 滚动完成后恢复原始样式
           setTimeout(() => {
             targetSection.style.scrollMarginTop = originalScrollMargin;
@@ -93,18 +93,20 @@ const MajorJobIntro: React.FC = () => {
       return data;
     } else if (Array.isArray(data)) {
       // 处理数组类型，为每个元素添加序号
-      return data.map((item, index) => {
-        const subContent = processDataToHtml(item, level + 1);
-        return `<div style="margin-left: ${level * 16}px; margin-bottom: 4px;">
+      return data
+        .map((item, index) => {
+          const subContent = processDataToHtml(item, level + 1);
+          return `<div style="margin-left: ${level * 16}px; margin-bottom: 4px;">
                   <span style="color: #666; margin-right: 8px;">${index + 1}.</span>
                   ${subContent}
                 </div>`;
-      }).join('');
+        })
+        .join('');
     } else if (typeof data === 'object' && data !== null) {
       let html = '';
       for (const [key, value] of Object.entries(data)) {
         const subContent = processDataToHtml(value, level + 1);
-        
+
         // 根据层级调整样式
         if (level === 0) {
           // 顶级标题使用蓝色
@@ -125,10 +127,7 @@ const MajorJobIntro: React.FC = () => {
     return String(data);
   };
 
-  const getMajorBriefHtml = (
-    majorBrief: any,
-    defaultStr: string
-  ) => {
+  const getMajorBriefHtml = (majorBrief: any, defaultStr: string) => {
     // 如果majorBrief是对象类型，直接使用processDataToHtml处理
     if (majorBrief && typeof majorBrief === 'object') {
       try {
@@ -143,7 +142,7 @@ const MajorJobIntro: React.FC = () => {
     if (majorBrief && typeof majorBrief === 'string') {
       try {
         majorBrief = majorBrief.replace(/'/g, '"');
-        
+
         const seniorTalkList = JSON.parse(majorBrief);
 
         let html = '',
@@ -205,25 +204,23 @@ const MajorJobIntro: React.FC = () => {
           </div>
           <div className="border border-solid border-[#e5e6eb] p-3">
             {/* 专业一览 */}
-            <div id="overview-section" style={{ marginBottom: 24 }}>
-              <div style={sectionTitleStyle}>
-                {' '}
-                {majorType === 'major' ? '做什么？' : '就业去向'}
+            {majorType === 'major' && (
+              <div id="overview-section" style={{ marginBottom: 24 }}>
+                <div style={sectionTitleStyle}>做什么？</div>
+                <div
+                  style={{ marginTop: 12 }}
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      majorType === 'major'
+                        ? majorDetail?.majorBrief
+                        : getMajorBriefHtml(majorDetail?.careerDevelopment, '正在搜集中...'),
+                  }}
+                ></div>
               </div>
-              <div
-                style={{ marginTop: 12 }}
-                dangerouslySetInnerHTML={{
-                  __html:
-                    majorType === 'major'
-                      ? majorDetail?.majorBrief
-                      : getMajorBriefHtml(majorDetail?.careerDevelopment, '正在搜集中...'),
-                }}
-              ></div>
-
-            </div>
+            )}
             {/* 学什么？ */}
             <div id="career-section" style={{ marginBottom: 24 }}>
-              <div style={sectionTitleStyle}>{majorType === 'major' ? '学什么？' : '薪酬水平'}</div>
+              <div style={sectionTitleStyle}>{majorType === 'major' ? '学什么？' : '职业回报'}</div>
               <div
                 style={{ marginTop: 12 }}
                 dangerouslySetInnerHTML={{
@@ -252,7 +249,6 @@ const MajorJobIntro: React.FC = () => {
                   ),
                 }}
               ></div>
-
             </div>
             {/* 成长空间 */}
             {majorType !== 'major' && (
@@ -261,13 +257,9 @@ const MajorJobIntro: React.FC = () => {
                 <div
                   style={{ marginTop: 12 }}
                   dangerouslySetInnerHTML={{
-                                      __html: getMajorBriefHtml(
-                    majorDetail?.growthPotential,
-                    '正在搜集中...'
-                  ),
+                    __html: getMajorBriefHtml(majorDetail?.growthPotential, '正在搜集中...'),
                   }}
                 ></div>
-
               </div>
             )}
           </div>
