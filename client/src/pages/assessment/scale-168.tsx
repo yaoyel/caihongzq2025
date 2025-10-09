@@ -565,10 +565,19 @@ const Scale168Assessment: React.FC = () => {
       setCurrentPage(0);
       // 使用setTimeout确保状态更新后再滚动到正确的容器
       setTimeout(() => {
+        // 使用.page-bg-hasTop选择器并尝试多种滚动方法
         const scrollContainer = document.querySelector('.page-bg-hasTop');
         if (scrollContainer) {
+          // 方法1: 使用scrollTo
           scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+          // 方法2: 如果scrollTo不工作，尝试scrollTop
+          setTimeout(() => {
+            if (scrollContainer.scrollTop > 0) {
+              scrollContainer.scrollTop = 0;
+            }
+          }, 100);
         } else {
+          // 回退到window滚动
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }
       }, 100);
@@ -580,12 +589,28 @@ const Scale168Assessment: React.FC = () => {
         setCurrentPage(0);
         // 使用setTimeout确保状态更新后再滚动到正确的容器
         setTimeout(() => {
-          const scrollContainer = document.querySelector('.page-bg-hasTop');
-          if (scrollContainer) {
-            scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
-          } else {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }
+        // 使用.page-bg-hasTop选择器并尝试多种滚动方法
+        const scrollContainer = document.querySelector('.page-bg-hasTop');
+        if (scrollContainer) {
+          // 方法1: 直接设置scrollTop
+          scrollContainer.scrollTop = 0;
+          
+          // 方法2: 使用scrollTo
+          scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+          
+          // 方法3: 使用scrollIntoView
+          setTimeout(() => {
+            scrollContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 50);
+          
+          // 方法4: 强制设置scrollTop
+          setTimeout(() => {
+            scrollContainer.scrollTop = 0;
+          }, 200);
+        } else {
+          // 回退到window滚动
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
         }, 100);
       } else {
         // 所有问题都已完成，跳转到专业列表页面
@@ -910,10 +935,26 @@ const Scale168Assessment: React.FC = () => {
       setCurrentPage(currentPage + 1);
       // 使用setTimeout确保状态更新后再滚动到正确的容器
       setTimeout(() => {
+        // 使用.page-bg-hasTop选择器并尝试多种滚动方法
         const scrollContainer = document.querySelector('.page-bg-hasTop');
         if (scrollContainer) {
+          // 方法1: 直接设置scrollTop
+          scrollContainer.scrollTop = 0;
+          
+          // 方法2: 使用scrollTo
           scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+          
+          // 方法3: 使用scrollIntoView
+          setTimeout(() => {
+            scrollContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 50);
+          
+          // 方法4: 强制设置scrollTop
+          setTimeout(() => {
+            scrollContainer.scrollTop = 0;
+          }, 200);
         } else {
+          // 回退到window滚动
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }
       }, 100);
@@ -939,12 +980,28 @@ const Scale168Assessment: React.FC = () => {
         setCurrentDimension(dimensions[currentDimensionIndex + 1]);
         // 使用setTimeout确保状态更新后再滚动到正确的容器
         setTimeout(() => {
-          const scrollContainer = document.querySelector('.page-bg-hasTop');
-          if (scrollContainer) {
-            scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
-          } else {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }
+        // 使用.page-bg-hasTop选择器并尝试多种滚动方法
+        const scrollContainer = document.querySelector('.page-bg-hasTop');
+        if (scrollContainer) {
+          // 方法1: 直接设置scrollTop
+          scrollContainer.scrollTop = 0;
+          
+          // 方法2: 使用scrollTo
+          scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+          
+          // 方法3: 使用scrollIntoView
+          setTimeout(() => {
+            scrollContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 50);
+          
+          // 方法4: 强制设置scrollTop
+          setTimeout(() => {
+            scrollContainer.scrollTop = 0;
+          }, 200);
+        } else {
+          // 回退到window滚动
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
         }, 100);
       } else {
         // 当前类别的所有维度都答完了，检查是否还有下一个类别
@@ -953,12 +1010,28 @@ const Scale168Assessment: React.FC = () => {
           setCurrentDimension('看'); // 重置为第一个维度
           // 使用setTimeout确保状态更新后再滚动到正确的容器
           setTimeout(() => {
-            const scrollContainer = document.querySelector('.page-bg-hasTop');
-            if (scrollContainer) {
-              scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
-            } else {
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
+        // 使用.page-bg-hasTop选择器并尝试多种滚动方法
+        const scrollContainer = document.querySelector('.page-bg-hasTop');
+        if (scrollContainer) {
+          // 方法1: 直接设置scrollTop
+          scrollContainer.scrollTop = 0;
+          
+          // 方法2: 使用scrollTo
+          scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+          
+          // 方法3: 使用scrollIntoView
+          setTimeout(() => {
+            scrollContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 50);
+          
+          // 方法4: 强制设置scrollTop
+          setTimeout(() => {
+            scrollContainer.scrollTop = 0;
+          }, 200);
+        } else {
+          // 回退到window滚动
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
           }, 100);
         } else {
           // 所有问题都已完成
@@ -973,10 +1046,26 @@ const Scale168Assessment: React.FC = () => {
       // 还有上一页问题
       setCurrentPage(currentPage - 1);
       setTimeout(() => {
+        // 使用.page-bg-hasTop选择器并尝试多种滚动方法
         const scrollContainer = document.querySelector('.page-bg-hasTop');
         if (scrollContainer) {
+          // 方法1: 直接设置scrollTop
+          scrollContainer.scrollTop = 0;
+          
+          // 方法2: 使用scrollTo
           scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+          
+          // 方法3: 使用scrollIntoView
+          setTimeout(() => {
+            scrollContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 50);
+          
+          // 方法4: 强制设置scrollTop
+          setTimeout(() => {
+            scrollContainer.scrollTop = 0;
+          }, 200);
         } else {
+          // 回退到window滚动
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }
       }, 100);
@@ -995,12 +1084,28 @@ const Scale168Assessment: React.FC = () => {
         setCurrentPage(Math.max(0, maxPage));
         // 添加延时确保状态更新后再滚动到正确的容器
         setTimeout(() => {
-          const scrollContainer = document.querySelector('.page-bg-hasTop');
-          if (scrollContainer) {
-            scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
-          } else {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }
+        // 使用.page-bg-hasTop选择器并尝试多种滚动方法
+        const scrollContainer = document.querySelector('.page-bg-hasTop');
+        if (scrollContainer) {
+          // 方法1: 直接设置scrollTop
+          scrollContainer.scrollTop = 0;
+          
+          // 方法2: 使用scrollTo
+          scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+          
+          // 方法3: 使用scrollIntoView
+          setTimeout(() => {
+            scrollContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 50);
+          
+          // 方法4: 强制设置scrollTop
+          setTimeout(() => {
+            scrollContainer.scrollTop = 0;
+          }, 200);
+        } else {
+          // 回退到window滚动
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
         }, 100);
       } else {
         // 当前类别的第一个维度，检查是否有上一个类别
@@ -1015,12 +1120,28 @@ const Scale168Assessment: React.FC = () => {
           setCurrentPage(Math.max(0, maxPage));
           // 添加延时确保状态更新后再滚动到正确的容器
           setTimeout(() => {
-            const scrollContainer = document.querySelector('.page-bg-hasTop');
-            if (scrollContainer) {
-              scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
-            } else {
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
+        // 使用.page-bg-hasTop选择器并尝试多种滚动方法
+        const scrollContainer = document.querySelector('.page-bg-hasTop');
+        if (scrollContainer) {
+          // 方法1: 直接设置scrollTop
+          scrollContainer.scrollTop = 0;
+          
+          // 方法2: 使用scrollTo
+          scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+          
+          // 方法3: 使用scrollIntoView
+          setTimeout(() => {
+            scrollContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 50);
+          
+          // 方法4: 强制设置scrollTop
+          setTimeout(() => {
+            scrollContainer.scrollTop = 0;
+          }, 200);
+        } else {
+          // 回退到window滚动
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
           }, 100);
         }
       }
@@ -1053,12 +1174,28 @@ const Scale168Assessment: React.FC = () => {
     setCurrentPage(0);
     // 滚动到顶部
     setTimeout(() => {
-      const scrollContainer = document.querySelector('.page-bg-hasTop');
-      if (scrollContainer) {
-        scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+        // 使用.page-bg-hasTop选择器并尝试多种滚动方法
+        const scrollContainer = document.querySelector('.page-bg-hasTop');
+        if (scrollContainer) {
+          // 方法1: 直接设置scrollTop
+          scrollContainer.scrollTop = 0;
+          
+          // 方法2: 使用scrollTo
+          scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+          
+          // 方法3: 使用scrollIntoView
+          setTimeout(() => {
+            scrollContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 50);
+          
+          // 方法4: 强制设置scrollTop
+          setTimeout(() => {
+            scrollContainer.scrollTop = 0;
+          }, 200);
+        } else {
+          // 回退到window滚动
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     }, 100);
   };
 
@@ -1090,10 +1227,19 @@ const Scale168Assessment: React.FC = () => {
       setCurrentPage(firstUnanswered.page);
       // 使用setTimeout确保状态更新后再滚动到正确的容器
       setTimeout(() => {
+        // 使用.page-bg-hasTop选择器并尝试多种滚动方法
         const scrollContainer = document.querySelector('.page-bg-hasTop');
         if (scrollContainer) {
+          // 方法1: 使用scrollTo
           scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+          // 方法2: 如果scrollTo不工作，尝试scrollTop
+          setTimeout(() => {
+            if (scrollContainer.scrollTop > 0) {
+              scrollContainer.scrollTop = 0;
+            }
+          }, 100);
         } else {
+          // 回退到window滚动
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }
       }, 100);
@@ -1268,10 +1414,19 @@ const Scale168Assessment: React.FC = () => {
                           setCurrentPage(0);
                           // 使用setTimeout确保状态更新后再滚动到正确的容器
                           setTimeout(() => {
+                            // 使用.page-bg-hasTop选择器并尝试多种滚动方法
                             const scrollContainer = document.querySelector('.page-bg-hasTop');
                             if (scrollContainer) {
+                              // 方法1: 直接设置scrollTop
+                              scrollContainer.scrollTop = 0;
+                              // 方法2: 使用scrollTo
                               scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+                              // 方法3: 强制设置scrollTop
+                              setTimeout(() => {
+                                scrollContainer.scrollTop = 0;
+                              }, 200);
                             } else {
+                              // 回退到window滚动
                               window.scrollTo({ top: 0, behavior: 'smooth' });
                             }
                           }, 100);

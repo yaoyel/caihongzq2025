@@ -3581,7 +3581,7 @@ const MajorPage: React.FC = () => {
             <div style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>
               支付后即可查看所有专业的详细分析报告
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff6b6b' }}>¥88</div>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff6b6b' }}>¥1</div>
             <div style={{ fontSize: '12px', color: '#999', marginTop: '5px' }}>
               一次支付，永久使用
             </div>
