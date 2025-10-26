@@ -1508,6 +1508,8 @@ const MajorPage: React.FC = () => {
             message.success('取消收藏成功，已成功从意向列表中移除。');
             // 重新获取收藏列表以更新状态
             await fetchMajorIntentions(true);
+            // 更新意向专业数据以刷新数量
+            await fetchIntentionMajors();
           }
         } else {
           // 当前未收藏，执行收藏
@@ -1516,6 +1518,8 @@ const MajorPage: React.FC = () => {
             message.success('收藏成功，已成功加入意向列表。');
             // 重新获取收藏列表以更新状态
             await fetchMajorIntentions(true);
+            // 更新意向专业数据以刷新数量
+            await fetchIntentionMajors();
           }
         }
       } catch (error) {
@@ -1523,7 +1527,7 @@ const MajorPage: React.FC = () => {
         message.error('操作失败，请重试');
       }
     },
-    [isMajorFavorite, fetchMajorIntentions]
+    [isMajorFavorite, fetchMajorIntentions, fetchIntentionMajors]
   );
 
   /**
