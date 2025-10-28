@@ -184,7 +184,7 @@ const MajorJobIntro: React.FC = () => {
   return (
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 40 }}>
       <Top title={(majorCode || '') + (majorName || '')} onBack={() => navigator(-1)} />
-      <div className="bg-[#f7f7fa] flex justify-center items-start p-3">
+      <div className="bg-[#f7f7fa] flex justify-center items-start p-3" style={{ paddingBottom: '90px' }}>
         {/* 页面主卡片 */}
         <Card className="rounded-2xl w-full max-w-xl shadow" bodyStyle={{ padding: '24px 16px' }}>
           {/* 标题 */}

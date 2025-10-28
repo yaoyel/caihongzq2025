@@ -588,7 +588,7 @@ const MajorSchools: React.FC = () => {
     <div className="page-bg-hasTop text-gray-900" style={{ marginTop: 40 }}>
       <Top title={`${majorCode ?? ''}${majorName ?? ''}`} onBack={() => navigator(-1)} />
 
-      <div className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3 min-h-screen">
+      <div className="bg-[#f7f7fa] flex flex-col justify-start items-start p-3 min-h-screen" style={{ paddingBottom: '90px' }}>
         {/* 搜索组件 */}
         <div className="w-full max-w-xl bg-white rounded-2xl p-4 mb-3">
           <div className="space-y-3">
