@@ -26,6 +26,7 @@ import {
   createMajorAlternative,
   getMajorAlternatives,
   cancelAlternative,
+  getSuitability,
 } from '../../config/volunteer';
 import './list.css'; // 可根据需要自定义样式
 
@@ -173,6 +174,8 @@ const MajorPage: React.FC = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
+  // 支付状态：是否已支付
+  const [hasPurchased, setHasPurchased] = useState<boolean>(false);
   const [majorIntentions, setMajorIntentions] = useState<any[]>([]);
   // 意向专业数据状态
   // 按专业分组的意向专业数据状态
@@ -1011,12 +1014,32 @@ const MajorPage: React.FC = () => {
 
     setFilteredSchoolsByMajor(newFilteredSchools);
   }, [groupedIntentionMajors, majorFilters, filterSchoolsByConditions, initializeMajorFilter]); // 初始化数据加载 - 只在首次挂载时加载
+
+  /**
+   * 获取支付状态
+   */
+  const fetchPurchaseStatus = useCallback(async () => {
+    try {
+      const suitabilityResponse = await getSuitability();
+      if (suitabilityResponse && suitabilityResponse.code === 200) {
+        // 从返回数据中获取 hasPurchased 字段
+        const purchased = suitabilityResponse.data.hasPurchased || false;
+        setHasPurchased(purchased);
+      }
+    } catch (error) {
+      console.error('获取支付状态失败:', error);
+      // 如果获取失败，默认设置为未支付
+      setHasPurchased(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!isInitialized) {
       fetchMajorScores();
       fetchMajorIntentions();
       fetchIntentionMajors(); // 添加意向专业数据获取
       fetchMajorAlternatives(); // 添加备选志愿数据获取
+      fetchPurchaseStatus(); // 获取支付状态
       setIsInitialized(true);
     }
   }, [
@@ -1024,6 +1047,7 @@ const MajorPage: React.FC = () => {
     fetchMajorIntentions,
     fetchIntentionMajors,
     fetchMajorAlternatives,
+    fetchPurchaseStatus,
     isInitialized,
   ]);
 
@@ -1330,6 +1354,8 @@ const MajorPage: React.FC = () => {
         setLoading(true);
         message.loading('正在帮您解锁所有专业报告', 0);
         await fetchMajorScores();
+        // 支付成功后更新支付状态
+        await fetchPurchaseStatus();
         message.destroy();
         setIsModalVisible(false);
         // 这里可以添加支付成功后的逻辑，比如刷新数据或跳转页面
@@ -1342,7 +1368,7 @@ const MajorPage: React.FC = () => {
     } finally {
       setPayLoading(false);
     }
-  }, [getUserOpenid, fetchMajorScores]);
+  }, [getUserOpenid, fetchMajorScores, fetchPurchaseStatus]);
 
   /**
    * 清空搜索
@@ -3530,8 +3556,8 @@ const MajorPage: React.FC = () => {
           </div>
 
           {/* 查看更多按钮（支付相关） - 移动到专业列表容器内部 */}
-          {/* 查看更多按钮（支付相关） - 只在全部专业tab显示 */}
-          {topActiveTab === 'all' && !loading && majors.length <= 10 && (
+          {/* 查看更多按钮（支付相关） - 只在全部专业tab显示，且用户未支付时显示 */}
+          {topActiveTab === 'all' && !loading && majors.length <= 10 && !hasPurchased && (
             <div
               style={{
                 display: 'flex',

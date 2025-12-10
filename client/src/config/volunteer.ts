@@ -672,6 +672,8 @@ interface SuitabilityResponse {
       count: number;
       data: SuitabilityDataItem[];
     };
+    // 标记用户是否已付费
+    hasPurchased?: boolean;
   };
 }
 
